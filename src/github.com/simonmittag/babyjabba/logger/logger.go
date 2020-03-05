@@ -11,25 +11,28 @@ import (
 
 //ServerID is a unique identifier made up as md5 of hostname and version.
 var ServerID string = "unknown"
-var host string
-var version string
 
 //initServerId creates a unique ID for the server log.
 func initServerID() {
-	host, _ = os.Hostname()
+	hasher := md5.New()
+	hasher.Write([]byte(getHost() + getVersion()))
+	ServerID = hex.EncodeToString(hasher.Sum(nil))[0:8]
+	log.Debug().Str("serverID", ServerID).Msg("determined serverID")
+}
+
+func getHost() string {
+	host, _ := os.Hostname()
 	log.Debug().Str("hostName", host).Msg("determined hostName")
-	version = os.Getenv("VERSION")
+	return host
+}
+
+func getVersion() string {
+	version := os.Getenv("VERSION")
 	if len(version) == 0 {
 		version = "unknown"
 	}
 	log.Debug().Str("version", version).Msg("determined version")
-
-	data := []byte(host + version)
-
-	hasher := md5.New()
-	hasher.Write(data)
-	ServerID = hex.EncodeToString(hasher.Sum(nil))[0:8]
-	log.Debug().Str("serverID", ServerID).Msg("determined serverID")
+	return version
 }
 
 // Init sets up a global logger instance
