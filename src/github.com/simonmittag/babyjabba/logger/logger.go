@@ -7,17 +7,17 @@ import (
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/simonmittag/babyjabba/server"
 )
 
 //ServerID is a unique identifier made up as md5 of hostname and version.
-var ServerID string = "unknown"
 
 //initServerId creates a unique ID for the server log.
 func initServerID() {
 	hasher := md5.New()
 	hasher.Write([]byte(getHost() + getVersion()))
-	ServerID = hex.EncodeToString(hasher.Sum(nil))[0:8]
-	log.Debug().Str("serverID", ServerID).Msg("determined serverID")
+	server.ID = hex.EncodeToString(hasher.Sum(nil))[0:8]
+	log.Debug().Str("serverID", server.ID).Msg("determined serverID")
 }
 
 func getHost() string {
@@ -27,12 +27,12 @@ func getHost() string {
 }
 
 func getVersion() string {
-	version := os.Getenv("VERSION")
-	if len(version) == 0 {
-		version = "unknown"
+	server.Version = os.Getenv("VERSION")
+	if len(server.Version) == 0 {
+		server.Version = "unknown"
 	}
-	log.Debug().Str("version", version).Msg("determined version")
-	return version
+	log.Debug().Str("version", server.Version).Msg("determined version")
+	return server.Version
 }
 
 // Init sets up a global logger instance
@@ -45,6 +45,6 @@ func Init() {
 	log.Logger = log.Output(w)
 
 	initServerID()
-	log.Logger = log.With().Str("serverId", ServerID).Logger()
+	log.Logger = log.With().Str("serverId", server.ID).Logger()
 
 }
