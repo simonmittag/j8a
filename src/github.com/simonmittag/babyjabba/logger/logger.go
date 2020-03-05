@@ -18,7 +18,7 @@ var version string
 func initServerID() {
 	host, _ = os.Hostname()
 	log.Debug().Str("hostName", host).Msg("determined hostName")
-	version = os.Getenv("BABYJABBA_VERSION")
+	version = os.Getenv("VERSION")
 	if len(version) == 0 {
 		version = "unknown"
 	}
