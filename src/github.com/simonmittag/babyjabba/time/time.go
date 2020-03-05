@@ -6,10 +6,12 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+var TZ = "UTC"
+
 func Init() {
-	tz := os.Getenv("TZ")
-	if len(tz) == 0 {
-		tz = "UTC"
+	TZ = os.Getenv("TZ")
+	if len(TZ) == 0 {
+		TZ = "UTC"
 	}
-	log.Debug().Str("timeZone", tz).Msg("timeZone determined")
+	log.Debug().Str("timeZone", TZ).Msg("timeZone determined")
 }
