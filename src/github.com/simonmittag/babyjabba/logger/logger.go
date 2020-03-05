@@ -14,4 +14,5 @@ func Init() {
 		NoColor: false,
 	}
 	log.Logger = log.Output(w)
+	log.Logger = log.With().Str("serverId", "12345").Logger()
 }

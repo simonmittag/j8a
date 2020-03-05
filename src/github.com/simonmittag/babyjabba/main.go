@@ -9,7 +9,7 @@ import (
 
 func main() {
 	logger.Init()
-	log.Debug().Str("TimeZone", os.Getenv("TZ")).Msg("BabyJabba is starting up...")
+	log.Debug().Str("TimeZone", os.Getenv("TZ")).Msg("BabyJabba is starting up....")
 
 	for {
 
