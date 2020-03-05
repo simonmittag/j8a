@@ -1,15 +1,15 @@
 package main
 
 import (
-	"os"
-
 	"github.com/rs/zerolog/log"
 	"github.com/simonmittag/babyjabba/logger"
+	"github.com/simonmittag/babyjabba/time"
 )
 
 func main() {
 	logger.Init()
-	log.Info().Str("TimeZone", os.Getenv("TZ")).Msg("BabyJabba is starting up....")
+	time.Init()
+	log.Info().Msg("BabyJabba is starting up....")
 
 	for {
 
