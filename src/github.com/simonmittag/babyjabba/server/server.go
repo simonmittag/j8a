@@ -26,12 +26,11 @@ func BootStrap() {
 	initPort()
 
 	http.HandleFunc("/about", handleAbout)
+	log.Info().Msgf("BabyJabba listening on port %s...", Port)
 	err := http.ListenAndServe(":"+Port, nil)
 	if err != nil {
-		log.Fatal().Err(err).Msg("unable to start HTTP(S) server, exiting...")
+		log.Fatal().Err(err).Msgf("unable to start HTTP(S) server on port %s, exiting...", Port)
 		panic(err.Error())
-	} else {
-		log.Info().Msgf("BabyJabba listening on port %s...", Port)
 	}
 }
 
