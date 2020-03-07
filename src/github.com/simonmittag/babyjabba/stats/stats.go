@@ -8,6 +8,7 @@ import (
 	"github.com/shirou/gopsutil/process"
 )
 
+//BootStrap starts the background goroutine resource logger.
 func BootStrap() {
 	go stats(os.Getpid())
 }
