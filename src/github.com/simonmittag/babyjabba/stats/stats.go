@@ -18,8 +18,11 @@ func stats(pid int) {
 
 		cpuPc, _ := proc.Percent(time.Millisecond * 2000)
 		mPc, _ := proc.MemoryPercent()
-		log.Debug().Int("pid", pid).Float64("cpuPercent", cpuPc).Float32("memPercent", mPc).Msg("server performance stats sample")
+		mInfo, _ := proc.MemoryInfo()
+		log.Debug().Int("pid", pid).Float64("cpuPercent", cpuPc).Float32("memPercent", mPc).
+			Uint64("rssBytes", mInfo.RSS).Uint64("vmsBytes", mInfo.VMS).Uint64("swapBytes", mInfo.Swap).
+			Msg("server performance stats sample")
 
-		time.Sleep(time.Second * 5)
+		time.Sleep(time.Minute * 1)
 	}
 }
