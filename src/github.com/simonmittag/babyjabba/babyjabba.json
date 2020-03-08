@@ -1,0 +1,22 @@
+{
+    "routes": [
+        {
+            "path": "/about",
+            "alias": "moi",
+            "label": "blue"
+        }
+    ],
+    "resources": [
+        {
+            "alias": "moi",
+            "labels": [
+                "blue"
+            ],
+            "upstream": {
+                "scheme": "http",
+                "host": "localhost",
+                "port": 8080
+            }
+        }
+    ]
+}

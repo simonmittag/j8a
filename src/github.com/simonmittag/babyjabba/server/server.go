@@ -23,6 +23,7 @@ func initPort() {
 }
 
 func BootStrap() {
+	parseFromFile()
 	initPort()
 
 	http.HandleFunc("/about", handleAbout)

@@ -16,7 +16,6 @@ func BootStrap() {
 func stats(pid int) {
 	proc, _ := process.NewProcess(int32(pid))
 	for {
-
 		cpuPc, _ := proc.Percent(time.Millisecond * 2000)
 		mPc, _ := proc.MemoryPercent()
 		mInfo, _ := proc.MemoryInfo()
