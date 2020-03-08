@@ -2,3 +2,4 @@
 .vscode
 ./babyjabba
 bin/
+__debug_bin
