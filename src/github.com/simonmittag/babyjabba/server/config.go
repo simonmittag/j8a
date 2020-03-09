@@ -15,6 +15,9 @@ type ServerConfig struct {
 	Resources []Resource
 }
 
+//special Route alias for internal endpoint
+const AboutJabba string = "aboutJabba"
+
 //Route maps a Path to an upstream resource
 type Route struct {
 	Path  string

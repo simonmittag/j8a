@@ -26,10 +26,8 @@ func initPort() {
 func BootStrap() {
 	parseFromFile()
 	initPort()
-	mapAboutJabba("/chuba")
 	for _, route := range Live.Routes {
-		upstream := mapResource(route)
-		log.Debug().Msgf("mapped route %s to upstream %s", route.Path, upstream)
+		assignHandler(route)
 	}
 
 	log.Info().Msgf("BabyJabba listening on port %s...", Port)
@@ -40,20 +38,30 @@ func BootStrap() {
 	}
 }
 
-func mapAboutJabba(path string) {
-	http.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
-		aboutString := "{\"version:\":\"" + Version + "\", \"serverID\":\"" + ID + "\"}"
-		w.Write([]byte(aboutString))
-	})
-	log.Debug().Msgf("mapped route %s", path)
+func assignHandler(route Route) {
+	if route.Alias == AboutJabba {
+		http.HandleFunc(route.Path, func(w http.ResponseWriter, r *http.Request) {
+			aboutString := "{\"version:\":\"" + Version + "\", \"serverID\":\"" + ID + "\"}"
+			w.Write([]byte(aboutString))
+		})
+		log.Debug().Msgf("assigned internal server information handler to path %s", route.Path)
+	} else {
+		http.HandleFunc(route.Path, func(w http.ResponseWriter, r *http.Request) {
+			upstream := mapUpstream(route)
+			w.Write([]byte(fmt.Sprintf("%v", upstream)))
+		})
+		log.Debug().Msgf("assigned proxy handler to path %s", route.Path)
+	}
+
 }
 
-func mapResource(route Route) *Upstream {
+func mapUpstream(route Route) *Upstream {
 	for _, resource := range Live.Resources {
 		if route.Alias == resource.Alias {
 			if len(route.Label) > 0 {
 				for _, label := range resource.Labels {
 					if label == route.Label {
+						log.Debug().Msgf("mapped route %s to upstream %s", route.Path, resource.Upstream)
 						return &resource.Upstream
 					}
 				}
@@ -61,6 +69,7 @@ func mapResource(route Route) *Upstream {
 				log.Fatal().Msg(msg)
 				panic(msg)
 			} else {
+				log.Debug().Msgf("mapped route %s to upstream %s", route.Path, resource.Upstream)
 				return &resource.Upstream
 			}
 		}

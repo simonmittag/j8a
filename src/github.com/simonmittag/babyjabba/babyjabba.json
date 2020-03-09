@@ -2,20 +2,24 @@
     "routes": [
         {
             "path": "/about",
-            "alias": "moi",
+            "alias": "aboutJabba"
+        },
+        {
+            "path": "/customer",
+            "alias": "customer",
             "label": "blue"
         }
     ],
     "resources": [
         {
-            "alias": "moi",
+            "alias": "customer",
             "labels": [
                 "blue"
             ],
             "upstream": {
                 "scheme": "http",
                 "host": "localhost",
-                "port": 8080
+                "port": 8081
             }
         }
     ]
