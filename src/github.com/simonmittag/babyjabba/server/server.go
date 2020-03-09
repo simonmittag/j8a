@@ -3,7 +3,7 @@ package server
 import (
 	"fmt"
 	"net/http"
-	"os"
+	"strconv"
 
 	"github.com/rs/zerolog/log"
 )
@@ -14,26 +14,16 @@ var Version string = "unknown"
 //ID is a unique server ID
 var ID string = "unknown"
 
-var Port string
-
-func initPort() {
-	Port = os.Getenv("PORT")
-	if len(Port) == 0 {
-		Port = "8080"
-	}
-}
-
 func BootStrap() {
-	parseFromFile()
-	initPort()
+	parseConfig("./babyjabba.json")
 	for _, route := range Live.Routes {
 		assignHandler(route)
 	}
 
-	log.Info().Msgf("BabyJabba listening on port %s...", Port)
-	err := http.ListenAndServe(":"+Port, nil)
+	log.Info().Msgf("BabyJabba listening on port %d...", Live.Port)
+	err := http.ListenAndServe(":"+strconv.Itoa(Live.Port), nil)
 	if err != nil {
-		log.Fatal().Err(err).Msgf("unable to start HTTP(S) server on port %s, exiting...", Port)
+		log.Fatal().Err(err).Msgf("unable to start HTTP(S) server on port %d, exiting...", Live.Port)
 		panic(err.Error())
 	}
 }
@@ -46,13 +36,15 @@ func assignHandler(route Route) {
 		})
 		log.Debug().Msgf("assigned internal server information handler to path %s", route.Path)
 	} else {
-		http.HandleFunc(route.Path, func(w http.ResponseWriter, r *http.Request) {
-			upstream := mapUpstream(route)
-			w.Write([]byte(fmt.Sprintf("%v", upstream)))
-		})
+		http.HandleFunc(route.Path, proxyHandler)
 		log.Debug().Msgf("assigned proxy handler to path %s", route.Path)
 	}
 
+}
+
+func proxyHandler(w http.ResponseWriter, r *http.Request) {
+	// upstream := mapUpstream(route)
+	w.Write([]byte(fmt.Sprintf("%v", "Hello World")))
 }
 
 func mapUpstream(route Route) *Upstream {

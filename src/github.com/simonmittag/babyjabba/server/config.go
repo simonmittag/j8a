@@ -9,13 +9,15 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-//Server config of all Routes mapped to Resources
+//ServerConfig of all Routes mapped to Resources
 type ServerConfig struct {
+	Mode      string
+	Port      int
 	Routes    []Route
 	Resources []Resource
 }
 
-//special Route alias for internal endpoint
+//AboutJabba special Route alias for internal endpoint
 const AboutJabba string = "aboutJabba"
 
 //Route maps a Path to an upstream resource
@@ -44,11 +46,11 @@ func (u Upstream) String() string {
 	return u.Scheme + "://" + u.Host + ":" + strconv.Itoa(int(u.Port))
 }
 
-//ServerConfig stores global params
+//Live ServerConfig stores global params
 var Live ServerConfig
 
-func parseFromFile() *ServerConfig {
-	jsonFile, err := os.Open("babyjabba.json")
+func parseConfig(file string) *ServerConfig {
+	jsonFile, err := os.Open(file)
 	defer jsonFile.Close()
 	if err != nil {
 		msg := "cannot find babyjabba.json, unable to read server configuration, exiting..."
