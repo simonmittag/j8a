@@ -49,6 +49,6 @@ func serverInformationHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func proxyHandler(w http.ResponseWriter, r *http.Request) {
-	// upstream := mapUpstream(route)
+	//TODO: find route from request, then map to upstream
 	w.Write([]byte(fmt.Sprintf("%v", "Hello World")))
 }

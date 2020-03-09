@@ -22,20 +22,20 @@ func (route Route) mapUpstream() *Upstream {
 			if len(route.Label) > 0 {
 				for _, label := range resource.Labels {
 					if label == route.Label {
-						log.Debug().Msgf("mapped route %s to upstream %s", route.Path, resource.Upstream)
+						log.Debug().Msgf("route %s mapped to upstream %s", route.Path, resource.Upstream)
 						return &resource.Upstream
 					}
 				}
-				msg := fmt.Sprintf("configuration error. invalid route %v unable to map resource", route)
-				log.Fatal().Msg(msg)
+				msg := fmt.Sprintf("route %v invalid", route)
+				log.Warn().Msg(msg)
 				panic(msg)
 			} else {
-				log.Debug().Msgf("mapped route %s to upstream %s", route.Path, resource.Upstream)
+				log.Debug().Msgf("route %s mapped to upstream %s", route.Path, resource.Upstream)
 				return &resource.Upstream
 			}
 		}
 	}
-	msg := fmt.Sprintf("configuration error. invalid route")
-	log.Fatal().Msg(msg)
+	msg := fmt.Sprintf("route %v invalid", route)
+	log.Warn().Msg(msg)
 	panic(msg)
 }
