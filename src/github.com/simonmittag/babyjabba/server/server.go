@@ -20,7 +20,10 @@ func BootStrap() {
 	for _, route := range Live.Routes {
 		assignHandler(route)
 	}
+	startListening()
+}
 
+func startListening() {
 	log.Info().Msgf("BabyJabba listening on port %d...", Live.Port)
 	err := http.ListenAndServe(":"+strconv.Itoa(Live.Port), nil)
 	if err != nil {

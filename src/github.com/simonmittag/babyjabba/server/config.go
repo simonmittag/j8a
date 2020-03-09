@@ -11,7 +11,7 @@ import (
 //Live ServerConfig stores global params
 var Live Config
 
-//ServerConfig of all Routes mapped to Resources
+//Config is the system wide configuration for BabyJabba
 type Config struct {
 	Mode      string
 	Port      int
