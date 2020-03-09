@@ -4,52 +4,22 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
-	"strconv"
 
 	"github.com/rs/zerolog/log"
 )
 
+//Live ServerConfig stores global params
+var Live Config
+
 //ServerConfig of all Routes mapped to Resources
-type ServerConfig struct {
+type Config struct {
 	Mode      string
 	Port      int
 	Routes    []Route
 	Resources []Resource
 }
 
-//AboutJabba special Route alias for internal endpoint
-const AboutJabba string = "aboutJabba"
-
-//Route maps a Path to an upstream resource
-type Route struct {
-	Path  string
-	Alias string
-	Label string
-}
-
-//Resource describes upstream servers
-type Resource struct {
-	Alias    string
-	Labels   []string
-	Upstream Upstream
-}
-
-//Upstream describes host mapping
-type Upstream struct {
-	Scheme string
-	Host   string
-	Port   int16
-}
-
-//String representation of our URL struct
-func (u Upstream) String() string {
-	return u.Scheme + "://" + u.Host + ":" + strconv.Itoa(int(u.Port))
-}
-
-//Live ServerConfig stores global params
-var Live ServerConfig
-
-func parseConfig(file string) *ServerConfig {
+func parse(file string) *Config {
 	jsonFile, err := os.Open(file)
 	defer jsonFile.Close()
 	if err != nil {
