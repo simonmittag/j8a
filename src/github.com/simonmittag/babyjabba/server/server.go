@@ -16,18 +16,18 @@ var ID string = "unknown"
 
 //BootStrap starts up the server from a ServerConfig
 func BootStrap() {
-	parse("./babyjabba.json")
-	for _, route := range Live.Routes {
+	config := parse("./babyjabba.json")
+	for _, route := range config.Routes {
 		assignHandler(route)
 	}
-	startListening()
+	startListening(config)
 }
 
-func startListening() {
-	log.Info().Msgf("BabyJabba listening on port %d...", Live.Port)
-	err := http.ListenAndServe(":"+strconv.Itoa(Live.Port), nil)
+func startListening(config *Config) {
+	log.Info().Msgf("BabyJabba listening on port %d...", config.Port)
+	err := http.ListenAndServe(":"+strconv.Itoa(config.Port), nil)
 	if err != nil {
-		log.Fatal().Err(err).Msgf("unable to start HTTP(S) server on port %d, exiting...", Live.Port)
+		log.Fatal().Err(err).Msgf("unable to start HTTP(S) server on port %d, exiting...", config.Port)
 		panic(err.Error())
 	}
 }
