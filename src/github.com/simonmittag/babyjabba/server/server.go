@@ -14,6 +14,7 @@ var Version string = "unknown"
 //ID is a unique server ID
 var ID string = "unknown"
 
+//BootStrap starts up the server from a ServerConfig
 func BootStrap() {
 	parseConfig("./babyjabba.json")
 	for _, route := range Live.Routes {
