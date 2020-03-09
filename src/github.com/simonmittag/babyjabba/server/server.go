@@ -31,16 +31,18 @@ func BootStrap() {
 
 func assignHandler(route Route) {
 	if route.Alias == AboutJabba {
-		http.HandleFunc(route.Path, func(w http.ResponseWriter, r *http.Request) {
-			aboutString := "{\"version:\":\"" + Version + "\", \"serverID\":\"" + ID + "\"}"
-			w.Write([]byte(aboutString))
-		})
+		http.HandleFunc(route.Path, serverInformationHandler)
 		log.Debug().Msgf("assigned internal server information handler to path %s", route.Path)
 	} else {
 		http.HandleFunc(route.Path, proxyHandler)
 		log.Debug().Msgf("assigned proxy handler to path %s", route.Path)
 	}
 
+}
+
+func serverInformationHandler(w http.ResponseWriter, r *http.Request) {
+	aboutString := "{\"version:\":\"" + Version + "\", \"serverID\":\"" + ID + "\"}"
+	w.Write([]byte(aboutString))
 }
 
 func proxyHandler(w http.ResponseWriter, r *http.Request) {
