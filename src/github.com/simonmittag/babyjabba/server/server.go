@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 
@@ -25,8 +26,12 @@ func initPort() {
 func BootStrap() {
 	parseFromFile()
 	initPort()
+	mapAboutJabba("/chuba")
+	for _, route := range Live.Routes {
+		upstream := mapResource(route)
+		log.Debug().Msgf("mapped route %s to upstream %s", route.Path, upstream)
+	}
 
-	http.HandleFunc("/about", handleAbout)
 	log.Info().Msgf("BabyJabba listening on port %s...", Port)
 	err := http.ListenAndServe(":"+Port, nil)
 	if err != nil {
@@ -35,7 +40,32 @@ func BootStrap() {
 	}
 }
 
-func handleAbout(w http.ResponseWriter, r *http.Request) {
-	aboutString := "{\"version:\":\"" + Version + "\", \"serverID\":\"" + ID + "\"}"
-	w.Write([]byte(aboutString))
+func mapAboutJabba(path string) {
+	http.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		aboutString := "{\"version:\":\"" + Version + "\", \"serverID\":\"" + ID + "\"}"
+		w.Write([]byte(aboutString))
+	})
+	log.Debug().Msgf("mapped route %s", path)
+}
+
+func mapResource(route Route) *Upstream {
+	for _, resource := range Live.Resources {
+		if route.Alias == resource.Alias {
+			if len(route.Label) > 0 {
+				for _, label := range resource.Labels {
+					if label == route.Label {
+						return &resource.Upstream
+					}
+				}
+				msg := fmt.Sprintf("configuration error. invalid route %v unable to map resource", route)
+				log.Fatal().Msg(msg)
+				panic(msg)
+			} else {
+				return &resource.Upstream
+			}
+		}
+	}
+	msg := fmt.Sprintf("configuration error. invalid route %v")
+	log.Fatal().Msg(msg)
+	panic(msg)
 }
