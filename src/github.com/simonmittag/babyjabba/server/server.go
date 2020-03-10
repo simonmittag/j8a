@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"net/http"
+	"regexp"
 	"strconv"
 
 	"github.com/rs/zerolog/log"
@@ -57,6 +58,16 @@ func serverInformationHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func proxyHandler(w http.ResponseWriter, r *http.Request) {
-	//TODO: find route from request, then map to upstream
-	w.Write([]byte(fmt.Sprintf("%v", "Hello World")))
+	matched := false
+	for _, route := range Runtime.Routes {
+		if matched, _ = regexp.MatchString(route.Path, r.RequestURI); matched {
+			upstream := route.mapUpstream()
+			log.Debug().Msgf("mapping %s to upstream %s", r.RequestURI, *upstream)
+			w.Write([]byte(fmt.Sprintf("proxy request for upstream %v", *upstream)))
+			break
+		}
+	}
+	if !matched {
+		w.Write([]byte(fmt.Sprintf("%v", "unmatched request")))
+	}
 }
