@@ -14,33 +14,41 @@ var Version string = "unknown"
 //ID is a unique server ID
 var ID string = "unknown"
 
+//Server struct defines runis the runtime environment for a config.
+type Server struct {
+	Config
+}
+
+//Runtime has access server config
+var Runtime *Server
+
 //BootStrap starts up the server from a ServerConfig
 func BootStrap() {
 	config := parse("./babyjabba.json")
-	for _, route := range config.Routes {
-		assignHandler(route)
-	}
-	startListening(config)
+	Runtime = &Server{Config: *config}
+	Runtime.assignHandlers().
+		startListening()
 }
 
-func startListening(config *Config) {
-	log.Info().Msgf("BabyJabba listening on port %d...", config.Port)
-	err := http.ListenAndServe(":"+strconv.Itoa(config.Port), nil)
+func (server Server) startListening() {
+	log.Info().Msgf("BabyJabba listening on port %d...", server.Port)
+	err := http.ListenAndServe(":"+strconv.Itoa(server.Port), nil)
 	if err != nil {
-		log.Fatal().Err(err).Msgf("unable to start HTTP(S) server on port %d, exiting...", config.Port)
+		log.Fatal().Err(err).Msgf("unable to start HTTP(S) server on port %d, exiting...", server.Port)
 		panic(err.Error())
 	}
 }
 
-func assignHandler(route Route) {
-	if route.Alias == AboutJabba {
-		http.HandleFunc(route.Path, serverInformationHandler)
-		log.Debug().Msgf("assigned internal server information handler to path %s", route.Path)
-	} else {
-		http.HandleFunc(route.Path, proxyHandler)
-		log.Debug().Msgf("assigned proxy handler to path %s", route.Path)
+func (server Server) assignHandlers() Server {
+	for _, route := range server.Routes {
+		if route.Alias == AboutJabba {
+			http.HandleFunc(route.Path, serverInformationHandler)
+			log.Debug().Msgf("assigned internal server information handler to path %s", route.Path)
+		}
 	}
-
+	http.HandleFunc("/", proxyHandler)
+	log.Debug().Msgf("assigned proxy handler to path %s", "/")
+	return server
 }
 
 func serverInformationHandler(w http.ResponseWriter, r *http.Request) {
