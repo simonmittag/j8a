@@ -62,7 +62,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	for _, route := range Runtime.Routes {
 		if matched, _ = regexp.MatchString(route.Path, r.RequestURI); matched {
 			upstream := route.mapUpstream()
-			log.Debug().Msgf("mapping %s to upstream %s", r.RequestURI, *upstream)
+			log.Info().Msgf("mapping %s to upstream %s", r.RequestURI, *upstream)
 			w.Write([]byte(fmt.Sprintf("proxy request for upstream %v", *upstream)))
 			break
 		}

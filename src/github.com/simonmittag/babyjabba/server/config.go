@@ -15,6 +15,7 @@ var Live Config
 type Config struct {
 	Mode      string
 	Port      int
+	Policies  map[string]Policy
 	Routes    []Route
 	Resources []Resource
 }

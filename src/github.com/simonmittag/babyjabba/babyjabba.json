@@ -1,6 +1,20 @@
 {
-    "port" : 8080,
-    "mode" : "TLS",
+    "port": 8080,
+    "mode": "TLS",
+    "policies": {
+        "ab": {
+            "labelWeights": [
+                {
+                    "label": "green",
+                    "weight": 0.8
+                },
+                {
+                    "label": "blue",
+                    "weight": 0.2
+                }
+            ]
+        }
+    },
     "routes": [
         {
             "path": "/about",
@@ -9,7 +23,7 @@
         {
             "path": "/customer",
             "alias": "customer",
-            "label": "blue"
+            "policy": "ab"
         }
     ],
     "resources": [
@@ -22,6 +36,17 @@
                 "scheme": "http",
                 "host": "localhost",
                 "port": 8081
+            }
+        },
+        {
+            "alias": "customer",
+            "labels": [
+                "green"
+            ],
+            "upstream": {
+                "scheme": "http",
+                "host": "localhost",
+                "port": 8082
             }
         }
     ]
