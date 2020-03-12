@@ -1,8 +1,6 @@
 package server
 
 import (
-	"fmt"
-
 	"github.com/rs/zerolog/log"
 )
 
@@ -16,7 +14,7 @@ type Route struct {
 	Policy string
 }
 
-func (route Route) mapUpstream() *Upstream {
+func (route Route) mapUpstream() (*Upstream, bool) {
 	var policy Policy
 	var policyLabel string
 	if len(route.Policy) > 0 {
@@ -30,16 +28,15 @@ func (route Route) mapUpstream() *Upstream {
 			for _, resourceLabel := range resourceMapping.Labels {
 				if policyLabel == resourceLabel {
 					log.Debug().Msgf("route %s mapped to upstream %s for label %s", route.Path, resourceMapping.Upstream, resourceLabel)
-					return &resourceMapping.Upstream
+					return &resourceMapping.Upstream, true
 				}
 			}
 		}
 	} else {
 		log.Debug().Msgf("route %s mapped to default upstream %s", route.Path, &resource[0].Upstream)
-		return &resource[0].Upstream
+		return &resource[0].Upstream, true
 	}
 
-	msg := fmt.Sprintf("route %v invalid", route)
-	log.Warn().Msg(msg)
-	panic(msg)
+	log.Debug().Msgf("route %s not mapped", route.Path)
+	return nil, false
 }

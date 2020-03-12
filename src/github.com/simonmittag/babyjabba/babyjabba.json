@@ -28,7 +28,7 @@
         "customer": [
             {
                 "labels": [
-                    "blue"
+                    "xblue"
                 ],
                 "upstream": {
                     "scheme": "http",
@@ -38,7 +38,7 @@
             },
             {
                 "labels": [
-                    "green"
+                    "xgreen"
                 ],
                 "upstream": {
                     "scheme": "http",
