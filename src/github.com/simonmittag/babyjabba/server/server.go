@@ -69,7 +69,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 				handleUpstreamRequest(w, r, upstream)
 			} else {
 				sendStatusCodeAsJSON(w, r, 503)
-				return
+				// return
 			}
 			break
 		}
@@ -88,7 +88,7 @@ func writeStandardHeaders(w http.ResponseWriter, statusCode int) {
 	w.Header().Set("X-xss-protection", "1;mode=block")
 	w.Header().Set("X-content-type-options", "nosniff")
 	w.Header().Set("X-frame-options", "sameorigin")
-	w.WriteHeader(200)
+	w.WriteHeader(statusCode)
 }
 
 func handleUpstreamRequest(w http.ResponseWriter, r *http.Request, u *Upstream) {
