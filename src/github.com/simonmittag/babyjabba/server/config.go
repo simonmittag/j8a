@@ -17,10 +17,10 @@ type Config struct {
 	Port      int
 	Policies  map[string]Policy
 	Routes    []Route
-	Resources []Resource
+	Resources map[string][]ResourceMapping
 }
 
-func parse(file string) *Config {
+func (config Config) parse(file string) *Config {
 	jsonFile, err := os.Open(file)
 	defer jsonFile.Close()
 	if err != nil {
@@ -33,4 +33,28 @@ func parse(file string) *Config {
 	//todo tell me about more of the config, number of routes
 	log.Debug().Msgf("parsed server configuration with %d live routes", len(Live.Routes))
 	return &Live
+}
+
+func (config Config) reAliasResources() *Config {
+	for alias := range config.Resources {
+		resourceMappings := config.Resources[alias]
+		for i, resourceMapping := range resourceMappings {
+			resourceMapping.Alias = alias
+			resourceMappings[i] = resourceMapping
+		}
+	}
+	return &config
+}
+
+func (config Config) addDefaultPolicy() *Config {
+	defaultPolicy := new(Policy)
+	lw := LabelWeight{
+		Label:  "default",
+		Weight: 1.0,
+	}
+	var labelWeights []LabelWeight
+	labelWeights = append(labelWeights, lw)
+	*defaultPolicy = labelWeights
+	config.Policies["default"] = *defaultPolicy
+	return &config
 }

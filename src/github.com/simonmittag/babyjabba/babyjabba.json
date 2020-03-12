@@ -2,18 +2,16 @@
     "port": 8080,
     "mode": "TLS",
     "policies": {
-        "ab": {
-            "labelWeights": [
-                {
-                    "label": "green",
-                    "weight": 0.8
-                },
-                {
-                    "label": "blue",
-                    "weight": 0.2
-                }
-            ]
-        }
+        "ab": [
+            {
+                "label": "green",
+                "weight": 0.8
+            },
+            {
+                "label": "blue",
+                "weight": 0.2
+            }
+        ]
     },
     "routes": [
         {
@@ -26,28 +24,28 @@
             "policy": "ab"
         }
     ],
-    "resources": [
-        {
-            "alias": "customer",
-            "labels": [
-                "blue"
-            ],
-            "upstream": {
-                "scheme": "http",
-                "host": "localhost",
-                "port": 8081
+    "resources": {
+        "customer": [
+            {
+                "labels": [
+                    "blue"
+                ],
+                "upstream": {
+                    "scheme": "http",
+                    "host": "localhost",
+                    "port": 8081
+                }
+            },
+            {
+                "labels": [
+                    "green"
+                ],
+                "upstream": {
+                    "scheme": "http",
+                    "host": "localhost",
+                    "port": 8082
+                }
             }
-        },
-        {
-            "alias": "customer",
-            "labels": [
-                "green"
-            ],
-            "upstream": {
-                "scheme": "http",
-                "host": "localhost",
-                "port": 8082
-            }
-        }
-    ]
+        ]
+    }
 }

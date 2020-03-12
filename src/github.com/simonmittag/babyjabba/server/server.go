@@ -25,7 +25,10 @@ var Runtime *Server
 
 //BootStrap starts up the server from a ServerConfig
 func BootStrap() {
-	config := parse("./babyjabba.json")
+	config := new(Config).
+		parse("./babyjabba.json").
+		reAliasResources().
+		addDefaultPolicy()
 	Runtime = &Server{Config: *config}
 	Runtime.assignHandlers().
 		startListening()

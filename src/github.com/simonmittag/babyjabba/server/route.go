@@ -23,21 +23,22 @@ func (route Route) mapUpstream() *Upstream {
 		policy = Runtime.Policies[route.Policy]
 		policyLabel = policy.resolveLabel()
 	}
-	for _, resource := range Runtime.Resources {
-		if route.Alias == resource.Alias {
-			if len(route.Policy) > 0 {
-				for _, resourceLabel := range resource.Labels {
-					if policyLabel == resourceLabel {
-						log.Debug().Msgf("route %s mapped to upstream %s", route.Path, resource.Upstream)
-						return &resource.Upstream
-					}
+
+	resource := Runtime.Resources[route.Alias]
+	if len(route.Policy) > 0 {
+		for _, resourceMapping := range resource {
+			for _, resourceLabel := range resourceMapping.Labels {
+				if policyLabel == resourceLabel {
+					log.Debug().Msgf("route %s mapped to upstream %s for label %s", route.Path, resourceMapping.Upstream, resourceLabel)
+					return &resourceMapping.Upstream
 				}
-			} else {
-				log.Debug().Msgf("route %s mapped to upstream %s", route.Path, resource.Upstream)
-				return &resource.Upstream
 			}
 		}
+	} else {
+		log.Debug().Msgf("route %s mapped to default upstream %s", route.Path, &resource[0].Upstream)
+		return &resource[0].Upstream
 	}
+
 	msg := fmt.Sprintf("route %v invalid", route)
 	log.Warn().Msg(msg)
 	panic(msg)
