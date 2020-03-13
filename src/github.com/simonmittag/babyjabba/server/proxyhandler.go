@@ -15,7 +15,7 @@ func proxyHandler(response http.ResponseWriter, request *http.Request) {
 	matched := false
 	decorateRequest(request)
 	for _, route := range Runtime.Routes {
-		if matchRouteInURI(route, request) {
+		if matched = matchRouteInURI(route, request); matched {
 			upstream, label, mapped := route.mapUpstream()
 			if mapped {
 				handleUpstreamRequest(response, request, upstream, label)
