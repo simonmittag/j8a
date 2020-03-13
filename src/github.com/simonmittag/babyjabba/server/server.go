@@ -3,10 +3,8 @@ package server
 import (
 	"fmt"
 	"net/http"
-	"regexp"
 	"strconv"
 
-	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 )
 
@@ -56,80 +54,33 @@ func (server Server) assignHandlers() Server {
 	return server
 }
 
-func serverInformationHandler(w http.ResponseWriter, r *http.Request) {
-	aboutString := "{\"version:\":\"" + Version + "\", \"serverID\":\"" + ID + "\"}"
-	w.Write([]byte(aboutString))
-}
-
-func proxyHandler(w http.ResponseWriter, r *http.Request) {
-	matched := false
-	xri := xRequestId()
-	r.Header.Set("X-REQUEST-ID", xri)
-	for _, route := range Runtime.Routes {
-		if matched, _ = regexp.MatchString("^"+route.Path, r.RequestURI); matched {
-			upstream, label, mapped := route.mapUpstream()
-			if mapped {
-				handleUpstreamRequest(w, r, upstream, label, xri)
-			} else {
-				sendStatusCodeAsJSON(w, r, 503, xri)
-			}
-			break
-		}
-	}
-	if !matched {
-		sendStatusCodeAsJSON(w, r, 404, xri)
-	}
-}
-
-func xRequestId() string {
-	uuid, _ := uuid.NewRandom()
-	return fmt.Sprintf("XR-%s-%s", ID, uuid)
-}
-
-func writeStandardHeaders(w http.ResponseWriter, statusCode int) {
-	w.Header().Set("Server", "BabyJabba "+Version)
-	w.Header().Set("Content-Encoding", "identity")
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Cache-control:", "no-store, no-cache, must-revalidate, proxy-revalidate")
+func writeStandardResponseHeaders(response http.ResponseWriter, request *http.Request, statusCode int) {
+	response.Header().Set("Server", "BabyJabba "+Version)
+	response.Header().Set("Content-Encoding", "identity")
+	response.Header().Set("Content-Type", "application/json")
+	response.Header().Set("Cache-control:", "no-store, no-cache, must-revalidate, proxy-revalidate")
+	//for TLS response, we set HSTS header
 	if Runtime.Mode == "TLS" {
-		w.Header().Set("Strict-Transport-Security", "max-age=31536000")
+		response.Header().Set("Strict-Transport-Security", "max-age=31536000")
 	}
-	w.Header().Set("X-server-id", ID)
-	w.Header().Set("X-xss-protection", "1;mode=block")
-	w.Header().Set("X-content-type-options", "nosniff")
-	w.Header().Set("X-frame-options", "sameorigin")
-	w.WriteHeader(statusCode)
+	response.Header().Set("X-server-id", ID)
+	response.Header().Set("X-xss-protection", "1;mode=block")
+	response.Header().Set("X-content-type-options", "nosniff")
+	response.Header().Set("X-frame-options", "sameorigin")
+	//copy the X-REQUEST-ID from the request
+	response.Header().Set(X_REQUEST_ID, request.Header.Get(X_REQUEST_ID))
+
+	//status code must be last, no headers may be written after this one.
+	response.WriteHeader(statusCode)
 }
 
-func handleUpstreamRequest(w http.ResponseWriter, r *http.Request, u *Upstream, label string, xri string) {
-	//handle request by sending upstream
-	url := r.URL
-	method := r.Method
-	// body, err := ioutil.ReadAll(r.Body)
-	// if err != nil {
-	// 	log.Debug().Msgf("unable to parse request body for %url", url)
-	// }
-	writeStandardHeaders(w, 200)
-	w.Write([]byte(fmt.Sprintf("proxy request for upstream %v", *u)))
-
-	log.Info().
-		Str("url", url.Path).
-		Str("method", method).
-		Str("upstream", u.String()).
-		Str("label", label).
-		Str("xRequestId", xri).
-		Int("upstreamResponseCode", 200).
-		Int("downstreamResponseCode", 200).
-		Msgf("request served")
-}
-
-func sendStatusCodeAsJSON(w http.ResponseWriter, r *http.Request, statusCode int, xri string) {
+func sendStatusCodeAsJSON(response http.ResponseWriter, request *http.Request, statusCode int) {
 	if statusCode >= 299 {
 		log.Warn().Int("downstreamResponseCode", statusCode).
-			Str("path", r.URL.Path).
-			Str("xRequestId", xri).
+			Str("path", request.URL.Path).
+			Str(X_REQUEST_ID, request.Header.Get(X_REQUEST_ID)).
 			Msgf("request not served")
 	}
-	writeStandardHeaders(w, statusCode)
-	w.Write([]byte(fmt.Sprintf("{ \"code\":\"%v\" }", strconv.Itoa(statusCode))))
+	writeStandardResponseHeaders(response, request, statusCode)
+	response.Write([]byte(fmt.Sprintf("{ \"code\":\"%d\" }", statusCode)))
 }
