@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strconv"
 
+	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 )
 
@@ -62,21 +63,27 @@ func serverInformationHandler(w http.ResponseWriter, r *http.Request) {
 
 func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	matched := false
+	xri := xRequestId()
+	r.Header.Set("X-REQUEST-ID", xri)
 	for _, route := range Runtime.Routes {
 		if matched, _ = regexp.MatchString("^"+route.Path, r.RequestURI); matched {
 			upstream, label, mapped := route.mapUpstream()
 			if mapped {
-				handleUpstreamRequest(w, r, upstream, label)
+				handleUpstreamRequest(w, r, upstream, label, xri)
 			} else {
-				sendStatusCodeAsJSON(w, r, 503)
-				// return
+				sendStatusCodeAsJSON(w, r, 503, xri)
 			}
 			break
 		}
 	}
 	if !matched {
-		sendStatusCodeAsJSON(w, r, 404)
+		sendStatusCodeAsJSON(w, r, 404, xri)
 	}
+}
+
+func xRequestId() string {
+	uuid, _ := uuid.NewRandom()
+	return fmt.Sprintf("XR-%s-%s", ID, uuid)
 }
 
 func writeStandardHeaders(w http.ResponseWriter, statusCode int) {
@@ -94,7 +101,7 @@ func writeStandardHeaders(w http.ResponseWriter, statusCode int) {
 	w.WriteHeader(statusCode)
 }
 
-func handleUpstreamRequest(w http.ResponseWriter, r *http.Request, u *Upstream, label string) {
+func handleUpstreamRequest(w http.ResponseWriter, r *http.Request, u *Upstream, label string, xri string) {
 	//handle request by sending upstream
 	url := r.URL
 	method := r.Method
@@ -110,15 +117,17 @@ func handleUpstreamRequest(w http.ResponseWriter, r *http.Request, u *Upstream, 
 		Str("method", method).
 		Str("upstream", u.String()).
 		Str("label", label).
+		Str("xRequestId", xri).
 		Int("upstreamResponseCode", 200).
 		Int("downstreamResponseCode", 200).
 		Msgf("request served")
 }
 
-func sendStatusCodeAsJSON(w http.ResponseWriter, r *http.Request, statusCode int) {
+func sendStatusCodeAsJSON(w http.ResponseWriter, r *http.Request, statusCode int, xri string) {
 	if statusCode >= 299 {
 		log.Warn().Int("downstreamResponseCode", statusCode).
 			Str("path", r.URL.Path).
+			Str("xRequestId", xri).
 			Msgf("request not served")
 	}
 	writeStandardHeaders(w, statusCode)
