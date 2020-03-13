@@ -63,10 +63,10 @@ func serverInformationHandler(w http.ResponseWriter, r *http.Request) {
 func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	matched := false
 	for _, route := range Runtime.Routes {
-		if matched, _ = regexp.MatchString(route.Path, r.RequestURI); matched {
-			upstream, mapped := route.mapUpstream()
+		if matched, _ = regexp.MatchString("^"+route.Path, r.RequestURI); matched {
+			upstream, label, mapped := route.mapUpstream()
 			if mapped {
-				handleUpstreamRequest(w, r, upstream)
+				handleUpstreamRequest(w, r, upstream, label)
 			} else {
 				sendStatusCodeAsJSON(w, r, 503)
 				// return
@@ -84,6 +84,9 @@ func writeStandardHeaders(w http.ResponseWriter, statusCode int) {
 	w.Header().Set("Content-Encoding", "identity")
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-control:", "no-store, no-cache, must-revalidate, proxy-revalidate")
+	if Runtime.Mode == "TLS" {
+		w.Header().Set("Strict-Transport-Security", "max-age=31536000")
+	}
 	w.Header().Set("X-server-id", ID)
 	w.Header().Set("X-xss-protection", "1;mode=block")
 	w.Header().Set("X-content-type-options", "nosniff")
@@ -91,15 +94,32 @@ func writeStandardHeaders(w http.ResponseWriter, statusCode int) {
 	w.WriteHeader(statusCode)
 }
 
-func handleUpstreamRequest(w http.ResponseWriter, r *http.Request, u *Upstream) {
+func handleUpstreamRequest(w http.ResponseWriter, r *http.Request, u *Upstream, label string) {
 	//handle request by sending upstream
+	url := r.URL
+	method := r.Method
+	// body, err := ioutil.ReadAll(r.Body)
+	// if err != nil {
+	// 	log.Debug().Msgf("unable to parse request body for %url", url)
+	// }
 	writeStandardHeaders(w, 200)
 	w.Write([]byte(fmt.Sprintf("proxy request for upstream %v", *u)))
+
+	log.Info().
+		Str("url", url.Path).
+		Str("method", method).
+		Str("upstream", u.String()).
+		Str("label", label).
+		Int("upstreamResponseCode", 200).
+		Int("downstreamResponseCode", 200).
+		Msgf("request served")
 }
 
 func sendStatusCodeAsJSON(w http.ResponseWriter, r *http.Request, statusCode int) {
 	if statusCode >= 299 {
-		log.Warn().Msgf("request path %v code %d", r.URL.Path, statusCode)
+		log.Warn().Int("downstreamResponseCode", statusCode).
+			Str("path", r.URL.Path).
+			Msgf("request not served")
 	}
 	writeStandardHeaders(w, statusCode)
 	w.Write([]byte(fmt.Sprintf("{ \"code\":\"%v\" }", strconv.Itoa(statusCode))))

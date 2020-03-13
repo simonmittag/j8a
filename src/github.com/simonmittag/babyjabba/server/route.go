@@ -14,7 +14,7 @@ type Route struct {
 	Policy string
 }
 
-func (route Route) mapUpstream() (*Upstream, bool) {
+func (route Route) mapUpstream() (*Upstream, string, bool) {
 	var policy Policy
 	var policyLabel string
 	if len(route.Policy) > 0 {
@@ -27,16 +27,16 @@ func (route Route) mapUpstream() (*Upstream, bool) {
 		for _, resourceMapping := range resource {
 			for _, resourceLabel := range resourceMapping.Labels {
 				if policyLabel == resourceLabel {
-					log.Debug().Msgf("route %s mapped to upstream %s for label %s", route.Path, resourceMapping.Upstream, resourceLabel)
-					return &resourceMapping.Upstream, true
+					log.Trace().Msgf("route %s mapped to upstream %s for label %s", route.Path, resourceMapping.Upstream, resourceLabel)
+					return &resourceMapping.Upstream, policyLabel, true
 				}
 			}
 		}
 	} else {
-		log.Debug().Msgf("route %s mapped to default upstream %s", route.Path, &resource[0].Upstream)
-		return &resource[0].Upstream, true
+		log.Trace().Msgf("route %s mapped to default upstream %s", route.Path, &resource[0].Upstream)
+		return &resource[0].Upstream, "default", true
 	}
 
-	log.Debug().Msgf("route %s not mapped", route.Path)
-	return nil, false
+	log.Trace().Msgf("route %s not mapped", route.Path)
+	return nil, "default", false
 }

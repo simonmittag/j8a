@@ -22,6 +22,11 @@
             "path": "/customer",
             "alias": "customer",
             "policy": "ab"
+        },
+        {
+            "path": "/billing",
+            "alias": "billing",
+            "policy": "ab"
         }
     ],
     "resources": {
@@ -44,6 +49,28 @@
                     "scheme": "http",
                     "host": "localhost",
                     "port": 8082
+                }
+            }
+        ],
+        "billing": [
+            {
+                "labels": [
+                    "blue"
+                ],
+                "upstream": {
+                    "scheme": "http",
+                    "host": "bluebillinghost",
+                    "port": 8083
+                }
+            },
+            {
+                "labels": [
+                    "green"
+                ],
+                "upstream": {
+                    "scheme": "http",
+                    "host": "greenbillinghost",
+                    "port": 8083
                 }
             }
         ]
