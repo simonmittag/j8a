@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"regexp"
 
@@ -20,6 +21,7 @@ func proxyHandler(response http.ResponseWriter, request *http.Request) {
 			if mapped {
 				handleUpstreamRequest(response, request, upstream, label)
 			} else {
+				//matched, but non mapped requests == configuration error in server
 				sendStatusCodeAsJSON(response, request, 503)
 			}
 			break
@@ -39,10 +41,14 @@ func handleUpstreamRequest(response http.ResponseWriter, request *http.Request, 
 	//handle request by sending upstream
 	url := request.URL
 	method := request.Method
-	// body, err := ioutil.ReadAll(r.Body)
-	// if err != nil {
-	// 	log.Debug().Msgf("unable to parse request body for %url", url)
-	// }
+	body, _ := ioutil.ReadAll(request.Body)
+	log.Trace().
+		Str("url", url.Path).
+		Str("method", method).
+		Int("bodyBytes", len(body)).
+		Str(X_REQUEST_ID, request.Header.Get(X_REQUEST_ID)).
+		Msg("parsed request")
+
 	writeStandardResponseHeaders(response, request, 200)
 	response.Write([]byte(fmt.Sprintf("proxy request for upstream %v", *upstream)))
 
@@ -51,6 +57,7 @@ func handleUpstreamRequest(response http.ResponseWriter, request *http.Request, 
 		Str("method", method).
 		Str("upstream", upstream.String()).
 		Str("label", label).
+		Str("userAgent", request.Header.Get("User-Agent")).
 		Str(X_REQUEST_ID, request.Header.Get(X_REQUEST_ID)).
 		Int("upstreamResponseCode", 200).
 		Int("downstreamResponseCode", 200).
