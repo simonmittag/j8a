@@ -37,7 +37,7 @@ func getVersion() string {
 
 // Init sets up a global logger instance
 func Init() {
-	zerolog.SetGlobalLevel(zerolog.WarnLevel)
+	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	w := zerolog.ConsoleWriter{
 		Out:     os.Stderr,
 		NoColor: false,
