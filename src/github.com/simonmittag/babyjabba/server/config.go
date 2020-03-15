@@ -8,9 +8,6 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-//Live ServerConfig stores global params
-var Live Config
-
 //Config is the system wide configuration for BabyJabba
 type Config struct {
 	Mode      string
@@ -29,10 +26,10 @@ func (config Config) parse(file string) *Config {
 		panic(msg)
 	}
 	byteValue, _ := ioutil.ReadAll(jsonFile)
-	json.Unmarshal(byteValue, &Live)
+	json.Unmarshal(byteValue, &config)
 	//todo tell me about more of the config, number of routes
-	log.Debug().Msgf("parsed server configuration with %d live routes", len(Live.Routes))
-	return &Live
+	log.Debug().Msgf("parsed server configuration with %d live routes", len(config.Routes))
+	return &config
 }
 
 func (config Config) reAliasResources() *Config {
