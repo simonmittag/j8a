@@ -15,6 +15,7 @@ type Config struct {
 	Policies  map[string]Policy
 	Routes    []Route
 	Resources map[string][]ResourceMapping
+	Timeout   Timeout
 }
 
 func (config Config) parse(file string) *Config {
@@ -53,5 +54,23 @@ func (config Config) addDefaultPolicy() *Config {
 	labelWeights = append(labelWeights, lw)
 	*defaultPolicy = labelWeights
 	config.Policies["default"] = *defaultPolicy
+	return &config
+}
+
+func (config Config) setDefaultTimeouts() *Config {
+
+	if config.Timeout.DownstreamReadTimeoutSeconds == 0 {
+		config.Timeout.DownstreamReadTimeoutSeconds = 120
+	}
+	if config.Timeout.DownstreamWriteTimeoutSeconds == 0 {
+		config.Timeout.DownstreamWriteTimeoutSeconds = 120
+	}
+	if config.Timeout.UpstreamConnectTimeoutSeconds == 0 {
+		config.Timeout.UpstreamConnectTimeoutSeconds = 5
+	}
+	if config.Timeout.UpstreamReadTimeoutSeconds == 0 {
+		config.Timeout.UpstreamReadTimeoutSeconds = 120
+	}
+
 	return &config
 }

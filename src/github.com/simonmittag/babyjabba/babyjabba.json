@@ -1,6 +1,10 @@
 {
     "port": 8080,
     "mode": "TLS",
+    "timeout": {
+        "downstreamReadTimeoutSeconds": 121,
+        "downstreamWriteTimeoutSeconds": 121
+    },
     "policies": {
         "ab": [
             {
@@ -59,7 +63,7 @@
                 ],
                 "upstream": {
                     "scheme": "http",
-                    "host": "bluebillinghost",
+                    "host": "localhost",
                     "port": 8083
                 }
             },
@@ -69,7 +73,7 @@
                 ],
                 "upstream": {
                     "scheme": "http",
-                    "host": "greenbillinghost",
+                    "host": "localhost",
                     "port": 8083
                 }
             }

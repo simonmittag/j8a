@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/rs/zerolog/log"
 )
@@ -14,12 +15,12 @@ var Version string = "unknown"
 //ID is a unique server ID
 var ID string = "unknown"
 
-//Server struct defines runis the runtime environment for a config.
+//Runtime struct defines runtime environment wrapper for a config.
 type Runtime struct {
 	Config
 }
 
-//Runtime has access server config
+//Runner is the Live environment of the server
 var Runner *Runtime
 
 //BootStrap starts up the server from a ServerConfig
@@ -27,7 +28,8 @@ func BootStrap() {
 	config := new(Config).
 		parse("./babyjabba.json").
 		reAliasResources().
-		addDefaultPolicy()
+		addDefaultPolicy().
+		setDefaultTimeouts()
 	Runner = &Runtime{Config: *config}
 	Runner.assignHandlers().
 		startListening()
@@ -35,7 +37,15 @@ func BootStrap() {
 
 func (runtime Runtime) startListening() {
 	log.Info().Msgf("BabyJabba listening on port %d...", runtime.Port)
-	err := http.ListenAndServe(":"+strconv.Itoa(runtime.Port), nil)
+	server := &http.Server{
+		Addr:         ":" + strconv.Itoa(runtime.Port),
+		Handler:      nil,
+		ReadTimeout:  time.Second * time.Duration(Runner.Timeout.DownstreamReadTimeoutSeconds),
+		WriteTimeout: time.Second * time.Duration(Runner.Timeout.DownstreamWriteTimeoutSeconds),
+	}
+
+	//this line blocks execution and the server stays up
+	err := server.ListenAndServe()
 	if err != nil {
 		log.Fatal().Err(err).Msgf("unable to start HTTP(S) server on port %d, exiting...", runtime.Port)
 		panic(err.Error())
@@ -59,7 +69,7 @@ func writeStandardResponseHeaders(response http.ResponseWriter, request *http.Re
 	response.Header().Set("Content-Encoding", "identity")
 	response.Header().Set("Content-Type", "application/json")
 	response.Header().Set("Cache-control:", "no-store, no-cache, must-revalidate, proxy-revalidate")
-	//for TLS response, we set HSTS header
+	//for TLS response, we set HSTS header see RFC6797
 	if Runner.Mode == "TLS" {
 		response.Header().Set("Strict-Transport-Security", "max-age=31536000")
 	}
