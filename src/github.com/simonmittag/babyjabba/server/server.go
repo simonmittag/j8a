@@ -15,12 +15,12 @@ var Version string = "unknown"
 var ID string = "unknown"
 
 //Server struct defines runis the runtime environment for a config.
-type Server struct {
+type Runtime struct {
 	Config
 }
 
 //Runtime has access server config
-var Runtime *Server
+var Runner *Runtime
 
 //BootStrap starts up the server from a ServerConfig
 func BootStrap() {
@@ -28,22 +28,22 @@ func BootStrap() {
 		parse("./babyjabba.json").
 		reAliasResources().
 		addDefaultPolicy()
-	Runtime = &Server{Config: *config}
-	Runtime.assignHandlers().
+	Runner = &Runtime{Config: *config}
+	Runner.assignHandlers().
 		startListening()
 }
 
-func (server Server) startListening() {
-	log.Info().Msgf("BabyJabba listening on port %d...", server.Port)
-	err := http.ListenAndServe(":"+strconv.Itoa(server.Port), nil)
+func (runtime Runtime) startListening() {
+	log.Info().Msgf("BabyJabba listening on port %d...", runtime.Port)
+	err := http.ListenAndServe(":"+strconv.Itoa(runtime.Port), nil)
 	if err != nil {
-		log.Fatal().Err(err).Msgf("unable to start HTTP(S) server on port %d, exiting...", server.Port)
+		log.Fatal().Err(err).Msgf("unable to start HTTP(S) server on port %d, exiting...", runtime.Port)
 		panic(err.Error())
 	}
 }
 
-func (server Server) assignHandlers() Server {
-	for _, route := range server.Routes {
+func (runtime Runtime) assignHandlers() Runtime {
+	for _, route := range runtime.Routes {
 		if route.Alias == AboutJabba {
 			http.HandleFunc(route.Path, serverInformationHandler)
 			log.Debug().Msgf("assigned internal server information handler to path %s", route.Path)
@@ -51,7 +51,7 @@ func (server Server) assignHandlers() Server {
 	}
 	http.HandleFunc("/", proxyHandler)
 	log.Debug().Msgf("assigned proxy handler to path %s", "/")
-	return server
+	return runtime
 }
 
 func writeStandardResponseHeaders(response http.ResponseWriter, request *http.Request, statusCode int) {
@@ -60,7 +60,7 @@ func writeStandardResponseHeaders(response http.ResponseWriter, request *http.Re
 	response.Header().Set("Content-Type", "application/json")
 	response.Header().Set("Cache-control:", "no-store, no-cache, must-revalidate, proxy-revalidate")
 	//for TLS response, we set HSTS header
-	if Runtime.Mode == "TLS" {
+	if Runner.Mode == "TLS" {
 		response.Header().Set("Strict-Transport-Security", "max-age=31536000")
 	}
 	response.Header().Set("X-server-id", ID)

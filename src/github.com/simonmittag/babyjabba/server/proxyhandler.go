@@ -15,7 +15,7 @@ const X_REQUEST_ID = "X-REQUEST-ID"
 func proxyHandler(response http.ResponseWriter, request *http.Request) {
 	matched := false
 	decorateRequest(request)
-	for _, route := range Runtime.Routes {
+	for _, route := range Runner.Routes {
 		if matched = matchRouteInURI(route, request); matched {
 			upstream, label, mapped := route.mapUpstream()
 			if mapped {
@@ -50,18 +50,34 @@ func handleUpstreamRequest(response http.ResponseWriter, request *http.Request, 
 		Msg("parsed request")
 
 	writeStandardResponseHeaders(response, request, 200)
-	response.Write([]byte(fmt.Sprintf("proxy request for upstream %v", *upstream)))
 
-	log.Info().
-		Str("url", url.Path).
-		Str("method", method).
-		Str("upstream", upstream.String()).
-		Str("label", label).
-		Str("userAgent", request.Header.Get("User-Agent")).
-		Str(X_REQUEST_ID, request.Header.Get(X_REQUEST_ID)).
-		Int("upstreamResponseCode", 200).
-		Int("downstreamResponseCode", 200).
-		Msgf("request served")
+	switch method {
+	case "GET":
+		upstreamResponse, err := http.Get(upstream.String() + request.RequestURI)
+		if err != nil {
+			//we need to work out what to do about retries.
+		}
+		defer upstreamResponse.Body.Close()
+
+		upstreamResponseBody, err2 := ioutil.ReadAll(upstreamResponse.Body)
+		if err2 != nil {
+			//we need to work out what to do about retries.
+		}
+
+		log.Info().
+			Str("url", url.Path).
+			Str("method", method).
+			Str("upstream", upstream.String()).
+			Str("label", label).
+			Str("userAgent", request.Header.Get("User-Agent")).
+			Str(X_REQUEST_ID, request.Header.Get(X_REQUEST_ID)).
+			Int("upstreamResponseCode", 200).
+			Int("downstreamResponseCode", 200).
+			Msgf("request served")
+
+		response.Write([]byte(upstreamResponseBody))
+	}
+
 }
 
 func decorateRequest(r *http.Request) *http.Request {

@@ -18,11 +18,11 @@ func (route Route) mapUpstream() (*Upstream, string, bool) {
 	var policy Policy
 	var policyLabel string
 	if len(route.Policy) > 0 {
-		policy = Runtime.Policies[route.Policy]
+		policy = Runner.Policies[route.Policy]
 		policyLabel = policy.resolveLabel()
 	}
 
-	resource := Runtime.Resources[route.Alias]
+	resource := Runner.Resources[route.Alias]
 	if len(route.Policy) > 0 {
 		for _, resourceMapping := range resource {
 			for _, resourceLabel := range resourceMapping.Labels {
