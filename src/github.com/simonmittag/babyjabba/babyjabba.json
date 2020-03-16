@@ -1,9 +1,15 @@
 {
     "port": 8080,
     "mode": "TLS",
-    "timeout": {
-        "downstreamReadTimeoutSeconds": 121,
-        "downstreamWriteTimeoutSeconds": 121
+    "connection": {
+        "server": {
+            "readTimeoutSeconds": 121,
+            "writeTimeoutSeconds": 242
+        },
+        "client": {
+            "readTimeoutSeconds": 121,
+            "connectTimeoutSeconds": 7
+        }
     },
     "policies": {
         "ab": [

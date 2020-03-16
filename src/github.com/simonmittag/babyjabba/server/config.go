@@ -10,12 +10,12 @@ import (
 
 //Config is the system wide configuration for BabyJabba
 type Config struct {
-	Mode      string
-	Port      int
-	Policies  map[string]Policy
-	Routes    []Route
-	Resources map[string][]ResourceMapping
-	Timeout   Timeout
+	Mode       string
+	Port       int
+	Policies   map[string]Policy
+	Routes     []Route
+	Resources  map[string][]ResourceMapping
+	Connection Connection
 }
 
 func (config Config) parse(file string) *Config {
@@ -59,17 +59,17 @@ func (config Config) addDefaultPolicy() *Config {
 
 func (config Config) setDefaultTimeouts() *Config {
 
-	if config.Timeout.DownstreamReadTimeoutSeconds == 0 {
-		config.Timeout.DownstreamReadTimeoutSeconds = 120
+	if config.Connection.Server.ReadTimeoutSeconds == 0 {
+		config.Connection.Server.ReadTimeoutSeconds = 120
 	}
-	if config.Timeout.DownstreamWriteTimeoutSeconds == 0 {
-		config.Timeout.DownstreamWriteTimeoutSeconds = 120
+	if config.Connection.Server.WriteTimeoutSeconds == 0 {
+		config.Connection.Server.WriteTimeoutSeconds = 250
 	}
-	if config.Timeout.UpstreamConnectTimeoutSeconds == 0 {
-		config.Timeout.UpstreamConnectTimeoutSeconds = 5
+	if config.Connection.Client.ConnectTimeoutSeconds == 0 {
+		config.Connection.Client.ConnectTimeoutSeconds = 5
 	}
-	if config.Timeout.UpstreamReadTimeoutSeconds == 0 {
-		config.Timeout.UpstreamReadTimeoutSeconds = 120
+	if config.Connection.Client.ReadTimeoutSeconds == 0 {
+		config.Connection.Client.ReadTimeoutSeconds = 120
 	}
 
 	return &config

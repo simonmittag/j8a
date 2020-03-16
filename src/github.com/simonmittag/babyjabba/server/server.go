@@ -38,10 +38,16 @@ func BootStrap() {
 func (runtime Runtime) startListening() {
 	log.Info().Msgf("BabyJabba listening on port %d...", runtime.Port)
 	server := &http.Server{
-		Addr:         ":" + strconv.Itoa(runtime.Port),
-		Handler:      nil,
-		ReadTimeout:  time.Second * time.Duration(Runner.Timeout.DownstreamReadTimeoutSeconds),
-		WriteTimeout: time.Second * time.Duration(Runner.Timeout.DownstreamWriteTimeoutSeconds),
+		Addr:    ":" + strconv.Itoa(runtime.Port),
+		Handler: nil,
+		ReadTimeout: time.Second * time.Duration(Runner.
+			Connection.
+			Server.
+			ReadTimeoutSeconds),
+		WriteTimeout: time.Second * time.Duration(Runner.
+			Connection.
+			Server.
+			WriteTimeoutSeconds),
 	}
 
 	//this line blocks execution and the server stays up
