@@ -59,18 +59,26 @@ func (config Config) addDefaultPolicy() *Config {
 
 func (config Config) setDefaultTimeouts() *Config {
 
+	//Server params
 	if config.Connection.Server.ReadTimeoutSeconds == 0 {
 		config.Connection.Server.ReadTimeoutSeconds = 120
 	}
 	if config.Connection.Server.WriteTimeoutSeconds == 0 {
 		config.Connection.Server.WriteTimeoutSeconds = 250
 	}
+
+	//Client params
 	if config.Connection.Client.ConnectTimeoutSeconds == 0 {
 		config.Connection.Client.ConnectTimeoutSeconds = 5
 	}
 	if config.Connection.Client.ReadTimeoutSeconds == 0 {
 		config.Connection.Client.ReadTimeoutSeconds = 120
 	}
-
+	if config.Connection.Client.TCPConnectionKeepAliveSeconds == 0 {
+		config.Connection.Client.TCPConnectionKeepAliveSeconds = 300
+	}
+	if config.Connection.Client.TCPConnectionPoolSize == 0 {
+		config.Connection.Client.TCPConnectionPoolSize = 32768
+	}
 	return &config
 }

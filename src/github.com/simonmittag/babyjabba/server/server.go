@@ -40,11 +40,11 @@ func (runtime Runtime) startListening() {
 	server := &http.Server{
 		Addr:    ":" + strconv.Itoa(runtime.Port),
 		Handler: nil,
-		ReadTimeout: time.Second * time.Duration(Runner.
+		ReadTimeout: time.Second * time.Duration(runtime.
 			Connection.
 			Server.
 			ReadTimeoutSeconds),
-		WriteTimeout: time.Second * time.Duration(Runner.
+		WriteTimeout: time.Second * time.Duration(runtime.
 			Connection.
 			Server.
 			WriteTimeoutSeconds),

@@ -3,8 +3,11 @@ package server
 import (
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
+	"net/url"
 	"regexp"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
@@ -37,8 +40,30 @@ func matchRouteInURI(route Route, request *http.Request) bool {
 	return matched
 }
 
-func handleUpstreamRequest(response http.ResponseWriter, request *http.Request, upstream *Upstream, label string) {
-	//handle request by sending upstream
+func scaffoldHTTPClient() *http.Client {
+	httpClient := &http.Client{
+		Transport: &http.Transport{
+			Dial: (&net.Dialer{
+				Timeout: time.Duration(Runner.
+					Connection.
+					Client.
+					ConnectTimeoutSeconds) * time.Second,
+				KeepAlive: time.Duration(Runner.
+					Connection.
+					Client.
+					TCPConnectionKeepAliveSeconds) * time.Second,
+			}).Dial,
+			//TLS handshake timeout is the same as connection timeout
+			TLSHandshakeTimeout: time.Duration(Runner.
+				Connection.
+				Client.
+				ConnectTimeoutSeconds) * time.Second,
+		},
+	}
+	return httpClient
+}
+
+func parseIncomingRequest(request *http.Request) (*url.URL, string, []byte) {
 	url := request.URL
 	method := request.Method
 	body, _ := ioutil.ReadAll(request.Body)
@@ -49,11 +74,22 @@ func handleUpstreamRequest(response http.ResponseWriter, request *http.Request, 
 		Str(X_REQUEST_ID, request.Header.Get(X_REQUEST_ID)).
 		Msg("parsed request")
 
+	return url, method, body
+}
+
+// handleUpstreamRequest the meaty part of proxying happens here.
+func handleUpstreamRequest(response http.ResponseWriter, request *http.Request, upstream *Upstream, label string) {
+	//parse incoming request for URL, method and body
+	url, method, _ := parseIncomingRequest(request)
+
 	writeStandardResponseHeaders(response, request, 200)
+
+	//we need a parameterized http client to send the request upstream.
+	httpClient := scaffoldHTTPClient()
 
 	switch method {
 	case "GET":
-		upstreamResponse, err := http.Get(upstream.String() + request.RequestURI)
+		upstreamResponse, err := httpClient.Get(upstream.String() + request.RequestURI)
 		if err != nil {
 			//we need to work out what to do about retries.
 		}

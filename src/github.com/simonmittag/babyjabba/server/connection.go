@@ -21,9 +21,16 @@ type Server struct {
 // Client params for connections to upstream servers that are being proxied by BabyJabba
 type Client struct {
 
-	//ConnectTimeoutSeconds is the wait period to establish socket connection with an upstream server
+	// ConnectionPoolSize is the Size of the connection pool for idle connections
+	TCPConnectionPoolSize int
+
+	// TCPConnectionKeepAliveSeconds is the wait period before a connection is closed.
+	TCPConnectionKeepAliveSeconds int
+
+	// ConnectTimeoutSeconds is the wait period to establish socket connection with an upstream server.
+	// This setting controls simple TCP connect for HTTP upstream servers and handshake time for TLS if applicable.
 	ConnectTimeoutSeconds int
 
-	//ReadTimeoutSeconds is the wait period to read the entire upstream response
+	// ReadTimeoutSeconds is the wait period to read the entire upstream response once connection was established
 	ReadTimeoutSeconds int
 }
