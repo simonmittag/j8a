@@ -15,6 +15,8 @@ import (
 
 const X_REQUEST_ID = "X-REQUEST-ID"
 
+var httpClient *http.Client
+
 func proxyHandler(response http.ResponseWriter, request *http.Request) {
 	matched := false
 	decorateRequest(request)
@@ -41,24 +43,26 @@ func matchRouteInURI(route Route, request *http.Request) bool {
 }
 
 func scaffoldHTTPClient() *http.Client {
-	httpClient := &http.Client{
-		Transport: &http.Transport{
-			Dial: (&net.Dialer{
-				Timeout: time.Duration(Runner.
+	if httpClient == nil {
+		httpClient = &http.Client{
+			Transport: &http.Transport{
+				Dial: (&net.Dialer{
+					Timeout: time.Duration(Runner.
+						Connection.
+						Client.
+						ConnectTimeoutSeconds) * time.Second,
+					KeepAlive: time.Duration(Runner.
+						Connection.
+						Client.
+						TCPConnectionKeepAliveSeconds) * time.Second,
+				}).Dial,
+				//TLS handshake timeout is the same as connection timeout
+				TLSHandshakeTimeout: time.Duration(Runner.
 					Connection.
 					Client.
 					ConnectTimeoutSeconds) * time.Second,
-				KeepAlive: time.Duration(Runner.
-					Connection.
-					Client.
-					TCPConnectionKeepAliveSeconds) * time.Second,
-			}).Dial,
-			//TLS handshake timeout is the same as connection timeout
-			TLSHandshakeTimeout: time.Duration(Runner.
-				Connection.
-				Client.
-				ConnectTimeoutSeconds) * time.Second,
-		},
+			},
+		}
 	}
 	return httpClient
 }
@@ -113,7 +117,7 @@ func handleUpstreamRequest(response http.ResponseWriter, request *http.Request, 
 
 		response.Write([]byte(upstreamResponseBody))
 	}
-
+	return
 }
 
 func decorateRequest(r *http.Request) *http.Request {
