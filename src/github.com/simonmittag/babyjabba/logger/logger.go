@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"os"
+	"strings"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -37,7 +38,20 @@ func getVersion() string {
 
 // Init sets up a global logger instance
 func Init() {
-	zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	logLevel := strings.ToUpper(os.Getenv("LOGLEVEL"))
+	switch logLevel {
+	case "TRACE":
+		zerolog.SetGlobalLevel(zerolog.TraceLevel)
+	case "DEBUG":
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	case "INFO":
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	case "WARN":
+		zerolog.SetGlobalLevel(zerolog.WarnLevel)
+	default:
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	}
+
 	w := zerolog.ConsoleWriter{
 		Out:     os.Stderr,
 		NoColor: false,
@@ -46,5 +60,6 @@ func Init() {
 
 	initServerID()
 	log.Logger = log.With().Str("serverId", server.ID).Logger()
+	log.Debug().Msgf("setting global log level to %s", logLevel)
 
 }
