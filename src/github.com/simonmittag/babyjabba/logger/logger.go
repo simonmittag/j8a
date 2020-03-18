@@ -52,11 +52,17 @@ func Init() {
 		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	}
 
-	w := zerolog.ConsoleWriter{
-		Out:     os.Stderr,
-		NoColor: false,
+	logColor := strings.ToUpper(os.Getenv("LOGCOLOR"))
+	switch logColor {
+	case "TRUE", "YES", "y":
+		w := zerolog.ConsoleWriter{
+			Out:     os.Stderr,
+			NoColor: false,
+		}
+		log.Logger = log.Output(w)
+	default:
+		//no color logging
 	}
-	log.Logger = log.Output(w)
 
 	initServerID()
 	log.Logger = log.With().Str("serverId", server.ID).Logger()

@@ -94,14 +94,18 @@ func handleUpstreamRequest(response http.ResponseWriter, request *http.Request, 
 	switch method {
 	case "GET":
 		upstreamResponse, err := httpClient.Get(upstream.String() + request.RequestURI)
+		//don't assume err is nil, don't assume upstreamresponse is not nil.
 		if err != nil {
 			//we need to work out what to do about retries.
+			log.Warn().Err(err).Msgf("error encountered upstream")
+		} else {
+			defer upstreamResponse.Body.Close()
 		}
-		defer upstreamResponse.Body.Close()
 
 		upstreamResponseBody, err2 := ioutil.ReadAll(upstreamResponse.Body)
 		if err2 != nil {
 			//we need to work out what to do about retries.
+			log.Warn().Err(err2).Msgf("error encountered parsing body")
 		}
 
 		log.Info().
