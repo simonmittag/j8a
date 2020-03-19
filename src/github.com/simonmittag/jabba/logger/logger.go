@@ -8,7 +8,7 @@ import (
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/simonmittag/babyjabba/server"
+	"github.com/simonmittag/jabba/server"
 )
 
 //ServerID is a unique identifier made up as md5 of hostname and version.
