@@ -14,6 +14,7 @@ type StatusCodeResponse struct {
 	Welcome    string
 }
 
+//AsJSON renders the status code response into a JSON string as []byte
 func (statusCodeResponse StatusCodeResponse) AsJSON() []byte {
 	statusCodeResponse.ServerID = ID
 	statusCodeResponse.Version = Version

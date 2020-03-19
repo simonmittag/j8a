@@ -13,6 +13,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+//X_REQUEST_ID is a per HTTP request unique identifier
 const X_REQUEST_ID = "X-REQUEST-ID"
 
 var httpClient *http.Client
