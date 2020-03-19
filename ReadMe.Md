@@ -1,6 +1,6 @@
 ![](jabba.png)
 
-Achuta! Jabba is a json friendly reverse proxy for micro-services.
+Achuta! Jabba is a json friendly reverse proxy for micro-services, written in golang.
 
 ## Features
 * map URLs to upstream HTTP and TLS based micro-services 
@@ -10,7 +10,7 @@ Achuta! Jabba is a json friendly reverse proxy for micro-services.
 
 
 # What's new
-## 20/03/2019
+## v0.1.1
 * partially complete and under development
 
 # Up and running
@@ -28,7 +28,7 @@ Specify these env vars to control server behaviour
 Server version for binary distribution
 
 ```bash
-VERSION="v.0.1.1"
+VERSION="v0.1.1"
 ```
 
 ## LOGLEVEL
