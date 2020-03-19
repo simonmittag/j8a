@@ -27,13 +27,13 @@ func proxyHandler(response http.ResponseWriter, request *http.Request) {
 				handleUpstreamRequest(response, request, upstream, label)
 			} else {
 				//matched, but non mapped requests == configuration error in server
-				sendStatusCodeAsJSON(response, request, 503)
+				sendStatusCodeAsJSON(response, request, 503, "unable to map upstream resource")
 			}
 			break
 		}
 	}
 	if !matched {
-		sendStatusCodeAsJSON(response, request, 404)
+		sendStatusCodeAsJSON(response, request, 404, "upstream resource not found")
 	}
 }
 
@@ -93,35 +93,32 @@ func handleUpstreamRequest(response http.ResponseWriter, request *http.Request, 
 
 	switch method {
 	case "GET":
-		upstreamResponse, err := httpClient.Get(upstream.String() + request.RequestURI)
-		//don't assume err is nil, don't assume upstreamresponse is not nil.
-		if err != nil {
-			//we need to work out what to do about retries.
-			log.Warn().Err(err).Msgf("error encountered upstream")
-		} else {
+		upstreamResponse, upstreamError := httpClient.Get(upstream.String() + request.RequestURI)
+
+		if upstreamError == nil {
 			defer upstreamResponse.Body.Close()
+
+			upstreamResponseBody, bodyError := ioutil.ReadAll(upstreamResponse.Body)
+			if bodyError == nil {
+				//what is the upstream content type?
+				response.Write([]byte(upstreamResponseBody))
+				log.Info().
+					Str("url", url.Path).
+					Str("method", method).
+					Str("upstream", upstream.String()).
+					Str("label", label).
+					Str("userAgent", request.Header.Get("User-Agent")).
+					Str(X_REQUEST_ID, request.Header.Get(X_REQUEST_ID)).
+					Int("upstreamResponseCode", 200).
+					Int("downstreamResponseCode", 200).
+					Msgf("request served")
+			} else {
+				log.Warn().Err(bodyError).Msgf("error encountered parsing body")
+			}
+		} else {
+			log.Warn().Err(upstreamError).Msgf("error encountered upstream")
 		}
-
-		upstreamResponseBody, err2 := ioutil.ReadAll(upstreamResponse.Body)
-		if err2 != nil {
-			//we need to work out what to do about retries.
-			log.Warn().Err(err2).Msgf("error encountered parsing body")
-		}
-
-		log.Info().
-			Str("url", url.Path).
-			Str("method", method).
-			Str("upstream", upstream.String()).
-			Str("label", label).
-			Str("userAgent", request.Header.Get("User-Agent")).
-			Str(X_REQUEST_ID, request.Header.Get(X_REQUEST_ID)).
-			Int("upstreamResponseCode", 200).
-			Int("downstreamResponseCode", 200).
-			Msgf("request served")
-
-		response.Write([]byte(upstreamResponseBody))
 	}
-	return
 }
 
 func decorateRequest(r *http.Request) *http.Request {

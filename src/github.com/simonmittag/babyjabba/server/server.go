@@ -1,7 +1,6 @@
 package server
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -73,7 +72,6 @@ func (runtime Runtime) assignHandlers() Runtime {
 func writeStandardResponseHeaders(response http.ResponseWriter, request *http.Request, statusCode int) {
 	response.Header().Set("Server", "BabyJabba "+Version)
 	response.Header().Set("Content-Encoding", "identity")
-	response.Header().Set("Content-Type", "application/json")
 	response.Header().Set("Cache-control:", "no-store, no-cache, must-revalidate, proxy-revalidate")
 	//for TLS response, we set HSTS header see RFC6797
 	if Runner.Mode == "TLS" {
@@ -90,7 +88,7 @@ func writeStandardResponseHeaders(response http.ResponseWriter, request *http.Re
 	response.WriteHeader(statusCode)
 }
 
-func sendStatusCodeAsJSON(response http.ResponseWriter, request *http.Request, statusCode int) {
+func sendStatusCodeAsJSON(response http.ResponseWriter, request *http.Request, statusCode int, message string) {
 	if statusCode >= 299 {
 		log.Warn().Int("downstreamResponseCode", statusCode).
 			Str("path", request.URL.Path).
@@ -98,5 +96,11 @@ func sendStatusCodeAsJSON(response http.ResponseWriter, request *http.Request, s
 			Msgf("request not served")
 	}
 	writeStandardResponseHeaders(response, request, statusCode)
-	response.Write([]byte(fmt.Sprintf("{ \"code\":\"%d\" }", statusCode)))
+	response.Header().Set("Content-Type", "application/json")
+	statusCodeResponse := StatusCodeResponse{
+		Code:       statusCode,
+		Message:    message,
+		XRequestID: request.Header.Get(X_REQUEST_ID),
+	}
+	response.Write(statusCodeResponse.AsJSON())
 }
