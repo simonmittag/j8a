@@ -13,8 +13,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-//X_REQUEST_ID is a per HTTP request unique identifier
-const X_REQUEST_ID = "X-REQUEST-ID"
+//XRequestID is a per HTTP request unique identifier
+const XRequestID = "X-REQUEST-ID"
 
 var httpClient *http.Client
 
@@ -76,7 +76,7 @@ func parseIncomingRequest(request *http.Request) (*url.URL, string, []byte) {
 		Str("url", url.Path).
 		Str("method", method).
 		Int("bodyBytes", len(body)).
-		Str(X_REQUEST_ID, request.Header.Get(X_REQUEST_ID)).
+		Str(XRequestID, request.Header.Get(XRequestID)).
 		Msg("parsed request")
 
 	return url, method, body
@@ -109,7 +109,7 @@ func handleUpstreamRequest(response http.ResponseWriter, request *http.Request, 
 					Str("upstream", upstream.String()).
 					Str("label", label).
 					Str("userAgent", request.Header.Get("User-Agent")).
-					Str(X_REQUEST_ID, request.Header.Get(X_REQUEST_ID)).
+					Str(XRequestID, request.Header.Get(XRequestID)).
 					Int("upstreamResponseCode", 200).
 					Int("downstreamResponseCode", 200).
 					Msgf("request served")
@@ -123,7 +123,7 @@ func handleUpstreamRequest(response http.ResponseWriter, request *http.Request, 
 }
 
 func decorateRequest(r *http.Request) *http.Request {
-	r.Header.Set(X_REQUEST_ID, xRequestID())
+	r.Header.Set(XRequestID, xRequestID())
 	return r
 }
 

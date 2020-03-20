@@ -60,8 +60,8 @@ func (runtime Runtime) startListening() {
 func (runtime Runtime) assignHandlers() Runtime {
 	for _, route := range runtime.Routes {
 		if route.Alias == AboutJabba {
-			http.HandleFunc(route.Path, serverInformationHandler)
-			log.Debug().Msgf("assigned internal server information handler to path %s", route.Path)
+			http.HandleFunc(route.Path, aboutHandler)
+			log.Debug().Msgf("assigned about handler to path %s", route.Path)
 		}
 	}
 	http.HandleFunc("/", proxyHandler)
@@ -82,7 +82,7 @@ func writeStandardResponseHeaders(response http.ResponseWriter, request *http.Re
 	response.Header().Set("X-content-type-options", "nosniff")
 	response.Header().Set("X-frame-options", "sameorigin")
 	//copy the X-REQUEST-ID from the request
-	response.Header().Set(X_REQUEST_ID, request.Header.Get(X_REQUEST_ID))
+	response.Header().Set(XRequestID, request.Header.Get(XRequestID))
 
 	//status code must be last, no headers may be written after this one.
 	response.WriteHeader(statusCode)
@@ -92,7 +92,7 @@ func sendStatusCodeAsJSON(response http.ResponseWriter, request *http.Request, s
 	if statusCode >= 299 {
 		log.Warn().Int("downstreamResponseCode", statusCode).
 			Str("path", request.URL.Path).
-			Str(X_REQUEST_ID, request.Header.Get(X_REQUEST_ID)).
+			Str(XRequestID, request.Header.Get(XRequestID)).
 			Msgf("request not served")
 	}
 	writeStandardResponseHeaders(response, request, statusCode)
@@ -100,7 +100,7 @@ func sendStatusCodeAsJSON(response http.ResponseWriter, request *http.Request, s
 	statusCodeResponse := StatusCodeResponse{
 		Code:       statusCode,
 		Message:    message,
-		XRequestID: request.Header.Get(X_REQUEST_ID),
+		XRequestID: request.Header.Get(XRequestID),
 	}
 	response.Write(statusCodeResponse.AsJSON())
 }

@@ -19,8 +19,8 @@ var huttese = []string{
 	"Kuba, kayaba dee anko!",
 }
 
-//ServerInformationResponse exposes standard environment
-type ServerInformationResponse struct {
+//AboutResponse exposes standard environment
+type AboutResponse struct {
 	Jabba    string
 	ServerID string
 	Version  string
@@ -28,18 +28,18 @@ type ServerInformationResponse struct {
 
 //StatusCodeResponse defines a JSON structure for a canned HTTP response
 type StatusCodeResponse struct {
-	ServerInformationResponse
+	AboutResponse
 	Code       int
 	Message    string
 	XRequestID string
 }
 
 //AsJSON renders the status code response into a JSON string as []byte
-func (serverInformationResponse ServerInformationResponse) AsJSON() []byte {
-	serverInformationResponse.ServerID = ID
-	serverInformationResponse.Version = Version
-	serverInformationResponse.Jabba = randomHuttese()
-	response, _ := json.Marshal(serverInformationResponse)
+func (aboutResponse AboutResponse) AsJSON() []byte {
+	aboutResponse.ServerID = ID
+	aboutResponse.Version = Version
+	aboutResponse.Jabba = randomHuttese()
+	response, _ := json.Marshal(aboutResponse)
 	return response
 }
 
@@ -57,6 +57,6 @@ func randomHuttese() string {
 	return huttese[rand.Int()%len(huttese)]
 }
 
-func serverInformationHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write(ServerInformationResponse{}.AsJSON())
+func aboutHandler(w http.ResponseWriter, r *http.Request) {
+	w.Write(AboutResponse{}.AsJSON())
 }
