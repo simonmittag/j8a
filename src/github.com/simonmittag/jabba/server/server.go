@@ -52,7 +52,7 @@ func (runtime Runtime) startListening() {
 	//this line blocks execution and the server stays up
 	err := server.ListenAndServe()
 	if err != nil {
-		log.Fatal().Err(err).Msgf("unable to start HTTP(S) server on port %d, exiting...", runtime.Port)
+		log.Fatal().Err(err).Msgf("unable to start HTTP server on port %d, exiting...", runtime.Port)
 		panic(err.Error())
 	}
 }
