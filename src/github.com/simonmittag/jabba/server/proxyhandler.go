@@ -75,40 +75,35 @@ func handleUpstreamRequest(response http.ResponseWriter, request *http.Request, 
 		parseIncoming(request).
 		firstAttempt(upstream, label)
 
-	switch proxyRequest.Method {
-	case "GET":
-		//TODO copy headers
+	//make the actual HTTP request. TODO: cannot do post right now because of nil body reader
+	upstreamRequest, _ := http.NewRequest(proxyRequest.Method, proxyRequest.resolveUpstreamURI(), nil)
+	for key, values := range request.Header {
+		upstreamRequest.Header.Set(key, strings.Join(values, ""))
+	}
+	upstreamResponse, upstreamError := scaffoldHTTPClient().Do(upstreamRequest)
 
-		//make the actual HTTP request
-		upstreamRequest, _ := http.NewRequest("GET", proxyRequest.resolveUpstreamURI(), nil)
-		for key, values := range request.Header {
-			upstreamRequest.Header.Set(key, strings.Join(values, ""))
-		}
-		upstreamResponse, upstreamError := scaffoldHTTPClient().Do(upstreamRequest)
-
-		if upstreamError == nil {
-			defer upstreamResponse.Body.Close()
-			upstreamResponseBody, bodyError := ioutil.ReadAll(upstreamResponse.Body)
-			if bodyError == nil {
-				writeStandardResponseHeaders(response, request, 200)
-				//what is the upstream content type?
-				response.Write([]byte(upstreamResponseBody))
-				log.Info().
-					Str("url", proxyRequest.URI).
-					Str("method", proxyRequest.Method).
-					Str("upstream", upstream.String()).
-					Str("label", proxyRequest.UpstreamAttempt.Label).
-					Str("userAgent", request.Header.Get("User-Agent")).
-					Str(XRequestID, request.Header.Get(XRequestID)).
-					Int("upstreamResponseCode", 200).
-					Int("downstreamResponseCode", 200).
-					Msgf("request served")
-			} else {
-				log.Warn().Err(bodyError).Msgf("error encountered parsing body")
-			}
+	if upstreamError == nil {
+		defer upstreamResponse.Body.Close()
+		upstreamResponseBody, bodyError := ioutil.ReadAll(upstreamResponse.Body)
+		if bodyError == nil {
+			writeStandardResponseHeaders(response, request, 200)
+			//what is the upstream content type?
+			response.Write([]byte(upstreamResponseBody))
+			log.Info().
+				Str("url", proxyRequest.URI).
+				Str("method", proxyRequest.Method).
+				Str("upstream", upstream.String()).
+				Str("label", proxyRequest.UpstreamAttempt.Label).
+				Str("userAgent", request.Header.Get("User-Agent")).
+				Str(XRequestID, request.Header.Get(XRequestID)).
+				Int("upstreamResponseCode", 200).
+				Int("downstreamResponseCode", 200).
+				Msgf("request served")
 		} else {
-			log.Warn().Err(upstreamError).Msgf("error encountered upstream")
+			log.Warn().Err(bodyError).Msgf("error encountered parsing body")
 		}
+	} else {
+		log.Warn().Err(upstreamError).Msgf("error encountered upstream")
 	}
 }
 
