@@ -25,7 +25,10 @@ func proxyHandler(response http.ResponseWriter, request *http.Request) {
 		if matched = matchRouteInURI(route, request); matched {
 			upstream, label, mapped := route.mapUpstream()
 			if mapped {
-				handleUpstreamRequest(response, request, upstream, label)
+				handle(new(Proxy).
+					parseIncoming(request).
+					firstAttempt(upstream, label).
+					setOutgoing(response))
 			} else {
 				//matched, but non mapped requests == configuration error in server
 				sendStatusCodeAsJSON(response, request, 503, "unable to map upstream resource")
@@ -68,36 +71,36 @@ func scaffoldHTTPClient() *http.Client {
 	return httpClient
 }
 
-// handleUpstreamRequest the meaty part of proxying happens here.
-func handleUpstreamRequest(response http.ResponseWriter, request *http.Request, upstream *Upstream, label string) {
-	//parse incoming request and build ProxyRequest object
-	proxyRequest := new(ProxyRequest).
-		parseIncoming(request).
-		firstAttempt(upstream, label)
-
-	//make the actual HTTP request. TODO: cannot do post right now because of nil body reader
-	upstreamRequest, _ := http.NewRequest(proxyRequest.Method,
-		proxyRequest.resolveUpstreamURI(),
-		proxyRequest.bodyReader())
-	for key, values := range request.Header {
-		upstreamRequest.Header.Set(key, strings.Join(values, ""))
+func scaffoldUpstreamRequest(proxy *Proxy) *http.Request {
+	upstreamRequest, _ := http.NewRequest(proxy.Method,
+		proxy.resolveUpstreamURI(),
+		proxy.bodyReader())
+	for key, values := range proxy.Downstream.Request.Header {
+		upstreamRequest.Header.Set(key, strings.Join(values, " "))
 	}
+	return upstreamRequest
+}
+
+// handle the proxy request
+func handle(proxy *Proxy) {
+
+	upstreamRequest := scaffoldUpstreamRequest(proxy)
 	upstreamResponse, upstreamError := scaffoldHTTPClient().Do(upstreamRequest)
 
 	if upstreamError == nil {
 		defer upstreamResponse.Body.Close()
 		upstreamResponseBody, bodyError := ioutil.ReadAll(upstreamResponse.Body)
 		if bodyError == nil {
-			writeStandardResponseHeaders(response, request, 200)
+			writeStandardResponseHeaders(proxy.Downstream.Response, proxy.Downstream.Request, 200)
 			//what is the upstream content type?
-			response.Write([]byte(upstreamResponseBody))
+			proxy.Downstream.Response.Write([]byte(upstreamResponseBody))
 			log.Info().
-				Str("url", proxyRequest.URI).
-				Str("method", proxyRequest.Method).
-				Str("upstream", upstream.String()).
-				Str("label", proxyRequest.UpstreamAttempt.Label).
-				Str("userAgent", request.Header.Get("User-Agent")).
-				Str(XRequestID, request.Header.Get(XRequestID)).
+				Str("url", proxy.URI).
+				Str("method", proxy.Method).
+				Str("upstream", proxy.Attempt.Upstream.String()).
+				Str("label", proxy.Attempt.Label).
+				Str("userAgent", proxy.Downstream.Request.Header.Get("User-Agent")).
+				Str(XRequestID, proxy.Downstream.Request.Header.Get(XRequestID)).
 				Int("upstreamResponseCode", 200).
 				Int("downstreamResponseCode", 200).
 				Msgf("request served")
