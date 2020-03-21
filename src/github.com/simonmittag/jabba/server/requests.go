@@ -66,7 +66,15 @@ func (proxyRequest *ProxyRequest) parseIncoming(request *http.Request) *ProxyReq
 	proxyRequest.URI = request.URL.EscapedPath()
 	proxyRequest.Method = request.Method
 	proxyRequest.Body = body
+	return proxyRequest
+}
 
+func (proxyRequest *ProxyRequest) firstAttempt(upstream *Upstream, label string) *ProxyRequest {
+	proxyRequest.UpstreamAttempt = UpstreamAttempt{
+		Label:    label,
+		Upstream: upstream,
+		Count:    1,
+	}
 	return proxyRequest
 }
 

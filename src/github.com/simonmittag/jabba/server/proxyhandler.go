@@ -70,22 +70,16 @@ func scaffoldHTTPClient() *http.Client {
 // handleUpstreamRequest the meaty part of proxying happens here.
 func handleUpstreamRequest(response http.ResponseWriter, request *http.Request, upstream *Upstream, label string) {
 	//parse incoming request and build ProxyRequest object
-	proxyRequest := new(ProxyRequest).parseIncoming(request)
-	proxyRequest.UpstreamAttempt = UpstreamAttempt{
-		Label:    label,
-		Upstream: upstream,
-		Count:    1,
-	}
-
-	//we need a parameterized http client to send the request upstream.
-	httpClient := scaffoldHTTPClient()
+	proxyRequest := new(ProxyRequest).
+		parseIncoming(request).
+		firstAttempt(upstream, label)
 
 	switch proxyRequest.Method {
 	case "GET":
 		//TODO copy headers
 
-		//make upstream request
-		upstreamResponse, upstreamError := httpClient.Get(proxyRequest.resolveUpstreamURI())
+		//make the actual HTTP request
+		upstreamResponse, upstreamError := scaffoldHTTPClient().Get(proxyRequest.resolveUpstreamURI())
 
 		if upstreamError == nil {
 			defer upstreamResponse.Body.Close()
