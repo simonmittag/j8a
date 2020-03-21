@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
-	"net/url"
 	"regexp"
 	"time"
 
@@ -68,46 +67,38 @@ func scaffoldHTTPClient() *http.Client {
 	return httpClient
 }
 
-func parseIncomingRequest(request *http.Request) (*url.URL, string, []byte) {
-	url := request.URL
-	method := request.Method
-	body, _ := ioutil.ReadAll(request.Body)
-	log.Trace().
-		Str("url", url.Path).
-		Str("method", method).
-		Int("bodyBytes", len(body)).
-		Str(XRequestID, request.Header.Get(XRequestID)).
-		Msg("parsed request")
-
-	return url, method, body
-}
-
 // handleUpstreamRequest the meaty part of proxying happens here.
 func handleUpstreamRequest(response http.ResponseWriter, request *http.Request, upstream *Upstream, label string) {
-	//parse incoming request for URL, method and body
-	url, method, _ := parseIncomingRequest(request)
-
-	writeStandardResponseHeaders(response, request, 200)
+	//parse incoming request and build ProxyRequest object
+	proxyRequest := new(ProxyRequest).parseIncoming(request)
+	proxyRequest.UpstreamAttempt = UpstreamAttempt{
+		Label:    label,
+		Upstream: upstream,
+		Count:    1,
+	}
 
 	//we need a parameterized http client to send the request upstream.
 	httpClient := scaffoldHTTPClient()
 
-	switch method {
+	switch proxyRequest.Method {
 	case "GET":
-		upstreamResponse, upstreamError := httpClient.Get(upstream.String() + request.RequestURI)
+		//TODO copy headers
+
+		//make upstream request
+		upstreamResponse, upstreamError := httpClient.Get(proxyRequest.resolveUpstreamURI())
 
 		if upstreamError == nil {
 			defer upstreamResponse.Body.Close()
-
 			upstreamResponseBody, bodyError := ioutil.ReadAll(upstreamResponse.Body)
 			if bodyError == nil {
+				writeStandardResponseHeaders(response, request, 200)
 				//what is the upstream content type?
 				response.Write([]byte(upstreamResponseBody))
 				log.Info().
-					Str("url", url.Path).
-					Str("method", method).
+					Str("url", proxyRequest.URI).
+					Str("method", proxyRequest.Method).
 					Str("upstream", upstream.String()).
-					Str("label", label).
+					Str("label", proxyRequest.UpstreamAttempt.Label).
 					Str("userAgent", request.Header.Get("User-Agent")).
 					Str(XRequestID, request.Header.Get(XRequestID)).
 					Int("upstreamResponseCode", 200).
