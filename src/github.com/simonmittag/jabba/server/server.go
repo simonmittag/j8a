@@ -88,6 +88,13 @@ func writeStandardResponseHeaders(response http.ResponseWriter, request *http.Re
 	response.WriteHeader(statusCode)
 }
 
+func sendStatusCodeAsJSONFrom(proxy *Proxy) {
+	sendStatusCodeAsJSON(proxy.Downstream.Response,
+		proxy.Downstream.Request,
+		proxy.Downstream.StatusCode,
+		proxy.Downstream.Message)
+}
+
 func sendStatusCodeAsJSON(response http.ResponseWriter, request *http.Request, statusCode int, message string) {
 	if statusCode >= 299 {
 		log.Warn().Int("downstreamResponseCode", statusCode).

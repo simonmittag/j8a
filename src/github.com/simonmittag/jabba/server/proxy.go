@@ -30,8 +30,10 @@ type Attempt struct {
 
 // Downstream request and response writer
 type Downstream struct {
-	Request  *http.Request
-	Response http.ResponseWriter
+	Request    *http.Request
+	Response   http.ResponseWriter
+	StatusCode int
+	Message    string
 }
 
 // Proxy wraps data for a single downstream request/response with multiple upstream HTTP request/response cycles.
