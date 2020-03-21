@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -70,14 +71,13 @@ func (runtime Runtime) assignHandlers() Runtime {
 }
 
 func writeStandardResponseHeaders(response http.ResponseWriter, request *http.Request, statusCode int) {
-	response.Header().Set("Server", "BabyJabba "+Version)
+	response.Header().Set("Server", fmt.Sprintf("Jabba %s %s", Version, ID))
 	response.Header().Set("Content-Encoding", "identity")
 	response.Header().Set("Cache-control:", "no-store, no-cache, must-revalidate, proxy-revalidate")
 	//for TLS response, we set HSTS header see RFC6797
 	if Runner.Mode == "TLS" {
 		response.Header().Set("Strict-Transport-Security", "max-age=31536000")
 	}
-	response.Header().Set("X-server-id", ID)
 	response.Header().Set("X-xss-protection", "1;mode=block")
 	response.Header().Set("X-content-type-options", "nosniff")
 	response.Header().Set("X-frame-options", "sameorigin")

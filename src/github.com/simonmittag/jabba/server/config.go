@@ -8,7 +8,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-//Config is the system wide configuration for BabyJabba
+//Config is the system wide configuration for Jabba
 type Config struct {
 	Mode       string
 	Port       int
@@ -22,7 +22,7 @@ func (config Config) parse(file string) *Config {
 	jsonFile, err := os.Open(file)
 	defer jsonFile.Close()
 	if err != nil {
-		msg := "cannot find babyjabba.json, unable to read server configuration, exiting..."
+		msg := "cannot find config file or unable to read server configuration, exiting..."
 		log.Fatal().Msg(msg)
 		panic(msg)
 	}

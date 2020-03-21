@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -79,7 +80,11 @@ func handleUpstreamRequest(response http.ResponseWriter, request *http.Request, 
 		//TODO copy headers
 
 		//make the actual HTTP request
-		upstreamResponse, upstreamError := scaffoldHTTPClient().Get(proxyRequest.resolveUpstreamURI())
+		upstreamRequest, _ := http.NewRequest("GET", proxyRequest.resolveUpstreamURI(), nil)
+		for key, values := range request.Header {
+			upstreamRequest.Header.Set(key, strings.Join(values, ""))
+		}
+		upstreamResponse, upstreamError := scaffoldHTTPClient().Do(upstreamRequest)
 
 		if upstreamError == nil {
 			defer upstreamResponse.Body.Close()
