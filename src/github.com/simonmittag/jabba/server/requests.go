@@ -1,6 +1,8 @@
 package server
 
 import (
+	"bytes"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -67,6 +69,13 @@ func (proxyRequest *ProxyRequest) parseIncoming(request *http.Request) *ProxyReq
 	proxyRequest.Method = request.Method
 	proxyRequest.Body = body
 	return proxyRequest
+}
+
+func (proxyRequest ProxyRequest) bodyReader() io.Reader {
+	if len(proxyRequest.Body) > 0 {
+		return bytes.NewReader(proxyRequest.Body)
+	}
+	return nil
 }
 
 func (proxyRequest *ProxyRequest) firstAttempt(upstream *Upstream, label string) *ProxyRequest {

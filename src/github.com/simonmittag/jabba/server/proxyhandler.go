@@ -76,7 +76,9 @@ func handleUpstreamRequest(response http.ResponseWriter, request *http.Request, 
 		firstAttempt(upstream, label)
 
 	//make the actual HTTP request. TODO: cannot do post right now because of nil body reader
-	upstreamRequest, _ := http.NewRequest(proxyRequest.Method, proxyRequest.resolveUpstreamURI(), nil)
+	upstreamRequest, _ := http.NewRequest(proxyRequest.Method,
+		proxyRequest.resolveUpstreamURI(),
+		proxyRequest.bodyReader())
 	for key, values := range request.Header {
 		upstreamRequest.Header.Set(key, strings.Join(values, ""))
 	}
