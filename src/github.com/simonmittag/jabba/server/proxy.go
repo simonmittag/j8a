@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
@@ -19,6 +20,9 @@ var httpSafeMethods []string = []string{"GET", "HEAD", "OPTIONS", "TRACE"}
 //RFC7231 4.2.2
 var httpIdempotentMethods []string = []string{"PUT", "DELETE"}
 var httpRepeatableMethods = append(httpSafeMethods, httpIdempotentMethods...)
+
+//RFC7231 4.3
+var httpLegalMethods []string = append(httpRepeatableMethods, []string{"POST", "CONNECT"}...)
 
 // Attempt wraps connection attempts to specific upstreams that are already mapped by label
 type Attempt struct {
@@ -65,22 +69,20 @@ func (proxy *Proxy) shouldRepeat() bool {
 
 // ParseIncoming is a factory method for a new ProxyRequest, embeds the incoming request.
 func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
-	url := request.URL
-	method := request.Method
+	//TODO: we are not processing downstream body reading errors, i.e. illegal content length
 	body, _ := ioutil.ReadAll(request.Body)
-	log.Trace().
-		Str("url", url.Path).
-		Str("method", method).
-		Int("bodyBytes", len(body)).
-		Str(XRequestID, proxy.XRequestID).
-		Msg("parsed request")
-
 	proxy.URI = request.URL.EscapedPath()
-	proxy.Method = request.Method
+	proxy.Method = strings.ToUpper(request.Method)
 	proxy.Body = body
 	proxy.Downstream = Downstream{
 		Request: request,
 	}
+	log.Trace().
+		Str("url", proxy.URI).
+		Str("method", proxy.Method).
+		Int("bodyBytes", len(proxy.Body)).
+		Str(XRequestID, proxy.XRequestID).
+		Msg("parsed request")
 	return proxy
 }
 
@@ -116,4 +118,13 @@ func (proxy *Proxy) respondWith(statusCode int, message string) *Proxy {
 	proxy.Downstream.StatusCode = statusCode
 	proxy.Downstream.Message = message
 	return proxy
+}
+
+func (proxy *Proxy) hasLegalHTTPMethod() bool {
+	for _, legal := range httpLegalMethods {
+		if proxy.Method == legal {
+			return true
+		}
+	}
+	return false
 }

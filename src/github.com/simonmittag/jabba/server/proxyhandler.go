@@ -25,6 +25,10 @@ func proxyHandler(response http.ResponseWriter, request *http.Request) {
 		initXRequestID().
 		parseIncoming(request).
 		setOutgoing(response)
+	if !validate(proxy) {
+		sendStatusCodeAsJSON(proxy.respondWith(400, "bad or malformed request"))
+		return
+	}
 	for _, route := range Runner.Routes {
 		if matched = matchRouteInURI(route, request); matched {
 			upstream, label, mapped := route.mapUpstream()
@@ -33,13 +37,19 @@ func proxyHandler(response http.ResponseWriter, request *http.Request) {
 			} else {
 				//matched, but non mapped requests == configuration error in server
 				sendStatusCodeAsJSON(proxy.respondWith(503, "unable to map upstream resource"))
+				return
 			}
 			break
 		}
 	}
 	if !matched {
 		sendStatusCodeAsJSON(proxy.respondWith(404, "upstream resource not found"))
+		return
 	}
+}
+
+func validate(proxy *Proxy) bool {
+	return proxy.hasLegalHTTPMethod()
 }
 
 func matchRouteInURI(route Route, request *http.Request) bool {
