@@ -19,29 +19,39 @@ const XRequestID = "X-REQUEST-ID"
 var httpClient *http.Client
 var httpResponseHeadersNoRewrite []string = []string{"Date", "Content-Length"}
 
+// main proxy handling
 func proxyHandler(response http.ResponseWriter, request *http.Request) {
 	matched := false
+
+	//preprocess incoming request in proxy object
 	proxy := new(Proxy).
 		initXRequestID().
 		parseIncoming(request).
 		setOutgoing(response)
+
+	//all malformed requests are rejected here and we return a 400
 	if !validate(proxy) {
 		sendStatusCodeAsJSON(proxy.respondWith(400, "bad or malformed request"))
 		return
 	}
+
+	//once a route is matched, it needs to be mapped to an upstream resource via a policy
 	for _, route := range Runner.Routes {
 		if matched = matchRouteInURI(route, request); matched {
 			upstream, label, mapped := route.mapUpstream()
 			if mapped {
+				//mapped requests get sent upstream
 				handle(proxy.firstAttempt(upstream, label))
 			} else {
-				//matched, but non mapped requests == configuration error in server
+				//unmapped request mean an internal configuration error in server
 				sendStatusCodeAsJSON(proxy.respondWith(503, "unable to map upstream resource"))
 				return
 			}
 			break
 		}
 	}
+
+	//unmatched paths means we have no route for this and always return a 404
 	if !matched {
 		sendStatusCodeAsJSON(proxy.respondWith(404, "upstream resource not found"))
 		return
