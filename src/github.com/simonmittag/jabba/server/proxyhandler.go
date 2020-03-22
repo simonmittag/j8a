@@ -1,15 +1,15 @@
 package server
 
 import (
-	"fmt"
 	"io/ioutil"
 	"net"
 	"net/http"
+	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 )
 
@@ -20,24 +20,24 @@ var httpClient *http.Client
 
 func proxyHandler(response http.ResponseWriter, request *http.Request) {
 	matched := false
-	decorateRequest(request)
+	proxy := new(Proxy).
+		parseIncoming(request).
+		initXRequestID().
+		setOutgoing(response)
 	for _, route := range Runner.Routes {
 		if matched = matchRouteInURI(route, request); matched {
 			upstream, label, mapped := route.mapUpstream()
 			if mapped {
-				handle(new(Proxy).
-					parseIncoming(request).
-					firstAttempt(upstream, label).
-					setOutgoing(response))
+				handle(proxy.firstAttempt(upstream, label))
 			} else {
 				//matched, but non mapped requests == configuration error in server
-				sendStatusCodeAsJSON(response, request, 503, "unable to map upstream resource")
+				sendStatusCodeAsJSON(proxy.respondWith(503, "unable to map upstream resource"))
 			}
 			break
 		}
 	}
 	if !matched {
-		sendStatusCodeAsJSON(response, request, 404, "upstream resource not found")
+		sendStatusCodeAsJSON(proxy.respondWith(404, "upstream resource not found"))
 	}
 }
 
@@ -91,7 +91,7 @@ func handle(proxy *Proxy) {
 		defer upstreamResponse.Body.Close()
 		upstreamResponseBody, bodyError := ioutil.ReadAll(upstreamResponse.Body)
 		if bodyError == nil {
-			writeStandardResponseHeaders(proxy.Downstream.Response, proxy.Downstream.Request, 200)
+			writeStandardResponseHeaders(proxy.respondWith(200, "OK"))
 			//what is the upstream content type?
 			proxy.Downstream.Response.Write([]byte(upstreamResponseBody))
 			log.Info().
@@ -112,12 +112,12 @@ func handle(proxy *Proxy) {
 	}
 }
 
-func decorateRequest(r *http.Request) *http.Request {
-	r.Header.Set(XRequestID, xRequestID())
-	return r
-}
-
-func xRequestID() string {
-	uuid, _ := uuid.NewRandom()
-	return fmt.Sprintf("XR-%s-%s", ID, uuid)
+func getHTTPMaxUpstreamAttempts() int {
+	if httpUpstreamMaxAttempts == 0 {
+		httpUpstreamMaxAttempts, _ = strconv.Atoi(os.Getenv("HTTP_UPSTREAM_MAX_ATTEMPTS"))
+		if httpUpstreamMaxAttempts == 0 {
+			httpUpstreamMaxAttempts = 2
+		}
+	}
+	return httpUpstreamMaxAttempts
 }

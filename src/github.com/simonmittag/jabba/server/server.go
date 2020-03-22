@@ -70,7 +70,10 @@ func (runtime Runtime) assignHandlers() Runtime {
 	return runtime
 }
 
-func writeStandardResponseHeaders(response http.ResponseWriter, request *http.Request, statusCode int) {
+func writeStandardResponseHeaders(proxy *Proxy) {
+	response := proxy.Downstream.Response
+	request := proxy.Downstream.Request
+
 	response.Header().Set("Server", fmt.Sprintf("Jabba %s %s", Version, ID))
 	response.Header().Set("Content-Encoding", "identity")
 	response.Header().Set("Cache-control:", "no-store, no-cache, must-revalidate, proxy-revalidate")
@@ -85,29 +88,23 @@ func writeStandardResponseHeaders(response http.ResponseWriter, request *http.Re
 	response.Header().Set(XRequestID, request.Header.Get(XRequestID))
 
 	//status code must be last, no headers may be written after this one.
-	response.WriteHeader(statusCode)
+	response.WriteHeader(proxy.Downstream.StatusCode)
 }
 
-func sendStatusCodeAsJSONFrom(proxy *Proxy) {
-	sendStatusCodeAsJSON(proxy.Downstream.Response,
-		proxy.Downstream.Request,
-		proxy.Downstream.StatusCode,
-		proxy.Downstream.Message)
-}
+func sendStatusCodeAsJSON(proxy *Proxy) {
 
-func sendStatusCodeAsJSON(response http.ResponseWriter, request *http.Request, statusCode int, message string) {
-	if statusCode >= 299 {
-		log.Warn().Int("downstreamResponseCode", statusCode).
-			Str("path", request.URL.Path).
-			Str(XRequestID, request.Header.Get(XRequestID)).
+	if proxy.Downstream.StatusCode >= 299 {
+		log.Warn().Int("downstreamResponseCode", proxy.Downstream.StatusCode).
+			Str("path", proxy.Downstream.Request.URL.Path).
+			Str(XRequestID, proxy.Downstream.Request.Header.Get(XRequestID)).
 			Msgf("request not served")
 	}
-	writeStandardResponseHeaders(response, request, statusCode)
-	response.Header().Set("Content-Type", "application/json")
+	writeStandardResponseHeaders(proxy)
+	proxy.Downstream.Response.Header().Set("Content-Type", "application/json")
 	statusCodeResponse := StatusCodeResponse{
-		Code:       statusCode,
-		Message:    message,
-		XRequestID: request.Header.Get(XRequestID),
+		Code:       proxy.Downstream.StatusCode,
+		Message:    proxy.Downstream.Message,
+		XRequestID: proxy.Downstream.Request.Header.Get(XRequestID),
 	}
-	response.Write(statusCodeResponse.AsJSON())
+	proxy.Downstream.Response.Write(statusCodeResponse.AsJSON())
 }

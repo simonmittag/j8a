@@ -2,12 +2,12 @@ package server
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
-	"os"
-	"strconv"
 
+	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 )
 
@@ -104,12 +104,14 @@ func (proxy *Proxy) firstAttempt(upstream *Upstream, label string) *Proxy {
 	return proxy
 }
 
-func getHTTPMaxUpstreamAttempts() int {
-	if httpUpstreamMaxAttempts == 0 {
-		httpUpstreamMaxAttempts, _ = strconv.Atoi(os.Getenv("HTTP_UPSTREAM_MAX_ATTEMPTS"))
-		if httpUpstreamMaxAttempts == 0 {
-			httpUpstreamMaxAttempts = 2
-		}
-	}
-	return httpUpstreamMaxAttempts
+func (proxy *Proxy) initXRequestID() *Proxy {
+	uuid, _ := uuid.NewRandom()
+	proxy.Downstream.Request.Header.Set(XRequestID, fmt.Sprintf("XR-%s-%s", ID, uuid))
+	return proxy
+}
+
+func (proxy *Proxy) respondWith(statusCode int, message string) *Proxy {
+	proxy.Downstream.StatusCode = statusCode
+	proxy.Downstream.Message = message
+	return proxy
 }
