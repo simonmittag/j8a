@@ -38,6 +38,7 @@ type Downstream struct {
 
 // Proxy wraps data for a single downstream request/response with multiple upstream HTTP request/response cycles.
 type Proxy struct {
+	XRequestID string
 	Method     string
 	URI        string
 	Body       []byte
@@ -71,7 +72,7 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 		Str("url", url.Path).
 		Str("method", method).
 		Int("bodyBytes", len(body)).
-		Str(XRequestID, request.Header.Get(XRequestID)).
+		Str(XRequestID, proxy.XRequestID).
 		Msg("parsed request")
 
 	proxy.URI = request.URL.EscapedPath()
@@ -106,7 +107,8 @@ func (proxy *Proxy) firstAttempt(upstream *Upstream, label string) *Proxy {
 
 func (proxy *Proxy) initXRequestID() *Proxy {
 	uuid, _ := uuid.NewRandom()
-	proxy.Downstream.Request.Header.Set(XRequestID, fmt.Sprintf("XR-%s-%s", ID, uuid))
+	xr := fmt.Sprintf("XR-%s-%s", ID, uuid)
+	proxy.XRequestID = xr
 	return proxy
 }
 

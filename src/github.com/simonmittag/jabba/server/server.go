@@ -72,7 +72,6 @@ func (runtime Runtime) assignHandlers() Runtime {
 
 func writeStandardResponseHeaders(proxy *Proxy) {
 	response := proxy.Downstream.Response
-	request := proxy.Downstream.Request
 
 	response.Header().Set("Server", fmt.Sprintf("Jabba %s %s", Version, ID))
 	response.Header().Set("Content-Encoding", "identity")
@@ -85,7 +84,7 @@ func writeStandardResponseHeaders(proxy *Proxy) {
 	response.Header().Set("X-content-type-options", "nosniff")
 	response.Header().Set("X-frame-options", "sameorigin")
 	//copy the X-REQUEST-ID from the request
-	response.Header().Set(XRequestID, request.Header.Get(XRequestID))
+	response.Header().Set(XRequestID, proxy.XRequestID)
 
 	//status code must be last, no headers may be written after this one.
 	response.WriteHeader(proxy.Downstream.StatusCode)
@@ -96,7 +95,7 @@ func sendStatusCodeAsJSON(proxy *Proxy) {
 	if proxy.Downstream.StatusCode >= 299 {
 		log.Warn().Int("downstreamResponseCode", proxy.Downstream.StatusCode).
 			Str("path", proxy.Downstream.Request.URL.Path).
-			Str(XRequestID, proxy.Downstream.Request.Header.Get(XRequestID)).
+			Str(XRequestID, proxy.XRequestID).
 			Msgf("request not served")
 	}
 	writeStandardResponseHeaders(proxy)
@@ -104,7 +103,7 @@ func sendStatusCodeAsJSON(proxy *Proxy) {
 	statusCodeResponse := StatusCodeResponse{
 		Code:       proxy.Downstream.StatusCode,
 		Message:    proxy.Downstream.Message,
-		XRequestID: proxy.Downstream.Request.Header.Get(XRequestID),
+		XRequestID: proxy.XRequestID,
 	}
 	proxy.Downstream.Response.Write(statusCodeResponse.AsJSON())
 }

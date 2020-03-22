@@ -21,8 +21,8 @@ var httpClient *http.Client
 func proxyHandler(response http.ResponseWriter, request *http.Request) {
 	matched := false
 	proxy := new(Proxy).
-		parseIncoming(request).
 		initXRequestID().
+		parseIncoming(request).
 		setOutgoing(response)
 	for _, route := range Runner.Routes {
 		if matched = matchRouteInURI(route, request); matched {
@@ -92,24 +92,28 @@ func handle(proxy *Proxy) {
 		upstreamResponseBody, bodyError := ioutil.ReadAll(upstreamResponse.Body)
 		if bodyError == nil {
 			writeStandardResponseHeaders(proxy.respondWith(200, "OK"))
-			//what is the upstream content type?
+			//TODO: what is the upstream content type? and other special headers from server...we need to copy relevant headers back down.
 			proxy.Downstream.Response.Write([]byte(upstreamResponseBody))
-			log.Info().
-				Str("url", proxy.URI).
-				Str("method", proxy.Method).
-				Str("upstream", proxy.Attempt.Upstream.String()).
-				Str("label", proxy.Attempt.Label).
-				Str("userAgent", proxy.Downstream.Request.Header.Get("User-Agent")).
-				Str(XRequestID, proxy.Downstream.Request.Header.Get(XRequestID)).
-				Int("upstreamResponseCode", 200).
-				Int("downstreamResponseCode", 200).
-				Msgf("request served")
+			logUpstreamAttempt(proxy)
 		} else {
 			log.Warn().Err(bodyError).Msgf("error encountered parsing body")
 		}
 	} else {
 		log.Warn().Err(upstreamError).Msgf("error encountered upstream")
 	}
+}
+
+func logUpstreamAttempt(proxy *Proxy) {
+	log.Info().
+		Str("url", proxy.URI).
+		Str("method", proxy.Method).
+		Str("upstream", proxy.Attempt.Upstream.String()).
+		Str("label", proxy.Attempt.Label).
+		Str("userAgent", proxy.Downstream.Request.Header.Get("User-Agent")).
+		Str(XRequestID, proxy.XRequestID).
+		Int("upstreamResponseCode", proxy.Attempt.StatusCode).
+		Int("downstreamResponseCode", proxy.Downstream.StatusCode).
+		Msgf("request served")
 }
 
 func getHTTPMaxUpstreamAttempts() int {
