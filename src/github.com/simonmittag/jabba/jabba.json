@@ -37,6 +37,10 @@
             "path": "/billing",
             "alias": "billing",
             "policy": "ab"
+        },
+        {
+            "path": "/posting",
+            "alias": "posting"
         }
     ],
     "resources": {
@@ -77,6 +81,15 @@
                 "labels": [
                     "green"
                 ],
+                "upstream": {
+                    "scheme": "http",
+                    "host": "localhost",
+                    "port": 8083
+                }
+            }
+        ],
+        "posting": [
+            {
                 "upstream": {
                     "scheme": "http",
                     "host": "localhost",
