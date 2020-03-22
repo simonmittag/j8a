@@ -68,7 +68,7 @@ func (config Config) setDefaultTimeouts() *Config {
 
 	//Client params
 	if config.Connection.Client.ConnectTimeoutSeconds == 0 {
-		config.Connection.Client.ConnectTimeoutSeconds = 5
+		config.Connection.Client.ConnectTimeoutSeconds = 2
 	}
 	if config.Connection.Client.ReadTimeoutSeconds == 0 {
 		config.Connection.Client.ReadTimeoutSeconds = 120
