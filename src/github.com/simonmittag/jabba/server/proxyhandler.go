@@ -115,9 +115,9 @@ func handle(proxy *Proxy) {
 			logHandledRequest(proxy)
 			return
 		}
-		log.Warn().Err(bodyError).Msgf("error encountered parsing body")
+		log.Debug().Err(bodyError).Msgf("error encountered parsing body")
 	}
-	log.Warn().Err(upstreamError).Msgf("error encountered upstream")
+	log.Debug().Err(upstreamError).Msgf("error encountered upstream")
 	if proxy.shouldAttemptRetry() {
 		handle(proxy.nextAttempt())
 	} else {
