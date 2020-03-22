@@ -4,9 +4,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
-	"os"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -104,7 +102,6 @@ func scaffoldUpstreamRequest(proxy *Proxy) *http.Request {
 
 // handle the proxy request
 func handle(proxy *Proxy) {
-
 	upstreamRequest := scaffoldUpstreamRequest(proxy)
 	upstreamResponse, upstreamError := scaffoldHTTPClient().Do(upstreamRequest)
 
@@ -114,14 +111,22 @@ func handle(proxy *Proxy) {
 		if bodyError == nil {
 			writeStandardResponseHeaders(proxy.respondWith(200, "OK"))
 			copyUpstreamResponseHeaders(proxy, upstreamResponse)
-			proxy.Downstream.Response.Write([]byte(upstreamResponseBody))
+			copyUpstreamResponseBody(proxy, upstreamResponseBody)
 			logHandledRequest(proxy)
-		} else {
-			log.Warn().Err(bodyError).Msgf("error encountered parsing body")
+			return
 		}
-	} else {
-		log.Warn().Err(upstreamError).Msgf("error encountered upstream")
+		log.Warn().Err(bodyError).Msgf("error encountered parsing body")
 	}
+	log.Warn().Err(upstreamError).Msgf("error encountered upstream")
+	if proxy.shouldAttemptRetry() {
+		handle(proxy.nextAttempt())
+	} else {
+		sendStatusCodeAsJSON(proxy.respondWith(502, "bad gateway, unable to read upstream response"))
+	}
+}
+
+func copyUpstreamResponseBody(proxy *Proxy, upstreamResponseBody []byte) {
+	proxy.Downstream.Response.Write([]byte(upstreamResponseBody))
 }
 
 func copyUpstreamResponseHeaders(proxy *Proxy, upstreamResponse *http.Response) {
@@ -143,16 +148,6 @@ func logHandledRequest(proxy *Proxy) {
 		Int("upstreamResponseCode", proxy.Attempt.StatusCode).
 		Int("downstreamResponseCode", proxy.Downstream.StatusCode).
 		Msgf("request served")
-}
-
-func getHTTPMaxUpstreamAttempts() int {
-	if httpUpstreamMaxAttempts == 0 {
-		httpUpstreamMaxAttempts, _ = strconv.Atoi(os.Getenv("HTTP_UPSTREAM_MAX_ATTEMPTS"))
-		if httpUpstreamMaxAttempts == 0 {
-			httpUpstreamMaxAttempts = 2
-		}
-	}
-	return httpUpstreamMaxAttempts
 }
 
 func shouldRewrite(header string) bool {

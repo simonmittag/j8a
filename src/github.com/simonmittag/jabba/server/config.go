@@ -58,7 +58,6 @@ func (config Config) addDefaultPolicy() *Config {
 }
 
 func (config Config) setDefaultTimeouts() *Config {
-
 	//Server params
 	if config.Connection.Server.ReadTimeoutSeconds == 0 {
 		config.Connection.Server.ReadTimeoutSeconds = 120
@@ -79,6 +78,9 @@ func (config Config) setDefaultTimeouts() *Config {
 	}
 	if config.Connection.Client.TCPConnectionPoolSize == 0 {
 		config.Connection.Client.TCPConnectionPoolSize = 32768
+	}
+	if config.Connection.Client.MaxAttempts == 0 {
+		config.Connection.Client.MaxAttempts = 1
 	}
 	return &config
 }

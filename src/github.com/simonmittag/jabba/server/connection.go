@@ -33,4 +33,7 @@ type Client struct {
 
 	// ReadTimeoutSeconds is the wait period to read the entire upstream response once connection was established
 	ReadTimeoutSeconds int
+
+	// MaxAttempts is the maximum number of request attempts to obtain a successful response for repeatable requests.
+	MaxAttempts int
 }

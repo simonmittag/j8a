@@ -8,7 +8,8 @@
         },
         "client": {
             "readTimeoutSeconds": 121,
-            "connectTimeoutSeconds": 7
+            "connectTimeoutSeconds": 7,
+            "maxAttempts": 4
         }
     },
     "policies": {
