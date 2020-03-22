@@ -17,6 +17,7 @@ import (
 const XRequestID = "X-REQUEST-ID"
 
 var httpClient *http.Client
+var httpResponseHeadersNoRewrite []string = []string{"Date", "Content-Length"}
 
 func proxyHandler(response http.ResponseWriter, request *http.Request) {
 	matched := false
@@ -92,9 +93,9 @@ func handle(proxy *Proxy) {
 		upstreamResponseBody, bodyError := ioutil.ReadAll(upstreamResponse.Body)
 		if bodyError == nil {
 			writeStandardResponseHeaders(proxy.respondWith(200, "OK"))
-			//TODO: what is the upstream content type? and other special headers from server...we need to copy relevant headers back down.
+			copyUpstreamResponseHeaders(proxy, upstreamResponse)
 			proxy.Downstream.Response.Write([]byte(upstreamResponseBody))
-			logUpstreamAttempt(proxy)
+			logHandledRequest(proxy)
 		} else {
 			log.Warn().Err(bodyError).Msgf("error encountered parsing body")
 		}
@@ -103,7 +104,15 @@ func handle(proxy *Proxy) {
 	}
 }
 
-func logUpstreamAttempt(proxy *Proxy) {
+func copyUpstreamResponseHeaders(proxy *Proxy, upstreamResponse *http.Response) {
+	for key, values := range upstreamResponse.Header {
+		if shouldRewrite(key) {
+			proxy.Downstream.Response.Header().Set(key, strings.Join(values, " "))
+		}
+	}
+}
+
+func logHandledRequest(proxy *Proxy) {
 	log.Info().
 		Str("url", proxy.URI).
 		Str("method", proxy.Method).
@@ -124,4 +133,13 @@ func getHTTPMaxUpstreamAttempts() int {
 		}
 	}
 	return httpUpstreamMaxAttempts
+}
+
+func shouldRewrite(header string) bool {
+	for _, dont := range httpResponseHeadersNoRewrite {
+		if header == dont {
+			return false
+		}
+	}
+	return true
 }
