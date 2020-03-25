@@ -94,6 +94,7 @@ func scaffoldUpstreamRequest(proxy *Proxy) *http.Request {
 	upstreamRequest, _ := http.NewRequest(proxy.Method,
 		proxy.resolveUpstreamURI(),
 		proxy.bodyReader())
+	//TODO: test if upstream request headers are reproced correctly
 	for key, values := range proxy.Downstream.Request.Header {
 		upstreamRequest.Header.Set(key, strings.Join(values, " "))
 	}
@@ -106,11 +107,14 @@ func handle(proxy *Proxy) {
 	upstreamResponse, upstreamError := scaffoldHTTPClient().Do(upstreamRequest)
 
 	if upstreamError == nil {
+		//this is required, else we leak TCP connections.
 		defer upstreamResponse.Body.Close()
 		upstreamResponseBody, bodyError := ioutil.ReadAll(upstreamResponse.Body)
 		if bodyError == nil {
-			writeStandardResponseHeaders(proxy.respondWith(200, "OK"))
+			writeStandardResponseHeaders(proxy)
 			copyUpstreamResponseHeaders(proxy, upstreamResponse)
+			resetContentLengthHeader(proxy, upstreamResponseBody)
+			writeStatusCodeHeader(proxy.respondWith(200, "OK"))
 			copyUpstreamResponseBody(proxy, upstreamResponseBody)
 			logHandledRequest(proxy)
 			return
@@ -125,6 +129,12 @@ func handle(proxy *Proxy) {
 	}
 }
 
+func resetContentLengthHeader(proxy *Proxy, upstreamResponseBody []byte) {
+	if proxy.Method == "HEAD" || len(upstreamResponseBody) == 0 {
+		proxy.Downstream.Response.Header().Set("Content-Length", "0")
+	}
+}
+
 func copyUpstreamResponseBody(proxy *Proxy, upstreamResponseBody []byte) {
 	proxy.Downstream.Response.Write([]byte(upstreamResponseBody))
 }
@@ -135,6 +145,11 @@ func copyUpstreamResponseHeaders(proxy *Proxy, upstreamResponse *http.Response) 
 			proxy.Downstream.Response.Header().Set(key, strings.Join(values, " "))
 		}
 	}
+}
+
+//status code must be last, no headers may be written after this one.
+func writeStatusCodeHeader(proxy *Proxy) {
+	proxy.Downstream.Response.WriteHeader(proxy.Downstream.StatusCode)
 }
 
 func logHandledRequest(proxy *Proxy) {

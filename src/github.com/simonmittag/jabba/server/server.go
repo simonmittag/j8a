@@ -85,9 +85,6 @@ func writeStandardResponseHeaders(proxy *Proxy) {
 	response.Header().Set("X-frame-options", "sameorigin")
 	//copy the X-REQUEST-ID from the request
 	response.Header().Set(XRequestID, proxy.XRequestID)
-
-	//status code must be last, no headers may be written after this one.
-	response.WriteHeader(proxy.Downstream.StatusCode)
 }
 
 func sendStatusCodeAsJSON(proxy *Proxy) {

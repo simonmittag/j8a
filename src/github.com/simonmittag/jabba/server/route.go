@@ -23,6 +23,7 @@ func (route Route) mapUpstream() (*Upstream, string, bool) {
 	}
 
 	resource := Runner.Resources[route.Alias]
+	//if a policy exists, we match resources with a label. TODO: this should be an interface
 	if len(route.Policy) > 0 {
 		for _, resourceMapping := range resource {
 			for _, resourceLabel := range resourceMapping.Labels {
