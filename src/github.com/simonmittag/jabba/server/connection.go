@@ -24,7 +24,7 @@ type Client struct {
 	// ConnectionPoolSize is the Size of the connection pool for idle connections
 	TCPConnectionPoolSize int
 
-	// TCPConnectionKeepAliveSeconds is the wait period before a connection is closed.
+	// TCPConnectionKeepAliveSeconds is the total wait period in seconds before we give up on an upstream connection.
 	TCPConnectionKeepAliveSeconds int
 
 	// ConnectTimeoutSeconds is the wait period to establish socket connection with an upstream server.

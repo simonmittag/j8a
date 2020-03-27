@@ -74,7 +74,7 @@ func (config Config) setDefaultTimeouts() *Config {
 		config.Connection.Client.ReadTimeoutSeconds = 120
 	}
 	if config.Connection.Client.TCPConnectionKeepAliveSeconds == 0 {
-		config.Connection.Client.TCPConnectionKeepAliveSeconds = 300
+		config.Connection.Client.TCPConnectionKeepAliveSeconds = 120
 	}
 	if config.Connection.Client.TCPConnectionPoolSize == 0 {
 		config.Connection.Client.TCPConnectionPoolSize = 32768

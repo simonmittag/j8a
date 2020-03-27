@@ -2,11 +2,9 @@ package server
 
 import (
 	"io/ioutil"
-	"net"
 	"net/http"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/rs/zerolog/log"
 )
@@ -63,31 +61,6 @@ func validate(proxy *Proxy) bool {
 func matchRouteInURI(route Route, request *http.Request) bool {
 	matched, _ := regexp.MatchString("^"+route.Path, request.RequestURI)
 	return matched
-}
-
-func scaffoldHTTPClient() *http.Client {
-	if httpClient == nil {
-		httpClient = &http.Client{
-			Transport: &http.Transport{
-				Dial: (&net.Dialer{
-					Timeout: time.Duration(Runner.
-						Connection.
-						Client.
-						ConnectTimeoutSeconds) * time.Second,
-					KeepAlive: time.Duration(Runner.
-						Connection.
-						Client.
-						TCPConnectionKeepAliveSeconds) * time.Second,
-				}).Dial,
-				//TLS handshake timeout is the same as connection timeout
-				TLSHandshakeTimeout: time.Duration(Runner.
-					Connection.
-					Client.
-					ConnectTimeoutSeconds) * time.Second,
-			},
-		}
-	}
-	return httpClient
 }
 
 func scaffoldUpstreamRequest(proxy *Proxy) *http.Request {
