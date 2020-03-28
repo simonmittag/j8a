@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"runtime"
 	"time"
+
+	"github.com/rs/zerolog/log"
 )
 
 func scaffoldHTTPClient() *http.Client {
@@ -23,8 +25,20 @@ func scaffoldHTTPClient() *http.Client {
 					Connection.
 					Client.
 					ConnectTimeoutSeconds) * time.Second,
+				MaxIdleConns:        Runner.Connection.Client.TCPConnectionPoolSize,
+				MaxIdleConnsPerHost: Runner.Connection.Client.TCPConnectionPoolSize,
+				IdleConnTimeout: time.Duration(Runner.
+					Connection.
+					Client.
+					TCPConnectionKeepAliveSeconds),
 			},
 		}
+		log.Debug().
+			Int("upstreamTlsHandshakeTimeout", Runner.Connection.Client.ConnectTimeoutSeconds).
+			Int("upstreamMaxIdleConns", Runner.Connection.Client.TCPConnectionPoolSize).
+			Int("upstreamMaxIdleConnsPerHost", Runner.Connection.Client.TCPConnectionPoolSize).
+			Int("upstreamIdleConnTimeout", Runner.Connection.Client.TCPConnectionKeepAliveSeconds).
+			Msg("http client upstream params")
 	}
 	return httpClient
 }
