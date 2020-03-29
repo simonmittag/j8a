@@ -10,7 +10,7 @@ import (
 )
 
 //Version is the server version
-var Version string = "unknown"
+var Version string = "v0.2.1"
 
 //ID is a unique server ID
 var ID string = "unknown"
@@ -36,7 +36,7 @@ func BootStrap() {
 }
 
 func (runtime Runtime) startListening() {
-	log.Info().Msgf("Jabba listening on port %d...", runtime.Port)
+	log.Info().Msgf("Jabba %s listening on port %d...", Version, runtime.Port)
 	server := &http.Server{
 		Addr:    ":" + strconv.Itoa(runtime.Port),
 		Handler: nil,

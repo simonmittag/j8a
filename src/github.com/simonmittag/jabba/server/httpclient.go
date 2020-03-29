@@ -25,8 +25,8 @@ func scaffoldHTTPClient() *http.Client {
 					Connection.
 					Client.
 					ConnectTimeoutSeconds) * time.Second,
-				MaxIdleConns:        Runner.Connection.Client.TCPConnectionPoolSize,
-				MaxIdleConnsPerHost: Runner.Connection.Client.TCPConnectionPoolSize,
+				// MaxIdleConns:        Runner.Connection.Client.TCPConnectionPoolSize,
+				// MaxIdleConnsPerHost: Runner.Connection.Client.TCPConnectionPoolSize,
 				IdleConnTimeout: time.Duration(Runner.
 					Connection.
 					Client.

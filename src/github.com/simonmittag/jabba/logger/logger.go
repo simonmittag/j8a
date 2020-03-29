@@ -28,10 +28,11 @@ func getHost() string {
 }
 
 func getVersion() string {
-	server.Version = os.Getenv("VERSION")
-	if len(server.Version) == 0 {
-		server.Version = "unknown"
+	osv := os.Getenv("VERSION")
+	if len(osv) > 0 {
+		server.Version = osv
 	}
+
 	log.Debug().Str("version", server.Version).Msg("determined version")
 	return server.Version
 }
