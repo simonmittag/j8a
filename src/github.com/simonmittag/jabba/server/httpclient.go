@@ -17,28 +17,28 @@ func scaffoldHTTPClient() *http.Client {
 					Timeout: time.Duration(Runner.
 						Connection.
 						Client.
-						ConnectTimeoutSeconds) * time.Second,
+						SocketTimeoutSeconds) * time.Second,
 					KeepAlive: getKeepAliveIntervalSecondsDuration(),
 				}).Dial,
 				//TLS handshake timeout is the same as connection timeout
 				TLSHandshakeTimeout: time.Duration(Runner.
 					Connection.
 					Client.
-					ConnectTimeoutSeconds) * time.Second,
-				MaxIdleConns:        Runner.Connection.Client.TCPConnectionPoolSize,
-				MaxIdleConnsPerHost: Runner.Connection.Client.TCPConnectionPoolSize,
-				// IdleConnTimeout: time.Duration(Runner.
-				// 	Connection.
-				// 	Client.
-				// 	TCPConnectionKeepAliveSeconds),
+					SocketTimeoutSeconds) * time.Second,
+				MaxIdleConns:        Runner.Connection.Client.PoolSize,
+				MaxIdleConnsPerHost: Runner.Connection.Client.PoolSize,
+				IdleConnTimeout: time.Duration(Runner.
+					Connection.
+					Client.
+					KeepAliveTimeoutSeconds),
 			},
 		}
 		log.Debug().
-			Int("upstreamTlsHandshakeTimeout", Runner.Connection.Client.ConnectTimeoutSeconds).
-			Int("upstreamMaxIdleConns", Runner.Connection.Client.TCPConnectionPoolSize).
-			Int("upstreamMaxIdleConnsPerHost", Runner.Connection.Client.TCPConnectionPoolSize).
-			Int("upstreamIdleConnTimeout", Runner.Connection.Client.TCPConnectionKeepAliveSeconds).
-			Msg("http client upstream params")
+			Int("upstreamTlsHandshakeTimeoutSeconds", Runner.Connection.Client.SocketTimeoutSeconds).
+			Int("upstreamMaxIdleConns", Runner.Connection.Client.PoolSize).
+			Int("upstreamMaxIdleConnsPerHost", Runner.Connection.Client.PoolSize).
+			Int("upstreamIdleConnTimeout", Runner.Connection.Client.KeepAliveTimeoutSeconds).
+			Msg("golang internal http client upstream params")
 	}
 	return httpClient
 }
@@ -53,7 +53,7 @@ func getKeepAliveIntervalSecondsDuration() time.Duration {
 	return time.Duration(float64(Runner.
 		Connection.
 		Client.
-		TCPConnectionKeepAliveSeconds)/float64(getTCP_KEEPCNT())) * time.Second
+		KeepAliveTimeoutSeconds)/float64(getTCP_KEEPCNT())) * time.Second
 }
 
 func getTCP_KEEPCNT() int {

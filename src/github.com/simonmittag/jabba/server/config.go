@@ -62,22 +62,22 @@ func (config Config) setDefaultTimeouts() *Config {
 	if config.Connection.Server.ReadTimeoutSeconds == 0 {
 		config.Connection.Server.ReadTimeoutSeconds = 120
 	}
-	if config.Connection.Server.WriteTimeoutSeconds == 0 {
-		config.Connection.Server.WriteTimeoutSeconds = 250
+	if config.Connection.Server.RoundTripTimeoutSeconds == 0 {
+		config.Connection.Server.RoundTripTimeoutSeconds = 250
 	}
 
 	//Client params
-	if config.Connection.Client.ConnectTimeoutSeconds == 0 {
-		config.Connection.Client.ConnectTimeoutSeconds = 2
+	if config.Connection.Client.SocketTimeoutSeconds == 0 {
+		config.Connection.Client.SocketTimeoutSeconds = 2
 	}
 	if config.Connection.Client.ReadTimeoutSeconds == 0 {
 		config.Connection.Client.ReadTimeoutSeconds = 120
 	}
-	if config.Connection.Client.TCPConnectionKeepAliveSeconds == 0 {
-		config.Connection.Client.TCPConnectionKeepAliveSeconds = 120
+	if config.Connection.Client.KeepAliveTimeoutSeconds == 0 {
+		config.Connection.Client.KeepAliveTimeoutSeconds = 300
 	}
-	if config.Connection.Client.TCPConnectionPoolSize == 0 {
-		config.Connection.Client.TCPConnectionPoolSize = 32768
+	if config.Connection.Client.PoolSize == 0 {
+		config.Connection.Client.PoolSize = 32768
 	}
 	if config.Connection.Client.MaxAttempts == 0 {
 		config.Connection.Client.MaxAttempts = 1

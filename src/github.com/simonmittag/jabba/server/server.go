@@ -47,7 +47,7 @@ func (runtime Runtime) startListening() {
 		WriteTimeout: time.Second * time.Duration(runtime.
 			Connection.
 			Server.
-			WriteTimeoutSeconds),
+			RoundTripTimeoutSeconds),
 	}
 
 	//this line blocks execution and the server stays up

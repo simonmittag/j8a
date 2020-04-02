@@ -4,12 +4,14 @@
     "connection": {
         "server": {
             "readTimeoutSeconds": 121,
-            "writeTimeoutSeconds": 242
+            "roundTripTimeoutSeconds": 242
         },
         "client": {
+            "socketTimeoutSeconds": 7,
             "readTimeoutSeconds": 121,
-            "connectTimeoutSeconds": 7,
-            "maxAttempts": 4
+            "keepAliveTimeoutSeconds": 300,
+            "maxAttempts": 4,
+            "poolSize" : 1024
         }
     },
     "policies": {
