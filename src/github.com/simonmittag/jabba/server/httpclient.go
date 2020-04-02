@@ -43,7 +43,7 @@ func scaffoldHTTPClient() *http.Client {
 	return httpClient
 }
 
-// KeepAlive is effectively: initial delay + interval * TCP_KEEPCNT (9 on linux).
+// getKeepAliveIntervalSecondsDuration. KeepAlive is effectively: initial delay + interval * TCP_KEEPCNT (9 on linux).
 // The KeepAliveIntervalSecondsDuration here defines interval, i.e. default 15s * 9 = 135s on linux
 // See: https://github.com/golang/go/issues/23459#issuecomment-374777402
 // The OS uses zero payload TCP segments to attempt to keep the connection alive.
@@ -53,10 +53,10 @@ func getKeepAliveIntervalSecondsDuration() time.Duration {
 	return time.Duration(float64(Runner.
 		Connection.
 		Client.
-		KeepAliveTimeoutSeconds)/float64(getTCP_KEEPCNT())) * time.Second
+		KeepAliveTimeoutSeconds)/float64(getTCPKeepCnt())) * time.Second
 }
 
-func getTCP_KEEPCNT() int {
+func getTCPKeepCnt() int {
 	switch runtime.GOOS {
 	case "windows":
 		return 5
