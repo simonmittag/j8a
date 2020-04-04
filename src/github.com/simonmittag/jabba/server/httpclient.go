@@ -11,34 +11,41 @@ import (
 
 func scaffoldHTTPClient() *http.Client {
 	if httpClient == nil {
+		idleConnTimeoutDuration := time.Duration(Runner.
+			Connection.
+			Client.
+			KeepAliveTimeoutSeconds) * time.Second
+
+		tLSHandshakeTimeoutDuration := time.Duration(Runner.
+			Connection.
+			Client.
+			SocketTimeoutSeconds) * time.Second
+
+		socketTimeoutDuration := time.Duration(Runner.
+			Connection.
+			Client.
+			SocketTimeoutSeconds) * time.Second
+
 		httpClient = &http.Client{
 			Transport: &http.Transport{
 				Dial: (&net.Dialer{
-					Timeout: time.Duration(Runner.
-						Connection.
-						Client.
-						SocketTimeoutSeconds) * time.Second,
+					Timeout:   socketTimeoutDuration,
 					KeepAlive: getKeepAliveIntervalDuration(),
 				}).Dial,
 				//TLS handshake timeout is the same as connection timeout
-				TLSHandshakeTimeout: time.Duration(Runner.
-					Connection.
-					Client.
-					SocketTimeoutSeconds) * time.Second,
+				TLSHandshakeTimeout: tLSHandshakeTimeoutDuration,
 				MaxIdleConns:        Runner.Connection.Client.PoolSize,
 				MaxIdleConnsPerHost: Runner.Connection.Client.PoolSize,
-				IdleConnTimeout: time.Duration(Runner.
-					Connection.
-					Client.
-					KeepAliveTimeoutSeconds),
+				IdleConnTimeout:     idleConnTimeoutDuration,
 			},
 		}
 
 		log.Debug().
-			Int("upstreamTlsHandshakeTimeoutSeconds", Runner.Connection.Client.SocketTimeoutSeconds).
 			Int("upstreamMaxIdleConns", Runner.Connection.Client.PoolSize).
 			Int("upstreamMaxIdleConnsPerHost", Runner.Connection.Client.PoolSize).
-			Int("upstreamIdleConnTimeout", Runner.Connection.Client.KeepAliveTimeoutSeconds).
+			Float64("upstreamTransportDialTimeoutSeconds", socketTimeoutDuration.Seconds()).
+			Float64("upstreamTlsHandshakeTimeoutSeconds", tLSHandshakeTimeoutDuration.Seconds()).
+			Float64("upstreamIdleConnTimeoutSeconds", idleConnTimeoutDuration.Seconds()).
 			Float64("upstreamTransportDialKeepAliveIntervalSeconds", getKeepAliveIntervalDuration().Seconds()).
 			Msg("http client derived upstream params")
 	}
