@@ -18,7 +18,7 @@ func scaffoldHTTPClient() *http.Client {
 						Connection.
 						Client.
 						SocketTimeoutSeconds) * time.Second,
-					KeepAlive: getKeepAliveIntervalSecondsDuration(),
+					KeepAlive: getKeepAliveIntervalDuration(),
 				}).Dial,
 				//TLS handshake timeout is the same as connection timeout
 				TLSHandshakeTimeout: time.Duration(Runner.
@@ -33,12 +33,14 @@ func scaffoldHTTPClient() *http.Client {
 					KeepAliveTimeoutSeconds),
 			},
 		}
+
 		log.Debug().
 			Int("upstreamTlsHandshakeTimeoutSeconds", Runner.Connection.Client.SocketTimeoutSeconds).
 			Int("upstreamMaxIdleConns", Runner.Connection.Client.PoolSize).
 			Int("upstreamMaxIdleConnsPerHost", Runner.Connection.Client.PoolSize).
 			Int("upstreamIdleConnTimeout", Runner.Connection.Client.KeepAliveTimeoutSeconds).
-			Msg("golang internal http client upstream params")
+			Float64("upstreamTransportDialKeepAliveIntervalSeconds", getKeepAliveIntervalDuration().Seconds()).
+			Msg("http client derived upstream params")
 	}
 	return httpClient
 }
@@ -49,11 +51,11 @@ func scaffoldHTTPClient() *http.Client {
 // The OS uses zero payload TCP segments to attempt to keep the connection alive.
 // after the total number of unacknowledged TCP_KEEPCNT is reached, the dialer kills the
 // connection.
-func getKeepAliveIntervalSecondsDuration() time.Duration {
+func getKeepAliveIntervalDuration() time.Duration {
 	return time.Duration(float64(Runner.
 		Connection.
 		Client.
-		KeepAliveTimeoutSeconds)/float64(getTCPKeepCnt())) * time.Second
+		KeepAliveTimeoutSeconds) / float64(getTCPKeepCnt()) * float64(time.Second))
 }
 
 func getTCPKeepCnt() int {

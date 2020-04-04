@@ -30,7 +30,11 @@ func BootStrap() {
 		reAliasResources().
 		addDefaultPolicy().
 		setDefaultTimeouts()
+
 	Runner = &Runtime{Config: *config}
+
+	scaffoldHTTPClient()
+
 	Runner.assignHandlers().
 		startListening()
 }
