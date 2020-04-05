@@ -32,10 +32,8 @@ func BootStrap() {
 		setDefaultTimeouts()
 
 	Runner = &Runtime{Config: *config}
-
-	scaffoldHTTPClient()
-
-	Runner.assignHandlers().
+	Runner.initUserAgent().
+		assignHandlers().
 		startListening()
 }
 
@@ -87,6 +85,13 @@ func (runtime Runtime) assignHandlers() Runtime {
 	}
 	http.HandleFunc("/", proxyHandler)
 	log.Debug().Msgf("assigned proxy handler to path %s", "/")
+	return runtime
+}
+
+func (runtime Runtime) initUserAgent() Runtime {
+	if httpClient == nil {
+		httpClient = scaffoldHTTPClient(runtime)
+	}
 	return runtime
 }
 

@@ -9,46 +9,46 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func scaffoldHTTPClient() *http.Client {
-	if httpClient == nil {
-		idleConnTimeoutDuration := time.Duration(Runner.
-			Connection.
-			Client.
-			IdleTimeoutSeconds) * time.Second
+// scaffoldHTTPClient is a factory method that applies connection params to the transport layer of http.Client
+func scaffoldHTTPClient(runtime Runtime) *http.Client {
+	idleConnTimeoutDuration := time.Duration(runtime.
+		Connection.
+		Client.
+		IdleTimeoutSeconds) * time.Second
 
-		tLSHandshakeTimeoutDuration := time.Duration(Runner.
-			Connection.
-			Client.
-			SocketTimeoutSeconds) * time.Second
+	tLSHandshakeTimeoutDuration := time.Duration(runtime.
+		Connection.
+		Client.
+		SocketTimeoutSeconds) * time.Second
 
-		socketTimeoutDuration := time.Duration(Runner.
-			Connection.
-			Client.
-			SocketTimeoutSeconds) * time.Second
+	socketTimeoutDuration := time.Duration(runtime.
+		Connection.
+		Client.
+		SocketTimeoutSeconds) * time.Second
 
-		httpClient = &http.Client{
-			Transport: &http.Transport{
-				Dial: (&net.Dialer{
-					Timeout:   socketTimeoutDuration,
-					KeepAlive: getKeepAliveIntervalDuration(),
-				}).Dial,
-				//TLS handshake timeout is the same as connection timeout
-				TLSHandshakeTimeout: tLSHandshakeTimeoutDuration,
-				MaxIdleConns:        Runner.Connection.Client.PoolSize,
-				MaxIdleConnsPerHost: Runner.Connection.Client.PoolSize,
-				IdleConnTimeout:     idleConnTimeoutDuration,
-			},
-		}
-
-		log.Debug().
-			Int("upstreamMaxIdleConns", Runner.Connection.Client.PoolSize).
-			Int("upstreamMaxIdleConnsPerHost", Runner.Connection.Client.PoolSize).
-			Float64("upstreamTransportDialTimeoutSeconds", socketTimeoutDuration.Seconds()).
-			Float64("upstreamTlsHandshakeTimeoutSeconds", tLSHandshakeTimeoutDuration.Seconds()).
-			Float64("upstreamIdleConnTimeoutSeconds", idleConnTimeoutDuration.Seconds()).
-			Float64("upstreamTransportDialKeepAliveIntervalSeconds", getKeepAliveIntervalDuration().Seconds()).
-			Msg("server derived upstream params")
+	httpClient = &http.Client{
+		Transport: &http.Transport{
+			Dial: (&net.Dialer{
+				Timeout:   socketTimeoutDuration,
+				KeepAlive: getKeepAliveIntervalDuration(),
+			}).Dial,
+			//TLS handshake timeout is the same as connection timeout
+			TLSHandshakeTimeout: tLSHandshakeTimeoutDuration,
+			MaxIdleConns:        runtime.Connection.Client.PoolSize,
+			MaxIdleConnsPerHost: runtime.Connection.Client.PoolSize,
+			IdleConnTimeout:     idleConnTimeoutDuration,
+		},
 	}
+
+	log.Debug().
+		Int("upstreamMaxIdleConns", runtime.Connection.Client.PoolSize).
+		Int("upstreamMaxIdleConnsPerHost", runtime.Connection.Client.PoolSize).
+		Float64("upstreamTransportDialTimeoutSeconds", socketTimeoutDuration.Seconds()).
+		Float64("upstreamTlsHandshakeTimeoutSeconds", tLSHandshakeTimeoutDuration.Seconds()).
+		Float64("upstreamIdleConnTimeoutSeconds", idleConnTimeoutDuration.Seconds()).
+		Float64("upstreamTransportDialKeepAliveIntervalSeconds", getKeepAliveIntervalDuration().Seconds()).
+		Msg("server derived upstream params")
+
 	return httpClient
 }
 

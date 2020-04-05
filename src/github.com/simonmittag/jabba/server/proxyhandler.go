@@ -12,7 +12,10 @@ import (
 //XRequestID is a per HTTP request unique identifier
 const XRequestID = "X-REQUEST-ID"
 
+//httpClient is the global user agent for upstream requests
 var httpClient *http.Client
+
+//httpResponseHeadersNoRewrite contains a list of headers that are not copied from upstream to downstream to avoid bugs.
 var httpResponseHeadersNoRewrite []string = []string{"Date", "Content-Length"}
 
 // main proxy handling
@@ -77,7 +80,7 @@ func scaffoldUpstreamRequest(proxy *Proxy) *http.Request {
 // handle the proxy request
 func handle(proxy *Proxy) {
 	upstreamRequest := scaffoldUpstreamRequest(proxy)
-	upstreamResponse, upstreamError := scaffoldHTTPClient().Do(upstreamRequest)
+	upstreamResponse, upstreamError := httpClient.Do(upstreamRequest)
 
 	if upstreamError == nil {
 		//this is required, else we leak TCP connections.
