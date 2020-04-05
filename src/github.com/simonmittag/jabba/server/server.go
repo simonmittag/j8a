@@ -56,7 +56,7 @@ func (runtime Runtime) startListening() {
 	log.Debug().
 		Float64("downstreamReadTimeoutSeconds", readTimeoutDuration.Seconds()).
 		Float64("downstreamWriteTimeoutSeconds", writeTimeoutDuration.Seconds()).
-		Float64("downstreamIdleTimeoutSeconds", idleTimeoutDuration.Seconds()).
+		Float64("downstreamIdleConnTimeoutSeconds", idleTimeoutDuration.Seconds()).
 		Msg("server derived downstream params")
 	log.Info().Msgf("Jabba %s listening on port %d...", Version, runtime.Port)
 
