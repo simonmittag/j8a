@@ -63,18 +63,21 @@ func (config Config) setDefaultTimeouts() *Config {
 		config.Connection.Server.ReadTimeoutSeconds = 120
 	}
 	if config.Connection.Server.RoundTripTimeoutSeconds == 0 {
-		config.Connection.Server.RoundTripTimeoutSeconds = 250
+		config.Connection.Server.RoundTripTimeoutSeconds = 240
+	}
+	if config.Connection.Server.IdleTimeoutSeconds == 0 {
+		config.Connection.Server.IdleTimeoutSeconds = 120
 	}
 
 	//Client params
 	if config.Connection.Client.SocketTimeoutSeconds == 0 {
-		config.Connection.Client.SocketTimeoutSeconds = 2
+		config.Connection.Client.SocketTimeoutSeconds = 3
 	}
 	if config.Connection.Client.ReadTimeoutSeconds == 0 {
 		config.Connection.Client.ReadTimeoutSeconds = 120
 	}
-	if config.Connection.Client.KeepAliveTimeoutSeconds == 0 {
-		config.Connection.Client.KeepAliveTimeoutSeconds = 300
+	if config.Connection.Client.IdleTimeoutSeconds == 0 {
+		config.Connection.Client.IdleTimeoutSeconds = 120
 	}
 	if config.Connection.Client.PoolSize == 0 {
 		config.Connection.Client.PoolSize = 32768

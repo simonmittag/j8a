@@ -10,7 +10,7 @@ import (
 )
 
 //Version is the server version
-var Version string = "v0.2.8"
+var Version string = "v0.2.9"
 
 //ID is a unique server ID
 var ID string = "unknown"
@@ -40,18 +40,34 @@ func BootStrap() {
 }
 
 func (runtime Runtime) startListening() {
+	readTimeoutDuration := time.Second * time.Duration(runtime.
+		Connection.
+		Server.
+		ReadTimeoutSeconds)
+
+	writeTimeoutDuration := time.Second * time.Duration(runtime.
+		Connection.
+		Server.
+		RoundTripTimeoutSeconds)
+
+	idleTimeoutDuration := time.Second * time.Duration(runtime.
+		Connection.
+		Server.
+		IdleTimeoutSeconds)
+
+	log.Debug().
+		Float64("downstreamReadTimeoutSeconds", readTimeoutDuration.Seconds()).
+		Float64("downstreamWriteTimeoutSeconds", writeTimeoutDuration.Seconds()).
+		Float64("downstreamIdleTimeoutSeconds", idleTimeoutDuration.Seconds()).
+		Msg("server derived downstream params")
 	log.Info().Msgf("Jabba %s listening on port %d...", Version, runtime.Port)
+
 	server := &http.Server{
-		Addr:    ":" + strconv.Itoa(runtime.Port),
-		Handler: nil,
-		ReadTimeout: time.Second * time.Duration(runtime.
-			Connection.
-			Server.
-			ReadTimeoutSeconds),
-		WriteTimeout: time.Second * time.Duration(runtime.
-			Connection.
-			Server.
-			RoundTripTimeoutSeconds),
+		Addr:         ":" + strconv.Itoa(runtime.Port),
+		Handler:      nil,
+		ReadTimeout:  readTimeoutDuration,
+		WriteTimeout: writeTimeoutDuration,
+		IdleTimeout:  idleTimeoutDuration,
 	}
 
 	//this line blocks execution and the server stays up

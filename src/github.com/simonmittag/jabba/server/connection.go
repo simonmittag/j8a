@@ -14,18 +14,22 @@ type Server struct {
 
 	// WriteTimeoutSeconds is the maximum duration round trip time in seconds any
 	// single request spends in the server, this includes the time to read the request,
-	// processing upstream attempts and writing the response.
+	// processing upstream attempts and writing the response into downstream socket.
 	RoundTripTimeoutSeconds int
+
+	// IdleTimeoutSeconds is the maximum duration, a downstream idle socket connection is kept open
+	// before the server hangs up on the downstream user agent.
+	IdleTimeoutSeconds int
 }
 
 // Client params for connections to upstream servers that are being proxied
 type Client struct {
 
-	// PoolSize is the maximum size of the socket connection pool for idle connections
+	// PoolSize is the maximum size of the client socket connection pool for idle connections
 	PoolSize int
 
-	// KeepAliveTimeoutSeconds is the total wait period in seconds before we give up on an idle upstream connection.
-	KeepAliveTimeoutSeconds int
+	// IdleTimeoutSeconds is the total wait period in seconds before we hang up on an idle upstream connection.
+	IdleTimeoutSeconds int
 
 	// SocketTimeoutSeconds is the wait period to establish socket connection with an upstream server.
 	// This setting controls roundtrip time for simple TCP connections, combined with handshake time for TLS

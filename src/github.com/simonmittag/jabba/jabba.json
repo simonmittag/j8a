@@ -3,13 +3,14 @@
     "mode": "TLS",
     "connection": {
         "server": {
-            "readTimeoutSeconds": 121,
-            "roundTripTimeoutSeconds": 242
+            "readTimeoutSeconds": 120,
+            "roundTripTimeoutSeconds": 240,
+            "idleTimeoutSeconds": 30
         },
         "client": {
-            "socketTimeoutSeconds": 7,
-            "readTimeoutSeconds": 121,
-            "keepAliveTimeoutSeconds": 300,
+            "socketTimeoutSeconds": 3,
+            "readTimeoutSeconds": 120,
+            "idleTimeoutSeconds": 120,
             "maxAttempts": 4,
             "poolSize" : 1024
         }
