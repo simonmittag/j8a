@@ -37,10 +37,10 @@ func proxyHandler(response http.ResponseWriter, request *http.Request) {
 	//once a route is matched, it needs to be mapped to an upstream resource via a policy
 	for _, route := range Runner.Routes {
 		if matched = matchRouteInURI(route, request); matched {
-			upstream, label, mapped := route.mapUpstream()
+			url, label, mapped := route.mapURL()
 			if mapped {
-				//mapped requests get sent upstream
-				handle(proxy.firstAttempt(upstream, label))
+				//mapped requests are sent to httpclient
+				handle(proxy.firstAttempt(url, label))
 			} else {
 				//unmapped request mean an internal configuration error in server
 				sendStatusCodeAsJSON(proxy.respondWith(503, "unable to map upstream resource"))
@@ -132,7 +132,7 @@ func logHandledRequest(proxy *Proxy) {
 	log.Info().
 		Str("url", proxy.URI).
 		Str("method", proxy.Method).
-		Str("upstream", proxy.Attempt.Upstream.String()).
+		Str("upstream", proxy.Attempt.URL.String()).
 		Str("label", proxy.Attempt.Label).
 		Str("userAgent", proxy.Downstream.Request.Header.Get("User-Agent")).
 		Str(XRequestID, proxy.XRequestID).

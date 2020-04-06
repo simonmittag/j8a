@@ -5,13 +5,13 @@ import (
 )
 
 //Upstream describes host mapping
-type Upstream struct {
+type URL struct {
 	Scheme string
 	Host   string
 	Port   int16
 }
 
 //String representation of our URL struct
-func (u Upstream) String() string {
+func (u URL) String() string {
 	return u.Scheme + "://" + u.Host + ":" + strconv.Itoa(int(u.Port))
 }

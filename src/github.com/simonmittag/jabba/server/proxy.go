@@ -26,7 +26,7 @@ var httpLegalMethods []string = append(httpRepeatableMethods, []string{"POST", "
 
 // Attempt wraps connection attempts to specific upstreams that are already mapped by label
 type Attempt struct {
-	Upstream   *Upstream
+	URL        *URL
 	Label      string
 	Count      int
 	StatusCode int
@@ -51,7 +51,7 @@ type Proxy struct {
 }
 
 func (proxy *Proxy) resolveUpstreamURI() string {
-	return proxy.Attempt.Upstream.String() + proxy.URI
+	return proxy.Attempt.URL.String() + proxy.URI
 }
 
 // ShouldRepeat tells us if we can safely repeat the upstream request
@@ -98,11 +98,11 @@ func (proxy Proxy) bodyReader() io.Reader {
 	return nil
 }
 
-func (proxy *Proxy) firstAttempt(upstream *Upstream, label string) *Proxy {
+func (proxy *Proxy) firstAttempt(URL *URL, label string) *Proxy {
 	proxy.Attempt = Attempt{
-		Label:    label,
-		Upstream: upstream,
-		Count:    1,
+		Label: label,
+		URL:   URL,
+		Count: 1,
 	}
 	return proxy
 }

@@ -53,7 +53,7 @@
                 "labels": [
                     "xblue"
                 ],
-                "upstream": {
+                "url": {
                     "scheme": "http",
                     "host": "localhost",
                     "port": 8081
@@ -63,7 +63,7 @@
                 "labels": [
                     "xgreen"
                 ],
-                "upstream": {
+                "url": {
                     "scheme": "http",
                     "host": "localhost",
                     "port": 8082
@@ -75,7 +75,7 @@
                 "labels": [
                     "blue"
                 ],
-                "upstream": {
+                "url": {
                     "scheme": "http",
                     "host": "localhost",
                     "port": 8083
@@ -85,7 +85,7 @@
                 "labels": [
                     "green"
                 ],
-                "upstream": {
+                "url": {
                     "scheme": "http",
                     "host": "localhost",
                     "port": 8083
@@ -94,7 +94,7 @@
         ],
         "posting": [
             {
-                "upstream": {
+                "url": {
                     "scheme": "http",
                     "host": "localhost",
                     "port": 8083

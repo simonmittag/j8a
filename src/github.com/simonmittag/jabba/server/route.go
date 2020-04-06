@@ -14,7 +14,8 @@ type Route struct {
 	Policy string
 }
 
-func (route Route) mapUpstream() (*Upstream, string, bool) {
+// maps a route to a URL. Returns the URL, the name of the mapped policy and whether mapping was successful
+func (route Route) mapURL() (*URL, string, bool) {
 	var policy Policy
 	var policyLabel string
 	if len(route.Policy) > 0 {
@@ -28,14 +29,14 @@ func (route Route) mapUpstream() (*Upstream, string, bool) {
 		for _, resourceMapping := range resource {
 			for _, resourceLabel := range resourceMapping.Labels {
 				if policyLabel == resourceLabel {
-					log.Trace().Msgf("route %s mapped to upstream %s for label %s", route.Path, resourceMapping.Upstream, resourceLabel)
-					return &resourceMapping.Upstream, policyLabel, true
+					log.Trace().Msgf("route %s mapped to upstream %s for label %s", route.Path, resourceMapping.URL, resourceLabel)
+					return &resourceMapping.URL, policyLabel, true
 				}
 			}
 		}
 	} else {
-		log.Trace().Msgf("route %s mapped to default upstream %s", route.Path, &resource[0].Upstream)
-		return &resource[0].Upstream, "default", true
+		log.Trace().Msgf("route %s mapped to default upstream %s", route.Path, &resource[0].URL)
+		return &resource[0].URL, "default", true
 	}
 
 	log.Trace().Msgf("route %s not mapped", route.Path)
