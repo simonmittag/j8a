@@ -10,8 +10,6 @@ import (
 
 //Config is the system wide configuration for Jabba
 type Config struct {
-	Mode       string
-	Port       int
 	Policies   map[string]Policy
 	Routes     []Route
 	Resources  map[string][]ResourceMapping
@@ -58,32 +56,32 @@ func (config Config) addDefaultPolicy() *Config {
 }
 
 func (config Config) setDefaultTimeouts() *Config {
-	//Server params
-	if config.Connection.Server.ReadTimeoutSeconds == 0 {
-		config.Connection.Server.ReadTimeoutSeconds = 120
+	//Downstrea params
+	if config.Connection.Downstream.ReadTimeoutSeconds == 0 {
+		config.Connection.Downstream.ReadTimeoutSeconds = 120
 	}
-	if config.Connection.Server.RoundTripTimeoutSeconds == 0 {
-		config.Connection.Server.RoundTripTimeoutSeconds = 240
+	if config.Connection.Downstream.RoundTripTimeoutSeconds == 0 {
+		config.Connection.Downstream.RoundTripTimeoutSeconds = 240
 	}
-	if config.Connection.Server.IdleTimeoutSeconds == 0 {
-		config.Connection.Server.IdleTimeoutSeconds = 120
+	if config.Connection.Downstream.IdleTimeoutSeconds == 0 {
+		config.Connection.Downstream.IdleTimeoutSeconds = 120
 	}
 
 	//Client params
-	if config.Connection.Client.SocketTimeoutSeconds == 0 {
-		config.Connection.Client.SocketTimeoutSeconds = 3
+	if config.Connection.Upstream.SocketTimeoutSeconds == 0 {
+		config.Connection.Upstream.SocketTimeoutSeconds = 3
 	}
-	if config.Connection.Client.ReadTimeoutSeconds == 0 {
-		config.Connection.Client.ReadTimeoutSeconds = 120
+	if config.Connection.Upstream.ReadTimeoutSeconds == 0 {
+		config.Connection.Upstream.ReadTimeoutSeconds = 120
 	}
-	if config.Connection.Client.IdleTimeoutSeconds == 0 {
-		config.Connection.Client.IdleTimeoutSeconds = 120
+	if config.Connection.Upstream.IdleTimeoutSeconds == 0 {
+		config.Connection.Upstream.IdleTimeoutSeconds = 120
 	}
-	if config.Connection.Client.PoolSize == 0 {
-		config.Connection.Client.PoolSize = 32768
+	if config.Connection.Upstream.PoolSize == 0 {
+		config.Connection.Upstream.PoolSize = 32768
 	}
-	if config.Connection.Client.MaxAttempts == 0 {
-		config.Connection.Client.MaxAttempts = 1
+	if config.Connection.Upstream.MaxAttempts == 0 {
+		config.Connection.Upstream.MaxAttempts = 1
 	}
 	return &config
 }

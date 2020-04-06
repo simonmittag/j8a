@@ -10,7 +10,7 @@ import (
 )
 
 //Version is the server version
-var Version string = "v0.2.10"
+var Version string = "v0.2.11"
 
 //ID is a unique server ID
 var ID string = "unknown"
@@ -40,17 +40,17 @@ func BootStrap() {
 func (runtime Runtime) startListening() {
 	readTimeoutDuration := time.Second * time.Duration(runtime.
 		Connection.
-		Server.
+		Downstream.
 		ReadTimeoutSeconds)
 
 	writeTimeoutDuration := time.Second * time.Duration(runtime.
 		Connection.
-		Server.
+		Downstream.
 		RoundTripTimeoutSeconds)
 
 	idleTimeoutDuration := time.Second * time.Duration(runtime.
 		Connection.
-		Server.
+		Downstream.
 		IdleTimeoutSeconds)
 
 	log.Debug().
@@ -58,10 +58,10 @@ func (runtime Runtime) startListening() {
 		Float64("downstreamWriteTimeoutSeconds", writeTimeoutDuration.Seconds()).
 		Float64("downstreamIdleConnTimeoutSeconds", idleTimeoutDuration.Seconds()).
 		Msg("server derived downstream params")
-	log.Info().Msgf("Jabba %s listening on port %d...", Version, runtime.Port)
+	log.Info().Msgf("Jabba %s listening on port %d...", Version, runtime.Connection.Downstream.Port)
 
 	server := &http.Server{
-		Addr:         ":" + strconv.Itoa(runtime.Port),
+		Addr:         ":" + strconv.Itoa(runtime.Connection.Downstream.Port),
 		Handler:      nil,
 		ReadTimeout:  readTimeoutDuration,
 		WriteTimeout: writeTimeoutDuration,
@@ -71,7 +71,7 @@ func (runtime Runtime) startListening() {
 	//this line blocks execution and the server stays up
 	err := server.ListenAndServe()
 	if err != nil {
-		log.Fatal().Err(err).Msgf("unable to start HTTP server on port %d, exiting...", runtime.Port)
+		log.Fatal().Err(err).Msgf("unable to start HTTP server on port %d, exiting...", runtime.Connection.Downstream.Port)
 		panic(err.Error())
 	}
 }
@@ -96,38 +96,38 @@ func (runtime Runtime) initUserAgent() Runtime {
 }
 
 func writeStandardResponseHeaders(proxy *Proxy) {
-	response := proxy.Downstream.Response
+	writer := proxy.Response.Writer
 
-	response.Header().Set("Server", fmt.Sprintf("Jabba %s %s", Version, ID))
-	response.Header().Set("Content-Encoding", "identity")
-	response.Header().Set("Cache-control:", "no-store, no-cache, must-revalidate, proxy-revalidate")
+	writer.Header().Set("Server", fmt.Sprintf("Jabba %s %s", Version, ID))
+	writer.Header().Set("Content-Encoding", "identity")
+	writer.Header().Set("Cache-control:", "no-store, no-cache, must-revalidate, proxy-revalidate")
 	//for TLS response, we set HSTS header see RFC6797
-	if Runner.Mode == "TLS" {
-		response.Header().Set("Strict-Transport-Security", "max-age=31536000")
+	if Runner.Connection.Downstream.Mode == "TLS" {
+		writer.Header().Set("Strict-Transport-Security", "max-age=31536000")
 	}
-	response.Header().Set("X-xss-protection", "1;mode=block")
-	response.Header().Set("X-content-type-options", "nosniff")
-	response.Header().Set("X-frame-options", "sameorigin")
+	writer.Header().Set("X-xss-protection", "1;mode=block")
+	writer.Header().Set("X-content-type-options", "nosniff")
+	writer.Header().Set("X-frame-options", "sameorigin")
 	//copy the X-REQUEST-ID from the request
-	response.Header().Set(XRequestID, proxy.XRequestID)
+	writer.Header().Set(XRequestID, proxy.XRequestID)
 }
 
 func sendStatusCodeAsJSON(proxy *Proxy) {
 
-	if proxy.Downstream.StatusCode >= 299 {
-		log.Warn().Int("downstreamResponseCode", proxy.Downstream.StatusCode).
-			Str("downstreamResponseMessage", proxy.Downstream.Message).
-			Str("path", proxy.Downstream.Request.URL.Path).
+	if proxy.Response.StatusCode >= 299 {
+		log.Warn().Int("downstreamResponseCode", proxy.Response.StatusCode).
+			Str("downstreamResponseMessage", proxy.Response.Message).
+			Str("path", proxy.Response.Request.URL.Path).
 			Str(XRequestID, proxy.XRequestID).
 			Str("method", proxy.Method).
 			Msgf("request not served")
 	}
 	writeStandardResponseHeaders(proxy)
-	proxy.Downstream.Response.Header().Set("Content-Type", "application/json")
+	proxy.Response.Writer.Header().Set("Content-Type", "application/json")
 	statusCodeResponse := StatusCodeResponse{
-		Code:       proxy.Downstream.StatusCode,
-		Message:    proxy.Downstream.Message,
+		Code:       proxy.Response.StatusCode,
+		Message:    proxy.Response.Message,
 		XRequestID: proxy.XRequestID,
 	}
-	proxy.Downstream.Response.Write(statusCodeResponse.AsJSON())
+	proxy.Response.Writer.Write(statusCodeResponse.AsJSON())
 }

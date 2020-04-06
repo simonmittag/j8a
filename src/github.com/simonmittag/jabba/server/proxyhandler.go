@@ -70,8 +70,8 @@ func scaffoldUpstreamRequest(proxy *Proxy) *http.Request {
 	upstreamRequest, _ := http.NewRequest(proxy.Method,
 		proxy.resolveUpstreamURI(),
 		proxy.bodyReader())
-	//TODO: test if upstream request headers are reproced correctly
-	for key, values := range proxy.Downstream.Request.Header {
+	//TODO: test if upstream request headers are reprocessed correctly
+	for key, values := range proxy.Response.Request.Header {
 		upstreamRequest.Header.Set(key, strings.Join(values, " "))
 	}
 	return upstreamRequest
@@ -107,25 +107,25 @@ func handle(proxy *Proxy) {
 
 func resetContentLengthHeader(proxy *Proxy, upstreamResponseBody []byte) {
 	if proxy.Method == "HEAD" || len(upstreamResponseBody) == 0 {
-		proxy.Downstream.Response.Header().Set("Content-Length", "0")
+		proxy.Response.Writer.Header().Set("Content-Length", "0")
 	}
 }
 
 func copyUpstreamResponseBody(proxy *Proxy, upstreamResponseBody []byte) {
-	proxy.Downstream.Response.Write([]byte(upstreamResponseBody))
+	proxy.Response.Writer.Write([]byte(upstreamResponseBody))
 }
 
 func copyUpstreamResponseHeaders(proxy *Proxy, upstreamResponse *http.Response) {
 	for key, values := range upstreamResponse.Header {
 		if shouldRewrite(key) {
-			proxy.Downstream.Response.Header().Set(key, strings.Join(values, " "))
+			proxy.Response.Writer.Header().Set(key, strings.Join(values, " "))
 		}
 	}
 }
 
 //status code must be last, no headers may be written after this one.
 func writeStatusCodeHeader(proxy *Proxy) {
-	proxy.Downstream.Response.WriteHeader(proxy.Downstream.StatusCode)
+	proxy.Response.Writer.WriteHeader(proxy.Response.StatusCode)
 }
 
 func logHandledRequest(proxy *Proxy) {
@@ -134,10 +134,10 @@ func logHandledRequest(proxy *Proxy) {
 		Str("method", proxy.Method).
 		Str("upstream", proxy.Attempt.URL.String()).
 		Str("label", proxy.Attempt.Label).
-		Str("userAgent", proxy.Downstream.Request.Header.Get("User-Agent")).
+		Str("userAgent", proxy.Response.Request.Header.Get("User-Agent")).
 		Str(XRequestID, proxy.XRequestID).
 		Int("upstreamResponseCode", proxy.Attempt.StatusCode).
-		Int("downstreamResponseCode", proxy.Downstream.StatusCode).
+		Int("downstreamResponseCode", proxy.Response.StatusCode).
 		Msgf("request served")
 }
 

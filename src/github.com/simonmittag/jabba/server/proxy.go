@@ -32,10 +32,10 @@ type Attempt struct {
 	StatusCode int
 }
 
-// Downstream request and response writer
-type Downstream struct {
+// Response writer and data
+type Response struct {
 	Request    *http.Request
-	Response   http.ResponseWriter
+	Writer     http.ResponseWriter
 	StatusCode int
 	Message    string
 }
@@ -47,7 +47,7 @@ type Proxy struct {
 	URI        string
 	Body       []byte
 	Attempt    Attempt
-	Downstream Downstream
+	Response   Response
 }
 
 func (proxy *Proxy) resolveUpstreamURI() string {
@@ -58,7 +58,7 @@ func (proxy *Proxy) resolveUpstreamURI() string {
 func (proxy *Proxy) shouldAttemptRetry() bool {
 	for _, method := range httpRepeatableMethods {
 		if proxy.Method == method {
-			if proxy.Attempt.Count < Runner.Connection.Client.MaxAttempts {
+			if proxy.Attempt.Count < Runner.Connection.Upstream.MaxAttempts {
 				return true
 			}
 			return false
@@ -74,7 +74,7 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 	proxy.URI = request.URL.EscapedPath()
 	proxy.Method = strings.ToUpper(request.Method)
 	proxy.Body = body
-	proxy.Downstream = Downstream{
+	proxy.Response = Response{
 		Request: request,
 	}
 	log.Trace().
@@ -86,8 +86,8 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 	return proxy
 }
 
-func (proxy *Proxy) setOutgoing(response http.ResponseWriter) *Proxy {
-	proxy.Downstream.Response = response
+func (proxy *Proxy) setOutgoing(out http.ResponseWriter) *Proxy {
+	proxy.Response.Writer = out
 	return proxy
 }
 
@@ -121,8 +121,8 @@ func (proxy *Proxy) initXRequestID() *Proxy {
 }
 
 func (proxy *Proxy) respondWith(statusCode int, message string) *Proxy {
-	proxy.Downstream.StatusCode = statusCode
-	proxy.Downstream.Message = message
+	proxy.Response.StatusCode = statusCode
+	proxy.Response.Message = message
 	return proxy
 }
 

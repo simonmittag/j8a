@@ -13,17 +13,17 @@ import (
 func scaffoldHTTPClient(runtime Runtime) *http.Client {
 	idleConnTimeoutDuration := time.Duration(runtime.
 		Connection.
-		Client.
+		Upstream.
 		IdleTimeoutSeconds) * time.Second
 
 	tLSHandshakeTimeoutDuration := time.Duration(runtime.
 		Connection.
-		Client.
+		Upstream.
 		SocketTimeoutSeconds) * time.Second
 
 	socketTimeoutDuration := time.Duration(runtime.
 		Connection.
-		Client.
+		Upstream.
 		SocketTimeoutSeconds) * time.Second
 
 	httpClient = &http.Client{
@@ -34,15 +34,15 @@ func scaffoldHTTPClient(runtime Runtime) *http.Client {
 			}).Dial,
 			//TLS handshake timeout is the same as connection timeout
 			TLSHandshakeTimeout: tLSHandshakeTimeoutDuration,
-			MaxIdleConns:        runtime.Connection.Client.PoolSize,
-			MaxIdleConnsPerHost: runtime.Connection.Client.PoolSize,
+			MaxIdleConns:        runtime.Connection.Upstream.PoolSize,
+			MaxIdleConnsPerHost: runtime.Connection.Upstream.PoolSize,
 			IdleConnTimeout:     idleConnTimeoutDuration,
 		},
 	}
 
 	log.Debug().
-		Int("upstreamMaxIdleConns", runtime.Connection.Client.PoolSize).
-		Int("upstreamMaxIdleConnsPerHost", runtime.Connection.Client.PoolSize).
+		Int("upstreamMaxIdleConns", runtime.Connection.Upstream.PoolSize).
+		Int("upstreamMaxIdleConnsPerHost", runtime.Connection.Upstream.PoolSize).
 		Float64("upstreamTransportDialTimeoutSeconds", socketTimeoutDuration.Seconds()).
 		Float64("upstreamTlsHandshakeTimeoutSeconds", tLSHandshakeTimeoutDuration.Seconds()).
 		Float64("upstreamIdleConnTimeoutSeconds", idleConnTimeoutDuration.Seconds()).
@@ -61,7 +61,7 @@ func scaffoldHTTPClient(runtime Runtime) *http.Client {
 func getKeepAliveIntervalDuration() time.Duration {
 	return time.Duration(float64(Runner.
 		Connection.
-		Client.
+		Upstream.
 		IdleTimeoutSeconds) / float64(getTCPKeepCnt()) * float64(time.Second))
 }
 

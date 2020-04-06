@@ -1,13 +1,13 @@
 {
-    "port": 8080,
-    "mode": "TLS",
     "connection": {
-        "server": {
+        "downstream": {
             "readTimeoutSeconds": 120,
             "roundTripTimeoutSeconds": 240,
-            "idleTimeoutSeconds": 30
+            "idleTimeoutSeconds": 30,
+            "port": 8080,
+            "mode": "TLS"
         },
-        "client": {
+        "upstream": {
             "socketTimeoutSeconds": 3,
             "readTimeoutSeconds": 120,
             "idleTimeoutSeconds": 120,

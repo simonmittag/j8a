@@ -2,12 +2,12 @@ package server
 
 // Connection Params
 type Connection struct {
-	Server Server
-	Client Client
+	Downstream Downstream
+	Upstream   Upstream
 }
 
 // Server params for the HTTP or TLS server that Jabba exposes
-type Server struct {
+type Downstream struct {
 	// ReadTimeoutSeconds is the maximum duration for reading the entire
 	// request, including the body, the downstream user agent sends to us.
 	ReadTimeoutSeconds int
@@ -20,10 +20,16 @@ type Server struct {
 	// IdleTimeoutSeconds is the maximum duration, a downstream idle socket connection is kept open
 	// before the server hangs up on the downstream user agent.
 	IdleTimeoutSeconds int
+
+	// Serving Mode, can be "TLS"
+	Mode string
+
+	// Serving on this port
+	Port int
 }
 
 // Client params for connections to upstream servers that are being proxied
-type Client struct {
+type Upstream struct {
 
 	// PoolSize is the maximum size of the client socket connection pool for idle connections
 	PoolSize int
