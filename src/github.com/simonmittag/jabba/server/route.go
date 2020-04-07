@@ -9,9 +9,9 @@ const AboutJabba string = "aboutJabba"
 
 //Route maps a Path to an upstream resource
 type Route struct {
-	Path   string
-	Alias  string
-	Policy string
+	Path     string
+	Resource string
+	Policy   string
 }
 
 // maps a route to a URL. Returns the URL, the name of the mapped policy and whether mapping was successful
@@ -23,7 +23,7 @@ func (route Route) mapURL() (*URL, string, bool) {
 		policyLabel = policy.resolveLabel()
 	}
 
-	resource := Runner.Resources[route.Alias]
+	resource := Runner.Resources[route.Resource]
 	//if a policy exists, we match resources with a label. TODO: this should be an interface
 	if len(route.Policy) > 0 {
 		for _, resourceMapping := range resource {

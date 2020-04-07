@@ -31,11 +31,11 @@ func (config Config) parse(file string) *Config {
 	return &config
 }
 
-func (config Config) reAliasResources() *Config {
-	for alias := range config.Resources {
-		resourceMappings := config.Resources[alias]
+func (config Config) reApplyResourceNames() *Config {
+	for name := range config.Resources {
+		resourceMappings := config.Resources[name]
 		for i, resourceMapping := range resourceMappings {
-			resourceMapping.Alias = alias
+			resourceMapping.Name = name
 			resourceMappings[i] = resourceMapping
 		}
 	}

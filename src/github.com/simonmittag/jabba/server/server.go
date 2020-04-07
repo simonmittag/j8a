@@ -27,7 +27,7 @@ var Runner *Runtime
 func BootStrap() {
 	config := new(Config).
 		parse("./jabba.json").
-		reAliasResources().
+		reApplyResourceNames().
 		addDefaultPolicy().
 		setDefaultTimeouts()
 
@@ -78,7 +78,7 @@ func (runtime Runtime) startListening() {
 
 func (runtime Runtime) assignHandlers() Runtime {
 	for _, route := range runtime.Routes {
-		if route.Alias == AboutJabba {
+		if route.Resource == AboutJabba {
 			http.HandleFunc(route.Path, aboutHandler)
 			log.Debug().Msgf("assigned about handler to path %s", route.Path)
 		}

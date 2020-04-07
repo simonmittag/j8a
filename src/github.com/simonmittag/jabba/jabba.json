@@ -30,21 +30,21 @@
     "routes": [
         {
             "path": "/about",
-            "alias": "aboutJabba"
+            "resource": "aboutJabba"
         },
         {
             "path": "/customer",
-            "alias": "customer",
+            "resource": "customer",
             "policy": "ab"
         },
         {
             "path": "/billing",
-            "alias": "billing",
+            "resource": "billing",
             "policy": "ab"
         },
         {
             "path": "/posting",
-            "alias": "posting"
+            "resource": "posting"
         }
     ],
     "resources": {

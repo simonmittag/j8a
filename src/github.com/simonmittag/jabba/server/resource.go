@@ -2,7 +2,7 @@ package server
 
 //ResourceMapping describes upstream servers
 type ResourceMapping struct {
-	Alias  string
+	Name   string
 	Labels []string
 	URL    URL
 }

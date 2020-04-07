@@ -81,6 +81,7 @@ func scaffoldUpstreamRequest(proxy *Proxy) *http.Request {
 func handle(proxy *Proxy) {
 	upstreamRequest := scaffoldUpstreamRequest(proxy)
 	upstreamResponse, upstreamError := httpClient.Do(upstreamRequest)
+	proxy.Attempt.StatusCode = upstreamResponse.StatusCode
 
 	if upstreamError == nil {
 		//this is required, else we leak TCP connections.
@@ -130,14 +131,14 @@ func writeStatusCodeHeader(proxy *Proxy) {
 
 func logHandledRequest(proxy *Proxy) {
 	log.Info().
-		Str("url", proxy.URI).
+		Str("path", proxy.URI).
 		Str("method", proxy.Method).
-		Str("upstream", proxy.Attempt.URL.String()).
-		Str("label", proxy.Attempt.Label).
 		Str("userAgent", proxy.Request.Header.Get("User-Agent")).
-		Str(XRequestID, proxy.XRequestID).
-		Int("upstreamResponseCode", proxy.Attempt.StatusCode).
 		Int("downstreamResponseCode", proxy.Response.StatusCode).
+		Str(XRequestID, proxy.XRequestID).
+		Str("upstreamURI", proxy.resolveUpstreamURI()).
+		Str("upstreamLabel", proxy.Attempt.Label).
+		Int("upstreamResponseCode", proxy.Attempt.StatusCode).
 		Msgf("request served")
 }
 
