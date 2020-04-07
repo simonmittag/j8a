@@ -79,8 +79,7 @@ func scaffoldUpstreamRequest(proxy *Proxy) *http.Request {
 
 // handle the proxy request
 func handle(proxy *Proxy) {
-	upstreamRequest := scaffoldUpstreamRequest(proxy)
-	upstreamResponse, upstreamError := httpClient.Do(upstreamRequest)
+	upstreamResponse, upstreamError := httpClient.Do(scaffoldUpstreamRequest(proxy))
 
 	if upstreamError == nil {
 		//this is required, else we leak TCP connections.
