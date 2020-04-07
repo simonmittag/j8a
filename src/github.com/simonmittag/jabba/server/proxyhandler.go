@@ -81,7 +81,6 @@ func scaffoldUpstreamRequest(proxy *Proxy) *http.Request {
 func handle(proxy *Proxy) {
 	upstreamRequest := scaffoldUpstreamRequest(proxy)
 	upstreamResponse, upstreamError := httpClient.Do(upstreamRequest)
-	proxy.Attempt.StatusCode = upstreamResponse.StatusCode
 
 	if upstreamError == nil {
 		//this is required, else we leak TCP connections.
@@ -117,6 +116,7 @@ func copyUpstreamResponseBody(proxy *Proxy, upstreamResponseBody []byte) {
 }
 
 func copyUpstreamResponseHeaders(proxy *Proxy, upstreamResponse *http.Response) {
+	proxy.Attempt.StatusCode = upstreamResponse.StatusCode
 	for key, values := range upstreamResponse.Header {
 		if shouldRewrite(key) {
 			proxy.Response.Writer.Header().Set(key, strings.Join(values, " "))
