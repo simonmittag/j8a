@@ -4,7 +4,7 @@ import (
 	"strconv"
 )
 
-//Upstream describes host mapping
+//URL describes host mapping
 type URL struct {
 	Scheme string
 	Host   string

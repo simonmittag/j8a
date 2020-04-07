@@ -6,7 +6,7 @@ type Connection struct {
 	Upstream   Upstream
 }
 
-// Server params for the HTTP or TLS server that Jabba exposes
+// Downstream params for the HTTP or TLS server that Jabba exposes
 type Downstream struct {
 	// ReadTimeoutSeconds is the maximum duration for reading the entire
 	// request, including the body, the downstream user agent sends to us.
@@ -28,7 +28,7 @@ type Downstream struct {
 	Port int
 }
 
-// Client params for connections to upstream servers that are being proxied
+// Upstream connection params for remote servers that are being proxied
 type Upstream struct {
 
 	// PoolSize is the maximum size of the client socket connection pool for idle connections
