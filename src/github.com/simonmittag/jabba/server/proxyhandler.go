@@ -71,7 +71,7 @@ func scaffoldUpstreamRequest(proxy *Proxy) *http.Request {
 		proxy.resolveUpstreamURI(),
 		proxy.bodyReader())
 	//TODO: test if upstream request headers are reprocessed correctly
-	for key, values := range proxy.Response.Request.Header {
+	for key, values := range proxy.Request.Header {
 		upstreamRequest.Header.Set(key, strings.Join(values, " "))
 	}
 	return upstreamRequest
@@ -134,7 +134,7 @@ func logHandledRequest(proxy *Proxy) {
 		Str("method", proxy.Method).
 		Str("upstream", proxy.Attempt.URL.String()).
 		Str("label", proxy.Attempt.Label).
-		Str("userAgent", proxy.Response.Request.Header.Get("User-Agent")).
+		Str("userAgent", proxy.Request.Header.Get("User-Agent")).
 		Str(XRequestID, proxy.XRequestID).
 		Int("upstreamResponseCode", proxy.Attempt.StatusCode).
 		Int("downstreamResponseCode", proxy.Response.StatusCode).

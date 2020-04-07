@@ -34,7 +34,6 @@ type Attempt struct {
 
 // Response writer and data
 type Response struct {
-	Request    *http.Request
 	Writer     http.ResponseWriter
 	StatusCode int
 	Message    string
@@ -42,12 +41,18 @@ type Response struct {
 
 // Proxy wraps data for a single downstream request/response with multiple upstream HTTP request/response cycles.
 type Proxy struct {
+	//downstream request params
+	Request    *http.Request
 	XRequestID string
 	Method     string
 	URI        string
 	Body       []byte
-	Attempt    Attempt
-	Response   Response
+
+	//upstream attempt
+	Attempt Attempt
+
+	//downstream response
+	Response Response
 }
 
 func (proxy *Proxy) resolveUpstreamURI() string {
@@ -74,9 +79,8 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 	proxy.URI = request.URL.EscapedPath()
 	proxy.Method = strings.ToUpper(request.Method)
 	proxy.Body = body
-	proxy.Response = Response{
-		Request: request,
-	}
+	proxy.Request = request
+	proxy.Response = Response{}
 	log.Trace().
 		Str("url", proxy.URI).
 		Str("method", proxy.Method).

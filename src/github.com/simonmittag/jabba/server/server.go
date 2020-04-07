@@ -117,7 +117,7 @@ func sendStatusCodeAsJSON(proxy *Proxy) {
 	if proxy.Response.StatusCode >= 299 {
 		log.Warn().Int("downstreamResponseCode", proxy.Response.StatusCode).
 			Str("downstreamResponseMessage", proxy.Response.Message).
-			Str("path", proxy.Response.Request.URL.Path).
+			Str("path", proxy.Request.URL.Path).
 			Str(XRequestID, proxy.XRequestID).
 			Str("method", proxy.Method).
 			Msgf("request not served")
