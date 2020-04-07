@@ -131,7 +131,7 @@ func writeStatusCodeHeader(proxy *Proxy) {
 
 func logHandledRequest(proxy *Proxy) {
 	log.Info().
-		Str("path", proxy.URI).
+		Str("path", proxy.Path).
 		Str("method", proxy.Method).
 		Str("userAgent", proxy.Request.Header.Get("User-Agent")).
 		Int("downstreamResponseCode", proxy.Response.StatusCode).

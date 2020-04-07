@@ -45,7 +45,7 @@ type Proxy struct {
 	Request    *http.Request
 	XRequestID string
 	Method     string
-	URI        string
+	Path       string
 	Body       []byte
 
 	//upstream attempt
@@ -56,7 +56,7 @@ type Proxy struct {
 }
 
 func (proxy *Proxy) resolveUpstreamURI() string {
-	return proxy.Attempt.URL.String() + proxy.URI
+	return proxy.Attempt.URL.String() + proxy.Path
 }
 
 // ShouldRepeat tells us if we can safely repeat the upstream request
@@ -76,13 +76,13 @@ func (proxy *Proxy) shouldAttemptRetry() bool {
 func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 	//TODO: we are not processing downstream body reading errors, i.e. illegal content length
 	body, _ := ioutil.ReadAll(request.Body)
-	proxy.URI = request.URL.EscapedPath()
+	proxy.Path = request.URL.EscapedPath()
 	proxy.Method = strings.ToUpper(request.Method)
 	proxy.Body = body
 	proxy.Request = request
 	proxy.Response = Response{}
 	log.Trace().
-		Str("url", proxy.URI).
+		Str("path", proxy.Path).
 		Str("method", proxy.Method).
 		Int("bodyBytes", len(proxy.Body)).
 		Str(XRequestID, proxy.XRequestID).
