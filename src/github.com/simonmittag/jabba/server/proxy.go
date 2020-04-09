@@ -47,6 +47,7 @@ type Proxy struct {
 	Method     string
 	Path       string
 	URI        string
+	UserAgent  string
 	Body       []byte
 
 	//upstream attempt
@@ -79,6 +80,11 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 	body, _ := ioutil.ReadAll(request.Body)
 	proxy.Path = request.URL.EscapedPath()
 	proxy.URI = request.URL.RequestURI()
+	proxy.UserAgent = request.Header.Get("User-Agent")
+	if len(proxy.UserAgent) == 0 {
+		proxy.UserAgent = "unknown"
+	}
+
 	proxy.Method = strings.ToUpper(request.Method)
 	proxy.Body = body
 	proxy.Request = request

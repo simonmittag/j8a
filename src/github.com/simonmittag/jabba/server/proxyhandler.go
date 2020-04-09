@@ -132,7 +132,7 @@ func logHandledRequest(proxy *Proxy) {
 	log.Info().
 		Str("path", proxy.Path).
 		Str("method", proxy.Method).
-		Str("userAgent", proxy.Request.Header.Get("User-Agent")).
+		Str("userAgent", proxy.UserAgent).
 		Int("downstreamResponseCode", proxy.Response.StatusCode).
 		Str(XRequestID, proxy.XRequestID).
 		Str("upstreamURI", proxy.resolveUpstreamURI()).
