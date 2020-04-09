@@ -96,20 +96,25 @@ func (runtime Runtime) initUserAgent() Runtime {
 }
 
 func writeStandardResponseHeaders(proxy *Proxy) {
-	writer := proxy.Response.Writer
+	header := proxy.Response.Writer.Header()
 
-	writer.Header().Set("Server", fmt.Sprintf("Jabba %s %s", Version, ID))
-	writer.Header().Set("Content-Encoding", "identity")
-	writer.Header().Set("Cache-control:", "no-store, no-cache, must-revalidate, proxy-revalidate")
+	header.Set("Server", fmt.Sprintf("Jabba %s %s", Version, ID))
+	if proxy.Gzip {
+		header.Set("Content-Encoding", "gzip")
+	} else {
+		header.Set("Content-Encoding", "identity")
+	}
+
+	header.Set("Cache-control:", "no-store, no-cache, must-revalidate, proxy-revalidate")
 	//for TLS response, we set HSTS header see RFC6797
 	if Runner.Connection.Downstream.Mode == "TLS" {
-		writer.Header().Set("Strict-Transport-Security", "max-age=31536000")
+		header.Set("Strict-Transport-Security", "max-age=31536000")
 	}
-	writer.Header().Set("X-xss-protection", "1;mode=block")
-	writer.Header().Set("X-content-type-options", "nosniff")
-	writer.Header().Set("X-frame-options", "sameorigin")
+	header.Set("X-xss-protection", "1;mode=block")
+	header.Set("X-content-type-options", "nosniff")
+	header.Set("X-frame-options", "sameorigin")
 	//copy the X-REQUEST-ID from the request
-	writer.Header().Set(XRequestID, proxy.XRequestID)
+	header.Set(XRequestID, proxy.XRequestID)
 }
 
 func sendStatusCodeAsJSON(proxy *Proxy) {

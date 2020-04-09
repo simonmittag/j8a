@@ -48,6 +48,7 @@ type Proxy struct {
 	Path       string
 	URI        string
 	UserAgent  string
+	Gzip       bool
 	Body       []byte
 
 	//upstream attempt
@@ -80,6 +81,7 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 	body, _ := ioutil.ReadAll(request.Body)
 	proxy.Path = request.URL.EscapedPath()
 	proxy.URI = request.URL.RequestURI()
+
 	proxy.UserAgent = request.Header.Get("User-Agent")
 	if len(proxy.UserAgent) == 0 {
 		proxy.UserAgent = "unknown"
@@ -89,6 +91,9 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 	proxy.Body = body
 	proxy.Request = request
 	proxy.Response = Response{}
+
+	proxy.Gzip = strings.Contains(request.Header.Get("Accept-Encoding"), "gzip")
+
 	log.Trace().
 		Str("path", proxy.Path).
 		Str("method", proxy.Method).
