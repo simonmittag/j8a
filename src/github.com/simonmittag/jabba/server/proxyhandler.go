@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/rs/zerolog/log"
 )
@@ -112,12 +113,14 @@ func resetContentLengthHeader(proxy *Proxy, upstreamResponseBody []byte) {
 
 func copyUpstreamResponseBody(proxy *Proxy, upstreamResponseBody []byte) {
 	w := proxy.Response.Writer
+	start := time.Now()
 	if proxy.Gzip {
 		w.Write(Gzip(upstreamResponseBody))
 	} else {
 		w.Write([]byte(upstreamResponseBody))
 	}
-
+	elapsed := time.Since(start)
+	log.Trace().Msgf("copying upstream body took %s", elapsed)
 }
 
 func copyUpstreamResponseHeaders(proxy *Proxy, upstreamResponse *http.Response) {
