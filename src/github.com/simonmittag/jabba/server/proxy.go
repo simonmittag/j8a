@@ -137,6 +137,14 @@ func (proxy *Proxy) initXRequestID() *Proxy {
 	return proxy
 }
 
+func (proxy *Proxy) contentEncoding() string {
+	if proxy.Gzip {
+		return "gzip"
+	} else {
+		return "identity"
+	}
+}
+
 func (proxy *Proxy) respondWith(statusCode int, message string) *Proxy {
 	proxy.Response.StatusCode = statusCode
 	proxy.Response.Message = message

@@ -10,7 +10,7 @@ import (
 )
 
 //Version is the server version
-var Version string = "v0.2.14"
+var Version string = "v0.2.15"
 
 //ID is a unique server ID
 var ID string = "unknown"
@@ -95,16 +95,12 @@ func (runtime Runtime) initUserAgent() Runtime {
 	return runtime
 }
 
+//TODO: this really needs to be configurable. it adds a lot of options to every response otherewise.
 func writeStandardResponseHeaders(proxy *Proxy) {
 	header := proxy.Response.Writer.Header()
 
 	header.Set("Server", fmt.Sprintf("Jabba %s %s", Version, ID))
-	if proxy.Gzip {
-		header.Set("Content-Encoding", "gzip")
-	} else {
-		header.Set("Content-Encoding", "identity")
-	}
-
+	header.Set("Content-Encoding", proxy.contentEncoding())
 	header.Set("Cache-control:", "no-store, no-cache, must-revalidate, proxy-revalidate")
 	//for TLS response, we set HSTS header see RFC6797
 	if Runner.Connection.Downstream.Mode == "TLS" {

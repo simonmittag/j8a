@@ -111,7 +111,13 @@ func resetContentLengthHeader(proxy *Proxy, upstreamResponseBody []byte) {
 }
 
 func copyUpstreamResponseBody(proxy *Proxy, upstreamResponseBody []byte) {
-	proxy.Response.Writer.Write([]byte(upstreamResponseBody))
+	w := proxy.Response.Writer
+	if proxy.Gzip {
+		w.Write(Gzip(upstreamResponseBody))
+	} else {
+		w.Write([]byte(upstreamResponseBody))
+	}
+
 }
 
 func copyUpstreamResponseHeaders(proxy *Proxy, upstreamResponse *http.Response) {
@@ -134,6 +140,7 @@ func logHandledRequest(proxy *Proxy) {
 		Str("method", proxy.Method).
 		Str("userAgent", proxy.UserAgent).
 		Int("downstreamResponseCode", proxy.Response.StatusCode).
+		Str("downstreamContentEncoding", proxy.contentEncoding()).
 		Str(XRequestID, proxy.XRequestID).
 		Str("upstreamURI", proxy.resolveUpstreamURI()).
 		Str("upstreamLabel", proxy.Attempt.Label).
