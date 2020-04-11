@@ -10,10 +10,10 @@ import (
 
 //Config is the system wide configuration for Jabba
 type Config struct {
-	Policies map[string]Policy
-	Routes   []Route
-	Rsrc     map[string][]ResourceMapping
-	Cnx      Connection
+	Policies   map[string]Policy
+	Routes     []Route
+	Resources  map[string][]ResourceMapping
+	Connection Connection
 }
 
 func (config Config) parse(file string) *Config {
@@ -32,8 +32,8 @@ func (config Config) parse(file string) *Config {
 }
 
 func (config Config) reApplyResourceNames() *Config {
-	for name := range config.Rsrc {
-		resourceMappings := config.Rsrc[name]
+	for name := range config.Resources {
+		resourceMappings := config.Resources[name]
 		for i, resourceMapping := range resourceMappings {
 			resourceMapping.Name = name
 			resourceMappings[i] = resourceMapping
@@ -57,31 +57,31 @@ func (config Config) addDefaultPolicy() *Config {
 
 func (config Config) setDefaultTimeouts() *Config {
 	//Downstrea params
-	if config.Cnx.Dwn.ReadTimeoutSeconds == 0 {
-		config.Cnx.Dwn.ReadTimeoutSeconds = 120
+	if config.Connection.Downstream.ReadTimeoutSeconds == 0 {
+		config.Connection.Downstream.ReadTimeoutSeconds = 120
 	}
-	if config.Cnx.Dwn.RoundTripTimeoutSeconds == 0 {
-		config.Cnx.Dwn.RoundTripTimeoutSeconds = 240
+	if config.Connection.Downstream.RoundTripTimeoutSeconds == 0 {
+		config.Connection.Downstream.RoundTripTimeoutSeconds = 240
 	}
-	if config.Cnx.Dwn.IdleTimeoutSeconds == 0 {
-		config.Cnx.Dwn.IdleTimeoutSeconds = 120
+	if config.Connection.Downstream.IdleTimeoutSeconds == 0 {
+		config.Connection.Downstream.IdleTimeoutSeconds = 120
 	}
 
 	//Client params
-	if config.Cnx.Up.SocketTimeoutSeconds == 0 {
-		config.Cnx.Up.SocketTimeoutSeconds = 3
+	if config.Connection.Upstream.SocketTimeoutSeconds == 0 {
+		config.Connection.Upstream.SocketTimeoutSeconds = 3
 	}
-	if config.Cnx.Up.ReadTimeoutSeconds == 0 {
-		config.Cnx.Up.ReadTimeoutSeconds = 120
+	if config.Connection.Upstream.ReadTimeoutSeconds == 0 {
+		config.Connection.Upstream.ReadTimeoutSeconds = 120
 	}
-	if config.Cnx.Up.IdleTimeoutSeconds == 0 {
-		config.Cnx.Up.IdleTimeoutSeconds = 120
+	if config.Connection.Upstream.IdleTimeoutSeconds == 0 {
+		config.Connection.Upstream.IdleTimeoutSeconds = 120
 	}
-	if config.Cnx.Up.PoolSize == 0 {
-		config.Cnx.Up.PoolSize = 32768
+	if config.Connection.Upstream.PoolSize == 0 {
+		config.Connection.Upstream.PoolSize = 32768
 	}
-	if config.Cnx.Up.MaxAttempts == 0 {
-		config.Cnx.Up.MaxAttempts = 1
+	if config.Connection.Upstream.MaxAttempts == 0 {
+		config.Connection.Upstream.MaxAttempts = 1
 	}
 	return &config
 }

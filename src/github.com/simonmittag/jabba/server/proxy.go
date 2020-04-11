@@ -73,7 +73,7 @@ func (proxy *Proxy) resolveUpstreamURI() string {
 func (proxy *Proxy) shouldAttemptRetry() bool {
 	for _, method := range httpRepeatableMethods {
 		if proxy.Dwn.Method == method {
-			if proxy.Up.Atmpt.Count < Runner.Cnx.Up.MaxAttempts {
+			if proxy.Up.Atmpt.Count < Runner.Connection.Upstream.MaxAttempts {
 				return true
 			}
 			return false

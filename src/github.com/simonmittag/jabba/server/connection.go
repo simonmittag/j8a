@@ -2,8 +2,8 @@ package server
 
 // Connection Params
 type Connection struct {
-	Dwn Downstream
-	Up  Upstream
+	Downstream Downstream
+	Upstream   Upstream
 }
 
 // Downstream params for the HTTP or TLS server that Jabba exposes
