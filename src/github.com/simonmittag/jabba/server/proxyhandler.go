@@ -68,11 +68,11 @@ func matchRouteInURI(route Route, request *http.Request) bool {
 }
 
 func scaffoldUpstreamRequest(proxy *Proxy) *http.Request {
-	upstreamRequest, _ := http.NewRequest(proxy.Method,
+	upstreamRequest, _ := http.NewRequest(proxy.Dwn.Method,
 		proxy.resolveUpstreamURI(),
 		proxy.bodyReader())
 	//TODO: test if upstream request headers are reprocessed correctly
-	for key, values := range proxy.Request.Header {
+	for key, values := range proxy.Dwn.Req.Header {
 		upstreamRequest.Header.Set(key, strings.Join(values, " "))
 	}
 	return upstreamRequest
@@ -106,15 +106,15 @@ func handle(proxy *Proxy) {
 }
 
 func resetContentLengthHeader(proxy *Proxy, upstreamResponseBody []byte) {
-	if proxy.Method == "HEAD" || len(upstreamResponseBody) == 0 {
-		proxy.Response.Writer.Header().Set("Content-Length", "0")
+	if proxy.Dwn.Method == "HEAD" || len(upstreamResponseBody) == 0 {
+		proxy.Dwn.Resp.Writer.Header().Set("Content-Length", "0")
 	}
 }
 
 func copyUpstreamResponseBody(proxy *Proxy, upstreamResponseBody []byte) {
-	w := proxy.Response.Writer
+	w := proxy.Dwn.Resp.Writer
 	start := time.Now()
-	if proxy.Gzip {
+	if proxy.Dwn.Resp.SendGzip {
 		w.Write(Gzip(upstreamResponseBody))
 	} else {
 		w.Write([]byte(upstreamResponseBody))
@@ -124,30 +124,33 @@ func copyUpstreamResponseBody(proxy *Proxy, upstreamResponseBody []byte) {
 }
 
 func copyUpstreamResponseHeaders(proxy *Proxy, upstreamResponse *http.Response) {
-	proxy.Attempt.StatusCode = upstreamResponse.StatusCode
+	proxy.Up.Atmpt.StatusCode = upstreamResponse.StatusCode
 	for key, values := range upstreamResponse.Header {
 		if shouldRewrite(key) {
-			proxy.Response.Writer.Header().Set(key, strings.Join(values, " "))
+			proxy.Dwn.Resp.Writer.Header().Set(key, strings.Join(values, " "))
+		}
+		if key == "Content-Encoding" {
+			// proxy.
 		}
 	}
 }
 
 //status code must be last, no headers may be written after this one.
 func writeStatusCodeHeader(proxy *Proxy) {
-	proxy.Response.Writer.WriteHeader(proxy.Response.StatusCode)
+	proxy.Dwn.Resp.Writer.WriteHeader(proxy.Dwn.Resp.StatusCode)
 }
 
 func logHandledRequest(proxy *Proxy) {
 	log.Info().
-		Str("path", proxy.Path).
-		Str("method", proxy.Method).
-		Str("userAgent", proxy.UserAgent).
-		Int("downstreamResponseCode", proxy.Response.StatusCode).
+		Str("path", proxy.Dwn.Path).
+		Str("method", proxy.Dwn.Method).
+		Str("userAgent", proxy.Dwn.UserAgent).
+		Int("downstreamResponseCode", proxy.Dwn.Resp.StatusCode).
 		Str("downstreamContentEncoding", proxy.contentEncoding()).
 		Str(XRequestID, proxy.XRequestID).
 		Str("upstreamURI", proxy.resolveUpstreamURI()).
-		Str("upstreamLabel", proxy.Attempt.Label).
-		Int("upstreamResponseCode", proxy.Attempt.StatusCode).
+		Str("upstreamLabel", proxy.Up.Atmpt.Label).
+		Int("upstreamResponseCode", proxy.Up.Atmpt.StatusCode).
 		Msgf("request served")
 }
 

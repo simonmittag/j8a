@@ -24,49 +24,56 @@ var httpRepeatableMethods = append(httpSafeMethods, httpIdempotentMethods...)
 //RFC7231 4.3
 var httpLegalMethods []string = append(httpRepeatableMethods, []string{"POST", "CONNECT"}...)
 
-// Attempt wraps connection attempts to specific upstreams that are already mapped by label
-type Attempt struct {
+// Atmpt wraps connection attempts to specific upstreams that are already mapped by label
+type Atmpt struct {
 	URL        *URL
 	Label      string
 	Count      int
 	StatusCode int
+	isGzip     bool
 }
 
 // Response writer and data
-type Response struct {
+type Resp struct {
 	Writer     http.ResponseWriter
 	StatusCode int
 	Message    string
+	SendGzip   bool
+}
+
+//Up wraps upstream
+type Up struct {
+	Atmpt Atmpt
+}
+
+//Down wraps downstream
+type Down struct {
+	Req       *http.Request
+	Method    string
+	Path      string
+	URI       string
+	UserAgent string
+	Body      []byte
+
+	Resp Resp
 }
 
 // Proxy wraps data for a single downstream request/response with multiple upstream HTTP request/response cycles.
 type Proxy struct {
-	//downstream request params
-	Request    *http.Request
 	XRequestID string
-	Method     string
-	Path       string
-	URI        string
-	UserAgent  string
-	Gzip       bool
-	Body       []byte
-
-	//upstream attempt
-	Attempt Attempt
-
-	//downstream response
-	Response Response
+	Up         Up
+	Dwn        Down
 }
 
 func (proxy *Proxy) resolveUpstreamURI() string {
-	return proxy.Attempt.URL.String() + proxy.URI
+	return proxy.Up.Atmpt.URL.String() + proxy.Dwn.URI
 }
 
 // ShouldRepeat tells us if we can safely repeat the upstream request
 func (proxy *Proxy) shouldAttemptRetry() bool {
 	for _, method := range httpRepeatableMethods {
-		if proxy.Method == method {
-			if proxy.Attempt.Count < Runner.Connection.Upstream.MaxAttempts {
+		if proxy.Dwn.Method == method {
+			if proxy.Up.Atmpt.Count < Runner.Connection.Upstream.MaxAttempts {
 				return true
 			}
 			return false
@@ -79,44 +86,43 @@ func (proxy *Proxy) shouldAttemptRetry() bool {
 func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 	//TODO: we are not processing downstream body reading errors, i.e. illegal content length
 	body, _ := ioutil.ReadAll(request.Body)
-	proxy.Path = request.URL.EscapedPath()
-	proxy.URI = request.URL.RequestURI()
+	proxy.Dwn.Path = request.URL.EscapedPath()
+	proxy.Dwn.URI = request.URL.RequestURI()
 
-	proxy.UserAgent = request.Header.Get("User-Agent")
-	if len(proxy.UserAgent) == 0 {
-		proxy.UserAgent = "unknown"
+	proxy.Dwn.UserAgent = request.Header.Get("User-Agent")
+	if len(proxy.Dwn.UserAgent) == 0 {
+		proxy.Dwn.UserAgent = "unknown"
 	}
 
-	proxy.Method = strings.ToUpper(request.Method)
-	proxy.Body = body
-	proxy.Request = request
-	proxy.Response = Response{}
-
-	proxy.Gzip = strings.Contains(request.Header.Get("Accept-Encoding"), "gzip")
+	proxy.Dwn.Method = strings.ToUpper(request.Method)
+	proxy.Dwn.Body = body
+	proxy.Dwn.Req = request
+	proxy.Dwn.Resp = Resp{}
+	proxy.Dwn.Resp.SendGzip = strings.Contains(request.Header.Get("Accept-Encoding"), "gzip")
 
 	log.Trace().
-		Str("path", proxy.Path).
-		Str("method", proxy.Method).
-		Int("bodyBytes", len(proxy.Body)).
+		Str("path", proxy.Dwn.Path).
+		Str("method", proxy.Dwn.Method).
+		Int("bodyBytes", len(proxy.Dwn.Body)).
 		Str(XRequestID, proxy.XRequestID).
 		Msg("parsed request")
 	return proxy
 }
 
 func (proxy *Proxy) setOutgoing(out http.ResponseWriter) *Proxy {
-	proxy.Response.Writer = out
+	proxy.Dwn.Resp.Writer = out
 	return proxy
 }
 
 func (proxy Proxy) bodyReader() io.Reader {
-	if len(proxy.Body) > 0 {
-		return bytes.NewReader(proxy.Body)
+	if len(proxy.Dwn.Body) > 0 {
+		return bytes.NewReader(proxy.Dwn.Body)
 	}
 	return nil
 }
 
 func (proxy *Proxy) firstAttempt(URL *URL, label string) *Proxy {
-	proxy.Attempt = Attempt{
+	proxy.Up.Atmpt = Atmpt{
 		Label: label,
 		URL:   URL,
 		Count: 1,
@@ -125,8 +131,8 @@ func (proxy *Proxy) firstAttempt(URL *URL, label string) *Proxy {
 }
 
 func (proxy *Proxy) nextAttempt() *Proxy {
-	proxy.Attempt.Count++
-	proxy.Attempt.StatusCode = 0
+	proxy.Up.Atmpt.Count++
+	proxy.Up.Atmpt.StatusCode = 0
 	return proxy
 }
 
@@ -138,21 +144,21 @@ func (proxy *Proxy) initXRequestID() *Proxy {
 }
 
 func (proxy *Proxy) contentEncoding() string {
-	if proxy.Gzip {
+	if proxy.Dwn.Resp.SendGzip {
 		return "gzip"
 	}
 	return "identity"
 }
 
 func (proxy *Proxy) respondWith(statusCode int, message string) *Proxy {
-	proxy.Response.StatusCode = statusCode
-	proxy.Response.Message = message
+	proxy.Dwn.Resp.StatusCode = statusCode
+	proxy.Dwn.Resp.Message = message
 	return proxy
 }
 
 func (proxy *Proxy) hasLegalHTTPMethod() bool {
 	for _, legal := range httpLegalMethods {
-		if proxy.Method == legal {
+		if proxy.Dwn.Method == legal {
 			return true
 		}
 	}

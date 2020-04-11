@@ -97,7 +97,7 @@ func (runtime Runtime) initUserAgent() Runtime {
 
 //TODO: this really needs to be configurable. it adds a lot of options to every response otherewise.
 func writeStandardResponseHeaders(proxy *Proxy) {
-	header := proxy.Response.Writer.Header()
+	header := proxy.Dwn.Resp.Writer.Header()
 
 	header.Set("Server", fmt.Sprintf("Jabba %s %s", Version, ID))
 	header.Set("Content-Encoding", proxy.contentEncoding())
@@ -115,20 +115,20 @@ func writeStandardResponseHeaders(proxy *Proxy) {
 
 func sendStatusCodeAsJSON(proxy *Proxy) {
 
-	if proxy.Response.StatusCode >= 299 {
-		log.Warn().Int("downstreamResponseCode", proxy.Response.StatusCode).
-			Str("downstreamResponseMessage", proxy.Response.Message).
-			Str("path", proxy.Request.URL.Path).
+	if proxy.Dwn.Resp.StatusCode >= 299 {
+		log.Warn().Int("downstreamResponseCode", proxy.Dwn.Resp.StatusCode).
+			Str("downstreamResponseMessage", proxy.Dwn.Resp.Message).
+			Str("path", proxy.Dwn.Req.URL.Path).
 			Str(XRequestID, proxy.XRequestID).
-			Str("method", proxy.Method).
+			Str("method", proxy.Dwn.Method).
 			Msgf("request not served")
 	}
 	writeStandardResponseHeaders(proxy)
-	proxy.Response.Writer.Header().Set("Content-Type", "application/json")
+	proxy.Dwn.Resp.Writer.Header().Set("Content-Type", "application/json")
 	statusCodeResponse := StatusCodeResponse{
-		Code:       proxy.Response.StatusCode,
-		Message:    proxy.Response.Message,
+		Code:       proxy.Dwn.Resp.StatusCode,
+		Message:    proxy.Dwn.Resp.Message,
 		XRequestID: proxy.XRequestID,
 	}
-	proxy.Response.Writer.Write(statusCodeResponse.AsJSON())
+	proxy.Dwn.Resp.Writer.Write(statusCodeResponse.AsJSON())
 }
