@@ -11,20 +11,9 @@ import (
 
 // scaffoldHTTPClient is a factory method that applies connection params to the transport layer of http.Client
 func scaffoldHTTPClient(runtime Runtime) *http.Client {
-	idleConnTimeoutDuration := time.Duration(runtime.
-		Connection.
-		Upstream.
-		IdleTimeoutSeconds) * time.Second
-
-	tLSHandshakeTimeoutDuration := time.Duration(runtime.
-		Connection.
-		Upstream.
-		SocketTimeoutSeconds) * time.Second
-
-	socketTimeoutDuration := time.Duration(runtime.
-		Connection.
-		Upstream.
-		SocketTimeoutSeconds) * time.Second
+	idleConnTimeoutDuration := time.Duration(runtime.Cnx.Up.IdleTimeoutSeconds) * time.Second
+	tLSHandshakeTimeoutDuration := time.Duration(runtime.Cnx.Up.SocketTimeoutSeconds) * time.Second
+	socketTimeoutDuration := time.Duration(runtime.Cnx.Up.SocketTimeoutSeconds) * time.Second
 
 	httpClient = &http.Client{
 		Transport: &http.Transport{
@@ -34,15 +23,15 @@ func scaffoldHTTPClient(runtime Runtime) *http.Client {
 			}).Dial,
 			//TLS handshake timeout is the same as connection timeout
 			TLSHandshakeTimeout: tLSHandshakeTimeoutDuration,
-			MaxIdleConns:        runtime.Connection.Upstream.PoolSize,
-			MaxIdleConnsPerHost: runtime.Connection.Upstream.PoolSize,
+			MaxIdleConns:        runtime.Cnx.Up.PoolSize,
+			MaxIdleConnsPerHost: runtime.Cnx.Up.PoolSize,
 			IdleConnTimeout:     idleConnTimeoutDuration,
 		},
 	}
 
 	log.Debug().
-		Int("upstreamMaxIdleConns", runtime.Connection.Upstream.PoolSize).
-		Int("upstreamMaxIdleConnsPerHost", runtime.Connection.Upstream.PoolSize).
+		Int("upstreamMaxIdleConns", runtime.Cnx.Up.PoolSize).
+		Int("upstreamMaxIdleConnsPerHost", runtime.Cnx.Up.PoolSize).
 		Float64("upstreamTransportDialTimeoutSeconds", socketTimeoutDuration.Seconds()).
 		Float64("upstreamTlsHandshakeTimeoutSeconds", tLSHandshakeTimeoutDuration.Seconds()).
 		Float64("upstreamIdleConnTimeoutSeconds", idleConnTimeoutDuration.Seconds()).
@@ -59,10 +48,7 @@ func scaffoldHTTPClient(runtime Runtime) *http.Client {
 // after the total number of unacknowledged TCP_KEEPCNT is reached, the dialer kills the
 // connection.
 func getKeepAliveIntervalDuration() time.Duration {
-	return time.Duration(float64(Runner.
-		Connection.
-		Upstream.
-		IdleTimeoutSeconds) / float64(getTCPKeepCnt()) * float64(time.Second))
+	return time.Duration(float64(Runner.Cnx.Up.IdleTimeoutSeconds) / float64(getTCPKeepCnt()) * float64(time.Second))
 }
 
 func getTCPKeepCnt() int {

@@ -23,7 +23,7 @@ func (route Route) mapURL() (*URL, string, bool) {
 		policyLabel = policy.resolveLabel()
 	}
 
-	resource := Runner.Resources[route.Resource]
+	resource := Runner.Rsrc[route.Resource]
 	//if a policy exists, we match resources with a label. TODO: this should be an interface
 	if len(route.Policy) > 0 {
 		for _, resourceMapping := range resource {

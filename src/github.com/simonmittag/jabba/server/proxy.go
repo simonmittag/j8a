@@ -33,7 +33,7 @@ type Atmpt struct {
 	isGzip     bool
 }
 
-// Response writer and data
+// Resp wraps downstream http response writer and data
 type Resp struct {
 	Writer     http.ResponseWriter
 	StatusCode int
@@ -46,7 +46,7 @@ type Up struct {
 	Atmpt Atmpt
 }
 
-//Down wraps downstream
+//Down wraps downstream exchange
 type Down struct {
 	Req       *http.Request
 	Method    string
@@ -73,7 +73,7 @@ func (proxy *Proxy) resolveUpstreamURI() string {
 func (proxy *Proxy) shouldAttemptRetry() bool {
 	for _, method := range httpRepeatableMethods {
 		if proxy.Dwn.Method == method {
-			if proxy.Up.Atmpt.Count < Runner.Connection.Upstream.MaxAttempts {
+			if proxy.Up.Atmpt.Count < Runner.Cnx.Up.MaxAttempts {
 				return true
 			}
 			return false

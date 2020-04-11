@@ -38,30 +38,19 @@ func BootStrap() {
 }
 
 func (runtime Runtime) startListening() {
-	readTimeoutDuration := time.Second * time.Duration(runtime.
-		Connection.
-		Downstream.
-		ReadTimeoutSeconds)
-
-	writeTimeoutDuration := time.Second * time.Duration(runtime.
-		Connection.
-		Downstream.
-		RoundTripTimeoutSeconds)
-
-	idleTimeoutDuration := time.Second * time.Duration(runtime.
-		Connection.
-		Downstream.
-		IdleTimeoutSeconds)
+	readTimeoutDuration := time.Second * time.Duration(runtime.Cnx.Dwn.ReadTimeoutSeconds)
+	writeTimeoutDuration := time.Second * time.Duration(runtime.Cnx.Dwn.RoundTripTimeoutSeconds)
+	idleTimeoutDuration := time.Second * time.Duration(runtime.Cnx.Dwn.IdleTimeoutSeconds)
 
 	log.Debug().
 		Float64("downstreamReadTimeoutSeconds", readTimeoutDuration.Seconds()).
 		Float64("downstreamWriteTimeoutSeconds", writeTimeoutDuration.Seconds()).
 		Float64("downstreamIdleConnTimeoutSeconds", idleTimeoutDuration.Seconds()).
 		Msg("server derived downstream params")
-	log.Info().Msgf("Jabba %s listening on port %d...", Version, runtime.Connection.Downstream.Port)
+	log.Info().Msgf("Jabba %s listening on port %d...", Version, runtime.Cnx.Dwn.Port)
 
 	server := &http.Server{
-		Addr:         ":" + strconv.Itoa(runtime.Connection.Downstream.Port),
+		Addr:         ":" + strconv.Itoa(runtime.Cnx.Dwn.Port),
 		Handler:      nil,
 		ReadTimeout:  readTimeoutDuration,
 		WriteTimeout: writeTimeoutDuration,
@@ -71,7 +60,7 @@ func (runtime Runtime) startListening() {
 	//this line blocks execution and the server stays up
 	err := server.ListenAndServe()
 	if err != nil {
-		log.Fatal().Err(err).Msgf("unable to start HTTP server on port %d, exiting...", runtime.Connection.Downstream.Port)
+		log.Fatal().Err(err).Msgf("unable to start HTTP server on port %d, exiting...", runtime.Cnx.Dwn.Port)
 		panic(err.Error())
 	}
 }
@@ -103,7 +92,7 @@ func writeStandardResponseHeaders(proxy *Proxy) {
 	header.Set("Content-Encoding", proxy.contentEncoding())
 	header.Set("Cache-control:", "no-store, no-cache, must-revalidate, proxy-revalidate")
 	//for TLS response, we set HSTS header see RFC6797
-	if Runner.Connection.Downstream.Mode == "TLS" {
+	if Runner.Cnx.Dwn.Mode == "TLS" {
 		header.Set("Strict-Transport-Security", "max-age=31536000")
 	}
 	header.Set("X-xss-protection", "1;mode=block")
