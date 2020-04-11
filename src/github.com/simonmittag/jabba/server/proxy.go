@@ -140,9 +140,8 @@ func (proxy *Proxy) initXRequestID() *Proxy {
 func (proxy *Proxy) contentEncoding() string {
 	if proxy.Gzip {
 		return "gzip"
-	} else {
-		return "identity"
 	}
+	return "identity"
 }
 
 func (proxy *Proxy) respondWith(statusCode int, message string) *Proxy {
