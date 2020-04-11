@@ -8,32 +8,24 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type zipper struct {
-	buf *bytes.Buffer
-	wrt *gzip.Writer
-}
-
-var zipperPool = sync.Pool{
+var zipPool = sync.Pool{
 	New: func() interface{} {
 		var buf bytes.Buffer
-		return &zipper{
-			buf: &buf,
-			wrt: gzip.NewWriter(&buf),
-		}
+		return gzip.NewWriter(&buf)
 	},
 }
 
 // Gzip a []byte
 func Gzip(input []byte) []byte {
-	zipper, _ := zipperPool.Get().(*zipper)
-	// zipper.buf.Reset()
-	// zipper.wrt.Reset(ioutil.Discard)
+	wrt, _ := zipPool.Get().(*gzip.Writer)
+	buf := &bytes.Buffer{}
+	wrt.Reset(buf)
 
-	zipper.wrt.Write(input)
-	zipper.wrt.Close()
-	defer zipperPool.Put(zipper)
+	wrt.Write(input)
+	wrt.Close()
+	defer zipPool.Put(wrt)
 
-	enc := zipper.buf.Bytes()
+	enc := buf.Bytes()
 	log.Trace().Msgf("byte buffer size %d", len(enc))
 	return enc
 }
