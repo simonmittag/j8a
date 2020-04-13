@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-//TestDefaultDownstreamReadTimeout checks that config is overridden
+//TestDefaultDownstreamReadTimeout
 func TestDefaultDownstreamReadTimeout(t *testing.T) {
 	config := new(Config).setDefaultValues()
 	got := config.Connection.Downstream.ReadTimeoutSeconds
@@ -14,7 +14,7 @@ func TestDefaultDownstreamReadTimeout(t *testing.T) {
 	}
 }
 
-//TestDefaultDownstreamIdleTimeout checks that config is overridden
+//TestDefaultDownstreamIdleTimeout
 func TestDefaultDownstreamIdleTimeout(t *testing.T) {
 	config := new(Config).setDefaultValues()
 	got := config.Connection.Downstream.IdleTimeoutSeconds
@@ -24,7 +24,7 @@ func TestDefaultDownstreamIdleTimeout(t *testing.T) {
 	}
 }
 
-//TestDefaultDownstreamRoundtripTimeout checks that config is overridden
+//TestDefaultDownstreamRoundtripTimeout
 func TestDefaultDownstreamRoundtripTimeout(t *testing.T) {
 	config := new(Config).setDefaultValues()
 	got := config.Connection.Downstream.RoundTripTimeoutSeconds
@@ -34,7 +34,7 @@ func TestDefaultDownstreamRoundtripTimeout(t *testing.T) {
 	}
 }
 
-//TestDefaultUpstreamSocketTimeout checks that config is overridden
+//TestDefaultUpstreamSocketTimeout
 func TestDefaultUpstreamSocketTimeout(t *testing.T) {
 	config := new(Config).setDefaultValues()
 	got := config.Connection.Upstream.SocketTimeoutSeconds
@@ -44,7 +44,7 @@ func TestDefaultUpstreamSocketTimeout(t *testing.T) {
 	}
 }
 
-//TestDefaultUpstreamSocketTimeout checks that config is overridden
+//TestDefaultUpstreamSocketTimeout
 func TestDefaultUpstreamReadTimeout(t *testing.T) {
 	config := new(Config).setDefaultValues()
 	got := config.Connection.Upstream.ReadTimeoutSeconds
@@ -54,7 +54,7 @@ func TestDefaultUpstreamReadTimeout(t *testing.T) {
 	}
 }
 
-//TestDefaultUpstreamIdleTimeout checks that config is overridden
+//TestDefaultUpstreamIdleTimeout
 func TestDefaultUpstreamIdleTimeout(t *testing.T) {
 	config := new(Config).setDefaultValues()
 	got := config.Connection.Upstream.IdleTimeoutSeconds
@@ -64,7 +64,7 @@ func TestDefaultUpstreamIdleTimeout(t *testing.T) {
 	}
 }
 
-//TestDefaultUpstreamConnectionPoolSize checks that config is overridden
+//TestDefaultUpstreamConnectionPoolSize
 func TestDefaultUpstreamConnectionPoolSize(t *testing.T) {
 	config := new(Config).setDefaultValues()
 	got := config.Connection.Upstream.PoolSize
@@ -74,7 +74,7 @@ func TestDefaultUpstreamConnectionPoolSize(t *testing.T) {
 	}
 }
 
-//TestDefaultUpstreamConnectionMaxAttempts checks that config is overridden
+//TestDefaultUpstreamConnectionMaxAttempts
 func TestDefaultUpstreamConnectionMaxAttempts(t *testing.T) {
 	config := new(Config).setDefaultValues()
 	got := config.Connection.Upstream.MaxAttempts
