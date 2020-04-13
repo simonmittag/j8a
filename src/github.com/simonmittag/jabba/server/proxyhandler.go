@@ -125,13 +125,13 @@ func copyUpstreamResponseBody(proxy *Proxy, upstreamResponseBody []byte) {
 	w := proxy.Dwn.Resp.Writer
 	start := time.Now()
 	//we only gzip if the upstream response isn't already
-	if proxy.Dwn.Resp.SendGzip && !proxy.Up.Atmpt.isGzip {
+	if proxy.shouldGzipEncodeResponseBody() {
 		w.Write(Gzip(upstreamResponseBody))
 	} else {
 		w.Write([]byte(upstreamResponseBody))
 	}
 	elapsed := time.Since(start)
-	log.Trace().Msgf("copying upstream body took %s", elapsed)
+	log.Trace().Msgf("copying upstream body with gzip encoding %s took %s", proxy.shouldGzipEncodeResponseBody, elapsed)
 }
 
 func copyUpstreamResponseHeaders(proxy *Proxy, upstreamResponse *http.Response) {
