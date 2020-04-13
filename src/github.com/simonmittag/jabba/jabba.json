@@ -43,6 +43,10 @@
             "policy": "ab"
         },
         {
+            "path": "/result",
+            "resource": "result"
+        },
+        {
             "path": "/posting",
             "resource": "posting"
         }
@@ -98,6 +102,15 @@
                     "scheme": "http",
                     "host": "localhost",
                     "port": 8083
+                }
+            }
+        ],
+        "result": [
+            {
+                "url": {
+                    "scheme": "https",
+                    "host": "api.syphenapp.com",
+                    "port": 443
                 }
             }
         ]

@@ -131,7 +131,7 @@ func copyUpstreamResponseBody(proxy *Proxy, upstreamResponseBody []byte) {
 		w.Write([]byte(upstreamResponseBody))
 	}
 	elapsed := time.Since(start)
-	log.Trace().Msgf("copying upstream body with gzip encoding %s took %s", proxy.shouldGzipEncodeResponseBody, elapsed)
+	log.Trace().Msgf("copying upstream body with gzip re-encoding %t took %s", proxy.shouldGzipEncodeResponseBody(), elapsed)
 }
 
 func copyUpstreamResponseHeaders(proxy *Proxy, upstreamResponse *http.Response) {
