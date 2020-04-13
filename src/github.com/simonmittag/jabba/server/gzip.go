@@ -8,6 +8,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+var gzipMagicBytes = []byte{0x1f, 0x8b}
+
 var zipPool = sync.Pool{
 	New: func() interface{} {
 		var buf bytes.Buffer

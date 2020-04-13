@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"io/ioutil"
 	"net/http"
 	"regexp"
@@ -12,6 +13,7 @@ import (
 
 //XRequestID is a per HTTP request unique identifier
 const XRequestID = "X-REQUEST-ID"
+const contentEncoding = "Content-Encoding"
 
 //httpClient is the global user agent for upstream requests
 var httpClient *http.Client
@@ -85,7 +87,7 @@ func handle(proxy *Proxy) {
 	if upstreamError == nil {
 		//this is required, else we leak TCP connections.
 		defer upstreamResponse.Body.Close()
-		upstreamResponseBody, bodyError := ioutil.ReadAll(upstreamResponse.Body)
+		upstreamResponseBody, bodyError := parseUpstreamResponse(upstreamResponse, proxy)
 		if bodyError == nil {
 			writeStandardResponseHeaders(proxy)
 			copyUpstreamResponseHeaders(proxy, upstreamResponse)
@@ -105,6 +107,14 @@ func handle(proxy *Proxy) {
 	}
 }
 
+func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byte, error) {
+	upstreamResponseBody, bodyError := ioutil.ReadAll(upstreamResponse.Body)
+	if c := bytes.Compare(upstreamResponseBody[0:2], gzipMagicBytes); c == 0 {
+		proxy.Up.Atmpt.isGzip = true
+	}
+	return upstreamResponseBody, bodyError
+}
+
 func resetContentLengthHeader(proxy *Proxy, upstreamResponseBody []byte) {
 	if proxy.Dwn.Method == "HEAD" || len(upstreamResponseBody) == 0 {
 		proxy.Dwn.Resp.Writer.Header().Set("Content-Length", "0")
@@ -114,7 +124,8 @@ func resetContentLengthHeader(proxy *Proxy, upstreamResponseBody []byte) {
 func copyUpstreamResponseBody(proxy *Proxy, upstreamResponseBody []byte) {
 	w := proxy.Dwn.Resp.Writer
 	start := time.Now()
-	if proxy.Dwn.Resp.SendGzip {
+	//we only gzip if the upstream response isn't already
+	if proxy.Dwn.Resp.SendGzip && !proxy.Up.Atmpt.isGzip {
 		w.Write(Gzip(upstreamResponseBody))
 	} else {
 		w.Write([]byte(upstreamResponseBody))
@@ -127,10 +138,12 @@ func copyUpstreamResponseHeaders(proxy *Proxy, upstreamResponse *http.Response) 
 	proxy.Up.Atmpt.StatusCode = upstreamResponse.StatusCode
 	for key, values := range upstreamResponse.Header {
 		if shouldRewrite(key) {
-			proxy.Dwn.Resp.Writer.Header().Set(key, strings.Join(values, " "))
+			for _, mval := range values {
+				proxy.Dwn.Resp.Writer.Header().Set(key, mval)
+			}
 		}
-		if key == "Content-Encoding" {
-			// proxy.
+		if key == contentEncoding {
+			proxy.Up.Atmpt.isGzip = strings.Contains(strings.Join(values, " "), "gzip")
 		}
 	}
 }
