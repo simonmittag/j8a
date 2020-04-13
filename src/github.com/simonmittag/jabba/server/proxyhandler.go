@@ -143,7 +143,7 @@ func copyUpstreamResponseHeaders(proxy *Proxy, upstreamResponse *http.Response) 
 			}
 		}
 		if key == contentEncoding {
-			proxy.Up.Atmpt.isGzip = strings.Contains(strings.Join(values, " "), "gzip")
+			proxy.Up.Atmpt.isGzip = proxy.Up.Atmpt.isGzip || strings.Contains(strings.Join(values, " "), "gzip")
 		}
 	}
 }
