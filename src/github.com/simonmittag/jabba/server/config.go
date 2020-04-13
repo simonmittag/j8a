@@ -55,8 +55,8 @@ func (config Config) addDefaultPolicy() *Config {
 	return &config
 }
 
-func (config Config) setDefaultTimeouts() *Config {
-	//Downstrea params
+func (config Config) setDefaultValues() *Config {
+	//Downstream params
 	if config.Connection.Downstream.ReadTimeoutSeconds == 0 {
 		config.Connection.Downstream.ReadTimeoutSeconds = 120
 	}
@@ -67,7 +67,7 @@ func (config Config) setDefaultTimeouts() *Config {
 		config.Connection.Downstream.IdleTimeoutSeconds = 120
 	}
 
-	//Client params
+	//Upstream params
 	if config.Connection.Upstream.SocketTimeoutSeconds == 0 {
 		config.Connection.Upstream.SocketTimeoutSeconds = 3
 	}

@@ -29,7 +29,7 @@ func BootStrap() {
 		parse("./jabba.json").
 		reApplyResourceNames().
 		addDefaultPolicy().
-		setDefaultTimeouts()
+		setDefaultValues()
 
 	Runner = &Runtime{Config: *config}
 	Runner.initUserAgent().
