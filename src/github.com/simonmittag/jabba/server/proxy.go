@@ -133,6 +133,7 @@ func (proxy *Proxy) firstAttempt(URL *URL, label string) *Proxy {
 func (proxy *Proxy) nextAttempt() *Proxy {
 	proxy.Up.Atmpt.Count++
 	proxy.Up.Atmpt.StatusCode = 0
+	proxy.Up.Atmpt.isGzip = false
 	return proxy
 }
 
