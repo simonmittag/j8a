@@ -83,3 +83,21 @@ func TestDefaultUpstreamConnectionMaxAttempts(t *testing.T) {
 		t.Errorf("default config got %d, want %d", got, want)
 	}
 }
+
+//TestDefaultPolicy
+func TestDefaultPolicy(t *testing.T) {
+	wantLabel := "default"
+
+	config := new(Config).addDefaultPolicy()
+	def := config.Policies[wantLabel]
+	gotLabel := def[0].Label
+	if gotLabel != wantLabel {
+		t.Errorf("default policy label got %s, want %s", gotLabel, wantLabel)
+	}
+
+	gotWeight := def[0].Weight
+	wantWeight := 1.0
+	if gotWeight != wantWeight {
+		t.Errorf("default policy weight got %f, want %fc", gotWeight, wantWeight)
+	}
+}

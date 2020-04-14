@@ -122,13 +122,11 @@ func resetContentLengthHeader(proxy *Proxy, upstreamResponseBody []byte) {
 }
 
 func copyUpstreamResponseBody(proxy *Proxy, upstreamResponseBody []byte) {
-	w := proxy.Dwn.Resp.Writer
 	start := time.Now()
-	//we only gzip if the upstream response isn't already
 	if proxy.shouldGzipEncodeResponseBody() {
-		w.Write(Gzip(upstreamResponseBody))
+		proxy.Dwn.Resp.Writer.Write(Gzip(upstreamResponseBody))
 	} else {
-		w.Write([]byte(upstreamResponseBody))
+		proxy.Dwn.Resp.Writer.Write([]byte(upstreamResponseBody))
 	}
 	elapsed := time.Since(start)
 	log.Trace().Msgf("copying upstream body with gzip re-encoding %t took %s", proxy.shouldGzipEncodeResponseBody(), elapsed)
