@@ -119,5 +119,9 @@ func sendStatusCodeAsJSON(proxy *Proxy) {
 		Message:    proxy.Dwn.Resp.Message,
 		XRequestID: proxy.XRequestID,
 	}
-	proxy.Dwn.Resp.Writer.Write(statusCodeResponse.AsJSON())
+	if proxy.Dwn.Resp.SendGzip {
+		proxy.Dwn.Resp.Writer.Write(Gzip(statusCodeResponse.AsJSON()))
+	} else {
+		proxy.Dwn.Resp.Writer.Write(statusCodeResponse.AsJSON())
+	}
 }
