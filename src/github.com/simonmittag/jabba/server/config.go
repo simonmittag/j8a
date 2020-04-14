@@ -51,7 +51,9 @@ func (config Config) addDefaultPolicy() *Config {
 	var labelWeights []LabelWeight
 	labelWeights = append(labelWeights, lw)
 	*defaultPolicy = labelWeights
-	config.Policies = make(map[string]Policy)
+	if config.Policies == nil {
+		config.Policies = make(map[string]Policy)
+	}
 	config.Policies["default"] = *defaultPolicy
 	return &config
 }
