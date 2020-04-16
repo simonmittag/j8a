@@ -129,34 +129,73 @@ func TestParseConnection(t *testing.T) {
 	configJson := []byte("{\n\t\"connection\": {\n\t\t\"downstream\": {\n\t\t\t\"readTimeoutSeconds\": 120,\n\t\t\t\"roundTripTimeoutSeconds\": 240,\n\t\t\t\"idleTimeoutSeconds\": 30,\n\t\t\t\"port\": 8080,\n\t\t\t\"mode\": \"TLS\"\n\t\t},\n\t\t\"upstream\": {\n\t\t\t\"socketTimeoutSeconds\": 3,\n\t\t\t\"readTimeoutSeconds\": 120,\n\t\t\t\"idleTimeoutSeconds\": 120,\n\t\t\t\"maxAttempts\": 4,\n\t\t\t\"poolSize\": 1024\n\t\t}\n\t}\n}")
 	config := new(Config).parse(configJson)
 
-	c := config.Connection
-	wrts := 120
-	grts := c.Downstream.ReadTimeoutSeconds
-	if wrts != grts {
-		t.Errorf("incorrectly parsed downstream readTimeoutSeconds, want %d, got %d", wrts, grts)
-	}
+	for i := 0; i < 2; i++ {
 
-	wrtts := 240
-	grtts := c.Downstream.RoundTripTimeoutSeconds
-	if wrtts != grtts {
-		t.Errorf("incorrectly parsed downstream roundTripTimeoutSeconds, want %d, got %d", wrtts, grtts)
-	}
+		//this whole test runs twice. the first pass validates the parsing of config object. the 2nd pass
+		//validates the setDefaultValues() method does not inadvertently overwrite it
+		if i == 1 {
+			config = config.setDefaultValues()
+		}
 
-	wits := 30
-	gits := c.Downstream.IdleTimeoutSeconds
-	if wits != gits {
-		t.Errorf("incorrectly parsed idleTimeoutSeconds, want %d, got %d", wits, gits)
-	}
+		c := config.Connection
+		wrts := 120
+		grts := c.Downstream.ReadTimeoutSeconds
+		if wrts != grts {
+			t.Errorf("incorrectly parsed downstream readTimeoutSeconds, want %d, got %d", wrts, grts)
+		}
 
-	wp := 8080
-	gp := c.Downstream.Port
-	if wp != gp {
-		t.Errorf("incorrectly parsed port, want %d, got %d", wp, gp)
-	}
+		wrtts := 240
+		grtts := c.Downstream.RoundTripTimeoutSeconds
+		if wrtts != grtts {
+			t.Errorf("incorrectly parsed downstream roundTripTimeoutSeconds, want %d, got %d", wrtts, grtts)
+		}
 
-	wm := "TLS"
-	gm := c.Downstream.Mode
-	if wm != gm {
-		t.Errorf("incorrectly parsed mode, want %s, got %s", wm, gm)
+		wits := 30
+		gits := c.Downstream.IdleTimeoutSeconds
+		if wits != gits {
+			t.Errorf("incorrectly parsed downstream idleTimeoutSeconds, want %d, got %d", wits, gits)
+		}
+
+		wp := 8080
+		gp := c.Downstream.Port
+		if wp != gp {
+			t.Errorf("incorrectly parsed downstream port, want %d, got %d", wp, gp)
+		}
+
+		wm := "TLS"
+		gm := c.Downstream.Mode
+		if wm != gm {
+			t.Errorf("incorrectly parsed downstream mode, want %s, got %s", wm, gm)
+		}
+
+		wuits := 120
+		guits := c.Upstream.IdleTimeoutSeconds
+		if wuits != guits {
+			t.Errorf("incorrectly parsed upstream idleTimeoutSeconds, want %d, got %d", wuits, guits)
+		}
+
+		wurts := 120
+		gurts := c.Upstream.ReadTimeoutSeconds
+		if wurts != gurts {
+			t.Errorf("incorrectly parsed upstream readTimeoutSeconds, want %d, got %d", wurts, gurts)
+		}
+
+		wusts := 3
+		gusts := c.Upstream.SocketTimeoutSeconds
+		if wusts != gusts {
+			t.Errorf("incorrectly parsed upstream socketTimeoutSeconds, want %d, got %d", wusts, gusts)
+		}
+
+		wups := 1024
+		gups := c.Upstream.PoolSize
+		if wups != gups {
+			t.Errorf("incorrectly parsed upstream poolSize, want %d, got %d", wups, gups)
+		}
+
+		wuma := 4
+		guma := c.Upstream.MaxAttempts
+		if wuma != guma {
+			t.Errorf("incorrectly parsed upstream maxAttempts, want %d, got %d", wuma, guma)
+		}
 	}
 }
