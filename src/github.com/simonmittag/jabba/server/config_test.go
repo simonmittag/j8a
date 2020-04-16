@@ -102,6 +102,37 @@ func TestDefaultPolicy(t *testing.T) {
 	}
 }
 
+func TestParsePolicy(t *testing.T) {
+	configJson := []byte("{\"policies\": {\n\t\t\"ab\": [{\n\t\t\t\t\"label\": \"green\",\n\t\t\t\t\"weight\": 0.8\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"label\": \"blue\",\n\t\t\t\t\"weight\": 0.2\n\t\t\t}\n\t\t]\n\t}}")
+	config := new(Config).parse(configJson)
+
+	p := config.Policies
+
+	gp0l := p["ab"][0].Label
+	wp0l := "green"
+	if gp0l != wp0l {
+		t.Errorf("incorrectly parsed policy label, want %s, got %s", wp0l, gp0l)
+	}
+
+	gp0w := p["ab"][0].Weight
+	wp0w := 0.8
+	if gp0w != wp0w {
+		t.Errorf("incorrectly parsed policy weight, want %f, got %f", wp0w, gp0w)
+	}
+
+	gp1l := p["ab"][1].Label
+	wp1l := "blue"
+	if gp1l != wp1l {
+		t.Errorf("incorrectly parsed policy label, want %s, got %s", wp1l, gp1l)
+	}
+
+	gp1w := p["ab"][1].Weight
+	wp1w := 0.2
+	if gp1w != wp1w {
+		t.Errorf("incorrectly parsed policy weight, want %f, got %f", wp1w, gp1w)
+	}
+}
+
 //TestParseResource
 func TestParseResource(t *testing.T) {
 	configJson := []byte("{\n\t\"resources\": {\n\t\t\"customer\": [{\n\t\t\t\"labels\": [\n\t\t\t\t\"blue\"\n\t\t\t],\n\t\t\t\"url\": {\n\t\t\t\t\"scheme\": \"http\",\n\t\t\t\t\"host\": \"localhost\",\n\t\t\t\t\"port\": 8081\n\t\t\t}\n\t\t}]\n\t}\n}")
