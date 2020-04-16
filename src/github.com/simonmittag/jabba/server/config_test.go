@@ -101,3 +101,24 @@ func TestDefaultPolicy(t *testing.T) {
 		t.Errorf("default policy weight got %f, want %fc", gotWeight, wantWeight)
 	}
 }
+
+func TestParseResource(t *testing.T) {
+	configJson := []byte("{\n\t\"resources\": {\n\t\t\"customer\": [{\n\t\t\t\"labels\": [\n\t\t\t\t\"blue\"\n\t\t\t],\n\t\t\t\"url\": {\n\t\t\t\t\"scheme\": \"http\",\n\t\t\t\t\"host\": \"localhost\",\n\t\t\t\t\"port\": 8081\n\t\t\t}\n\t\t}]\n\t}\n}")
+	config := new(Config).parse(configJson)
+	config.reApplyResourceNames()
+
+	customer := config.Resources["customer"]
+	if customer[0].Name != "customer" {
+		t.Error("resource name not re-applied after parsing server configuration. cannot identify upstream resource, mapping would fail")
+	}
+
+	if customer[0].Labels[0] != "blue" {
+		t.Error("resource label not parsed, cannot perform upstream mapping")
+	}
+
+	wantURL := URL{"http", "localhost", 8081}
+	gotURL := customer[0].URL
+	if wantURL != gotURL {
+		t.Errorf("resource url parsed incorrectly. want %s got %s", wantURL, gotURL)
+	}
+}

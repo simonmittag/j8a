@@ -104,15 +104,6 @@
                     "port": 8083
                 }
             }
-        ],
-        "result": [
-            {
-                "url": {
-                    "scheme": "https",
-                    "host": "api.syphenapp.com",
-                    "port": 443
-                }
-            }
         ]
     }
 }

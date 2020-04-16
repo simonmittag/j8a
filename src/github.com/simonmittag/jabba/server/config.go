@@ -16,7 +16,7 @@ type Config struct {
 	Connection Connection
 }
 
-func (config Config) parse(file string) *Config {
+func (config Config) read(file string) *Config {
 	jsonFile, err := os.Open(file)
 	defer jsonFile.Close()
 	if err != nil {
@@ -25,7 +25,11 @@ func (config Config) parse(file string) *Config {
 		panic(msg)
 	}
 	byteValue, _ := ioutil.ReadAll(jsonFile)
-	json.Unmarshal(byteValue, &config)
+	return config.parse(byteValue)
+}
+
+func (config Config) parse(jsonConfig []byte) *Config {
+	json.Unmarshal(jsonConfig, &config)
 	//todo tell me about more of the config, number of routes
 	log.Debug().Msgf("parsed server configuration with %d live routes", len(config.Routes))
 	return &config

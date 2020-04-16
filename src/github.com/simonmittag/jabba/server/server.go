@@ -26,7 +26,7 @@ var Runner *Runtime
 //BootStrap starts up the server from a ServerConfig
 func BootStrap() {
 	config := new(Config).
-		parse("./jabba.json").
+		read("./jabba.json").
 		reApplyResourceNames().
 		addDefaultPolicy().
 		setDefaultValues()
