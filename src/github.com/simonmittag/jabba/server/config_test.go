@@ -1,8 +1,20 @@
 package server
 
 import (
+	"os"
 	"testing"
 )
+
+func TestMain(m *testing.M) {
+	testSetup()
+	code := m.Run()
+	//teardown()
+	os.Exit(code)
+}
+
+func testSetup() {
+	os.Setenv("TZ", "Australia/Sydney")
+}
 
 //TestDefaultDownstreamReadTimeout
 func TestDefaultDownstreamReadTimeout(t *testing.T) {
@@ -228,5 +240,24 @@ func TestParseConnection(t *testing.T) {
 		if wuma != guma {
 			t.Errorf("incorrectly parsed upstream maxAttempts, want %d, got %d", wuma, guma)
 		}
+	}
+}
+
+//TestParseRoute
+func TestParseRoute(t *testing.T) {
+	configJson := []byte("{\"routes\": [{\n\t\t\t\"path\": \"/about\",\n\t\t\t\"resource\": \"aboutJabba\"\n\t\t},\n\t\t{\n\t\t\t\"path\": \"/customer\",\n\t\t\t\"resource\": \"customer\",\n\t\t\t\"policy\": \"ab\"\n\t\t}\n\t]}")
+	config := new(Config).parse(configJson)
+
+	customer := config.Routes[1]
+	if customer.Path != "/customer" {
+		t.Errorf("incorrectly parsed route path, want %s, got %s", "/customer", customer.Path)
+	}
+
+	if customer.Policy != "ab" {
+		t.Errorf("incorrectly parsed route policy, want %s, got %s", "ab", customer.Policy)
+	}
+
+	if customer.Resource != "customer" {
+		t.Errorf("incorrectly parsed route resource, want %s, got %s", "customer", customer.Resource)
 	}
 }
