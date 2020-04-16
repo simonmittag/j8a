@@ -1,109 +1,109 @@
 {
-    "connection": {
-        "downstream": {
-            "readTimeoutSeconds": 120,
-            "roundTripTimeoutSeconds": 240,
-            "idleTimeoutSeconds": 30,
-            "port": 8080,
-            "mode": "TLS"
-        },
-        "upstream": {
-            "socketTimeoutSeconds": 3,
-            "readTimeoutSeconds": 120,
-            "idleTimeoutSeconds": 120,
-            "maxAttempts": 4,
-            "poolSize" : 1024
-        }
+  "connection": {
+    "downstream": {
+      "readTimeoutSeconds": 120,
+      "roundTripTimeoutSeconds": 240,
+      "idleTimeoutSeconds": 30,
+      "port": 8080,
+      "mode": "TLS"
     },
-    "policies": {
-        "ab": [
-            {
-                "label": "green",
-                "weight": 0.8
-            },
-            {
-                "label": "blue",
-                "weight": 0.2
-            }
-        ]
-    },
-    "routes": [
-        {
-            "path": "/about",
-            "resource": "aboutJabba"
-        },
-        {
-            "path": "/customer",
-            "resource": "customer",
-            "policy": "ab"
-        },
-        {
-            "path": "/billing",
-            "resource": "billing",
-            "policy": "ab"
-        },
-        {
-            "path": "/result",
-            "resource": "result"
-        },
-        {
-            "path": "/posting",
-            "resource": "posting"
-        }
-    ],
-    "resources": {
-        "customer": [
-            {
-                "labels": [
-                    "xblue"
-                ],
-                "url": {
-                    "scheme": "http",
-                    "host": "localhost",
-                    "port": 8081
-                }
-            },
-            {
-                "labels": [
-                    "xgreen"
-                ],
-                "url": {
-                    "scheme": "http",
-                    "host": "localhost",
-                    "port": 8082
-                }
-            }
-        ],
-        "billing": [
-            {
-                "labels": [
-                    "blue"
-                ],
-                "url": {
-                    "scheme": "http",
-                    "host": "localhost",
-                    "port": 8083
-                }
-            },
-            {
-                "labels": [
-                    "green"
-                ],
-                "url": {
-                    "scheme": "http",
-                    "host": "localhost",
-                    "port": 8083
-                }
-            }
-        ],
-        "posting": [
-            {
-                "url": {
-                    "scheme": "http",
-                    "host": "localhost",
-                    "port": 8083
-                }
-            }
-        ]
+    "upstream": {
+      "socketTimeoutSeconds": 3,
+      "readTimeoutSeconds": 120,
+      "idleTimeoutSeconds": 120,
+      "maxAttempts": 4,
+      "poolSize": 1024
     }
+  },
+  "policies": {
+    "ab": [
+      {
+        "label": "green",
+        "weight": 0.8
+      },
+      {
+        "label": "blue",
+        "weight": 0.2
+      }
+    ]
+  },
+  "routes": [
+    {
+      "path": "/about",
+      "resource": "aboutJabba"
+    },
+    {
+      "path": "/customer",
+      "resource": "customer",
+      "policy": "ab"
+    },
+    {
+      "path": "/billing",
+      "resource": "billing",
+      "policy": "ab"
+    },
+    {
+      "path": "/result",
+      "resource": "result"
+    },
+    {
+      "path": "/posting",
+      "resource": "posting"
+    }
+  ],
+  "resources": {
+    "customer": [
+      {
+        "labels": [
+          "xblue"
+        ],
+        "url": {
+          "scheme": "http",
+          "host": "localhost",
+          "port": 8081
+        }
+      },
+      {
+        "labels": [
+          "xgreen"
+        ],
+        "url": {
+          "scheme": "http",
+          "host": "localhost",
+          "port": 8082
+        }
+      }
+    ],
+    "billing": [
+      {
+        "labels": [
+          "blue"
+        ],
+        "url": {
+          "scheme": "http",
+          "host": "localhost",
+          "port": 8083
+        }
+      },
+      {
+        "labels": [
+          "green"
+        ],
+        "url": {
+          "scheme": "http",
+          "host": "localhost",
+          "port": 8083
+        }
+      }
+    ],
+    "posting": [
+      {
+        "url": {
+          "scheme": "http",
+          "host": "localhost",
+          "port": 8083
+        }
+      }
+    ]
+  }
 }

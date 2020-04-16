@@ -102,6 +102,7 @@ func TestDefaultPolicy(t *testing.T) {
 	}
 }
 
+//TestParseResource
 func TestParseResource(t *testing.T) {
 	configJson := []byte("{\n\t\"resources\": {\n\t\t\"customer\": [{\n\t\t\t\"labels\": [\n\t\t\t\t\"blue\"\n\t\t\t],\n\t\t\t\"url\": {\n\t\t\t\t\"scheme\": \"http\",\n\t\t\t\t\"host\": \"localhost\",\n\t\t\t\t\"port\": 8081\n\t\t\t}\n\t\t}]\n\t}\n}")
 	config := new(Config).parse(configJson)
@@ -120,5 +121,42 @@ func TestParseResource(t *testing.T) {
 	gotURL := customer[0].URL
 	if wantURL != gotURL {
 		t.Errorf("resource url parsed incorrectly. want %s got %s", wantURL, gotURL)
+	}
+}
+
+//TestParseConnection
+func TestParseConnection(t *testing.T) {
+	configJson := []byte("{\n\t\"connection\": {\n\t\t\"downstream\": {\n\t\t\t\"readTimeoutSeconds\": 120,\n\t\t\t\"roundTripTimeoutSeconds\": 240,\n\t\t\t\"idleTimeoutSeconds\": 30,\n\t\t\t\"port\": 8080,\n\t\t\t\"mode\": \"TLS\"\n\t\t},\n\t\t\"upstream\": {\n\t\t\t\"socketTimeoutSeconds\": 3,\n\t\t\t\"readTimeoutSeconds\": 120,\n\t\t\t\"idleTimeoutSeconds\": 120,\n\t\t\t\"maxAttempts\": 4,\n\t\t\t\"poolSize\": 1024\n\t\t}\n\t}\n}")
+	config := new(Config).parse(configJson)
+
+	c := config.Connection
+	wrts := 120
+	grts := c.Downstream.ReadTimeoutSeconds
+	if wrts != grts {
+		t.Errorf("incorrectly parsed downstream readTimeoutSeconds, want %d, got %d", wrts, grts)
+	}
+
+	wrtts := 240
+	grtts := c.Downstream.RoundTripTimeoutSeconds
+	if wrtts != grtts {
+		t.Errorf("incorrectly parsed downstream roundTripTimeoutSeconds, want %d, got %d", wrtts, grtts)
+	}
+
+	wits := 30
+	gits := c.Downstream.IdleTimeoutSeconds
+	if wits != gits {
+		t.Errorf("incorrectly parsed idleTimeoutSeconds, want %d, got %d", wits, gits)
+	}
+
+	wp := 8080
+	gp := c.Downstream.Port
+	if wp != gp {
+		t.Errorf("incorrectly parsed port, want %d, got %d", wp, gp)
+	}
+
+	wm := "TLS"
+	gm := c.Downstream.Mode
+	if wm != gm {
+		t.Errorf("incorrectly parsed mode, want %s, got %s", wm, gm)
 	}
 }
