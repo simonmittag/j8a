@@ -30,8 +30,12 @@ jobs:
             export CIRCLE_BRANCH=`git branch --show-current`
             ./cc-test-reporter before-build
             go test -cover -coverprofile=c.out
+            gotestsum --junitfile /tmp/test-results/unit-tests.xml
             go tool cover -html=c.out -o coverage.html
             ./cc-test-reporter after-build --coverage-input-type gocov -d -p "github.com/simonmittag/jabba"
             mv coverage.html /tmp/artifacts
       - store_artifacts:
           path: /tmp/artifacts
+
+      - store_test_results:
+          path: /tmp/test-results
