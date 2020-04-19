@@ -1,4 +1,4 @@
-[![circleci](https://circleci.com/gh/simonmittag/jabba.svg?style=svg)](https://circleci.com/gh/simonmittag/jabba)
+[![circleci](https://circleci.com/gh/simonmittag/jabba.svg?style=shield)](https://circleci.com/gh/simonmittag/jabba)
 
 ![](jabba.png)
 
