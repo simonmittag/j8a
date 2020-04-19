@@ -1,0 +1,20 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/golang:1.14 #
+    environment:
+      TEST_RESULTS: /tmp/test-results
+      LOGLEVEL: TRACE
+    steps:
+      - checkout # check out source code to working directory
+      - run: go build github.com/simonmittag/jabba
+      - run: go test github.com/simonmittag/jabba
+      - run: go install github.com/simonmittag/jabba/cmd/jabba
+
+      - store_artifacts: # Upload test summary for display in Artifacts: https://circleci.com/docs/2.0/artifacts/
+          path: /tmp/test-results
+          destination: raw-test-output
+
+      - store_test_results: # Upload test results for display in Test Summary: https://circleci.com/docs/2.0/collect-test-data/
+          path: /tmp/test-results
