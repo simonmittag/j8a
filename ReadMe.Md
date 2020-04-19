@@ -24,8 +24,7 @@ Jabba is heavily under development and currently alpha grade.
 # Up and running
 
 ```bash
-go install github.com/simonmittag/jabba/cmd/jabba
-./jabba
+go install github.com/simonmittag/jabba/cmd/jabba && jabba
 ```
 
 # Supported environment variables
