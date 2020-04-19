@@ -36,7 +36,7 @@ jobs:
             go test -cover -coverprofile=c.out
             gotestsum --junitfile /tmp/test-results/unit-tests.xml
             go tool cover -html=c.out -o coverage.html
-            ./cc-test-reporter after-build --coverage-input-type gocov -d -p "github.com/simonmittag/jabba"
+            ./cc-test-reporter after-build --coverage-input-type gocov -p "github.com/simonmittag/jabba"
             mv coverage.html /tmp/artifacts
       - store_artifacts:
           path: /tmp/artifacts
