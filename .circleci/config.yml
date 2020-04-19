@@ -17,6 +17,10 @@ jobs:
           command: |
             mkdir -p /tmp/artifacts
       - run:
+          name: "Create a temp directory for tests"
+          command: |
+            mkdir -p /tmp/test-results
+      - run:
           name: Setup Code Climate test-reporter
           command: |
             # download test reporter as a static binary
@@ -27,7 +31,7 @@ jobs:
           command: |
             export GIT_COMMITTED_AT="$(date +%s)"
             export CIRCLE_SHA="$CIRCLE_SHA1"
-            export CIRCLE_BRANCH=`git branch --show-current`
+            export CIRCLE_BRANCH=`git rev-parse --abbrev-ref HEAD`
             ./cc-test-reporter before-build
             go test -cover -coverprofile=c.out
             gotestsum --junitfile /tmp/test-results/unit-tests.xml
