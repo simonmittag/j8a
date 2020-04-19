@@ -1,4 +1,4 @@
-package stats
+package jabba
 
 import (
 	"os"
@@ -9,7 +9,7 @@ import (
 )
 
 //BootStrap starts the background goroutine resource logger.
-func BootStrap() {
+func InitStats() {
 	go stats(os.Getpid())
 }
 

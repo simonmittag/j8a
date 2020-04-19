@@ -1,4 +1,4 @@
-package server
+package jabba
 
 //ResourceMapping describes upstream servers
 type ResourceMapping struct {

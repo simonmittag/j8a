@@ -1,4 +1,4 @@
-package server
+package jabba
 
 // Connection Params
 type Connection struct {

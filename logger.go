@@ -1,4 +1,4 @@
-package logger
+package jabba
 
 import (
 	"crypto/md5"
@@ -8,7 +8,6 @@ import (
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/simonmittag/jabba/server"
 )
 
 //ServerID is a unique identifier made up as md5 of hostname and version.
@@ -17,8 +16,8 @@ import (
 func initServerID() {
 	hasher := md5.New()
 	hasher.Write([]byte(getHost() + getVersion()))
-	server.ID = hex.EncodeToString(hasher.Sum(nil))[0:8]
-	log.Debug().Str("serverID", server.ID).Msg("determined serverID")
+	ID = hex.EncodeToString(hasher.Sum(nil))[0:8]
+	log.Debug().Str("serverID", ID).Msg("determined serverID")
 }
 
 func getHost() string {
@@ -30,15 +29,15 @@ func getHost() string {
 func getVersion() string {
 	osv := os.Getenv("VERSION")
 	if len(osv) > 0 {
-		server.Version = osv
+		Version = osv
 	}
 
-	log.Debug().Str("version", server.Version).Msg("determined version")
-	return server.Version
+	log.Debug().Str("version", Version).Msg("determined version")
+	return Version
 }
 
 // Init sets up a global logger instance
-func Init() {
+func InitLogger() {
 	logLevel := strings.ToUpper(os.Getenv("LOGLEVEL"))
 	switch logLevel {
 	case "TRACE":
@@ -66,7 +65,7 @@ func Init() {
 	}
 
 	initServerID()
-	log.Logger = log.With().Str("serverId", server.ID).Logger()
+	log.Logger = log.With().Str("serverId", ID).Logger()
 	log.Debug().Msgf("setting global log level to %s", logLevel)
 
 }

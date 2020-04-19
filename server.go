@@ -1,4 +1,4 @@
-package server
+package jabba
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 )
 
 //Version is the server version
-var Version string = "v0.2.17"
+var Version string = "v0.3.0"
 
 //ID is a unique server ID
 var ID string = "unknown"

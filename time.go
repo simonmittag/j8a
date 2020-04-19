@@ -1,4 +1,4 @@
-package time
+package jabba
 
 import (
 	"os"
@@ -8,7 +8,7 @@ import (
 
 var TZ = "UTC"
 
-func Init() {
+func InitTime() {
 	TZ = os.Getenv("TZ")
 	if len(TZ) == 0 {
 		TZ = "UTC"
