@@ -1,3 +1,5 @@
+[![circleci](https://circleci.com/gh/simonmittag/jabba.svg?style=svg)](https://circleci.com/gh/simonmittag/jabba)
+
 ![](jabba.png)
 
 Achuta! Jabba is a json friendly reverse proxy for micro-services, written in golang.
