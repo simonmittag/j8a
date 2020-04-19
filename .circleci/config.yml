@@ -7,6 +7,7 @@ jobs:
     environment:
       TEST_RESULTS: /tmp/test-results
       LOGLEVEL: TRACE
+      CC_TEST_REPORTER_ID: a45fccea925702bc9483bdead24976073cf3e3807b22ce566d2858a700e5472c
     steps:
       - checkout # check out source code to working directory
       - run: go build github.com/simonmittag/jabba
@@ -16,10 +17,21 @@ jobs:
           command: |
             mkdir -p /tmp/artifacts
       - run:
-          name: "Run tests with coverage report"
+          name: Setup Code Climate test-reporter
           command: |
+            # download test reporter as a static binary
+            curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+            chmod +x ./cc-test-reporter
+      - run:
+          name: Run tests with coverage report
+          command: |
+            export GIT_COMMITTED_AT="$(date +%s)"
+            export CIRCLE_SHA="$CIRCLE_SHA1"
+            export CIRCLE_BRANCH=`git branch --show-current`
+            ./cc-test-reporter before-build
             go test -cover -coverprofile=c.out
             go tool cover -html=c.out -o coverage.html
+            ./cc-test-reporter after-build --coverage-input-type gocov -d -p "github.com/simonmittag/jabba"
             mv coverage.html /tmp/artifacts
       - store_artifacts:
           path: /tmp/artifacts
