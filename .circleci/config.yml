@@ -37,13 +37,14 @@ jobs:
             go tool cover -html=c.out -o coverage.html
             ./cc-test-reporter after-build --coverage-input-type gocov -p "github.com/simonmittag/jabba"
             mv coverage.html /tmp/artifacts
+
+      - store_artifacts:
+          path: /tmp/artifacts
+
       - run:
           name: Test Summary for CircleCI
           command: |
             gotestsum --junitfile /tmp/test-results/unit-tests.xml
-
-      - store_artifacts:
-          path: /tmp/artifacts
 
       - store_test_results:
           path: /tmp/test-results
