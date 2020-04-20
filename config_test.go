@@ -80,7 +80,7 @@ func TestDefaultUpstreamIdleTimeout(t *testing.T) {
 func TestDefaultUpstreamConnectionPoolSize(t *testing.T) {
 	config := new(Config).setDefaultValues()
 	got := config.Connection.Upstream.PoolSize
-	want := 32768
+	want := 327681
 	if got != want {
 		t.Errorf("default config got %d, want %d", got, want)
 	}
