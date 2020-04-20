@@ -7,7 +7,7 @@ Achuta! Jabba is a json friendly reverse proxy for micro-services, written in go
 [![Github Issues](https://img.shields.io/github/issues/simonmittag/jabba)](https://github.com/simonmittag/jabba/issues)
 [![Github Activity](https://img.shields.io/github/commit-activity/m/simonmittag/jabba)](https://img.shields.io/github/commit-activity/m/simonmittag/jabba)  
 [![Codeclimate Maintainability](https://api.codeclimate.com/v1/badges/326d3c304e32645811c8/maintainability)](https://codeclimate.com/github/simonmittag/jabba/maintainability)
-[![Codeclimate Test Coverage](https://api.codeclimate.com/v1/badges/326d3c304e32645811c8/test_coverage)](https://codeclimate.com/github/simonmittag/jabba/test_coverage)
+[![Codeclimate Test Coverage](https://api.codeclimate.com/v1/badges/326d3c304e32645811c8/test_coverage)](https://codeclimate.com/github/simonmittag/jabba/code)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/simonmittag/jabba)](https://img.shields.io/github/go-mod/go-version/simonmittag/jabba)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
