@@ -39,7 +39,9 @@ jobs:
             mv coverage.html /tmp/artifacts
       - run:
           name: Test Summary for CircleCI
-          command: gotestsum --junitfile /tmp/test-results/unit-tests.xml
+          command: |
+            gotestsum --junitfile /tmp/test-results/unit-tests.xml
+
       - store_artifacts:
           path: /tmp/artifacts
 
