@@ -15,47 +15,45 @@ Achuta! Jabba is a json friendly reverse proxy for micro-services, written in go
 * HTTP 1.1 compatible reverse proxy w/ TLS support.
 * JSON API friendly, configurable recovery of idempotent requests.
 * policy based routing to multiple upstream servers for a/b testing
-* highly concurrent with multiprocessor support
+* highly concurrent with multiprocessor support, 10k req/s
 
-# What's new
-Jabba is heavily under development and currently alpha grade. 
+## What's new
+Jabba is heavily under development and currently alpha grade. Production
+use is currently not recommended, until TLS support is fully implemented. 
+Please see project milestones for details.
 
-## 19/04/2020
-* converted to go mod
-* added circleci support
-
-## 01/04/2020
-* HTTP proxying is mostly complete and in testing.
-* TLS is still missing
-
-# Up and running
+## Up and running
 
 ```bash
 go install github.com/simonmittag/jabba/cmd/jabba && jabba
 ```
 
-# Supported environment variables
+## Supported environment variables
 
 Specify these env vars to control server behaviour
 
 
-## LOGLEVEL
+### LOGLEVEL
 Loglevel for stdout, one of TRACE, DEBUG, INFO or WARN
 
 ```bash
 LOGLEVEL="DEBUG"
 ```
 
-## LOGCOLOR
+### LOGCOLOR
 Enable color logging on stdout for development or workstation environment (not recommended in production)
 
 ```bash
 LOGCOLOR="true"
 ```
 
-## TZ
+### TZ
 TimeZone
 
 ```bash
 TZ="Australia/Sydney"
 ```
+
+##Code Of Conduct
+The Jabba team welcomes all contributors. Everyone interacting with the project's codebase, issue trackers, chat rooms and mailing lists
+is expected to follow the [code of conduct](https://github.com/simonmittag/jabba/blob/master/CODE_OF_CONDUCT.md)
