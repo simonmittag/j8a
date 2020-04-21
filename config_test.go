@@ -261,3 +261,20 @@ func TestParseRoute(t *testing.T) {
 		t.Errorf("incorrectly parsed route resource, want %s, got %s", "customer", customer.Resource)
 	}
 }
+
+//TestReadConfigFile
+func TestReadConfigFile(t *testing.T) {
+	config := new(Config).read("./jabba.json")
+	if config.Routes == nil {
+		t.Error("incorrectly parsed routes in config file")
+	}
+	if config.Policies == nil {
+		t.Error("incorrectly parsed policies in config file")
+	}
+	if config.Connection == *new(Connection) {
+		t.Error("incorrectly parsed connection in config file")
+	}
+	if config.Resources == nil {
+		t.Error("incorrectly parsed resources in config file")
+	}
+}
