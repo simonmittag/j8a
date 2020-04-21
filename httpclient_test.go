@@ -3,7 +3,32 @@ package jabba
 import (
 	"os"
 	"testing"
+	"time"
 )
+
+func TestHttpClientSocketTimeout(t *testing.T) {
+	Runner = &Runtime{
+		Config: Config{
+			Connection: Connection{
+				Upstream: Upstream{
+					SocketTimeoutSeconds: 1,
+				},
+			},
+		},
+	}
+
+	client := scaffoldHTTPClient(*Runner)
+	start := time.Now()
+	_, err := client.Get("http://10.73.124.255:2/uri")
+	elapsed := time.Since(start)
+	want := time.Duration(1 * time.Second)
+	if elapsed < want {
+		t.Errorf("socket timeout was not respected, client aborted too early, wanted > %v, got %v", want, elapsed)
+	}
+	if err == nil {
+		t.Errorf("uh oh http client not meant to resolve got no error for non existing URL")
+	}
+}
 
 //TestDefaultDownstreamReadTimeout
 func TestGetTcpCntAndKeepAliveIntervalDuration(t *testing.T) {
