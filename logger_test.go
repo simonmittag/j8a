@@ -26,3 +26,43 @@ func TestDefaultLogLevelInit(t *testing.T) {
 		t.Errorf("default log level not properly initialised, got %v, want %v", got, want)
 	}
 }
+
+func TestTraceLogLevelInit(t *testing.T) {
+	os.Setenv("LOGLEVEL", "TRACE")
+	InitLogger()
+	got := zerolog.GlobalLevel().String()
+	want := "trace"
+	if got != want {
+		t.Errorf("default log level not properly initialised, got %v, want %v", got, want)
+	}
+}
+
+func TestDebugLogLevelInit(t *testing.T) {
+	os.Setenv("LOGLEVEL", "DEBUG")
+	InitLogger()
+	got := zerolog.GlobalLevel().String()
+	want := "debug"
+	if got != want {
+		t.Errorf("log level not properly initialised, got %v, want %v", got, want)
+	}
+}
+
+func TestInfoLogLevelInit(t *testing.T) {
+	os.Setenv("LOGLEVEL", "INFO")
+	InitLogger()
+	got := zerolog.GlobalLevel().String()
+	want := "info"
+	if got != want {
+		t.Errorf("log level not properly initialised, got %v, want %v", got, want)
+	}
+}
+
+func TestWarnLogLevelInit(t *testing.T) {
+	os.Setenv("LOGLEVEL", "WARN")
+	InitLogger()
+	got := zerolog.GlobalLevel().String()
+	want := "warn"
+	if got != want {
+		t.Errorf("log level not properly initialised, got %v, want %v", got, want)
+	}
+}
