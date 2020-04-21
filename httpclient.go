@@ -3,6 +3,7 @@ package jabba
 import (
 	"net"
 	"net/http"
+	"os"
 	"runtime"
 	"time"
 
@@ -55,7 +56,11 @@ func getKeepAliveIntervalDuration() time.Duration {
 }
 
 func getTCPKeepCnt() int {
-	switch runtime.GOOS {
+	os := os.Getenv("OS")
+	if len(os) == 0 {
+		os = runtime.GOOS
+	}
+	switch os {
 	case "windows":
 		return 5
 	case "darwin", "freebsd", "openbsd":
