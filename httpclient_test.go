@@ -3,7 +3,6 @@ package jabba
 import (
 	"os"
 	"testing"
-	"time"
 )
 
 //TestDefaultDownstreamReadTimeout
@@ -24,8 +23,9 @@ func TestGetTcpCntAndKeepAliveIntervalDuration(t *testing.T) {
 	if got != want {
 		t.Errorf("incorrect linux tcp cnt interval for socket timeout test, got %v, want %v", got, want)
 	}
-	gotKeepAlive := getKeepAliveIntervalDuration()
-	wantKeepAlive := time.Duration(120 / float64(got) * 1000000000)
+	gotKeepAlive := getKeepAliveIntervalDuration().Nanoseconds()
+	//nanos for keepAlive interval
+	wantKeepAlive := int64(120 / float64(got) * 1000000000)
 	if gotKeepAlive != wantKeepAlive {
 		t.Errorf("incorrect linux keepalive interval duration, got %v, want %v", gotKeepAlive, wantKeepAlive)
 	}
