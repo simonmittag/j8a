@@ -21,7 +21,10 @@ func initServerID() {
 }
 
 func getHost() string {
-	host, _ := os.Hostname()
+	host := os.Getenv("HOSTNAME")
+	if len(host) == 0 {
+		host, _ = os.Hostname()
+	}
 	log.Debug().Str("hostName", host).Msg("determined hostName")
 	return host
 }
