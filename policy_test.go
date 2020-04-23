@@ -4,6 +4,15 @@ import (
 	"testing"
 )
 
+func TestEmptyPolicyResolves(t *testing.T) {
+	p := Policy{}
+	want := "default"
+	got := p.resolveLabel()
+	if got != want {
+		t.Errorf("resolved incorrect policy label, got %v, want %v", got, want)
+	}
+}
+
 func TestPolicyResolveLabelWithWeightOne(t *testing.T) {
 	p := Policy{
 		LabelWeight{
