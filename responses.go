@@ -9,14 +9,12 @@ import (
 
 var huttese = []string{
 	"Achuta!",
-	"Bo shuda!",
 	"Goodde da lodia!",
 	"H'chu apenkee!",
 	"Chuba!",
 	"Ka Cheesa Crispa Greedo?",
 	"De wanna wanga?",
 	"Peedunkee, caba dee unko!",
-	"Kuba, kayaba dee anko!",
 }
 
 //AboutResponse exposes standard environment
