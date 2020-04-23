@@ -8,56 +8,81 @@ import (
 	"testing"
 )
 
-//this Mock object wraps the httpClient and prevents actuall outgoing HTTP requests.
+var (
+	mockDoFunc  func(*http.Request) (*http.Response, error)
+	mockGetFunc func(uri string) (*http.Response, error)
+)
+
+//this Mock object wraps the httpClient and prevents actual outgoing HTTP requests.
 type HttpMock struct{}
 
 func (m *HttpMock) Do(req *http.Request) (*http.Response, error) {
-	return canned200Ok()
+	return mockDoFunc(req)
 }
 
 func (m *HttpMock) Get(uri string) (*http.Response, error) {
-	return canned200Ok()
-}
-
-func canned200Ok() (*http.Response, error) {
-	json := `{"key":"value"}`
-	return &http.Response{
-		StatusCode: 200,
-		Body:       ioutil.NopCloser(bytes.NewReader([]byte(json))),
-	}, nil
+	return mockGetFunc(uri)
 }
 
 //this testHandler binds the mock HTTP server to proxyHandler.
 type TestHttpHandler struct{}
 
 func (t TestHttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	proxyHandler(w,r)
+	proxyHandler(w, r)
 }
 
-func TestProxyHandler(t *testing.T) {
-	// Create Runtime with hardcoded config.
+// TestUpstreamSuccessWithProxyHandler mocks a 200 upstream response and tests the proxy handler returns clean.
+func TestUpstreamSuccessWithProxyHandler(t *testing.T) {
 	Runner = getRuntime()
-
-	// create a Mock http client that returns hardcoded 200 ok
 	httpClient = &HttpMock{}
+	mockDoFunc = func(req *http.Request) (*http.Response, error) {
+		json := `{"key":"value"}`
+		return &http.Response{
+			StatusCode: 200,
+			Body:       ioutil.NopCloser(bytes.NewReader([]byte(json))),
+		}, nil
+	}
 
-	//create a Mock server that is bound to a real proxyhandler
 	h := &TestHttpHandler{}
 	server := httptest.NewServer(h)
 	defer server.Close()
 
-	// Test all of Jabba's goodness, use Runner config to match a route, find a resource, map an upstream server, use
-	// proxy object to serve upstream response.
 	resp, err := http.Get(server.URL)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	//and here we want to receive the 200 ok from the Mock upstream to prove that proxyHandler did it's job based
-	//on the config.
 	want := 200
 	if resp.StatusCode != want {
-		t.Fatalf("uh oh, received incorrect status code from proxyhandler, want %v, got %v", want, resp.StatusCode)
+		t.Fatalf("uh oh, received incorrect status code from success proxyhandler, want %v, got %v", want, resp.StatusCode)
+	}
+}
+
+// TestUpstreamRetryWithProxyHandler mocks a 500 upstream response for a GET request, which is repeatable.
+// it will repeat upstream attempts until MaxAttempts is reached, then return a 502 gateway error
+func TestUpstreamGETRetryWithProxyHandler(t *testing.T) {
+	Runner = getRuntime()
+	httpClient = &HttpMock{}
+	mockDoFunc = func(req *http.Request) (*http.Response, error) {
+		json := `{"500":"server error"}`
+		return &http.Response{
+			StatusCode: 500,
+			Body:       ioutil.NopCloser(bytes.NewReader([]byte(json))),
+		}, nil
+	}
+
+	h := &TestHttpHandler{}
+	server := httptest.NewServer(h)
+	defer server.Close()
+
+	resp, err := http.Get(server.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := 502
+	if resp.StatusCode != want {
+		t.Fatalf("uh oh, received incorrect status code from failing proxyhandler, want %v, got %v", want, resp.StatusCode)
 	}
 }
 
@@ -69,7 +94,7 @@ func getRuntime() *Runtime {
 					ReadTimeoutSeconds:   120,
 					SocketTimeoutSeconds: 3,
 					IdleTimeoutSeconds:   120,
-					MaxAttempts:          1,
+					MaxAttempts:          3,
 					PoolSize:             2,
 				},
 				Downstream: Downstream{
@@ -91,7 +116,7 @@ func getRuntime() *Runtime {
 			Resources: map[string][]ResourceMapping{
 				"default": {
 					ResourceMapping{
-						Name:   "upstream",
+						Name: "upstream",
 						Labels: []string{
 							"simple",
 						},
