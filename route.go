@@ -40,5 +40,5 @@ func (route Route) mapURL() (*URL, string, bool) {
 	}
 
 	log.Trace().Msgf("route %s not mapped", route.Path)
-	return nil, "default", false
+	return nil, "", false
 }
