@@ -10,7 +10,7 @@ import (
 )
 
 //Version is the server version
-var Version string = "v0.3.2"
+var Version string = "v0.3.3"
 
 //ID is a unique server ID
 var ID string = "unknown"
@@ -104,7 +104,7 @@ func writeStandardResponseHeaders(proxy *Proxy) {
 
 func sendStatusCodeAsJSON(proxy *Proxy) {
 
-	if proxy.Dwn.Resp.StatusCode >= 299 {
+	if proxy.Dwn.Resp.StatusCode > 399 {
 		log.Warn().Int("downstreamResponseCode", proxy.Dwn.Resp.StatusCode).
 			Str("downstreamResponseMessage", proxy.Dwn.Resp.Message).
 			Str("path", proxy.Dwn.Req.URL.Path).
@@ -114,6 +114,9 @@ func sendStatusCodeAsJSON(proxy *Proxy) {
 	}
 	writeStandardResponseHeaders(proxy)
 	proxy.Dwn.Resp.Writer.Header().Set("Content-Type", "application/json")
+
+	proxy.Dwn.Resp.Writer.WriteHeader(proxy.Dwn.Resp.StatusCode)
+
 	statusCodeResponse := StatusCodeResponse{
 		Code:       proxy.Dwn.Resp.StatusCode,
 		Message:    proxy.Dwn.Resp.Message,
