@@ -58,6 +58,32 @@ func TestUpstreamSuccessWithProxyHandler(t *testing.T) {
 	}
 }
 
+func TestUpstreamPOSTNonRetryWithProxyHandler(t *testing.T) {
+	Runner = getRuntime()
+	httpClient = &HttpMock{}
+	mockDoFunc = func(req *http.Request) (*http.Response, error) {
+		json := `{"404":"not found"}`
+		return &http.Response{
+			StatusCode: 404,
+			Body:       ioutil.NopCloser(bytes.NewReader([]byte(json))),
+		}, nil
+	}
+
+	h := &TestHttpHandler{}
+	server := httptest.NewServer(h)
+	defer server.Close()
+
+	resp, err := http.Get(server.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := 404
+	if resp.StatusCode != want {
+		t.Fatalf("uh oh, received incorrect status code from non retrying failing proxyhandler, want %v, got %v", want, resp.StatusCode)
+	}
+}
+
 // TestUpstreamRetryWithProxyHandler mocks a 500 upstream response for a GET request, which is repeatable.
 // it will repeat upstream attempts until MaxAttempts is reached, then return a 502 gateway error
 func TestUpstreamGETRetryWithProxyHandler(t *testing.T) {
@@ -82,7 +108,7 @@ func TestUpstreamGETRetryWithProxyHandler(t *testing.T) {
 
 	want := 502
 	if resp.StatusCode != want {
-		t.Fatalf("uh oh, received incorrect status code from failing proxyhandler, want %v, got %v", want, resp.StatusCode)
+		t.Fatalf("uh oh, received incorrect status code from retrying failing proxyhandler, want %v, got %v", want, resp.StatusCode)
 	}
 }
 
