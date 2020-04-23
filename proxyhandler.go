@@ -16,7 +16,7 @@ const XRequestID = "X-REQUEST-ID"
 const contentEncoding = "Content-Encoding"
 
 //httpClient is the global user agent for upstream requests
-var httpClient *http.Client
+var httpClient HTTPClient
 
 //httpResponseHeadersNoRewrite contains a list of headers that are not copied from upstream to downstream to avoid bugs.
 var httpResponseHeadersNoRewrite []string = []string{"Date", "Content-Length"}

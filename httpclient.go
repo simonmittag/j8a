@@ -10,8 +10,13 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+type HTTPClient interface {
+	Do(req *http.Request) (*http.Response, error)
+	Get(uri string) (*http.Response, error)
+}
+
 // scaffoldHTTPClient is a factory method that applies connection params to the transport layer of http.Client
-func scaffoldHTTPClient(runtime Runtime) *http.Client {
+func scaffoldHTTPClient(runtime Runtime) HTTPClient {
 	idleConnTimeoutDuration := time.Duration(runtime.Connection.Upstream.IdleTimeoutSeconds) * time.Second
 	tLSHandshakeTimeoutDuration := time.Duration(runtime.Connection.Upstream.SocketTimeoutSeconds) * time.Second
 	socketTimeoutDuration := time.Duration(runtime.Connection.Upstream.SocketTimeoutSeconds) * time.Second
