@@ -88,23 +88,31 @@ func handle(proxy *Proxy) {
 		//this is required, else we leak TCP connections.
 		defer upstreamResponse.Body.Close()
 		upstreamResponseBody, bodyError := parseUpstreamResponse(upstreamResponse, proxy)
-		if bodyError == nil {
+		if shouldSendDownstreamResponse(upstreamResponse, bodyError) {
 			writeStandardResponseHeaders(proxy)
 			copyUpstreamResponseHeaders(proxy, upstreamResponse)
 			resetContentLengthHeader(proxy, upstreamResponseBody)
-			writeStatusCodeHeader(proxy.respondWith(200, "OK"))
+			writeStatusCodeHeader(proxy.respondWith(upstreamResponse.StatusCode, "none"))
 			copyUpstreamResponseBody(proxy, upstreamResponseBody)
 			logHandledRequest(proxy)
 			return
 		}
-		log.Debug().Err(bodyError).Msgf("error encountered parsing body")
 	}
-	log.Debug().Err(upstreamError).Msgf("error encountered upstream")
+	log.Trace().
+		Str(XRequestID, proxy.XRequestID).
+		Int("upstreamResponseCode", upstreamResponse.StatusCode).
+		Int("upstreamAttempt", proxy.Up.Atmpt.Count).
+		Int("upstreamMaxAttempt", Runner.Connection.Upstream.MaxAttempts).
+		Err(upstreamError).Msgf("upstream attempt did not pass exit criteria for proxying")
 	if proxy.shouldAttemptRetry() {
 		handle(proxy.nextAttempt())
 	} else {
 		sendStatusCodeAsJSON(proxy.respondWith(502, "bad gateway, unable to read upstream response"))
 	}
+}
+
+func shouldSendDownstreamResponse(upstreamResponse *http.Response, bodyError error) bool {
+	return bodyError == nil && upstreamResponse.StatusCode < 500
 }
 
 func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byte, error) {
