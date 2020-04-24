@@ -5,13 +5,14 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/rs/zerolog/log"
 )
 
 //Version is the server version
-var Version string = "v0.3.5"
+var Version string = "v0.3.6"
 
 //ID is a unique server ID
 var ID string = "unknown"
@@ -23,6 +24,8 @@ type Runtime struct {
 
 //Runner is the Live environment of the server
 var Runner *Runtime
+
+var Boot sync.WaitGroup = sync.WaitGroup{}
 
 //BootStrap starts up the server from a ServerConfig
 func BootStrap() {
@@ -60,6 +63,9 @@ func (runtime Runtime) startListening() {
 		WriteTimeout: writeTimeoutDuration,
 		IdleTimeout:  idleTimeoutDuration,
 	}
+
+	//signal the WaitGroup that boot is over.
+	Boot.Done()
 
 	//this line blocks execution and the server stays up
 	err := server.ListenAndServe()

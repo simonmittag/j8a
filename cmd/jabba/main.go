@@ -5,5 +5,6 @@ import (
 )
 
 func main() {
+	jabba.Boot.Add(1)
 	jabba.BootStrap()
 }
