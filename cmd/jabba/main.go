@@ -5,8 +5,5 @@ import (
 )
 
 func main() {
-	jabba.InitLogger()
-	jabba.InitTime()
-	jabba.InitStats()
 	jabba.BootStrap()
 }

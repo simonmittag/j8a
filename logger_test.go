@@ -19,7 +19,7 @@ func TestServerID(t *testing.T) {
 
 func TestDefaultLogLevelInit(t *testing.T) {
 	os.Setenv("LOGLEVEL", "not set")
-	InitLogger()
+	initLogger()
 	got := zerolog.GlobalLevel().String()
 	want := "info"
 	if got != want {
@@ -29,7 +29,7 @@ func TestDefaultLogLevelInit(t *testing.T) {
 
 func TestTraceLogLevelInit(t *testing.T) {
 	os.Setenv("LOGLEVEL", "TRACE")
-	InitLogger()
+	initLogger()
 	got := zerolog.GlobalLevel().String()
 	want := "trace"
 	if got != want {
@@ -39,7 +39,7 @@ func TestTraceLogLevelInit(t *testing.T) {
 
 func TestDebugLogLevelInit(t *testing.T) {
 	os.Setenv("LOGLEVEL", "DEBUG")
-	InitLogger()
+	initLogger()
 	got := zerolog.GlobalLevel().String()
 	want := "debug"
 	if got != want {
@@ -49,7 +49,7 @@ func TestDebugLogLevelInit(t *testing.T) {
 
 func TestInfoLogLevelInit(t *testing.T) {
 	os.Setenv("LOGLEVEL", "INFO")
-	InitLogger()
+	initLogger()
 	got := zerolog.GlobalLevel().String()
 	want := "info"
 	if got != want {
@@ -59,7 +59,7 @@ func TestInfoLogLevelInit(t *testing.T) {
 
 func TestWarnLogLevelInit(t *testing.T) {
 	os.Setenv("LOGLEVEL", "WARN")
-	InitLogger()
+	initLogger()
 	got := zerolog.GlobalLevel().String()
 	want := "warn"
 	if got != want {

@@ -18,6 +18,7 @@ func initServerID() {
 	hasher.Write([]byte(getHost() + getVersion()))
 	ID = hex.EncodeToString(hasher.Sum(nil))[0:8]
 	log.Debug().Str("serverID", ID).Msg("determined serverID")
+	log.Logger = log.With().Str("serverId", ID).Logger()
 }
 
 func getHost() string {
@@ -40,7 +41,7 @@ func getVersion() string {
 }
 
 // Init sets up a global logger instance
-func InitLogger() {
+func initLogger() {
 	logLevel := strings.ToUpper(os.Getenv("LOGLEVEL"))
 	switch logLevel {
 	case "TRACE":
@@ -68,7 +69,6 @@ func InitLogger() {
 	}
 
 	initServerID()
-	log.Logger = log.With().Str("serverId", ID).Logger()
+	initTime()
 	log.Debug().Msgf("setting global log level to %s", logLevel)
-
 }

@@ -8,7 +8,7 @@ import (
 
 var TZ = "UTC"
 
-func InitTime() {
+func initTime() {
 	TZ = os.Getenv("TZ")
 	if len(TZ) == 0 {
 		TZ = "UTC"

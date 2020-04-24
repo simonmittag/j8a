@@ -3,6 +3,7 @@ package jabba
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
@@ -10,7 +11,7 @@ import (
 )
 
 //Version is the server version
-var Version string = "v0.3.4"
+var Version string = "v0.3.5"
 
 //ID is a unique server ID
 var ID string = "unknown"
@@ -25,6 +26,8 @@ var Runner *Runtime
 
 //BootStrap starts up the server from a ServerConfig
 func BootStrap() {
+	initLogger()
+
 	config := new(Config).
 		read("./jabba.json").
 		reApplyResourceNames().
@@ -32,7 +35,8 @@ func BootStrap() {
 		setDefaultValues()
 
 	Runner = &Runtime{Config: *config}
-	Runner.initUserAgent().
+	Runner.initStats().
+		initUserAgent().
 		assignHandlers().
 		startListening()
 }
@@ -81,6 +85,11 @@ func (runtime Runtime) initUserAgent() Runtime {
 	if httpClient == nil {
 		httpClient = scaffoldHTTPClient(runtime)
 	}
+	return runtime
+}
+
+func (runtime Runtime) initStats() Runtime {
+	go stats(os.Getpid())
 	return runtime
 }
 
