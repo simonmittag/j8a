@@ -58,6 +58,36 @@ func TestUpstreamSuccessWithProxyHandler(t *testing.T) {
 	}
 }
 
+func TestUpstreamHeadersAreRewrittenWithProxyHandler(t *testing.T) {
+	Runner = mockRuntime()
+	httpClient = &MockHttp{}
+	mockDoFunc = func(req *http.Request) (*http.Response, error) {
+		json := `{"key":"value"}`
+		return &http.Response{
+			StatusCode: 200,
+			Header: map[string][]string{
+				"Cookie": []string{"$Version=1; Skin=new"},
+			},
+			Body: ioutil.NopCloser(bytes.NewReader([]byte(json))),
+		}, nil
+	}
+
+	h := &TestHttpHandler{}
+	server := httptest.NewServer(h)
+	defer server.Close()
+
+	resp, err := http.Get(server.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := "$Version=1; Skin=new"
+	got := resp.Header["Cookie"][0]
+	if got != want {
+		t.Fatalf("Cookie header was not rewritten, want %v, got %v", want, got)
+	}
+}
+
 func TestUpstreamPOSTNonRetryWithProxyHandler(t *testing.T) {
 	Runner = mockRuntime()
 	httpClient = &MockHttp{}
