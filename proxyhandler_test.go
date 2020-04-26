@@ -58,7 +58,7 @@ func TestUpstreamSuccess(t *testing.T) {
 	}
 }
 
-// mocks upstream identity response that is re-encoded as gzip by Jabba
+// mocks upstream gzip response that is passed through as gzip by Jabba
 func TestUpstreamGzipEncodingPassThrough(t *testing.T) {
 	Runner = mockRuntime()
 	httpClient = &MockHttp{}
@@ -96,6 +96,7 @@ func TestUpstreamGzipEncodingPassThrough(t *testing.T) {
 	}
 }
 
+// mocks upstream identity response that is passed-through as-is
 func TestUpstreamIdentityEncodingPassThrough(t *testing.T) {
 	Runner = mockRuntime()
 	httpClient = &MockHttp{}
@@ -133,6 +134,7 @@ func TestUpstreamIdentityEncodingPassThrough(t *testing.T) {
 	}
 }
 
+// mocks upstream response with custom content encoding that is passed-through as-is
 func TestUpstreamCustomEncodingPassThroughWithBadAcceptEncoding(t *testing.T) {
 	Runner = mockRuntime()
 	httpClient = &MockHttp{}
@@ -170,6 +172,45 @@ func TestUpstreamCustomEncodingPassThroughWithBadAcceptEncoding(t *testing.T) {
 	}
 }
 
+
+func TestUpstreamCustomEncodingPassThroughWithIdentityAcceptEncoding(t *testing.T) {
+	Runner = mockRuntime()
+	httpClient = &MockHttp{}
+	mockDoFunc = func(req *http.Request) (*http.Response, error) {
+		json := `{"key":"value"}`
+		return &http.Response{
+			StatusCode: 200,
+			Header: map[string][]string{
+				"Content-Encoding": []string{"custom"},
+			},
+			Body: ioutil.NopCloser(bytes.NewReader([]byte(json))),
+		}, nil
+	}
+
+	server := httptest.NewServer(&ProxyHttpHandler{})
+	defer server.Close()
+
+	c := &http.Client{}
+	req, _ := http.NewRequest("GET", server.URL, nil)
+	req.Header.Set("Accept-Encoding", "identity")
+	resp, err := c.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	gotBody, _ := ioutil.ReadAll(resp.Body)
+	if c := bytes.Compare(gotBody[0:2], gzipMagicBytes); c == 0 {
+		t.Errorf("body should not have gzip response magic bytes: %v", gotBody[0:2])
+	}
+
+	want := "custom"
+	got := resp.Header["Content-Encoding"][0]
+	if got != want {
+		t.Errorf("uh oh, did not receive correct Content-Encoding header, want %v, got %v", want, got)
+	}
+}
+
+// mocks upstream identity that is re-encoded as gzip by Jabba
 func TestUpstreamGzipReEncodingWithProxyHandler(t *testing.T) {
 	Runner = mockRuntime()
 	httpClient = &MockHttp{}
@@ -207,6 +248,7 @@ func TestUpstreamGzipReEncodingWithProxyHandler(t *testing.T) {
 	}
 }
 
+// tests upstream headers are rewritten
 func TestUpstreamHeadersAreRewrittenWithProxyHandler(t *testing.T) {
 	Runner = mockRuntime()
 	httpClient = &MockHttp{}
@@ -237,6 +279,7 @@ func TestUpstreamHeadersAreRewrittenWithProxyHandler(t *testing.T) {
 	}
 }
 
+// tests upstream POST requests are not retried.
 func TestUpstreamPOSTNonRetryWithProxyHandler(t *testing.T) {
 	Runner = mockRuntime()
 	httpClient = &MockHttp{}
