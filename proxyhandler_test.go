@@ -58,6 +58,41 @@ func TestUpstreamSuccessWithProxyHandler(t *testing.T) {
 	}
 }
 
+func TestUpstreamGzipEncodingPassThroughWithProxyHandler(t *testing.T) {
+	Runner = mockRuntime()
+	httpClient = &MockHttp{}
+	mockDoFunc = func(req *http.Request) (*http.Response, error) {
+		json := `{"key":"value"}`
+		return &http.Response{
+			StatusCode: 200,
+			Header: map[string][]string{
+				"Content-Encoding": []string{"gzip"},
+			},
+			Body: ioutil.NopCloser(bytes.NewReader(Gzip([]byte(json)))),
+		}, nil
+	}
+
+	h := &TestHttpHandler{}
+	server := httptest.NewServer(h)
+	defer server.Close()
+
+	resp, err := http.Get(server.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := "gzip"
+	got := resp.Header["Content-Encoding"][0]
+	if got != want {
+		t.Errorf("uh oh, did not receive correct Content-Encoding header, want %v, got %v", want, got)
+	}
+
+	gotBody, _ := ioutil.ReadAll(resp.Body)
+	if c := bytes.Compare(gotBody[0:2], gzipMagicBytes); c != 0 {
+		t.Errorf("uh, oh, body did not have gzip response magic bytes, want %v, got %v", gzipMagicBytes, gotBody[0:2])
+	}
+}
+
 func TestUpstreamHeadersAreRewrittenWithProxyHandler(t *testing.T) {
 	Runner = mockRuntime()
 	httpClient = &MockHttp{}

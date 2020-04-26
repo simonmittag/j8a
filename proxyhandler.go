@@ -19,7 +19,7 @@ const contentEncoding = "Content-Encoding"
 var httpClient HTTPClient
 
 //httpResponseHeadersNoRewrite contains a list of headers that are not copied from upstream to downstream to avoid bugs.
-var httpResponseHeadersNoRewrite []string = []string{"Date", "Content-Length"}
+var httpResponseHeadersNoRewrite []string = []string{"Date", "Content-Length", "Content-Encoding"}
 
 // main proxy handling
 func proxyHandler(response http.ResponseWriter, request *http.Request) {
@@ -92,6 +92,7 @@ func handle(proxy *Proxy) {
 			writeStandardResponseHeaders(proxy)
 			copyUpstreamResponseHeaders(proxy, upstreamResponse)
 			resetContentLengthHeader(proxy, upstreamResponseBody)
+			setContentEncodingHeader(proxy, upstreamResponse)
 			writeStatusCodeHeader(proxy.respondWith(upstreamResponse.StatusCode, "none"))
 			copyUpstreamResponseBody(proxy, upstreamResponseBody)
 			logHandledRequest(proxy)
@@ -129,6 +130,17 @@ func resetContentLengthHeader(proxy *Proxy, upstreamResponseBody []byte) {
 	}
 }
 
+func setContentEncodingHeader(proxy *Proxy, upstreamResponse *http.Response) {
+	if proxy.Dwn.Resp.SendGzip {                                   //we still need this func for sending std response.
+		proxy.Dwn.Resp.Writer.Header().Set("Content-Encoding", proxy.contentEncoding())
+	} else {
+		ce := upstreamResponse.Header["Content-Encoding"]
+		if len(ce) > 0 {
+			proxy.Dwn.Resp.Writer.Header().Set("Content-Encoding", strings.Join(ce, " "))
+		}
+	}
+}
+
 func copyUpstreamResponseBody(proxy *Proxy, upstreamResponseBody []byte) {
 	start := time.Now()
 	if proxy.shouldGzipEncodeResponseBody() {
@@ -147,9 +159,6 @@ func copyUpstreamResponseHeaders(proxy *Proxy, upstreamResponse *http.Response) 
 			for _, mval := range values {
 				proxy.Dwn.Resp.Writer.Header().Set(key, mval)
 			}
-		}
-		if key == contentEncoding {
-			proxy.Up.Atmpt.isGzip = proxy.Up.Atmpt.isGzip || strings.Contains(strings.Join(values, " "), "gzip")
 		}
 	}
 }
