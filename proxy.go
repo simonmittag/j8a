@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
@@ -31,6 +32,8 @@ type Atmpt struct {
 	Count      int
 	StatusCode int
 	isGzip     bool
+	resp       *http.Response
+	respBody   *[]byte
 }
 
 // Resp wraps downstream http response writer and data
@@ -123,9 +126,11 @@ func (proxy Proxy) bodyReader() io.Reader {
 
 func (proxy *Proxy) firstAttempt(URL *URL, label string) *Proxy {
 	proxy.Up.Atmpt = Atmpt{
-		Label: label,
-		URL:   URL,
-		Count: 1,
+		Label:    label,
+		URL:      URL,
+		Count:    1,
+		resp:     nil,
+		respBody: nil,
 	}
 	return proxy
 }
@@ -134,6 +139,8 @@ func (proxy *Proxy) nextAttempt() *Proxy {
 	proxy.Up.Atmpt.Count++
 	proxy.Up.Atmpt.StatusCode = 0
 	proxy.Up.Atmpt.isGzip = false
+	proxy.Up.Atmpt.resp = nil
+	proxy.Up.Atmpt.respBody = nil
 	return proxy
 }
 
@@ -144,11 +151,75 @@ func (proxy *Proxy) initXRequestID() *Proxy {
 	return proxy
 }
 
+func (proxy *Proxy) writeContentEncodingHeader() {
+	proxy.Dwn.Resp.Writer.Header().Set(contentEncoding, proxy.contentEncoding())
+}
+
+func (proxy *Proxy) copyUpstreamResponseHeaders() {
+	proxy.Up.Atmpt.StatusCode = proxy.Up.Atmpt.resp.StatusCode
+	for key, values := range proxy.Up.Atmpt.resp.Header {
+		if shouldRewrite(key) {
+			for _, mval := range values {
+				proxy.Dwn.Resp.Writer.Header().Set(key, mval)
+			}
+		}
+	}
+}
+
+func (proxy *Proxy) copyUpstreamResponseBody() {
+	start := time.Now()
+	if proxy.shouldGzipEncodeResponseBody() {
+		proxy.Dwn.Resp.Writer.Write(Gzip(*proxy.Up.Atmpt.respBody))
+		elapsed := time.Since(start)
+		log.Trace().Msgf("copying upstream body with gzip re-encoding took %s", elapsed)
+	} else {
+		if proxy.shouldGzipDecodeResponseBody() {
+			proxy.Dwn.Resp.Writer.Write(Gunzip([]byte(*proxy.Up.Atmpt.respBody)))
+			elapsed := time.Since(start)
+			log.Trace().Msgf("copying upstream body with gzip re-decoding took %s", elapsed)
+		} else {
+			proxy.Dwn.Resp.Writer.Write([]byte(*proxy.Up.Atmpt.respBody))
+			elapsed := time.Since(start)
+			log.Trace().Msgf("copying upstream body without coding took %s", elapsed)
+		}
+	}
+}
+
 func (proxy *Proxy) contentEncoding() string {
 	if proxy.Dwn.Resp.SendGzip {
 		return "gzip"
+	} else {
+		if proxy.shouldGzipDecodeResponseBody() {
+			return "identity"
+		} else {
+			ce := proxy.Up.Atmpt.resp.Header[contentEncoding]
+			if len(ce) > 0 {
+				return strings.Join(ce, " ")
+			} else {
+				return "identity"
+			}
+		}
 	}
-	return "identity"
+}
+
+func (proxy *Proxy) processHeaders() {
+	proxy.writeStandardResponseHeaders()
+	proxy.copyUpstreamResponseHeaders()
+	proxy.resetContentLengthHeader()
+	proxy.writeContentEncodingHeader()
+	proxy.writeStatusCodeHeader()
+}
+
+func (proxy *Proxy) resetContentLengthHeader() {
+	if proxy.Dwn.Method == "HEAD" || len(*proxy.Up.Atmpt.respBody) == 0 {
+		proxy.Dwn.Resp.Writer.Header().Set(contentLength, "0")
+	}
+}
+
+//status code must be last, no headers may be written after this one.
+func (proxy *Proxy) writeStatusCodeHeader() {
+	proxy.respondWith(proxy.Up.Atmpt.StatusCode, "none")
+	proxy.Dwn.Resp.Writer.WriteHeader(proxy.Dwn.Resp.StatusCode)
 }
 
 func (proxy *Proxy) respondWith(statusCode int, message string) *Proxy {

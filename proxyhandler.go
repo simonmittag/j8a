@@ -2,13 +2,11 @@ package jabba
 
 import (
 	"bytes"
+	"github.com/rs/zerolog/log"
 	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strings"
-	"time"
-
-	"github.com/rs/zerolog/log"
 )
 
 //XRequestID is a per HTTP request unique identifier
@@ -85,18 +83,16 @@ func scaffoldUpstreamRequest(proxy *Proxy) *http.Request {
 // handle the proxy request
 func handle(proxy *Proxy) {
 	upstreamResponse, upstreamError := httpClient.Do(scaffoldUpstreamRequest(proxy))
+	proxy.Up.Atmpt.resp = upstreamResponse
 
 	if upstreamError == nil {
 		//this is required, else we leak TCP connections.
 		defer upstreamResponse.Body.Close()
 		upstreamResponseBody, bodyError := parseUpstreamResponse(upstreamResponse, proxy)
-		if shouldSendDownstreamResponse(upstreamResponse, bodyError) {
-			writeStandardResponseHeaders(proxy)
-			copyUpstreamResponseHeaders(proxy, upstreamResponse)
-			resetContentLengthHeader(proxy, upstreamResponseBody)
-			setContentEncodingHeader(proxy, upstreamResponse)
-			writeStatusCodeHeader(proxy.respondWith(upstreamResponse.StatusCode, "none"))
-			copyUpstreamResponseBody(proxy, upstreamResponseBody)
+		proxy.Up.Atmpt.respBody = &upstreamResponseBody
+		if shouldSendDownstreamResponse(proxy, bodyError) {
+			proxy.processHeaders()
+			proxy.copyUpstreamResponseBody()
 			logHandledRequest(proxy)
 			return
 		}
@@ -114,8 +110,8 @@ func handle(proxy *Proxy) {
 	}
 }
 
-func shouldSendDownstreamResponse(upstreamResponse *http.Response, bodyError error) bool {
-	return bodyError == nil && upstreamResponse.StatusCode < 500
+func shouldSendDownstreamResponse(proxy *Proxy, bodyError error) bool {
+	return bodyError == nil && proxy.Up.Atmpt.resp.StatusCode < 500
 }
 
 func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byte, error) {
@@ -124,64 +120,6 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 		proxy.Up.Atmpt.isGzip = true
 	}
 	return upstreamResponseBody, bodyError
-}
-
-func resetContentLengthHeader(proxy *Proxy, upstreamResponseBody []byte) {
-	if proxy.Dwn.Method == "HEAD" || len(upstreamResponseBody) == 0 {
-		proxy.Dwn.Resp.Writer.Header().Set(contentLength, "0")
-	}
-}
-
-func setContentEncodingHeader(proxy *Proxy, upstreamResponse *http.Response) {
-	if proxy.Dwn.Resp.SendGzip {
-		proxy.Dwn.Resp.Writer.Header().Set(contentEncoding, "gzip")
-	} else {
-		if proxy.shouldGzipDecodeResponseBody() {
-			proxy.Dwn.Resp.Writer.Header().Set(contentEncoding, "identity")
-		} else {
-			ce := upstreamResponse.Header[contentEncoding]
-			if len(ce) > 0 {
-				proxy.Dwn.Resp.Writer.Header().Set(contentEncoding, strings.Join(ce, " "))
-			}
-		}
-	}
-}
-
-func copyUpstreamResponseBody(proxy *Proxy, upstreamResponseBody []byte) {
-	start := time.Now()
-	if proxy.shouldGzipEncodeResponseBody() {
-		proxy.Dwn.Resp.Writer.Write(Gzip(upstreamResponseBody))
-		elapsed := time.Since(start)
-		log.Trace().Msgf("copying upstream body with gzip re-encoding took %s", elapsed)
-	} else {
-		if proxy.shouldGzipDecodeResponseBody() {
-			proxy.Dwn.Resp.Writer.Write(Gunzip([]byte(upstreamResponseBody)))
-			elapsed := time.Since(start)
-			log.Trace().Msgf("copying upstream body with gzip re-decoding took %s", elapsed)
-		} else {
-			proxy.Dwn.Resp.Writer.Write([]byte(upstreamResponseBody))
-			elapsed := time.Since(start)
-			log.Trace().Msgf("copying upstream body without coding took %s", elapsed)
-		}
-	}
-
-
-}
-
-func copyUpstreamResponseHeaders(proxy *Proxy, upstreamResponse *http.Response) {
-	proxy.Up.Atmpt.StatusCode = upstreamResponse.StatusCode
-	for key, values := range upstreamResponse.Header {
-		if shouldRewrite(key) {
-			for _, mval := range values {
-				proxy.Dwn.Resp.Writer.Header().Set(key, mval)
-			}
-		}
-	}
-}
-
-//status code must be last, no headers may be written after this one.
-func writeStatusCodeHeader(proxy *Proxy) {
-	proxy.Dwn.Resp.Writer.WriteHeader(proxy.Dwn.Resp.StatusCode)
 }
 
 func logHandledRequest(proxy *Proxy) {
