@@ -133,7 +133,7 @@ func TestUpstreamIdentityEncodingPassThrough(t *testing.T) {
 	}
 }
 
-func TestUpstreamIdentityEncodingPassThroughWithBadAcceptEncoding(t *testing.T) {
+func TestUpstreamCustomEncodingPassThroughWithBadAcceptEncoding(t *testing.T) {
 	Runner = mockRuntime()
 	httpClient = &MockHttp{}
 	mockDoFunc = func(req *http.Request) (*http.Response, error) {
@@ -141,7 +141,7 @@ func TestUpstreamIdentityEncodingPassThroughWithBadAcceptEncoding(t *testing.T) 
 		return &http.Response{
 			StatusCode: 200,
 			Header: map[string][]string{
-				"Content-Encoding": []string{"identity"},
+				"Content-Encoding": []string{"custom"},
 			},
 			Body: ioutil.NopCloser(bytes.NewReader([]byte(json))),
 		}, nil
@@ -163,7 +163,7 @@ func TestUpstreamIdentityEncodingPassThroughWithBadAcceptEncoding(t *testing.T) 
 		t.Errorf("body should not have gzip response magic bytes: %v", gotBody[0:2])
 	}
 
-	want := "identity"
+	want := "custom"
 	got := resp.Header["Content-Encoding"][0]
 	if got != want {
 		t.Errorf("uh oh, did not receive correct Content-Encoding header, want %v, got %v", want, got)
