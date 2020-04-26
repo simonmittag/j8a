@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"math/rand"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -56,5 +57,18 @@ func randomHuttese() string {
 }
 
 func aboutHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write(AboutResponse{}.AsJSON())
+	ae := r.Header["Accept-Encoding"]
+	if len(ae) > 0 {
+		s := strings.Join(ae, " ")
+		if strings.Contains(s, "gzip") {
+			w.Header().Set("Content-Encoding", "gzip")
+			w.Write(Gzip(AboutResponse{}.AsJSON()))
+		} else {
+			w.Header().Set("Content-Encoding", "identity")
+			w.Write(AboutResponse{}.AsJSON())
+		}
+	} else {
+		w.Header().Set("Content-Encoding", "identity")
+		w.Write(AboutResponse{}.AsJSON())
+	}
 }
