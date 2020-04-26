@@ -2,10 +2,11 @@ package jabba
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 )
 
-//TestDefaultDownstreamReadTimeout
+//test pool allocation of zipper
 func TestGzipper(t *testing.T) {
 	//run small loop to ensure pool allocation works
 	for i:=0;i<=10;i++ {
@@ -19,6 +20,15 @@ func TestGzipper(t *testing.T) {
 		var want = [2]int{100, 120}
 		if !(len(zipped) >= want[0] && len(zipped) <= want[1]) {
 			t.Errorf("gzip compression not working")
+		}
+	}
+}
+
+func TestGzipThenUnzip(t *testing.T) {
+	for i:=0;i<=100;i++ {
+		json := []byte(fmt.Sprintf(`{ "key":"value%d" }`, i))
+		if c := bytes.Compare(json, Gunzip(Gzip(json))); c != 0 {
+			t.Error("unzipped data is not equal to original")
 		}
 	}
 }

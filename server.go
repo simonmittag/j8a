@@ -12,7 +12,7 @@ import (
 )
 
 //Version is the server version
-var Version string = "v0.3.6"
+var Version string = "v0.3.7"
 
 //ID is a unique server ID
 var ID string = "unknown"
@@ -104,7 +104,6 @@ func writeStandardResponseHeaders(proxy *Proxy) {
 	header := proxy.Dwn.Resp.Writer.Header()
 
 	header.Set("Server", fmt.Sprintf("Jabba %s %s", Version, ID))
-	header.Set("Content-Encoding", proxy.contentEncoding())
 	header.Set("Cache-control:", "no-store, no-cache, must-revalidate, proxy-revalidate")
 	//for TLS response, we set HSTS header see RFC6797
 	if Runner.Connection.Downstream.Mode == "TLS" {
@@ -129,6 +128,7 @@ func sendStatusCodeAsJSON(proxy *Proxy) {
 	}
 	writeStandardResponseHeaders(proxy)
 	proxy.Dwn.Resp.Writer.Header().Set("Content-Type", "application/json")
+	proxy.Dwn.Resp.Writer.Header().Set("Content-Encoding", proxy.contentEncoding())
 
 	proxy.Dwn.Resp.Writer.WriteHeader(proxy.Dwn.Resp.StatusCode)
 
@@ -137,6 +137,7 @@ func sendStatusCodeAsJSON(proxy *Proxy) {
 		Message:    proxy.Dwn.Resp.Message,
 		XRequestID: proxy.XRequestID,
 	}
+
 	if proxy.Dwn.Resp.SendGzip {
 		proxy.Dwn.Resp.Writer.Write(Gzip(statusCodeResponse.AsJSON()))
 	} else {

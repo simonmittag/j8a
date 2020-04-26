@@ -169,3 +169,7 @@ func (proxy *Proxy) hasLegalHTTPMethod() bool {
 func (proxy *Proxy) shouldGzipEncodeResponseBody() bool {
 	return proxy.Dwn.Resp.SendGzip && !proxy.Up.Atmpt.isGzip
 }
+
+func (proxy *Proxy) shouldGzipDecodeResponseBody() bool {
+	return !proxy.Dwn.Resp.SendGzip && proxy.Up.Atmpt.isGzip
+}

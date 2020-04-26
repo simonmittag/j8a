@@ -25,14 +25,14 @@ func (m *MockHttp) Get(uri string) (*http.Response, error) {
 }
 
 //this testHandler binds the mock HTTP server to proxyHandler.
-type TestHttpHandler struct{}
+type ProxyHttpHandler struct{}
 
-func (t TestHttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (t ProxyHttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	proxyHandler(w, r)
 }
 
-// TestUpstreamSuccessWithProxyHandler mocks a 200 upstream response and tests the proxy handler returns clean.
-func TestUpstreamSuccessWithProxyHandler(t *testing.T) {
+// mocks a 200 upstream response and tests the proxy handler returns clean.
+func TestUpstreamSuccess(t *testing.T) {
 	Runner = mockRuntime()
 	httpClient = &MockHttp{}
 	mockDoFunc = func(req *http.Request) (*http.Response, error) {
@@ -43,7 +43,7 @@ func TestUpstreamSuccessWithProxyHandler(t *testing.T) {
 		}, nil
 	}
 
-	h := &TestHttpHandler{}
+	h := &ProxyHttpHandler{}
 	server := httptest.NewServer(h)
 	defer server.Close()
 
@@ -58,6 +58,235 @@ func TestUpstreamSuccessWithProxyHandler(t *testing.T) {
 	}
 }
 
+// mocks upstream gzip response that is passed through as gzip by Jabba
+func TestUpstreamGzipEncodingPassThrough(t *testing.T) {
+	Runner = mockRuntime()
+	httpClient = &MockHttp{}
+	mockDoFunc = func(req *http.Request) (*http.Response, error) {
+		json := `{"key":"value"}`
+		return &http.Response{
+			StatusCode: 200,
+			Header: map[string][]string{
+				"Content-Encoding": []string{"gzip"},
+			},
+			Body: ioutil.NopCloser(bytes.NewReader(Gzip([]byte(json)))),
+		}, nil
+	}
+
+	server := httptest.NewServer(&ProxyHttpHandler{})
+	defer server.Close()
+
+	c := &http.Client{}
+	req, _ := http.NewRequest("GET", server.URL, nil)
+	req.Header.Set("Accept-Encoding", "gzip")
+	resp, err := c.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	gotBody, _ := ioutil.ReadAll(resp.Body)
+	if c := bytes.Compare(gotBody[0:2], gzipMagicBytes); c != 0 {
+		t.Errorf("uh, oh, body did not have gzip response magic bytes, want %v, got %v", gzipMagicBytes, gotBody[0:2])
+	}
+
+	want := "gzip"
+	got := resp.Header["Content-Encoding"][0]
+	if got != want {
+		t.Errorf("uh oh, did not receive correct Content-Encoding header, want %v, got %v", want, got)
+	}
+}
+
+// mocks upstream identity response that is passed-through as-is
+func TestUpstreamIdentityEncodingPassThrough(t *testing.T) {
+	Runner = mockRuntime()
+	httpClient = &MockHttp{}
+	mockDoFunc = func(req *http.Request) (*http.Response, error) {
+		json := `{"key":"value"}`
+		return &http.Response{
+			StatusCode: 200,
+			Header: map[string][]string{
+				"Content-Encoding": []string{"identity"},
+			},
+			Body: ioutil.NopCloser(bytes.NewReader([]byte(json))),
+		}, nil
+	}
+
+	server := httptest.NewServer(&ProxyHttpHandler{})
+	defer server.Close()
+
+	c := &http.Client{}
+	req, _ := http.NewRequest("GET", server.URL, nil)
+	req.Header.Set("Accept-Encoding", "identity")
+	resp, err := c.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	gotBody, _ := ioutil.ReadAll(resp.Body)
+	if c := bytes.Compare(gotBody[0:2], gzipMagicBytes); c == 0 {
+		t.Errorf("body should not have gzip response magic bytes: %v", gotBody[0:2])
+	}
+
+	want := "identity"
+	got := resp.Header["Content-Encoding"][0]
+	if got != want {
+		t.Errorf("uh oh, did not receive correct Content-Encoding header, want %v, got %v", want, got)
+	}
+}
+
+// mocks upstream response with custom content encoding that is passed-through as-is
+func TestUpstreamCustomEncodingPassThroughWithBadAcceptEncoding(t *testing.T) {
+	Runner = mockRuntime()
+	httpClient = &MockHttp{}
+	mockDoFunc = func(req *http.Request) (*http.Response, error) {
+		json := `{"key":"value"}`
+		return &http.Response{
+			StatusCode: 200,
+			Header: map[string][]string{
+				"Content-Encoding": []string{"custom"},
+			},
+			Body: ioutil.NopCloser(bytes.NewReader([]byte(json))),
+		}, nil
+	}
+
+	server := httptest.NewServer(&ProxyHttpHandler{})
+	defer server.Close()
+
+	c := &http.Client{}
+	req, _ := http.NewRequest("GET", server.URL, nil)
+	req.Header.Set("Accept-Encoding", "uh-oh")
+	resp, err := c.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	gotBody, _ := ioutil.ReadAll(resp.Body)
+	if c := bytes.Compare(gotBody[0:2], gzipMagicBytes); c == 0 {
+		t.Errorf("body should not have gzip response magic bytes: %v", gotBody[0:2])
+	}
+
+	want := "custom"
+	got := resp.Header["Content-Encoding"][0]
+	if got != want {
+		t.Errorf("uh oh, did not receive correct Content-Encoding header, want %v, got %v", want, got)
+	}
+}
+
+// mocks upstream response with custom encoding that is passed through to client that accepts identity
+func TestUpstreamCustomEncodingPassThroughWithIdentityAcceptEncoding(t *testing.T) {
+	Runner = mockRuntime()
+	httpClient = &MockHttp{}
+	mockDoFunc = func(req *http.Request) (*http.Response, error) {
+		json := `{"key":"value"}`
+		return &http.Response{
+			StatusCode: 200,
+			Header: map[string][]string{
+				"Content-Encoding": []string{"custom"},
+			},
+			Body: ioutil.NopCloser(bytes.NewReader([]byte(json))),
+		}, nil
+	}
+
+	server := httptest.NewServer(&ProxyHttpHandler{})
+	defer server.Close()
+
+	c := &http.Client{}
+	req, _ := http.NewRequest("GET", server.URL, nil)
+	req.Header.Set("Accept-Encoding", "identity")
+	resp, err := c.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	gotBody, _ := ioutil.ReadAll(resp.Body)
+	if c := bytes.Compare(gotBody[0:2], gzipMagicBytes); c == 0 {
+		t.Errorf("body should not have gzip response magic bytes: %v", gotBody[0:2])
+	}
+
+	want := "custom"
+	got := resp.Header["Content-Encoding"][0]
+	if got != want {
+		t.Errorf("uh oh, did not receive correct Content-Encoding header, want %v, got %v", want, got)
+	}
+}
+
+// mocks upstream identity that is re-encoded as gzip by Jabba
+func TestUpstreamGzipReEncodingWithProxyHandler(t *testing.T) {
+	Runner = mockRuntime()
+	httpClient = &MockHttp{}
+	mockDoFunc = func(req *http.Request) (*http.Response, error) {
+		json := `{"key":"value"}`
+		return &http.Response{
+			StatusCode: 200,
+			Header: map[string][]string{
+				"Content-Encoding": []string{"identity"},
+			},
+			Body: ioutil.NopCloser(bytes.NewReader([]byte(json))),
+		}, nil
+	}
+
+	server := httptest.NewServer(&ProxyHttpHandler{})
+	defer server.Close()
+
+	c := &http.Client{}
+	req, _ := http.NewRequest("GET", server.URL, nil)
+	req.Header.Set("Accept-Encoding", "gzip")
+	resp, err := c.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	gotBody, _ := ioutil.ReadAll(resp.Body)
+	if c := bytes.Compare(gotBody[0:2], gzipMagicBytes); c != 0 {
+		t.Errorf("uh, oh, body did not have gzip response magic bytes, want %v, got %v", gzipMagicBytes, gotBody[0:2])
+	}
+
+	want := "gzip"
+	got := resp.Header["Content-Encoding"][0]
+	if got != want {
+		t.Errorf("uh oh, did not receive correct Content-Encoding header, want %v, got %v", want, got)
+	}
+}
+
+// mocks upstream gzip that is re-decoded as identity by Jabba
+func TestUpstreamGzipReDecodingWithProxyHandler(t *testing.T) {
+	Runner = mockRuntime()
+	httpClient = &MockHttp{}
+	mockDoFunc = func(req *http.Request) (*http.Response, error) {
+		json := `{"key":"value"}`
+		return &http.Response{
+			StatusCode: 200,
+			Header: map[string][]string{
+				"Content-Encoding": []string{"gzip"},
+			},
+			Body: ioutil.NopCloser(bytes.NewReader(Gzip([]byte(json)))),
+		}, nil
+	}
+
+	server := httptest.NewServer(&ProxyHttpHandler{})
+	defer server.Close()
+
+	c := &http.Client{}
+	req, _ := http.NewRequest("GET", server.URL, nil)
+	req.Header.Set("Accept-Encoding", "identity")
+	resp, err := c.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	gotBody, _ := ioutil.ReadAll(resp.Body)
+	if c := bytes.Compare(gotBody[0:2], gzipMagicBytes); c == 0 {
+		t.Errorf("body should not have gzip response magic bytes, got %v", gotBody[0:2])
+	}
+
+	want := "identity"
+	got := resp.Header["Content-Encoding"][0]
+	if got != want {
+		t.Errorf("uh oh, did not receive correct Content-Encoding header, want %v, got %v", want, got)
+	}
+}
+
+// tests upstream headers are rewritten
 func TestUpstreamHeadersAreRewrittenWithProxyHandler(t *testing.T) {
 	Runner = mockRuntime()
 	httpClient = &MockHttp{}
@@ -72,7 +301,7 @@ func TestUpstreamHeadersAreRewrittenWithProxyHandler(t *testing.T) {
 		}, nil
 	}
 
-	h := &TestHttpHandler{}
+	h := &ProxyHttpHandler{}
 	server := httptest.NewServer(h)
 	defer server.Close()
 
@@ -88,6 +317,7 @@ func TestUpstreamHeadersAreRewrittenWithProxyHandler(t *testing.T) {
 	}
 }
 
+// tests upstream POST requests are not retried.
 func TestUpstreamPOSTNonRetryWithProxyHandler(t *testing.T) {
 	Runner = mockRuntime()
 	httpClient = &MockHttp{}
@@ -99,7 +329,7 @@ func TestUpstreamPOSTNonRetryWithProxyHandler(t *testing.T) {
 		}, nil
 	}
 
-	h := &TestHttpHandler{}
+	h := &ProxyHttpHandler{}
 	server := httptest.NewServer(h)
 	defer server.Close()
 
@@ -127,7 +357,7 @@ func TestUpstreamGETRetryWithProxyHandler(t *testing.T) {
 		}, nil
 	}
 
-	h := &TestHttpHandler{}
+	h := &ProxyHttpHandler{}
 	server := httptest.NewServer(h)
 	defer server.Close()
 
