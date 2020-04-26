@@ -12,7 +12,7 @@ import (
 )
 
 //Version is the server version
-var Version string = "v0.3.7"
+var Version string = "v0.3.8"
 
 //ID is a unique server ID
 var ID string = "unknown"
@@ -100,7 +100,7 @@ func (runtime Runtime) initStats() Runtime {
 }
 
 //TODO: this really needs to be configurable. it adds a lot of options to every response otherewise.
-func writeStandardResponseHeaders(proxy *Proxy) {
+func (proxy *Proxy) writeStandardResponseHeaders() {
 	header := proxy.Dwn.Resp.Writer.Header()
 
 	header.Set("Server", fmt.Sprintf("Jabba %s %s", Version, ID))
@@ -117,7 +117,6 @@ func writeStandardResponseHeaders(proxy *Proxy) {
 }
 
 func sendStatusCodeAsJSON(proxy *Proxy) {
-
 	if proxy.Dwn.Resp.StatusCode > 399 {
 		log.Warn().Int("downstreamResponseCode", proxy.Dwn.Resp.StatusCode).
 			Str("downstreamResponseMessage", proxy.Dwn.Resp.Message).
@@ -126,9 +125,9 @@ func sendStatusCodeAsJSON(proxy *Proxy) {
 			Str("method", proxy.Dwn.Method).
 			Msgf("request not served")
 	}
-	writeStandardResponseHeaders(proxy)
+	proxy.writeStandardResponseHeaders()
 	proxy.Dwn.Resp.Writer.Header().Set("Content-Type", "application/json")
-	proxy.Dwn.Resp.Writer.Header().Set("Content-Encoding", proxy.contentEncoding())
+	proxy.writeContentEncodingHeader()
 
 	proxy.Dwn.Resp.Writer.WriteHeader(proxy.Dwn.Resp.StatusCode)
 
