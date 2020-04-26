@@ -74,20 +74,24 @@ func TestUpstreamGzipEncodingPassThroughWithProxyHandler(t *testing.T) {
 
 	server := httptest.NewServer(&TestHttpHandler{})
 	defer server.Close()
-	resp, err := http.Get(server.URL)
+
+	c := &http.Client{}
+	req, _ := http.NewRequest("GET", server.URL, nil)
+	req.Header.Set("Accept-Encoding", "gzip")
+	resp, err := c.Do(req)
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	gotBody, _ := ioutil.ReadAll(resp.Body)
+	if c := bytes.Compare(gotBody[0:2], gzipMagicBytes); c != 0 {
+		t.Errorf("uh, oh, body did not have gzip response magic bytes, want %v, got %v", gzipMagicBytes, gotBody[0:2])
 	}
 
 	want := "gzip"
 	got := resp.Header["Content-Encoding"][0]
 	if got != want {
 		t.Errorf("uh oh, did not receive correct Content-Encoding header, want %v, got %v", want, got)
-	}
-
-	gotBody, _ := ioutil.ReadAll(resp.Body)
-	if c := bytes.Compare(gotBody[0:2], gzipMagicBytes); c != 0 {
-		t.Errorf("uh, oh, body did not have gzip response magic bytes, want %v, got %v", gzipMagicBytes, gotBody[0:2])
 	}
 }
 
