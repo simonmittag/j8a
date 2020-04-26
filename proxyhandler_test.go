@@ -72,10 +72,8 @@ func TestUpstreamGzipEncodingPassThroughWithProxyHandler(t *testing.T) {
 		}, nil
 	}
 
-	h := &TestHttpHandler{}
-	server := httptest.NewServer(h)
+	server := httptest.NewServer(&TestHttpHandler{})
 	defer server.Close()
-
 	resp, err := http.Get(server.URL)
 	if err != nil {
 		t.Fatal(err)
