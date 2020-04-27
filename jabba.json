@@ -49,6 +49,10 @@
     {
       "path": "/posting",
       "resource": "posting"
+    },
+    {
+      "path": "/v2",
+      "resource": "mse6"
     }
   ],
   "resources": {
@@ -102,6 +106,15 @@
           "scheme": "http",
           "host": "localhost",
           "port": 8083
+        }
+      }
+    ],
+    "mse6": [
+      {
+        "url": {
+          "scheme": "http",
+          "host": "localhost",
+          "port": 60083
         }
       }
     ]

@@ -14,6 +14,7 @@ func TestMain(m *testing.M) {
 
 func testSetup() {
 	os.Setenv("TZ", "Australia/Sydney")
+	setupJabbaWithMse6()
 }
 
 //TestDefaultDownstreamReadTimeout
