@@ -185,6 +185,10 @@ func (proxy *Proxy) copyUpstreamResponseBody() {
 	}
 }
 
+func (proxy *Proxy) hasMadeUpstreamAttempt() bool {
+	return proxy.Up.Atmpt.resp != nil
+}
+
 func (proxy *Proxy) contentEncoding() string {
 	if proxy.Dwn.Resp.SendGzip {
 		return "gzip"
@@ -192,9 +196,13 @@ func (proxy *Proxy) contentEncoding() string {
 		if proxy.shouldGzipDecodeResponseBody() {
 			return "identity"
 		} else {
-			ce := proxy.Up.Atmpt.resp.Header[contentEncoding]
-			if len(ce) > 0 {
-				return strings.Join(ce, " ")
+			if proxy.hasMadeUpstreamAttempt() {
+				ce := proxy.Up.Atmpt.resp.Header[contentEncoding]
+				if len(ce) > 0 {
+					return strings.Join(ce, " ")
+				} else {
+					return "identity"
+				}
 			} else {
 				return "identity"
 			}

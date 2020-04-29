@@ -14,6 +14,8 @@ func TestMain(m *testing.M) {
 
 func testSetup() {
 	os.Setenv("TZ", "Australia/Sydney")
+	os.Setenv("LOGLEVEL", "TRACE")
+	os.Setenv("LOGCOLOR", "true")
 	setupJabbaWithMse6()
 }
 

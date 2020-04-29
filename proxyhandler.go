@@ -97,12 +97,19 @@ func handle(proxy *Proxy) {
 			return
 		}
 	}
-	log.Trace().
+
+	ev := log.Trace().
 		Str(XRequestID, proxy.XRequestID).
-		Int("upstreamResponseCode", upstreamResponse.StatusCode).
 		Int("upstreamAttempt", proxy.Up.Atmpt.Count).
-		Int("upstreamMaxAttempt", Runner.Connection.Upstream.MaxAttempts).
-		Err(upstreamError).Msgf("upstream attempt did not pass exit criteria for proxying")
+		Int("upstreamMaxAttempt", Runner.Connection.Upstream.MaxAttempts)
+	if upstreamResponse!=nil {
+		ev = ev.Int("upstreamResponseCode", upstreamResponse.StatusCode)
+	}
+	if upstreamError!=nil {
+		ev = ev.Err(upstreamError)
+	}
+	ev.Msg("upstream attempt not proxied")
+
 	if proxy.shouldAttemptRetry() {
 		handle(proxy.nextAttempt())
 	} else {
@@ -123,17 +130,28 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 }
 
 func logHandledRequest(proxy *Proxy) {
-	log.Info().
-		Str("path", proxy.Dwn.Path).
+	msg := "request served"
+	ev := log.Info()
+
+	if proxy.Dwn.Resp.StatusCode > 399 {
+		msg = "request not served"
+		ev = log.Warn()
+	}
+
+	ev = ev.Str("path", proxy.Dwn.Path).
 		Str("method", proxy.Dwn.Method).
 		Str("userAgent", proxy.Dwn.UserAgent).
 		Int("downstreamResponseCode", proxy.Dwn.Resp.StatusCode).
 		Str("downstreamContentEncoding", proxy.contentEncoding()).
-		Str(XRequestID, proxy.XRequestID).
-		Str("upstreamURI", proxy.resolveUpstreamURI()).
-		Str("upstreamLabel", proxy.Up.Atmpt.Label).
-		Int("upstreamResponseCode", proxy.Up.Atmpt.StatusCode).
-		Msgf("request served")
+		Str(XRequestID, proxy.XRequestID)
+
+	if proxy.hasMadeUpstreamAttempt() {
+		ev = ev.Str("upstreamURI", proxy.resolveUpstreamURI()).
+			Str("upstreamLabel", proxy.Up.Atmpt.Label).
+			Int("upstreamResponseCode", proxy.Up.Atmpt.StatusCode)
+	}
+
+	ev.Msg(msg)
 }
 
 func shouldRewrite(header string) bool {
