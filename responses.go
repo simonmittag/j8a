@@ -57,18 +57,28 @@ func randomHuttese() string {
 }
 
 func aboutHandler(w http.ResponseWriter, r *http.Request) {
+	proxy := new(Proxy).
+		initXRequestID().
+		parseIncoming(r).
+		setOutgoing(w)
+
+	proxy.writeStandardResponseHeaders()
+
 	ae := r.Header["Accept-Encoding"]
+	res := AboutResponse{}.AsJSON()
 	if len(ae) > 0 {
 		s := strings.Join(ae, " ")
 		if strings.Contains(s, "gzip") {
 			w.Header().Set("Content-Encoding", "gzip")
-			w.Write(Gzip(AboutResponse{}.AsJSON()))
+			w.Write(Gzip(res))
 		} else {
 			w.Header().Set("Content-Encoding", "identity")
-			w.Write(AboutResponse{}.AsJSON())
+			w.Write(res)
 		}
 	} else {
 		w.Header().Set("Content-Encoding", "identity")
-		w.Write(AboutResponse{}.AsJSON())
+		w.Write(res)
 	}
+
+	logHandledRequest(proxy)
 }

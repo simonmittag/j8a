@@ -8,7 +8,7 @@ import (
 type URL struct {
 	Scheme string
 	Host   string
-	Port   int16
+	Port   uint16
 }
 
 //String representation of our URL struct

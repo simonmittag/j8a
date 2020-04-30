@@ -117,14 +117,7 @@ func (proxy *Proxy) writeStandardResponseHeaders() {
 }
 
 func sendStatusCodeAsJSON(proxy *Proxy) {
-	if proxy.Dwn.Resp.StatusCode > 399 {
-		log.Warn().Int("downstreamResponseCode", proxy.Dwn.Resp.StatusCode).
-			Str("downstreamResponseMessage", proxy.Dwn.Resp.Message).
-			Str("path", proxy.Dwn.Req.URL.Path).
-			Str(XRequestID, proxy.XRequestID).
-			Str("method", proxy.Dwn.Method).
-			Msgf("request not served")
-	}
+
 	proxy.writeStandardResponseHeaders()
 	proxy.Dwn.Resp.Writer.Header().Set("Content-Type", "application/json")
 	proxy.writeContentEncodingHeader()
@@ -142,4 +135,6 @@ func sendStatusCodeAsJSON(proxy *Proxy) {
 	} else {
 		proxy.Dwn.Resp.Writer.Write(statusCodeResponse.AsJSON())
 	}
+
+	logHandledRequest(proxy)
 }

@@ -29,16 +29,28 @@ func (route Route) mapURL() (*URL, string, bool) {
 		for _, resourceMapping := range resource {
 			for _, resourceLabel := range resourceMapping.Labels {
 				if policyLabel == resourceLabel {
-					log.Trace().Msgf("route %s mapped to upstream %s for label %s", route.Path, resourceMapping.URL, resourceLabel)
+					log.Trace().
+						Str("routePath", route.Path).
+						Str("upstream", resourceMapping.URL.String()).
+						Str("label", resourceLabel).
+						Str("policy", route.Policy).
+						Msg("route mapped")
 					return &resourceMapping.URL, policyLabel, true
 				}
 			}
 		}
 	} else {
-		log.Trace().Msgf("route %s mapped to default upstream %s", route.Path, &resource[0].URL)
+		log.Trace().
+			Str("routePath", route.Path).
+			Str( "policy", "default").
+			Str("upstream", resource[0].URL.String()).
+			Msg("route mapped")
 		return &resource[0].URL, "default", true
 	}
 
-	log.Trace().Msgf("route %s not mapped", route.Path)
+	log.Trace().
+		Str("routePath", route.Path).
+		Msg("route not mapped")
+
 	return nil, "", false
 }

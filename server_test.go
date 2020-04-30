@@ -1,7 +1,7 @@
 package jabba
 
 import (
-	"fmt"
+	"github.com/rs/zerolog/log"
 	"net/http"
 	"sync"
 	"testing"
@@ -29,6 +29,20 @@ func TestServerMakesSuccessfulUpstreamConnection(t *testing.T) {
 	}
 }
 
+//func TestServerUpstreamReadTimeout(t *testing.T) {
+//	resp, err := http.Get("http://localhost:8080/about")
+//	resp, err = http.Get("http://localhost:8080/v2/billing")
+//	resp, err = http.Get("http://localhost:8080/v2/slowheader")
+//
+//	if err!=nil {
+//		t.Errorf("error connecting to upstream, cause: %v", err)
+//	}
+//
+//	if resp.StatusCode != 502 {
+//		t.Errorf("slow header writes from server > upstream timeout should not return ok and fail after max attempts, want 502, got %v", resp.StatusCode)
+//	}
+//}
+
 func setupJabbaWithMse6() {
 	//start mse6 our upstream server
 	mse6Wait.Add(1)
@@ -42,7 +56,7 @@ func setupJabbaWithMse6() {
 }
 
 func mse6Listen() {
-	fmt.Println("starting Upstream http server MSE6")
+	log.Trace().Msg("starting Upstream http server MSE6")
 
 	http.HandleFunc("/v2/billing", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Encoding", "identity")
