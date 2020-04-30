@@ -29,19 +29,17 @@ func TestServerMakesSuccessfulUpstreamConnection(t *testing.T) {
 	}
 }
 
-//func TestServerUpstreamReadTimeout(t *testing.T) {
-//	resp, err := http.Get("http://localhost:8080/about")
-//	resp, err = http.Get("http://localhost:8080/v2/billing")
-//	resp, err = http.Get("http://localhost:8080/v2/slowheader")
-//
-//	if err!=nil {
-//		t.Errorf("error connecting to upstream, cause: %v", err)
-//	}
-//
-//	if resp.StatusCode != 502 {
-//		t.Errorf("slow header writes from server > upstream timeout should not return ok and fail after max attempts, want 502, got %v", resp.StatusCode)
-//	}
-//}
+func TestServerUpstreamReadTimeout(t *testing.T) {
+	resp, err := http.Get("http://localhost:8080/v2/slowheader")
+
+	if err!=nil {
+		t.Errorf("error connecting to upstream, cause: %v", err)
+	}
+
+	if resp.StatusCode != 502 {
+		t.Errorf("slow header writes from server > upstream timeout should not return ok and fail after max attempts, want 502, got %v", resp.StatusCode)
+	}
+}
 
 func setupJabbaWithMse6() {
 	//start mse6 our upstream server
