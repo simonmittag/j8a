@@ -40,13 +40,6 @@ Loglevel for stdout, one of TRACE, DEBUG, INFO or WARN
 LOGLEVEL="DEBUG"
 ```
 
-### LOGCOLOR
-Enable color logging on stdout for development or workstation environment (not recommended in production)
-
-```bash
-LOGCOLOR="true"
-```
-
 ### TZ
 TimeZone
 
