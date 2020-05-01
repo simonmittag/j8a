@@ -54,6 +54,6 @@ TimeZone
 TZ="Australia/Sydney"
 ```
 
-## Code Of Conduct
-The Jabba team welcomes all contributors. Everyone interacting with the project's codebase, issue trackers, chat rooms and mailing lists
+## Contributions
+The Jabba team welcomes all [contributors](https://github.com/simonmittag/jabba/blob/master/CONTRIBUTING.md). Everyone interacting with the project's codebase, issue trackers, chat rooms and mailing lists
 is expected to follow the [code of conduct](https://github.com/simonmittag/jabba/blob/master/CODE_OF_CONDUCT.md)
