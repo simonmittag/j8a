@@ -22,7 +22,7 @@ Pull requests are the best way to propose changes to the codebase (we use [Circl
 In short, when you submit code changes, your submissions are understood to be under the same [Apache License](https://github.com/simonmittag/jabba/blob/master/LICENSE). Feel free to contact one of the project maintainers if that's a concern.
 
 ## Report bugs using Github's [issues](https://github.com/simonmittag/jabba/issues)
-We use GitHub issues to track public bugs. Report a bug by [opening a new issue](); it's that easy!
+We use GitHub issues to track public bugs. Report a bug by [opening a new issue](https://github.com/simonmittag/jabba/issues/new/choose); it's that easy!
 
 ## Write bug reports with necessary detail, background, and sample code
 Jabba is a proxy server. Filing bugs right now is simple and should include either mention of failing tests or sample http client.
