@@ -15,7 +15,7 @@ func TestServerBootStrap(t *testing.T) {
 }
 
 func TestServerMakesSuccessfulUpstreamConnection(t *testing.T) {
-	resp, err := http.Get("http://localhost:8080/v2/billing")
+	resp, err := http.Get("http://localhost:8080/c/billing")
 
 	if err != nil {
 		t.Errorf("error connecting to upstream, cause: %v", err)
@@ -27,7 +27,7 @@ func TestServerMakesSuccessfulUpstreamConnection(t *testing.T) {
 }
 
 func TestServerUpstreamReadTimeout(t *testing.T) {
-	resp, err := http.Get("http://localhost:8080/v2/slowheader")
+	resp, err := http.Get("http://localhost:8080/mse6/slowheader")
 	if err != nil {
 		t.Errorf("error connecting to upstream, cause: %v", err)
 	}
@@ -49,44 +49,45 @@ func setupJabbaWithMse6() {
 func mse6Listen() {
 	log.Trace().Msg("starting Upstream http server MSE6")
 
-	http.HandleFunc("/v2/billing", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/mse6/billing", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Encoding", "identity")
 		w.WriteHeader(200)
-		w.Write([]byte(`{"MSE6":"Hello from the v2/billing endpoint"}`))
+		w.Write([]byte(`{"MSE6":"Hello from the mse6/billing endpoint"}`))
 	})
 
-	http.HandleFunc("/v2/posting", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/mse6/posting", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Encoding", "identity")
 		w.WriteHeader(200)
-		w.Write([]byte(`{"MSE6":"Hello from the v2/posting endpoint"}`))
+		w.Write([]byte(`{"MSE6":"Hello from the mse6/posting endpoint"}`))
 	})
 
-	http.HandleFunc("/v2/slowbody", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/mse6/slowbody", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Encoding", "identity")
+		//we must have this, else golang sets it to 'chunked' after 2nd write
 		w.Header().Set("Transfer-Encoding", "identity")
 		w.WriteHeader(200)
 		hj, _ := w.(http.Hijacker)
 		conn, bufrw, _ := hj.Hijack()
 		defer conn.Close()
 		time.Sleep(time.Second * 3)
-		bufrw.WriteString(`[{"mse6":"Hello from the slowbody endpoint"}`)
+		bufrw.WriteString(`[{"mse6":"Hello from the mse6/slowbody endpoint"}`)
 		bufrw.Flush()
 		time.Sleep(time.Second * 3)
-		bufrw.WriteString(`,{"mse6":"and some more data from the slowbody endpoint"}]`)
+		bufrw.WriteString(`,{"mse6":"and some more data from the mse6/slowbody endpoint"}]`)
 		bufrw.Flush()
 	})
 
-	http.HandleFunc("/v2/slowheader", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/mse6/slowheader", func(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(time.Second * 3)
 		w.Header().Set("Content-Encoding", "identity")
-		w.WriteHeader(202)
-		w.Write([]byte(`{"MSE6":"Hello from the v2/slowheader endpoint"}`))
+		w.WriteHeader(200)
+		w.Write([]byte(`{"MSE6":"Hello from the mse6/slowheader endpoint"}`))
 	})
 
-	http.HandleFunc("/v2/gzip", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/mse6/gzip", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Encoding", "gzip")
 		w.WriteHeader(200)
-		w.Write(Gzip([]byte(`{"MSE6":"Hello from the v2/gzip endpoint"}`)))
+		w.Write(Gzip([]byte(`{"MSE6":"Hello from the mse6/gzip endpoint"}`)))
 	})
 
 	Boot.Done()
