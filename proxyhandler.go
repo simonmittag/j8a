@@ -89,6 +89,7 @@ func handle(proxy *Proxy) {
 		//this is required, else we leak TCP connections.
 		defer upstreamResponse.Body.Close()
 		upstreamResponseBody, bodyError := parseUpstreamResponse(upstreamResponse, proxy)
+		upstreamError = bodyError
 		proxy.Up.Atmpt.respBody = &upstreamResponseBody
 		if shouldSendDownstreamResponse(proxy, bodyError) {
 			proxy.processHeaders()
@@ -102,7 +103,7 @@ func handle(proxy *Proxy) {
 		Str(XRequestID, proxy.XRequestID).
 		Int("upstreamAttempt", proxy.Up.Atmpt.Count).
 		Int("upstreamMaxAttempt", Runner.Connection.Upstream.MaxAttempts)
-	if upstreamResponse!=nil {
+	if upstreamResponse!=nil && upstreamResponse.StatusCode>0 {
 		ev = ev.Int("upstreamResponseCode", upstreamResponse.StatusCode)
 	}
 	if upstreamError!=nil {
