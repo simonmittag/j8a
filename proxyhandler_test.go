@@ -211,7 +211,7 @@ func TestUpstreamCustomEncodingPassThroughWithIdentityAcceptEncoding(t *testing.
 }
 
 // mocks upstream identity that is re-encoded as gzip by Jabba
-func TestUpstreamGzipReEncodingWithProxyHandler(t *testing.T) {
+func TestUpstreamGzipReEncoding(t *testing.T) {
 	Runner = mockRuntime()
 	httpClient = &MockHttp{}
 	mockDoFunc = func(req *http.Request) (*http.Response, error) {
@@ -249,7 +249,7 @@ func TestUpstreamGzipReEncodingWithProxyHandler(t *testing.T) {
 }
 
 // mocks upstream gzip that is re-decoded as identity by Jabba
-func TestUpstreamGzipReDecodingWithProxyHandler(t *testing.T) {
+func TestUpstreamGzipReDecoding(t *testing.T) {
 	Runner = mockRuntime()
 	httpClient = &MockHttp{}
 	mockDoFunc = func(req *http.Request) (*http.Response, error) {
@@ -287,7 +287,7 @@ func TestUpstreamGzipReDecodingWithProxyHandler(t *testing.T) {
 }
 
 // tests upstream headers are rewritten
-func TestUpstreamHeadersAreRewrittenWithProxyHandler(t *testing.T) {
+func TestUpstreamHeadersAreRewritten(t *testing.T) {
 	Runner = mockRuntime()
 	httpClient = &MockHttp{}
 	mockDoFunc = func(req *http.Request) (*http.Response, error) {
@@ -318,7 +318,7 @@ func TestUpstreamHeadersAreRewrittenWithProxyHandler(t *testing.T) {
 }
 
 // tests upstream POST requests are not retried.
-func TestUpstreamPOSTNonRetryWithProxyHandler(t *testing.T) {
+func TestUpstreamPOSTNonRetry(t *testing.T) {
 	Runner = mockRuntime()
 	httpClient = &MockHttp{}
 	mockDoFunc = func(req *http.Request) (*http.Response, error) {
@@ -346,7 +346,7 @@ func TestUpstreamPOSTNonRetryWithProxyHandler(t *testing.T) {
 
 // TestUpstreamRetryWithProxyHandler mocks a 500 upstream response for a GET request, which is repeatable.
 // it will repeat upstream attempts until MaxAttempts is reached, then return a 502 gateway error
-func TestUpstreamGETRetryWithProxyHandler(t *testing.T) {
+func TestUpstreamGETRetry(t *testing.T) {
 	Runner = mockRuntime()
 	httpClient = &MockHttp{}
 	mockDoFunc = func(req *http.Request) (*http.Response, error) {
