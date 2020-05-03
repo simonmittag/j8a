@@ -3,12 +3,9 @@ package jabba
 import (
 	"github.com/rs/zerolog/log"
 	"net/http"
-	"sync"
 	"testing"
 	"time"
 )
-
-var mse6Wait sync.WaitGroup = sync.WaitGroup{}
 
 func TestServerBootStrap(t *testing.T) {
 	resp, _ := http.Get("http://localhost:8080/about")
@@ -20,7 +17,7 @@ func TestServerBootStrap(t *testing.T) {
 func TestServerMakesSuccessfulUpstreamConnection(t *testing.T) {
 	resp, err := http.Get("http://localhost:8080/v2/billing")
 
-	if err!=nil {
+	if err != nil {
 		t.Errorf("error connecting to upstream, cause: %v", err)
 	}
 
@@ -31,8 +28,7 @@ func TestServerMakesSuccessfulUpstreamConnection(t *testing.T) {
 
 func TestServerUpstreamReadTimeout(t *testing.T) {
 	resp, err := http.Get("http://localhost:8080/v2/slowheader")
-
-	if err!=nil {
+	if err != nil {
 		t.Errorf("error connecting to upstream, cause: %v", err)
 	}
 
@@ -42,12 +38,9 @@ func TestServerUpstreamReadTimeout(t *testing.T) {
 }
 
 func setupJabbaWithMse6() {
-	//start mse6 our upstream server
-	mse6Wait.Add(1)
+	Boot.Add(1)
 	go mse6Listen()
-	mse6Wait.Wait()
 
-	//start jabba
 	Boot.Add(1)
 	go BootStrap()
 	Boot.Wait()
@@ -59,36 +52,44 @@ func mse6Listen() {
 	http.HandleFunc("/v2/billing", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Encoding", "identity")
 		w.WriteHeader(200)
-		w.Write([]byte(`{"MSE6":"Hello from the billing endpoint"}`))
+		w.Write([]byte(`{"MSE6":"Hello from the v2/billing endpoint"}`))
 	})
 
 	http.HandleFunc("/v2/posting", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Encoding", "identity")
 		w.WriteHeader(200)
-		w.Write([]byte(`{"MSE6":"Hello from the posting endpoint"}`))
+		w.Write([]byte(`{"MSE6":"Hello from the v2/posting endpoint"}`))
 	})
 
 	http.HandleFunc("/v2/slowbody", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Encoding", "identity")
+		w.Header().Set("Transfer-Encoding", "identity")
 		w.WriteHeader(200)
-		time.Sleep(time.Second*2)
-		w.Write([]byte(`{"MSE6":"Hello from the posting endpoint"}`))
+		hj, _ := w.(http.Hijacker)
+		conn, bufrw, _ := hj.Hijack()
+		defer conn.Close()
+		time.Sleep(time.Second * 3)
+		bufrw.WriteString(`[{"mse6":"Hello from the slowbody endpoint"}`)
+		bufrw.Flush()
+		time.Sleep(time.Second * 3)
+		bufrw.WriteString(`,{"mse6":"and some more data from the slowbody endpoint"}]`)
+		bufrw.Flush()
 	})
 
 	http.HandleFunc("/v2/slowheader", func(w http.ResponseWriter, r *http.Request) {
-		time.Sleep(time.Second*2)
+		time.Sleep(time.Second * 3)
 		w.Header().Set("Content-Encoding", "identity")
-		w.WriteHeader(200)
-		w.Write([]byte(`{"MSE6":"Hello from the posting endpoint"}`))
+		w.WriteHeader(202)
+		w.Write([]byte(`{"MSE6":"Hello from the v2/slowheader endpoint"}`))
 	})
 
 	http.HandleFunc("/v2/gzip", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Encoding", "gzip")
 		w.WriteHeader(200)
-		w.Write(Gzip([]byte(`{"MSE6":"Hello from the posting endpoint"}`)))
+		w.Write(Gzip([]byte(`{"MSE6":"Hello from the v2/gzip endpoint"}`)))
 	})
 
-	mse6Wait.Done()
+	Boot.Done()
 	err := http.ListenAndServe(":60083", nil)
 	if err != nil {
 		panic(err.Error())
