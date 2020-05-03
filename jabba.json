@@ -43,8 +43,12 @@
       "policy": "ab"
     },
     {
-      "path": "/result",
-      "resource": "result"
+      "path": "/slowheader",
+      "resource": "myawesomeproj"
+    },
+    {
+      "path": "/slowbody",
+      "resource": "myawesomeproj"
     },
     {
       "path": "/posting",
@@ -100,7 +104,7 @@
         }
       }
     ],
-    "posting": [
+    "myawesomeproj": [
       {
         "url": {
           "scheme": "http",
