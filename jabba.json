@@ -8,9 +8,9 @@
       "mode": "TLS"
     },
     "upstream": {
-      "socketTimeoutSeconds": 1,
-      "readTimeoutSeconds": 1,
-      "idleTimeoutSeconds": 1,
+      "socketTimeoutSeconds": 3,
+      "readTimeoutSeconds": 121,
+      "idleTimeoutSeconds": 30,
       "maxAttempts": 4,
       "poolSize": 1024
     }
