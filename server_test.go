@@ -15,7 +15,7 @@ func TestServerBootStrap(t *testing.T) {
 }
 
 func TestServerMakesSuccessfulUpstreamConnection(t *testing.T) {
-	resp, err := http.Get("http://localhost:8080/c/billing")
+	resp, err := http.Get("http://localhost:8080/mse6/billing")
 
 	if err != nil {
 		t.Errorf("error connecting to upstream, cause: %v", err)
@@ -26,14 +26,25 @@ func TestServerMakesSuccessfulUpstreamConnection(t *testing.T) {
 	}
 }
 
-func TestServerUpstreamReadTimeout(t *testing.T) {
-	resp, err := http.Get("http://localhost:8080/mse6/slowheader")
+func TestServerUpstreamReadTimeoutSlowHeader(t *testing.T) {
+	resp, err := http.Get("http://localhost:8080/slowheader")
 	if err != nil {
 		t.Errorf("error connecting to upstream, cause: %v", err)
 	}
 
 	if resp.StatusCode != 502 {
 		t.Errorf("slow header writes from server > upstream timeout should not return ok and fail after max attempts, want 502, got %v", resp.StatusCode)
+	}
+}
+
+func TestServerUpstreamReadTimeoutSlowBody(t *testing.T) {
+	resp, err := http.Get("http://localhost:8080/slowbody")
+	if err != nil {
+		t.Errorf("error connecting to upstream, cause: %v", err)
+	}
+
+	if resp.StatusCode != 502 {
+		t.Errorf("slow body writes from server > upstream timeout should not return ok and fail after max attempts, want 502, got %v", resp.StatusCode)
 	}
 }
 
