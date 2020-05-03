@@ -55,7 +55,7 @@
       "resource": "posting"
     },
     {
-      "path": "/v2",
+      "path": "/mse6",
       "resource": "mse6"
     }
   ],
