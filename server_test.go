@@ -3,6 +3,7 @@ package jabba
 import (
 	"github.com/rs/zerolog/log"
 	"net/http"
+	"runtime/debug"
 	"testing"
 	"time"
 )
@@ -29,7 +30,11 @@ func TestServerMakesSuccessfulUpstreamConnection(t *testing.T) {
 func TestServerUpstreamReadTimeoutFailsWithSlowHeader(t *testing.T) {
 	Runner.Connection.Upstream.ReadTimeoutSeconds = 1
 	httpClient = scaffoldHTTPClient(*Runner)
-	resp, err := http.Get("http://localhost:8080/slowheader")
+	resp, err := http.Get("http://localhost:8080/mse6/slowheader")
+	debug.PrintStack()
+	time.Sleep(4*time.Second)
+	debug.PrintStack()
+
 	if err != nil {
 		t.Errorf("error connecting to upstream, cause: %v", err)
 	}
@@ -43,7 +48,7 @@ func TestServerUpstreamReadTimeoutFailsWithSlowBody(t *testing.T) {
 	Runner.Connection.Upstream.ReadTimeoutSeconds = 1
 	httpClient = scaffoldHTTPClient(*Runner)
 
-	resp, err := http.Get("http://localhost:8080/slowbody")
+	resp, err := http.Get("http://localhost:8080/mse6/slowbody")
 	if err != nil {
 		t.Errorf("error connecting to upstream, cause: %v", err)
 	}
@@ -58,7 +63,7 @@ func TestServerUpstreamReadTimeoutPassesWithSlowHeader(t *testing.T) {
 	Runner.Connection.Upstream.ReadTimeoutSeconds = 4
 	httpClient = scaffoldHTTPClient(*Runner)
 
-	resp, err := http.Get("http://localhost:8080/slowheader")
+	resp, err := http.Get("http://localhost:8080/mse6/slowheader")
 	if err != nil {
 		t.Errorf("error connecting to upstream, cause: %v", err)
 	}
@@ -73,7 +78,7 @@ func TestServerUpstreamReadTimeoutPassesWithSlowBody(t *testing.T) {
 	Runner.Connection.Upstream.ReadTimeoutSeconds = 10
 	httpClient = scaffoldHTTPClient(*Runner)
 
-	resp, err := http.Get("http://localhost:8080/slowbody")
+	resp, err := http.Get("http://localhost:8080/mse6/slowbody")
 	if err != nil {
 		t.Errorf("error connecting to upstream, cause: %v", err)
 	}
