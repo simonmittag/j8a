@@ -33,66 +33,13 @@
       "resource": "aboutJabba"
     },
     {
-      "path": "/customer",
-      "resource": "customer",
-      "policy": "ab"
-    },
-    {
-      "path": "/billing",
-      "resource": "billing",
-      "policy": "ab"
-    },
-    {
-      "path": "/slowheader",
-      "resource": "myawesomeproj"
-    },
-    {
-      "path": "/slowbody",
-      "resource": "myawesomeproj"
-    },
-    {
-      "path": "/posting",
-      "resource": "posting"
-    },
-    {
       "path": "/mse6",
-      "resource": "mse6"
+      "resource": "mse6",
+      "policy": "ab"
     }
   ],
   "resources": {
-    "customer": [
-      {
-        "labels": [
-          "xblue"
-        ],
-        "url": {
-          "scheme": "http",
-          "host": "localhost",
-          "port": 8081
-        }
-      },
-      {
-        "labels": [
-          "xgreen"
-        ],
-        "url": {
-          "scheme": "http",
-          "host": "localhost",
-          "port": 8082
-        }
-      }
-    ],
-    "billing": [
-      {
-        "labels": [
-          "blue"
-        ],
-        "url": {
-          "scheme": "http",
-          "host": "localhost",
-          "port": 8083
-        }
-      },
+    "mse6": [
       {
         "labels": [
           "green"
@@ -100,25 +47,17 @@
         "url": {
           "scheme": "http",
           "host": "localhost",
-          "port": 8083
-        }
-      }
-    ],
-    "myawesomeproj": [
-      {
-        "url": {
-          "scheme": "http",
-          "host": "localhost",
-          "port": 8083
-        }
-      }
-    ],
-    "mse6": [
-      {
-        "url": {
-          "scheme": "http",
-          "host": "localhost",
           "port": 60083
+        }
+      },
+      {
+        "labels": [
+          "blue"
+        ],
+        "url": {
+          "scheme": "http",
+          "host": "localhost",
+          "port": 60084
         }
       }
     ]
