@@ -29,6 +29,7 @@ jobs:
       LOGLEVEL: TRACE
       CC_TEST_REPORTER_ID: a45fccea925702bc9483bdead24976073cf3e3807b22ce566d2858a700e5472c
     steps:
+      - checkout # check out source code to working directory
       - run:
           name: "Create a temp directory for artifacts"
           command: |
