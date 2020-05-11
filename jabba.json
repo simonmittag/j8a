@@ -8,9 +8,9 @@
       "mode": "TLS"
     },
     "upstream": {
-      "socketTimeoutSeconds": 1,
-      "readTimeoutSeconds": 1,
-      "idleTimeoutSeconds": 1,
+      "socketTimeoutSeconds": 3,
+      "readTimeoutSeconds": 121,
+      "idleTimeoutSeconds": 30,
       "maxAttempts": 4,
       "poolSize": 1024
     }
@@ -33,62 +33,13 @@
       "resource": "aboutJabba"
     },
     {
-      "path": "/customer",
-      "resource": "customer",
+      "path": "/mse6",
+      "resource": "mse6",
       "policy": "ab"
-    },
-    {
-      "path": "/billing",
-      "resource": "billing",
-      "policy": "ab"
-    },
-    {
-      "path": "/result",
-      "resource": "result"
-    },
-    {
-      "path": "/posting",
-      "resource": "posting"
-    },
-    {
-      "path": "/v2",
-      "resource": "mse6"
     }
   ],
   "resources": {
-    "customer": [
-      {
-        "labels": [
-          "xblue"
-        ],
-        "url": {
-          "scheme": "http",
-          "host": "localhost",
-          "port": 8081
-        }
-      },
-      {
-        "labels": [
-          "xgreen"
-        ],
-        "url": {
-          "scheme": "http",
-          "host": "localhost",
-          "port": 8082
-        }
-      }
-    ],
-    "billing": [
-      {
-        "labels": [
-          "blue"
-        ],
-        "url": {
-          "scheme": "http",
-          "host": "localhost",
-          "port": 8083
-        }
-      },
+    "mse6": [
       {
         "labels": [
           "green"
@@ -96,25 +47,17 @@
         "url": {
           "scheme": "http",
           "host": "localhost",
-          "port": 8083
-        }
-      }
-    ],
-    "posting": [
-      {
-        "url": {
-          "scheme": "http",
-          "host": "localhost",
-          "port": 8083
-        }
-      }
-    ],
-    "mse6": [
-      {
-        "url": {
-          "scheme": "http",
-          "host": "localhost",
           "port": 60083
+        }
+      },
+      {
+        "labels": [
+          "blue"
+        ],
+        "url": {
+          "scheme": "http",
+          "host": "localhost",
+          "port": 60084
         }
       }
     ]

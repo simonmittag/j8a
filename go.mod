@@ -8,7 +8,8 @@ require (
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/google/uuid v1.1.1
 	github.com/rs/zerolog v1.18.0
-	github.com/shirou/gopsutil v2.20.3+incompatible
+	github.com/shirou/gopsutil v2.20.4+incompatible
+	github.com/simonmittag/mse6 v0.1.2 // indirect
 	github.com/stretchr/testify v1.5.1 // indirect
-	golang.org/x/sys v0.0.0-20200413165638-669c56c373c4 // indirect
+	golang.org/x/sys v0.0.0-20200508214444-3aab700007d7 // indirect
 )
