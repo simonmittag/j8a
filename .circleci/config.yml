@@ -91,6 +91,6 @@ jobs:
           background: true
       - run:
           name: Start upstream server two
-          command: mse6 -p 60083
+          command: mse6 -p 60084
           background: true
       - run: curl http://localhost:8080/mse6/slowbody
