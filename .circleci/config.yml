@@ -2,19 +2,21 @@ version: 2.1
 
 workflows:
   version: 2.1
-  build_and_metrics:
+  ci:
     jobs:
       - build
       - metrics
+  integration:
+    jobs:
+      - integration
 
 jobs:
   build:
     docker:
       - image: circleci/golang:1.14 #
     environment:
-      TEST_RESULTS: /tmp/test-results
+      LOGCOLOR: TRUE
       LOGLEVEL: TRACE
-      CC_TEST_REPORTER_ID: a45fccea925702bc9483bdead24976073cf3e3807b22ce566d2858a700e5472c
     steps:
       - checkout # check out source code to working directory
       - run: go build github.com/simonmittag/jabba
@@ -27,6 +29,7 @@ jobs:
     environment:
       TEST_RESULTS: /tmp/test-results
       LOGLEVEL: TRACE
+      LOGCOLOR: TRUE
       CC_TEST_REPORTER_ID: a45fccea925702bc9483bdead24976073cf3e3807b22ce566d2858a700e5472c
     steps:
       - checkout # check out source code to working directory
@@ -66,3 +69,28 @@ jobs:
 
       - store_test_results:
           path: /tmp/test-results
+
+  integration:
+    docker:
+      - image: circleci/golang:1.14 #
+    environment:
+      LOGLEVEL: TRACE
+    steps:
+      - checkout # check out source code to working directory
+      - run: go build github.com/simonmittag/jabba
+      - run: go install github.com/simonmittag/jabba/cmd/jabba
+      - run:
+          name: start jabba
+          command: jabba
+          background: true
+      - run: go get github.com/simonmittag/mse6
+      - run: go install github.com/simonmittag/mse6/cmd/mse6
+      - run:
+          name: Start upstream server one
+          command: mse6 -p 60083
+          background: true
+      - run:
+          name: Start upstream server two
+          command: mse6 -p 60083
+          background: true
+      - run: curl http://localhost:8080/mse6/slowbody
