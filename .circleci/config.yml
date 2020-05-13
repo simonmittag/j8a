@@ -1,17 +1,38 @@
 version: 2.1
 
+workflows:
+  version: 2.1
+  ci:
+    jobs:
+      - build
+      - metrics
+  integration:
+    jobs:
+      - integration
+
 jobs:
   build:
     docker:
       - image: circleci/golang:1.14 #
     environment:
-      TEST_RESULTS: /tmp/test-results
+      LOGCOLOR: TRUE
       LOGLEVEL: TRACE
-      CC_TEST_REPORTER_ID: a45fccea925702bc9483bdead24976073cf3e3807b22ce566d2858a700e5472c
     steps:
       - checkout # check out source code to working directory
       - run: go build github.com/simonmittag/jabba
       - run: go install github.com/simonmittag/jabba/cmd/jabba
+      - run: go test -v
+
+  metrics:
+    docker:
+      - image: circleci/golang:1.14 #
+    environment:
+      TEST_RESULTS: /tmp/test-results
+      LOGLEVEL: TRACE
+      LOGCOLOR: TRUE
+      CC_TEST_REPORTER_ID: a45fccea925702bc9483bdead24976073cf3e3807b22ce566d2858a700e5472c
+    steps:
+      - checkout # check out source code to working directory
       - run:
           name: "Create a temp directory for artifacts"
           command: |
@@ -33,7 +54,8 @@ jobs:
             export CIRCLE_SHA="$CIRCLE_SHA1"
             export CIRCLE_BRANCH=`git rev-parse --abbrev-ref HEAD`
             ./cc-test-reporter before-build
-            go test -cover -coverprofile=c.out
+            #only run tests in this directory to exclude integration tests
+            go test -cover -coverprofile=c.out .
             go tool cover -html=c.out -o coverage.html
             ./cc-test-reporter after-build --coverage-input-type gocov -p "github.com/simonmittag/jabba"
             mv coverage.html /tmp/artifacts
@@ -44,7 +66,37 @@ jobs:
       - run:
           name: Test Summary for CircleCI
           command: |
-            gotestsum --junitfile /tmp/test-results/unit-tests.xml
+            gotestsum --junitfile /tmp/test-results/unit-tests.xml .
 
       - store_test_results:
           path: /tmp/test-results
+
+  integration:
+    docker:
+      - image: circleci/golang:1.14 #
+    environment:
+      LOGLEVEL: TRACE
+    steps:
+      - checkout # check out source code to working directory
+      - run: go get github.com/simonmittag/pwt
+      - run: go install github.com/simonmittag/pwt/cmd/pwt
+      - run: go get github.com/simonmittag/mse6
+      - run: go install github.com/simonmittag/mse6/cmd/mse6
+      - run:
+          name: Start upstream server one
+          command: mse6 -p 60083
+          background: true
+      - run: pwt localhost:60083
+      - run:
+          name: Start upstream server two
+          command: mse6 -p 60084
+          background: true
+      - run: pwt localhost:60084
+      - run: go build github.com/simonmittag/jabba
+      - run: go install github.com/simonmittag/jabba/cmd/jabba
+      - run:
+          name: start jabba
+          command: jabba
+          background: true
+      - run: pwt localhost:8080
+      - run: go test -v github.com/simonmittag/jabba/integration

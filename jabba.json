@@ -9,7 +9,7 @@
     },
     "upstream": {
       "socketTimeoutSeconds": 3,
-      "readTimeoutSeconds": 121,
+      "readTimeoutSeconds": 3,
       "idleTimeoutSeconds": 30,
       "maxAttempts": 4,
       "poolSize": 1024
