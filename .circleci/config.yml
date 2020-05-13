@@ -1,6 +1,4 @@
 version: 2.1
-orbs:
-  slack: circleci/slack@3.4.2
 
 workflows:
   version: 2.1
@@ -24,9 +22,6 @@ jobs:
       - run: go build github.com/simonmittag/jabba
       - run: go install github.com/simonmittag/jabba/cmd/jabba
       - run: go test -v
-      - slack/status:
-          fail_only: true
-          mentions: 'Simon'
 
   metrics:
     docker:
@@ -76,10 +71,6 @@ jobs:
       - store_test_results:
           path: /tmp/test-results
 
-      - slack/status:
-          fail_only: true
-          mentions: 'Simon'
-
   integration:
     docker:
       - image: circleci/golang:1.14 #
@@ -109,6 +100,3 @@ jobs:
           background: true
       - run: pwt localhost:8080
       - run: go test -v github.com/simonmittag/jabba/integration
-      - slack/status:
-          fail_only: true
-          mentions: 'Simon'
