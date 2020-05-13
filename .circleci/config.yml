@@ -66,7 +66,7 @@ jobs:
       - run:
           name: Test Summary for CircleCI
           command: |
-            gotestsum --junitfile /tmp/test-results/unit-tests.xml
+            gotestsum . --junitfile /tmp/test-results/unit-tests.xml
 
       - store_test_results:
           path: /tmp/test-results
@@ -99,4 +99,4 @@ jobs:
           command: jabba
           background: true
       - run: pwt localhost:8080
-      - run: curl http://localhost:8080/mse6/slowbody
+      - run: go test -v github.com/simonmittag/jabba/integration
