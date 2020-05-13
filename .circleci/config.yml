@@ -54,7 +54,8 @@ jobs:
             export CIRCLE_SHA="$CIRCLE_SHA1"
             export CIRCLE_BRANCH=`git rev-parse --abbrev-ref HEAD`
             ./cc-test-reporter before-build
-            go test -cover -coverprofile=c.out github.com/simonmittag/jabba
+            #only run tests in this directory to exclude integration tests
+            go test -cover -coverprofile=c.out .
             go tool cover -html=c.out -o coverage.html
             ./cc-test-reporter after-build --coverage-input-type gocov -p "github.com/simonmittag/jabba"
             mv coverage.html /tmp/artifacts
