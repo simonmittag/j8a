@@ -66,7 +66,7 @@ jobs:
       - run:
           name: Test Summary for CircleCI
           command: |
-            gotestsum . --junitfile /tmp/test-results/unit-tests.xml
+            gotestsum --junitfile /tmp/test-results/unit-tests.xml .
 
       - store_test_results:
           path: /tmp/test-results
