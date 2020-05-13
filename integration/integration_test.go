@@ -12,7 +12,7 @@ func TestServerMakesSuccessfulUpstreamConnection(t *testing.T) {
 		t.Errorf("error connecting to upstream, cause: %v", err)
 	}
 
-	if resp.StatusCode != 201 {
+	if resp.StatusCode != 200 {
 		t.Errorf("server does not return ok from working upstream, want 200, got %v", resp.StatusCode)
 	}
 }
