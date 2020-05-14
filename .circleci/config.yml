@@ -100,3 +100,12 @@ jobs:
           background: true
       - run: pwt localhost:8080
       - run: go test -v github.com/simonmittag/jabba/integration
+      - run:
+          name: install wrk
+          command: |
+            sudo apt-get install build-essential libssl-dev git -y
+            git clone https://github.com/wg/wrk.git wrk
+            cd wrk
+            make
+            sudo cp wrk /usr/local/bin
+      - run: wrk -t 8 -c 8 -d 1m http://localhost:8080/mse6/get
