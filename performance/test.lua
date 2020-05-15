@@ -133,8 +133,8 @@ function done(summary, latency, requests)
    file:write(json.encode({
        duration = summary.duration,
        requests = summary.requests,
-       requestspersecond = summary.requests/(summary.duration/1000000),
-       bytespersecond = summary.bytes/(summary.duration/1000000),
+       requestspersecond = summary.requests/(summary.duration//1000000),
+       bytespersecond = summary.bytes/(summary.duration//1000000),
        bytes    = summary.bytes,
        errors   = summary.errors,
        latency  = {
