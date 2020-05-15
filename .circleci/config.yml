@@ -176,7 +176,7 @@ jobs:
       TEST_DURATION_SECONDS: 10
       TEST_CONCURRENCY: 8
     steps:
-      - checkout # check out source code to working directory
+      - checkout
       - run:
           name: Install deps
           command: |
