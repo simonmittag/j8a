@@ -158,7 +158,7 @@ jobs:
     environment:
       LOGLEVEL: WARN
       LOGCOLOR: FALSE
-      PERFORMANCE_REQUEST_SECOND_THRESHOLD: 5000
+      PERFORMANCE_REQUEST_SECOND_THRESHOLD: 25000
     steps:
       - checkout # check out source code to working directory
       - run:
