@@ -173,3 +173,8 @@ jobs:
       - store_artifacts:
           path: performance/performance_results.json
           destination: performance_results.json
+
+      - run: sudo apt-get install jq
+      - run:
+          name: check performance test results
+          command: test `cat performance/performance_results.json | jq .requestspersecond` -gt 5000 && echo "performance test passed, request/s > 5k" || echo "performance test failed, request/s < 5k";pkill jq
