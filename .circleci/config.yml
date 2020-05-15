@@ -144,7 +144,7 @@ jobs:
     environment:
       LOGLEVEL: WARN
       LOGCOLOR: FALSE
-      PERFORMANCE_REQUEST_SECOND_THRESHOLD: 25000
+      PERFORMANCE_REQUEST_SECOND_THRESHOLD: 5000
     steps:
       - checkout # check out source code to working directory
       - run:
@@ -190,5 +190,5 @@ jobs:
       - run:
           name: check performance test results
           command: |
-            echo "min threshold for req/s $PERFORMANCE_REQUEST_SECOND_THRESHOLD"
-            test `cat performance/performance_results.json | jq .requestspersecond` -gt $PERFORMANCE_REQUEST_SECOND_THRESHOLD && (echo "performance test passed, request/s > $PERFORMANCE_REQUEST_SECOND_THRESHOLD";exit 0) || (echo "performance test failed, request/s < $PERFORMANCE_REQUEST_SECOND_THRESHOLD";pkill jq)
+            reqss = `cat performance/performance_results.json | jq .requestspersecond`
+            test reqss -gt $PERFORMANCE_REQUEST_SECOND_THRESHOLD && (echo "performance test passed, ${reqss}/s > $PERFORMANCE_REQUEST_SECOND_THRESHOLD/s";exit 0) || (echo "performance test failed, ${reqss}/s < $PERFORMANCE_REQUEST_SECOND_THRESHOLD/s";pkill jq)
