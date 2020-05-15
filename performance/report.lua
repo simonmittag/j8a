@@ -1,5 +1,115 @@
 json = require "json"
 
+-- example HTTP POST script which demonstrates setting the
+-- HTTP method, body, and adding a header
+
+wrk.method = "POST"
+wrk.body   = [[{
+    \"port\": 8080,
+    \"mode\": \"TLS\",
+    \"connection\": {
+        \"server\": {
+            \"readTimeoutSeconds\": 121,
+            \"roundTripTimeoutSeconds\": 242
+        },
+        \"client\": {
+            \"socketTimeoutSeconds\": 7,
+            \"readTimeoutSeconds\": 121,
+            \"keepAliveTimeoutSeconds\": 300,
+            \"maxAttempts\": 4,
+            \"poolSize\" : 1024
+        }
+    },
+    \"policies\": {
+        \"ab\": [
+            {
+                \"label\": \"green\",
+                \"weight\": 0.8
+            },
+            {
+                \"label\": \"blue\",
+                \"weight\": 0.2
+            }
+        ]
+    },
+    \"routes\": [
+        {
+            \"path\": \"/about\",
+            \"alias\": \"aboutJabba\"
+        },
+        {
+            \"path\": \"/customer\",
+            \"alias\": \"customer\",
+            \"policy\": \"ab\"
+        },
+        {
+            \"path\": \"/billing\",
+            \"alias\": \"billing\",
+            \"policy\": \"ab\"
+        },
+        {
+            \"path\": \"/posting\",
+            \"alias\": \"posting\"
+        }
+    ],
+    \"resources\": {
+        \"customer\": [
+            {
+                \"labels\": [
+                    \"xblue\"
+                ],
+                \"upstream\": {
+                    \"scheme\": \"http\",
+                    \"host\": \"localhost\",
+                    \"port\": 8081
+                }
+            },
+            {
+                \"labels\": [
+                    \"xgreen\"
+                ],
+                \"upstream\": {
+                    \"scheme\": \"http\",
+                    \"host\": \"localhost\",
+                    \"port\": 8082
+                }
+            }
+        ],
+        \"billing\": [
+            {
+                \"labels\": [
+                    \"blue\"
+                ],
+                \"upstream\": {
+                    \"scheme\": \"http\",
+                    \"host\": \"localhost\",
+                    \"port\": 8083
+                }
+            },
+            {
+                \"labels\": [
+                    \"green\"
+                ],
+                \"upstream\": {
+                    \"scheme\": \"http\",
+                    \"host\": \"localhost\",
+                    \"port\": 8083
+                }
+            }
+        ],
+        \"posting\": [
+            {
+                \"upstream\": {
+                    \"scheme\": \"http\",
+                    \"host\": \"localhost\",
+                    \"port\": 8083
+                }
+            }
+        ]
+    }
+}]]
+wrk.headers["Content-Type"] = "application/json"
+
 function setup(thread)
    thread0 = thread0 or thread
 end
