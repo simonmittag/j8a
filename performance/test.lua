@@ -1,7 +1,8 @@
 json = require "json"
 
--- example HTTP POST script which demonstrates setting the
--- HTTP method, body, and adding a header
+-- This test script sends a HTTP 1.1. POST with 2580 bytes body to Jabba
+-- with 8 concurrent threads and records various performance metrics such as requests per second
+-- in an output file
 
 wrk.method = "POST"
 wrk.body   = [[{
