@@ -138,5 +138,5 @@ jobs:
       - run: cd performance && wrk -t 8 -c 8 -d 1m -s report.lua -- http://localhost:8080/mse6/get performance_results.json
 
       - store_artifacts:
-          path: /performance/performance_results.json
+          path: performance/performance_results.json
           destination: performance_results.json
