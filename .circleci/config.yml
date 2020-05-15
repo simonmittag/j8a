@@ -205,4 +205,4 @@ jobs:
           name: Check performance test results against threshold
           command: |
             export reqss=`cat performance/performance_results.json | jq .requestspersecond`
-            test ${reqss} -gt ${PERFORMANCE_REQUEST_SECOND_THRESHOLD} && (echo "performance test passed, ${reqss}/s > ${PERFORMANCE_REQUEST_SECOND_THRESHOLD}/s";exit 0) || (echo "performance test failed, ${reqss}/s < ${PERFORMANCE_REQUEST_SECOND_THRESHOLD}/s";pkill jq)
+            test ${reqss} -gt ${PERFORMANCE_REQUEST_SECOND_THRESHOLD} && (echo "performance test passed, ${reqss}req/s > ${PERFORMANCE_REQUEST_SECOND_THRESHOLD}req/s";exit 0) || (echo "performance test failed, ${reqss}req/s < ${PERFORMANCE_REQUEST_SECOND_THRESHOLD}req/s";pkill jq)
