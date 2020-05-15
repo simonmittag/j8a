@@ -1,4 +1,5 @@
 json = require "json"
+math = require "math"
 
 -- This test script sends a HTTP 1.1. POST with 2580 bytes body to Jabba
 -- with 8 concurrent threads and records various performance metrics such as requests per second
@@ -133,8 +134,8 @@ function done(summary, latency, requests)
    file:write(json.encode({
        duration = summary.duration,
        requests = summary.requests,
-       requestspersecond = summary.requests/(summary.duration//1000000),
-       bytespersecond = summary.bytes/(summary.duration//1000000),
+       requestspersecond = math.floor(summary.requests/(summary.duration/1000000)),
+       bytespersecond = math.floor(summary.bytes/(summary.duration/1000000)),
        bytes    = summary.bytes,
        errors   = summary.errors,
        latency  = {
