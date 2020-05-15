@@ -2,16 +2,19 @@ version: 2.1
 
 workflows:
   version: 2.1
-  ci:
+  buildunittest:
     jobs:
-      - build
+      - buildunittest
       - metrics
-  integration:
+  integrationtest:
     jobs:
-      - integration
+      - integrationtest
+  performancetest:
+    jobs:
+      - performancetest
 
 jobs:
-  build:
+  buildunittest:
     docker:
       - image: circleci/golang:1.14 #
     environment:
@@ -25,7 +28,7 @@ jobs:
 
   metrics:
     docker:
-      - image: circleci/golang:1.14 #
+      - image: circleci/golang:1.14
     environment:
       TEST_RESULTS: /tmp/test-results
       LOGLEVEL: TRACE
@@ -71,11 +74,12 @@ jobs:
       - store_test_results:
           path: /tmp/test-results
 
-  integration:
+  integrationtest:
     docker:
-      - image: simonmittag/wrk
+      - image: circleci/golang:1.14
     environment:
-      LOGLEVEL: TRACE
+      LOGLEVEL: WARN
+      LOGCOLOR: FALSE
     steps:
       - checkout # check out source code to working directory
       - run: go get github.com/simonmittag/pwt
@@ -100,5 +104,35 @@ jobs:
           background: true
       - run: pwt localhost:8080
       - run: go test -v github.com/simonmittag/jabba/integration
+
+  performancetest:
+    docker:
+      - image: simonmittag/wrk
+    environment:
+      LOGLEVEL: WARN
+      LOGCOLOR: FALSE
+    steps:
+      - checkout # check out source code to working directory
+      - run: go get github.com/simonmittag/pwt
+      - run: go install github.com/simonmittag/pwt/cmd/pwt
+      - run: go get github.com/simonmittag/mse6
+      - run: go install github.com/simonmittag/mse6/cmd/mse6
+      - run:
+          name: Start upstream server one
+          command: mse6 -p 60083
+          background: true
+      - run: pwt localhost:60083
+      - run:
+          name: Start upstream server two
+          command: mse6 -p 60084
+          background: true
+      - run: pwt localhost:60084
+      - run: go build github.com/simonmittag/jabba
+      - run: go install github.com/simonmittag/jabba/cmd/jabba
+      - run:
+          name: start jabba
+          command: jabba
+          background: true
+      - run: pwt localhost:8080
 
       - run: wrk -t 8 -c 8 -d 1m http://localhost:8080/mse6/get
