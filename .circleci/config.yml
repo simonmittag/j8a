@@ -112,6 +112,11 @@ jobs:
     environment:
       LOGLEVEL: WARN
       LOGCOLOR: FALSE
+      UPSTREAM_ONE_PORT: 60083
+      UPSTREAM_TWO_PORT: 60084
+      JABBA_PORT: 8080
+      TEST_DURATION_SECONDS: 10
+      TEST_CONCURRENCY: 8
     steps:
       - checkout # check out source code to working directory
       - run:
@@ -124,18 +129,18 @@ jobs:
             go install github.com/simonmittag/mse6/cmd/mse6
       - run:
           name: Start upstream server one
-          command: mse6 -p 60083
+          command: mse6 -p ${UPSTREAM_ONE_PORT}
           background: true
       - run:
           name: Wait for upstream server one
-          command: pwt localhost:60083
+          command: pwt localhost:${UPSTREAM_ONE_PORT}
       - run:
           name: Start upstream server two
-          command: mse6 -p 60084
+          command: mse6 -p ${UPSTREAM_TWO_PORT}
           background: true
       - run:
           name: Wait for upstream server two
-          command: pwt localhost:60084
+          command: pwt localhost:${UPSTREAM_TWO_PORT}
       - run:
           name: Install Jabba
           command: |
@@ -143,14 +148,20 @@ jobs:
             go install github.com/simonmittag/jabba/cmd/jabba
       - run:
           name: Start jabba
-          command: jabba
+          command: jabba -p ${JABBA_PORT}
           background: true
       - run:
           name: Wait for Jabba
-          command: pwt localhost:8080
+          command: pwt localhost:${JABBA_PORT}
       - run:
           name: Execute performance tests on Jabba with wrk
-          command: cd performance && wrk -t 8 -c 8 -d 10s -s test.lua -- http://localhost:8080/mse6/post performance_results.json
+          command: cd performance && wrk -t ${TEST_CONCURRENCY} -c ${TEST_CONCURRENCY} -d ${TEST_DURATION_SECONDS}s -s test.lua -- http://localhost:${JABBA_PORT}/mse6/post performance_results.json
+      - run:
+          name: Display performance test results
+          command: |
+            export reqss=`cat performance/performance_results.json | jq .requestspersecond`
+            echo "(ignore 'Step cancelled' messages upstream, Jabba shutdown related)"
+            echo "=> performance test results, ${reqss} req/s"
 
   performanceartifacts:
     docker:
@@ -159,6 +170,11 @@ jobs:
       LOGLEVEL: WARN
       LOGCOLOR: FALSE
       PERFORMANCE_REQUEST_SECOND_THRESHOLD: 5000
+      UPSTREAM_ONE_PORT: 60083
+      UPSTREAM_TWO_PORT: 60084
+      JABBA_PORT: 8080
+      TEST_DURATION_SECONDS: 10
+      TEST_CONCURRENCY: 8
     steps:
       - checkout # check out source code to working directory
       - run:
@@ -171,18 +187,18 @@ jobs:
             go install github.com/simonmittag/mse6/cmd/mse6
       - run:
           name: Start upstream server one
-          command: mse6 -p 60083
+          command: mse6 -p ${UPSTREAM_ONE_PORT}
           background: true
       - run:
           name: Wait for upstream server one
-          command: pwt localhost:60083
+          command: pwt localhost:${UPSTREAM_ONE_PORT}
       - run:
           name: Start upstream server two
-          command: mse6 -p 60084
+          command: mse6 -p ${UPSTREAM_TWO_PORT}
           background: true
       - run:
           name: Wait for upstream server two
-          command: pwt localhost:60084
+          command: pwt localhost:${UPSTREAM_TWO_PORT}
       - run:
           name: Install Jabba
           command: |
@@ -190,14 +206,14 @@ jobs:
             go install github.com/simonmittag/jabba/cmd/jabba
       - run:
           name: Start jabba
-          command: jabba
+          command: jabba -p ${JABBA_PORT}
           background: true
       - run:
           name: Wait for Jabba
-          command: pwt localhost:8080
+          command: pwt localhost:${JABBA_PORT}
       - run:
           name: Execute performance tests on Jabba with wrk
-          command: cd performance && wrk -t 8 -c 8 -d 1m -s test.lua -- http://localhost:8080/mse6/post performance_results.json
+          command: cd performance && wrk -t ${TEST_CONCURRENCY} -c ${TEST_CONCURRENCY} -d ${TEST_DURATION_SECONDS}s -s test.lua -- http://localhost:${JABBA_PORT}/mse6/post performance_results.json
       - store_artifacts:
           path: Performance/performance_results.json
           destination: performance_results.json
