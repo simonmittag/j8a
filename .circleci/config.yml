@@ -38,11 +38,11 @@ jobs:
     steps:
       - checkout # check out source code to working directory
       - run:
-          name: "Create a temp directory for artifacts"
+          name: Create a temp directory for artifacts
           command: |
             mkdir -p /tmp/artifacts
       - run:
-          name: "Create a temp directory for tests"
+          name: Create a temp directory for tests
           command: |
             mkdir -p /tmp/test-results
       - run:
@@ -52,7 +52,7 @@ jobs:
             curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
             chmod +x ./cc-test-reporter
       - run:
-          name: Run tests with coverage report
+          name: Run tests with coverage report and upload to codeclimate
           command: |
             export GIT_COMMITTED_AT="$(date +%s)"
             export CIRCLE_SHA="$CIRCLE_SHA1"
@@ -146,10 +146,10 @@ jobs:
           command: jabba
           background: true
       - run:
-          name: Wait for Jabba to load
+          name: Wait for Jabba
           command: pwt localhost:8080
       - run:
-          name: Execute performance tests with wrk
+          name: Execute performance tests on Jabba with wrk
           command: cd performance && wrk -t 8 -c 8 -d 10s -s test.lua -- http://localhost:8080/mse6/post performance_results.json
 
   performanceartifacts:
@@ -193,16 +193,16 @@ jobs:
           command: jabba
           background: true
       - run:
-          name: Wait for Jabba to load
+          name: Wait for Jabba
           command: pwt localhost:8080
       - run:
-          name: Execute performance tests with wrk
+          name: Execute performance tests on Jabba with wrk
           command: cd performance && wrk -t 8 -c 8 -d 1m -s test.lua -- http://localhost:8080/mse6/post performance_results.json
       - store_artifacts:
           path: Performance/performance_results.json
           destination: performance_results.json
       - run:
-          name: Check performance test results
+          name: Check performance test results against threshold
           command: |
             export reqss=`cat performance/performance_results.json | jq .requestspersecond`
             test ${reqss} -gt ${PERFORMANCE_REQUEST_SECOND_THRESHOLD} && (echo "performance test passed, ${reqss}/s > ${PERFORMANCE_REQUEST_SECOND_THRESHOLD}/s";exit 0) || (echo "performance test failed, ${reqss}/s < ${PERFORMANCE_REQUEST_SECOND_THRESHOLD}/s";pkill jq)
