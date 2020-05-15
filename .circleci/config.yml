@@ -190,5 +190,5 @@ jobs:
       - run:
           name: check performance test results
           command: |
-            reqss = `cat performance/performance_results.json | jq .requestspersecond`
+            export reqss=`cat performance/performance_results.json | jq .requestspersecond`
             test reqss -gt $PERFORMANCE_REQUEST_SECOND_THRESHOLD && (echo "performance test passed, ${reqss}/s > $PERFORMANCE_REQUEST_SECOND_THRESHOLD/s";exit 0) || (echo "performance test failed, ${reqss}/s < $PERFORMANCE_REQUEST_SECOND_THRESHOLD/s";pkill jq)
