@@ -171,8 +171,8 @@ jobs:
       - run:
           name: install Jabba
           command: |
-          go build github.com/simonmittag/jabba
-          go install github.com/simonmittag/jabba/cmd/jabba
+            go build github.com/simonmittag/jabba
+            go install github.com/simonmittag/jabba/cmd/jabba
       - run:
           name: start jabba
           command: jabba
@@ -189,6 +189,6 @@ jobs:
       - run:
           name: check performance test results
           command: |
-          sudo apt-get install jq
-          echo "min threshold for req/s $PERFORMANCE_REQUEST_SECOND_THRESHOLD"
-          test `cat performance/performance_results.json | jq .requestspersecond` -gt $PERFORMANCE_REQUEST_SECOND_THRESHOLD && (echo "performance test passed, request/s > 5k";exit 0) || (echo "performance test failed, request/s < 5k";pkill jq)
+            sudo apt-get install jq
+            echo "min threshold for req/s $PERFORMANCE_REQUEST_SECOND_THRESHOLD"
+            test `cat performance/performance_results.json | jq .requestspersecond` -gt $PERFORMANCE_REQUEST_SECOND_THRESHOLD && (echo "performance test passed, request/s > 5k";exit 0) || (echo "performance test failed, request/s < 5k";pkill jq)
