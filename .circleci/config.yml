@@ -147,35 +147,48 @@ jobs:
       PERFORMANCE_REQUEST_SECOND_THRESHOLD: 25000
     steps:
       - checkout # check out source code to working directory
-      - run: go get github.com/simonmittag/pwt
-      - run: go install github.com/simonmittag/pwt/cmd/pwt
-      - run: go get github.com/simonmittag/mse6
-      - run: go install github.com/simonmittag/mse6/cmd/mse6
       - run:
-          name: Start upstream server one
+        name: install deps
+        command: |
+          go get github.com/simonmittag/pwt
+          go install github.com/simonmittag/pwt/cmd/pwt
+          go get github.com/simonmittag/mse6
+          go install github.com/simonmittag/mse6/cmd/mse6
+      - run:
+          name: start upstream server one
           command: mse6 -p 60083
           background: true
-      - run: pwt localhost:60083
       - run:
-          name: Start upstream server two
+          name: wait for upstream server one
+          command: pwt localhost:60083
+      - run:
+          name: start upstream server two
           command: mse6 -p 60084
           background: true
-      - run: pwt localhost:60084
-      - run: go build github.com/simonmittag/jabba
-      - run: go install github.com/simonmittag/jabba/cmd/jabba
+      - run:
+          name: wait for upstream server two
+          command: pwt localhost:60084
+      - run:
+          name: install Jabba
+          command: |
+          go build github.com/simonmittag/jabba
+          go install github.com/simonmittag/jabba/cmd/jabba
       - run:
           name: start jabba
           command: jabba
           background: true
-      - run: pwt localhost:8080
-
-      - run: cd performance && wrk -t 8 -c 8 -d 1m -s test.lua -- http://localhost:8080/mse6/post performance_results.json
-
+      - run:
+          name: wait for Jabba to load
+          command: pwt localhost:8080
+      - run:
+          name: execute performance tests with wrk
+          command: cd performance && wrk -t 8 -c 8 -d 1m -s test.lua -- http://localhost:8080/mse6/post performance_results.json
       - store_artifacts:
           path: performance/performance_results.json
           destination: performance_results.json
-
-      - run: sudo apt-get install jq
       - run:
           name: check performance test results
-          command: test `cat performance/performance_results.json | jq .requestspersecond` -gt $PERFORMANCE_REQUEST_SECOND_THRESHOLD && echo "performance test passed, request/s > 5k";exit 0 || echo "performance test failed, request/s < 5k";pkill jq
+          command: |
+          sudo apt-get install jq
+          echo "min threshold for req/s $PERFORMANCE_REQUEST_SECOND_THRESHOLD"
+          test `cat performance/performance_results.json | jq .requestspersecond` -gt $PERFORMANCE_REQUEST_SECOND_THRESHOLD && echo "performance test passed, request/s > 5k";exit 0 || echo "performance test failed, request/s < 5k";pkill jq
