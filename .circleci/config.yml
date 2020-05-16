@@ -11,7 +11,7 @@ workflows:
       - integration
   performancetest:
     jobs:
-      - performancesimple
+      - performance
       - performanceartifacts
 
 jobs:
@@ -106,7 +106,7 @@ jobs:
       - run: pwt localhost:8080
       - run: go test -v github.com/simonmittag/jabba/integration
 
-  performancesimple:
+  performance:
     docker:
       - image: simonmittag/wrk
     environment:
@@ -162,6 +162,7 @@ jobs:
             export reqss=`cat performance/performance_results.json | jq .requestspersecond`
             echo "(ignore 'Step cancelled' messages upstream, Jabba shutdown related)"
             echo "=> performance test results, ${reqss} req/s"
+
 
   performanceartifacts:
     docker:
