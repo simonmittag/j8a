@@ -4,5 +4,5 @@
 bin/
 __debug_bin
 art
-.idea/process.yml
+process.yml
 .idea
