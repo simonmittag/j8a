@@ -96,6 +96,38 @@ func TestUpstreamGzipEncodingPassThrough(t *testing.T) {
 	}
 }
 
+func TestUpstreamServerHeaderNotCopied(t *testing.T) {
+	Runner = mockRuntime()
+	httpClient = &MockHttp{}
+	mockDoFunc = func(req *http.Request) (*http.Response, error) {
+		json := `{"key":"value"}`
+		return &http.Response{
+			StatusCode: 200,
+			Header: map[string][]string{
+				"Server": []string{"r5d4"},
+			},
+			Body: ioutil.NopCloser(bytes.NewReader([]byte(json))),
+		}, nil
+	}
+
+	server := httptest.NewServer(&ProxyHttpHandler{})
+	defer server.Close()
+
+	c := &http.Client{}
+	req, _ := http.NewRequest("GET", server.URL, nil)
+	req.Header.Set("Accept-Encoding", "identity")
+	resp, err := c.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := "Jabba " + Version + " " + ID
+	got := resp.Header["Server"][0]
+	if got != want {
+		t.Errorf("Jabba did not send it's own Server header, want: %v, got: %v", want, got)
+	}
+}
+
 // mocks upstream identity response that is passed-through as-is
 func TestUpstreamIdentityEncodingPassThrough(t *testing.T) {
 	Runner = mockRuntime()
