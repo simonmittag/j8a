@@ -14,12 +14,13 @@ const XRequestID = "X-REQUEST-ID"
 const contentEncoding = "Content-Encoding"
 const contentLength = "Content-Length"
 const date = "Date"
+const server = "Server"
 
 //httpClient is the global user agent for upstream requests
 var httpClient HTTPClient
 
 //httpResponseHeadersNoRewrite contains a list of headers that are not copied from upstream to downstream to avoid bugs.
-var httpResponseHeadersNoRewrite []string = []string{date, contentLength, contentEncoding}
+var httpResponseHeadersNoRewrite []string = []string{date, contentLength, contentEncoding, server}
 
 // main proxy handling
 func proxyHandler(response http.ResponseWriter, request *http.Request) {
