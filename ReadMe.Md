@@ -1,4 +1,4 @@
-![](jabba.png)
+![](images/jabba.png)
 
 Achuta! Jabba is a json friendly reverse proxy for micro-services, written in golang.
 
