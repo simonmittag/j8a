@@ -5,6 +5,7 @@ import (
 	"testing"
 )
 
+
 func TestServerMakesSuccessfulUpstreamConnection(t *testing.T) {
 	resp, err := http.Get("http://localhost:8080/mse6/get")
 

@@ -36,9 +36,61 @@
       "path": "/mse6",
       "resource": "mse6",
       "policy": "ab"
+    },
+    {
+      "path": "/badip",
+      "resource": "badip"
+    },
+    {
+      "path": "/baddns",
+      "resource": "baddns"
+    },
+    {
+      "path": "/badremote",
+      "resource": "badremote"
+    },
+    {
+      "path": "/badlocal",
+      "resource": "badlocal"
     }
   ],
   "resources": {
+    "badip": [
+      {
+        "url":{
+          "scheme": "http",
+          "host": "10.247.13.14",
+          "port": 29471
+        }
+      }
+    ],
+    "baddns": [
+      {
+        "url":{
+          "scheme": "http",
+          "host": "kajsdkfj23848392sdfjsj332jkjkjdkshhhhimnotahost.com",
+          "port": 29471
+        }
+      }
+    ],
+    "badremote": [
+      {
+        "url":{
+          "scheme": "http",
+          "host": "google.com",
+          "port": 29471
+        }
+      }
+    ],
+    "badlocal": [
+      {
+        "url":{
+          "scheme": "http",
+          "host": "localhost",
+          "port": 29471
+        }
+      }
+    ],
     "mse6": [
       {
         "labels": [
