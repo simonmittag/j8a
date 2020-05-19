@@ -38,24 +38,24 @@
       "policy": "ab"
     },
     {
-      "path": "/notip",
-      "resource": "notip"
+      "path": "/badip",
+      "resource": "badip"
     },
     {
-      "path": "/notdns",
-      "resource": "notdns"
+      "path": "/baddns",
+      "resource": "baddns"
     },
     {
-      "path": "/notremote",
-      "resource": "notremote"
+      "path": "/badremote",
+      "resource": "badremote"
     },
     {
-      "path": "/notlocal",
-      "resource": "notlocal"
+      "path": "/badlocal",
+      "resource": "badlocal"
     }
   ],
   "resources": {
-    "notip": [
+    "badip": [
       {
         "url":{
           "scheme": "http",
@@ -64,7 +64,7 @@
         }
       }
     ],
-    "notdns": [
+    "baddns": [
       {
         "url":{
           "scheme": "http",
@@ -73,7 +73,7 @@
         }
       }
     ],
-    "notremote": [
+    "badremote": [
       {
         "url":{
           "scheme": "http",
@@ -82,7 +82,7 @@
         }
       }
     ],
-    "notlocal": [
+    "badlocal": [
       {
         "url":{
           "scheme": "http",
