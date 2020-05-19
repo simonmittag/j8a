@@ -36,9 +36,61 @@
       "path": "/mse6",
       "resource": "mse6",
       "policy": "ab"
+    },
+    {
+      "path": "/notip",
+      "resource": "notip"
+    },
+    {
+      "path": "/notdns",
+      "resource": "notdns"
+    },
+    {
+      "path": "/notremote",
+      "resource": "notremote"
+    },
+    {
+      "path": "/notlocal",
+      "resource": "notlocal"
     }
   ],
   "resources": {
+    "notip": [
+      {
+        "url":{
+          "scheme": "http",
+          "host": "10.247.13.14",
+          "port": 29471
+        }
+      }
+    ],
+    "notdns": [
+      {
+        "url":{
+          "scheme": "http",
+          "host": "kajsdkfj23848392sdfjsj332jkjkjdkshhhhimnotahost.com",
+          "port": 29471
+        }
+      }
+    ],
+    "notremote": [
+      {
+        "url":{
+          "scheme": "http",
+          "host": "google.com",
+          "port": 29471
+        }
+      }
+    ],
+    "notlocal": [
+      {
+        "url":{
+          "scheme": "http",
+          "host": "localhost",
+          "port": 29471
+        }
+      }
+    ],
     "mse6": [
       {
         "labels": [
