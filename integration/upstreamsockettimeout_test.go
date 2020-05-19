@@ -15,7 +15,7 @@ func connectionTimeoutTestPeriod() int {
 	return want
 }
 
-func TestServerUpstreamConnectionTimeoutFailsWithBadLocal(t *testing.T) {
+func TestServerUpstreamSocketTimeoutWithBadLocal(t *testing.T) {
 	start := time.Now()
 	resp, err := http.Get("http://localhost:8080/badlocal")
 	elapsed := time.Since(start)
@@ -34,7 +34,7 @@ func TestServerUpstreamConnectionTimeoutFailsWithBadLocal(t *testing.T) {
 	}
 }
 
-func TestServerUpstreamConnectionTimeoutWithBadRemote(t *testing.T) {
+func TestServerUpstreamSocketTimeoutWithBadRemote(t *testing.T) {
 	start := time.Now()
 	resp, err := http.Get("http://localhost:8080/badremote")
 	elapsed := time.Since(start)
@@ -53,7 +53,7 @@ func TestServerUpstreamConnectionTimeoutWithBadRemote(t *testing.T) {
 	}
 }
 
-func TestServerUpstreamConnectionTimeoutWithBadIp(t *testing.T) {
+func TestServerUpstreamSocketTimeoutWithBadIp(t *testing.T) {
 	start := time.Now()
 	resp, err := http.Get("http://localhost:8080/badip")
 	elapsed := time.Since(start)
@@ -72,14 +72,14 @@ func TestServerUpstreamConnectionTimeoutWithBadIp(t *testing.T) {
 	}
 }
 
-func TestServerUpstreamConnectionTimeoutWithBadDNS(t *testing.T) {
+func TestServerUpstreamSocketTimeoutWithBadDNS(t *testing.T) {
 	start := time.Now()
 	resp, err := http.Get("http://localhost:8080/baddns")
 	elapsed := time.Since(start)
 
 	//check integration test config file for correct values if test is failing
 	want := connectionTimeoutTestPeriod()
-	if elapsed > time.Duration(want) * time.Second {
+	if elapsed > time.Duration(want)*time.Second {
 		t.Errorf("upstream connection timeout exceed, want: %vs, got: %vs", want, elapsed)
 	}
 
