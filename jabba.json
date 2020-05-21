@@ -12,7 +12,7 @@
       "readTimeoutSeconds": 3,
       "idleTimeoutSeconds": 30,
       "maxAttempts": 4,
-      "poolSize": 1024
+      "poolSize": 2
     }
   },
   "policies": {
@@ -36,6 +36,10 @@
       "path": "/mse6",
       "resource": "mse6",
       "policy": "ab"
+    },
+    {
+      "path": "/s1",
+      "resource": "s1"
     },
     {
       "path": "/badip",
@@ -110,6 +114,15 @@
           "scheme": "http",
           "host": "localhost",
           "port": 60084
+        }
+      }
+    ],
+    "s1": [
+      {
+        "url": {
+          "scheme": "http",
+          "host": "localhost",
+          "port": 60085
         }
       }
     ]
