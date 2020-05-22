@@ -125,7 +125,11 @@ jobs:
       LOGLEVEL: WARN
       LOGCOLOR: FALSE
       UPSTREAM_ONE_PORT: 60083
+      UPSTREAM_ONE_SLUG: /mse6
       UPSTREAM_TWO_PORT: 60084
+      UPSTREAM_TWO_SLUG: /mse6
+      UPSTREAM_THREE_PORT: 60085
+      UPSTREAM_THREE_SLUG: /s1
       JABBA_PORT: 8080
       TEST_DURATION_SECONDS: 10
       TEST_CONCURRENCY: 8
@@ -141,18 +145,25 @@ jobs:
             go install github.com/simonmittag/mse6/cmd/mse6
       - run:
           name: Start upstream server one
-          command: mse6 -p ${UPSTREAM_ONE_PORT}
+          command: mse6 -p ${UPSTREAM_ONE_PORT} -u ${UPSTREAM_ONE_SLUG}
           background: true
       - run:
           name: Wait for upstream server one
           command: pwt localhost:${UPSTREAM_ONE_PORT}
       - run:
           name: Start upstream server two
-          command: mse6 -p ${UPSTREAM_TWO_PORT}
+          command: mse6 -p ${UPSTREAM_TWO_PORT} -u ${UPSTREAM_TWO_SLUG}
           background: true
       - run:
           name: Wait for upstream server two
           command: pwt localhost:${UPSTREAM_TWO_PORT}
+      - run:
+          name: Start upstream server three
+          command: mse6 -p ${UPSTREAM_THREE_PORT} -u ${UPSTREAM_THREE_SLUG}
+          background: true
+      - run:
+          name: Wait for upstream server three
+          command: pwt localhost:${UPSTREAM_THREE_PORT}
       - run:
           name: Install Jabba
           command: |
@@ -184,7 +195,11 @@ jobs:
       LOGCOLOR: FALSE
       PERFORMANCE_REQUEST_SECOND_THRESHOLD: 5000
       UPSTREAM_ONE_PORT: 60083
+      UPSTREAM_ONE_SLUG: /mse6
       UPSTREAM_TWO_PORT: 60084
+      UPSTREAM_TWO_SLUG: /mse6
+      UPSTREAM_THREE_PORT: 60085
+      UPSTREAM_THREE_SLUG: /s1
       JABBA_PORT: 8080
       TEST_DURATION_SECONDS: 10
       TEST_CONCURRENCY: 8
@@ -212,6 +227,13 @@ jobs:
       - run:
           name: Wait for upstream server two
           command: pwt localhost:${UPSTREAM_TWO_PORT}
+      - run:
+          name: Start upstream server three
+          command: mse6 -p ${UPSTREAM_THREE_PORT} -u ${UPSTREAM_THREE_SLUG}
+          background: true
+      - run:
+          name: Wait for upstream server three
+          command: pwt localhost:${UPSTREAM_THREE_PORT}
       - run:
           name: Install Jabba
           command: |

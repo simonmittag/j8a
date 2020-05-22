@@ -12,7 +12,7 @@
       "readTimeoutSeconds": 3,
       "idleTimeoutSeconds": 30,
       "maxAttempts": 4,
-      "poolSize": 2
+      "poolSize": 8
     }
   },
   "policies": {
