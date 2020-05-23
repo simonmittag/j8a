@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 	"unicode"
 )
 
@@ -29,19 +30,32 @@ func TestServerDoesNotExceedConnectionPoolSize(t *testing.T) {
 		}
 	}
 
+	//does the connection pool max out properly?
 	//double check connection pool size value in jabba config if the test fails.
-	want := 8
+	wantConns := 8
 	pid := getJabbaPid()
-	got := osConnsWithLsof(pid, want)
-	if got > want {
-		t.Errorf("jabba pid %s too many upstream tcp connections, want %d, got %d", pid, want, got)
+	gotConns := osConnsWithLsof(pid)
+	log.Info().Msgf("tried 16x10 rotating upstream connections, "+
+		"jabba pid %s expected %d max in pool, found %d using lsof", pid, wantConns, gotConns)
+	if gotConns > wantConns {
+		t.Errorf("jabba pid %s too many idle upstream tcp connections in pool, want %d, got %d", pid, wantConns, gotConns)
+	}
+
+	//we also want to know if the pool empties after timeout passes.
+	waitPeriodSeconds := 10
+	grace :=1
+	time.Sleep(time.Second*time.Duration(waitPeriodSeconds+grace))
+	gotConns = osConnsWithLsof(pid)
+	log.Info().Msgf("jabba pid %s after timeout want pool 0, found %d using lsof", pid, gotConns)
+	if gotConns > 0 {
+		t.Errorf("jabba pid %s connection pool not empty after timeout %d, want 0, got %d", pid, waitPeriodSeconds, gotConns)
 	}
 }
 
 //This is a brittle helper method to get the number of upstream connections for a pid.
 //If this test starts failing check your os output of lsof.
 //TODO do no rely on lsof output formatting
-func osConnsWithLsof(pid string, want int) int {
+func osConnsWithLsof(pid string) int {
 	lsofc := exec.Command("lsof", "-ai", "-p", pid)
 	outlsofc, _ := lsofc.CombinedOutput()
 	conns := strings.Split(string(outlsofc), "\n")
@@ -52,8 +66,6 @@ func osConnsWithLsof(pid string, want int) int {
 			got++
 		}
 	}
-	log.Info().Msgf("tried 16x10 rotating upstream connections, "+
-		"process %s expected %d max in pool, found %d using lsof", pid, want, got)
 	return got
 }
 
