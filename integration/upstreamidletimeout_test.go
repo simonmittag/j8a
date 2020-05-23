@@ -12,7 +12,7 @@ import (
 )
 
 func TestServerDoesNotExceedConnectionPoolSize(t *testing.T) {
-	for j:=0; j<100;j++ {
+	for j := 0; j < 10; j++ {
 		for i := 1; i <= 16; i++ {
 			url := fmt.Sprintf("http://localhost:8080/s%02d/get", i)
 			resp, err := http.Get(url)
@@ -52,7 +52,7 @@ func osConnsWithLsof(pid string, want int) int {
 			got++
 		}
 	}
-	log.Info().Msgf("tried 16x100 rotating upstream connections, "+
+	log.Info().Msgf("tried 16x10 rotating upstream connections, "+
 		"process %s expected %d max in pool, found %d using lsof", pid, want, got)
 	return got
 }
