@@ -81,42 +81,163 @@ jobs:
     environment:
       LOGLEVEL: WARN
       LOGCOLOR: FALSE
-      UPSTREAM_ONE_PORT: 60083
-      UPSTREAM_ONE_SLUG: /mse6
-      UPSTREAM_TWO_PORT: 60084
-      UPSTREAM_TWO_SLUG: /mse6
-      UPSTREAM_THREE_PORT: 60085
-      UPSTREAM_THREE_SLUG: /s1
+      UPSTREAM_01_PORT: 60083
+      UPSTREAM_01_SLUG: /mse6
+      UPSTREAM_02_PORT: 60084
+      UPSTREAM_02_SLUG: /mse6
+      UPSTREAM_03_PORT: 60085
+      UPSTREAM_03_SLUG: /s01
+      UPSTREAM_04_PORT: 60086
+      UPSTREAM_04_SLUG: /s02
+      UPSTREAM_05_PORT: 60087
+      UPSTREAM_05_SLUG: /s03
+      UPSTREAM_06_PORT: 60088
+      UPSTREAM_06_SLUG: /s04
+      UPSTREAM_07_PORT: 60089
+      UPSTREAM_07_SLUG: /s05
+      UPSTREAM_08_PORT: 60090
+      UPSTREAM_08_SLUG: /s06
+      UPSTREAM_09_PORT: 60091
+      UPSTREAM_09_SLUG: /s07
+      UPSTREAM_10_PORT: 60092
+      UPSTREAM_10_SLUG: /s08
+      UPSTREAM_11_PORT: 60093
+      UPSTREAM_11_SLUG: /s09
+      UPSTREAM_12_PORT: 60094
+      UPSTREAM_12_SLUG: /s10
+      UPSTREAM_13_PORT: 60095
+      UPSTREAM_13_SLUG: /s11
+      UPSTREAM_14_PORT: 60096
+      UPSTREAM_14_SLUG: /s12
+      UPSTREAM_15_PORT: 60097
+      UPSTREAM_15_SLUG: /s13
+      UPSTREAM_16_PORT: 60098
+      UPSTREAM_16_SLUG: /s14
+      UPSTREAM_17_PORT: 60099
+      UPSTREAM_17_SLUG: /s15
+      UPSTREAM_18_PORT: 60100
+      UPSTREAM_18_SLUG: /s16
       JABBA_PORT: 8080
     steps:
       - checkout # check out source code to working directory
-      - run: go get github.com/simonmittag/pwt
-      - run: go install github.com/simonmittag/pwt/cmd/pwt
-      - run: go get github.com/simonmittag/mse6
-      - run: go install github.com/simonmittag/mse6/cmd/mse6
       - run:
-          name: Start upstream server one
-          command: mse6 -p ${UPSTREAM_ONE_PORT} -u ${UPSTREAM_ONE_SLUG}
+          name: Install upstream server helpers
+          command: |
+            go get github.com/simonmittag/pwt
+            go install github.com/simonmittag/pwt/cmd/pwt
+            go get github.com/simonmittag/mse6
+            go install github.com/simonmittag/mse6/cmd/mse6
+      - run:
+          name: Start upstream server 01
+          command: mse6 -p ${UPSTREAM_01_PORT} -u ${UPSTREAM_01_SLUG}
           background: true
-      - run: pwt localhost:${UPSTREAM_ONE_PORT}
       - run:
-          name: Start upstream server two
-          command: mse6 -p ${UPSTREAM_TWO_PORT} -u ${UPSTREAM_TWO_SLUG}
+          name: Start upstream server 02
+          command: mse6 -p ${UPSTREAM_02_PORT} -u ${UPSTREAM_02_SLUG}
           background: true
-      - run: pwt localhost:${UPSTREAM_TWO_PORT}
       - run:
-          name: Start upstream server three
-          command: mse6 -p ${UPSTREAM_THREE_PORT} -u ${UPSTREAM_THREE_SLUG}
+          name: Start upstream server 03
+          command: mse6 -p ${UPSTREAM_03_PORT} -u ${UPSTREAM_03_SLUG}
           background: true
-      - run: pwt localhost:${UPSTREAM_THREE_PORT}
-      - run: go build github.com/simonmittag/jabba
-      - run: go install github.com/simonmittag/jabba/cmd/jabba
       - run:
-          name: start jabba
-          command: jabba
+          name: Start upstream server 04
+          command: mse6 -p ${UPSTREAM_04_PORT} -u ${UPSTREAM_04_SLUG}
+          background: true
+      - run:
+          name: Start upstream server 05
+          command: mse6 -p ${UPSTREAM_05_PORT} -u ${UPSTREAM_05_SLUG}
+          background: true
+      - run:
+          name: Start upstream server 06
+          command: mse6 -p ${UPSTREAM_06_PORT} -u ${UPSTREAM_06_SLUG}
+          background: true
+      - run:
+          name: Start upstream server 07
+          command: mse6 -p ${UPSTREAM_07_PORT} -u ${UPSTREAM_07_SLUG}
+          background: true
+      - run:
+          name: Start upstream server 08
+          command: mse6 -p ${UPSTREAM_08_PORT} -u ${UPSTREAM_08_SLUG}
+          background: true
+      - run:
+          name: Start upstream server 09
+          command: mse6 -p ${UPSTREAM_09_PORT} -u ${UPSTREAM_09_SLUG}
+          background: true
+      - run:
+          name: Start upstream server 10
+          command: mse6 -p ${UPSTREAM_10_PORT} -u ${UPSTREAM_10_SLUG}
+          background: true
+      - run:
+          name: Start upstream server 11
+          command: mse6 -p ${UPSTREAM_11_PORT} -u ${UPSTREAM_11_SLUG}
+          background: true
+      - run:
+          name: Start upstream server 12
+          command: mse6 -p ${UPSTREAM_12_PORT} -u ${UPSTREAM_12_SLUG}
+          background: true
+      - run:
+          name: Start upstream server 13
+          command: mse6 -p ${UPSTREAM_13_PORT} -u ${UPSTREAM_13_SLUG}
+          background: true
+      - run:
+          name: Start upstream server 14
+          command: mse6 -p ${UPSTREAM_14_PORT} -u ${UPSTREAM_14_SLUG}
+          background: true
+      - run:
+          name: Start upstream server 15
+          command: mse6 -p ${UPSTREAM_15_PORT} -u ${UPSTREAM_15_SLUG}
+          background: true
+      - run:
+          name: Start upstream server 16
+          command: mse6 -p ${UPSTREAM_16_PORT} -u ${UPSTREAM_16_SLUG}
+          background: true
+      - run:
+          name: Start upstream server 17
+          command: mse6 -p ${UPSTREAM_17_PORT} -u ${UPSTREAM_17_SLUG}
+          background: true
+      - run:
+          name: Start upstream server 18
+          command: mse6 -p ${UPSTREAM_18_PORT} -u ${UPSTREAM_18_SLUG}
+          background: true
+
+      - run:
+          name: Wait for upstream servers
+          command: |
+            pwt localhost:${UPSTREAM_01_PORT}
+            pwt localhost:${UPSTREAM_02_PORT}
+            pwt localhost:${UPSTREAM_03_PORT}
+            pwt localhost:${UPSTREAM_04_PORT}
+            pwt localhost:${UPSTREAM_05_PORT}
+            pwt localhost:${UPSTREAM_06_PORT}
+            pwt localhost:${UPSTREAM_07_PORT}
+            pwt localhost:${UPSTREAM_08_PORT}
+            pwt localhost:${UPSTREAM_09_PORT}
+            pwt localhost:${UPSTREAM_10_PORT}
+            pwt localhost:${UPSTREAM_11_PORT}
+            pwt localhost:${UPSTREAM_12_PORT}
+            pwt localhost:${UPSTREAM_13_PORT}
+            pwt localhost:${UPSTREAM_14_PORT}
+            pwt localhost:${UPSTREAM_15_PORT}
+            pwt localhost:${UPSTREAM_16_PORT}
+            pwt localhost:${UPSTREAM_17_PORT}
+            pwt localhost:${UPSTREAM_18_PORT}
+
+      - run:
+          name: Start jabba
+          command: |
+            go build github.com/simonmittag/jabba
+            go install github.com/simonmittag/jabba/cmd/jabba
+            jabba
           background: true
       - run: pwt localhost:${JABBA_PORT}
-      - run: go test -v github.com/simonmittag/jabba/integration
+      - run:
+          name: Install Test dependencies
+          command: |
+            sudo apt-get install ack -y
+            sudo apt-get install lsof -y
+      - run:
+          name: Run integration tests
+          command: go test -v github.com/simonmittag/jabba/integration
 
   performance:
     docker:
