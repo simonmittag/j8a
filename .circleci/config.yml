@@ -229,7 +229,9 @@ jobs:
             go install github.com/simonmittag/jabba/cmd/jabba
             jabba
           background: true
-      - run: pwt localhost:${JABBA_PORT}
+      - run:
+          name: Wait for jabba
+          command: pwt localhost:${JABBA_PORT}
       - run:
           name: Install Test dependencies
           command: |
