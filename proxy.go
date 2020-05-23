@@ -171,16 +171,16 @@ func (proxy *Proxy) copyUpstreamResponseBody() {
 	if proxy.shouldGzipEncodeResponseBody() {
 		proxy.Dwn.Resp.Writer.Write(Gzip(*proxy.Up.Atmpt.respBody))
 		elapsed := time.Since(start)
-		log.Trace().Msgf("copying upstream body with gzip re-encoding took %s", elapsed)
+		log.Trace().Msgf("copying upstream body with gzip re-encoding in %s", elapsed)
 	} else {
 		if proxy.shouldGzipDecodeResponseBody() {
 			proxy.Dwn.Resp.Writer.Write(Gunzip([]byte(*proxy.Up.Atmpt.respBody)))
 			elapsed := time.Since(start)
-			log.Trace().Msgf("copying upstream body with gzip re-decoding took %s", elapsed)
+			log.Trace().Msgf("copying upstream body with gzip re-decoding in %s", elapsed)
 		} else {
 			proxy.Dwn.Resp.Writer.Write([]byte(*proxy.Up.Atmpt.respBody))
 			elapsed := time.Since(start)
-			log.Trace().Msgf("copying upstream body without coding took %s", elapsed)
+			log.Trace().Msgf("copying upstream body without coding in %s", elapsed)
 		}
 	}
 }
