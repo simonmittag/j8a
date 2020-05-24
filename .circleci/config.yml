@@ -11,7 +11,7 @@ workflows:
       - integration
   performancetest:
     jobs:
-      - performanceartifacts
+      - performance
 
 jobs:
   unit:
@@ -240,7 +240,7 @@ jobs:
           name: Run integration tests
           command: go test -v github.com/simonmittag/jabba/integration
 
-  performance:
+  localperformance:
     docker:
       - image: simonmittag/wrk
     environment:
@@ -309,7 +309,7 @@ jobs:
             echo "=> performance test results, ${reqss} req/s"
 
 
-  performanceartifacts:
+  performance:
     docker:
       - image: simonmittag/wrk
     environment:
