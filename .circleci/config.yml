@@ -1,7 +1,5 @@
-version: 2.1
-
 workflows:
-  version: 2.1
+  version: 2
   unittest:
     jobs:
       - unit
@@ -307,6 +305,7 @@ jobs:
             export reqss=`cat performance/performance_results.json | jq .requestspersecond`
             echo "(ignore 'Step cancelled' messages upstream, Jabba shutdown related)"
             echo "=> performance test results, ${reqss} req/s"
+
 
 
   performance:
