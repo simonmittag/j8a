@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	"github.com/rs/zerolog/log"
 )
@@ -15,6 +16,9 @@ type Config struct {
 	Resources  map[string][]ResourceMapping
 	Connection Connection
 }
+
+const HTTP = "http"
+const HTTPS = "https"
 
 func (config Config) read(file string) *Config {
 	jsonFile, err := os.Open(file)
@@ -41,6 +45,26 @@ func (config Config) reApplyResourceNames() *Config {
 		for i, resourceMapping := range resourceMappings {
 			resourceMapping.Name = name
 			resourceMappings[i] = resourceMapping
+		}
+	}
+	return &config
+}
+
+func (config Config) reApplySchemes() *Config {
+	for name := range config.Resources {
+		resourceMappings := config.Resources[name]
+		for i, resourceMapping := range resourceMappings {
+			scheme := resourceMapping.URL.Scheme
+			if len(scheme) == 0 {
+				scheme = HTTP
+			} else {
+				if strings.Contains(scheme, HTTPS) {
+					scheme = HTTPS
+				} else if strings.Contains(scheme, HTTP) {
+					scheme = HTTP
+				}
+			}
+			resourceMappings[i].URL.Scheme = scheme
 		}
 	}
 	return &config
