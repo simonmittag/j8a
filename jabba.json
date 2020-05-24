@@ -161,7 +161,7 @@
           "green"
         ],
         "url": {
-          "scheme": "http",
+          "scheme": "http://",
           "host": "localhost",
           "port": 60083
         }
@@ -171,7 +171,6 @@
           "blue"
         ],
         "url": {
-          "scheme": "http",
           "host": "localhost",
           "port": 60084
         }

@@ -281,3 +281,18 @@ func TestReadConfigFile(t *testing.T) {
 		t.Error("incorrectly parsed resources in config file")
 	}
 }
+
+func TestReApplyScheme(t *testing.T) {
+	want := map[string]string{HTTP:HTTP, HTTPS:HTTPS}
+	config := new(Config).read("./jabba.json").reApplySchemes()
+
+	for name := range config.Resources {
+		resourceMappings := config.Resources[name]
+		for _, resourceMapping := range resourceMappings {
+			scheme := resourceMapping.URL.Scheme
+			if _,ok := want[scheme];!ok {
+				t.Errorf("incorrectly reapplied scheme, want any of %v, got %v", want, scheme)
+			}
+		}
+	}
+}
