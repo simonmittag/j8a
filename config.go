@@ -17,8 +17,7 @@ type Config struct {
 	Connection Connection
 }
 
-const HTTP = "http"
-const HTTPS = "https"
+const HTTP = "HTTP"
 const TLS = "TLS"
 
 func (config Config) read(file string) *Config {
@@ -52,17 +51,19 @@ func (config Config) reApplyResourceNames() *Config {
 }
 
 func (config Config) reApplySchemes() *Config {
+	const http = "http"
+	const https = "https"
 	for name := range config.Resources {
 		resourceMappings := config.Resources[name]
 		for i, resourceMapping := range resourceMappings {
 			scheme := resourceMapping.URL.Scheme
 			if len(scheme) == 0 {
-				scheme = HTTP
+				scheme = http
 			} else {
-				if strings.Contains(scheme, HTTPS) {
-					scheme = HTTPS
-				} else if strings.Contains(scheme, HTTP) {
-					scheme = HTTP
+				if strings.Contains(scheme, https) {
+					scheme = https
+				} else if strings.Contains(scheme, http) {
+					scheme = http
 				}
 			}
 			resourceMappings[i].URL.Scheme = scheme

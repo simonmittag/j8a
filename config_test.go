@@ -50,27 +50,33 @@ func TestDefaultDownstreamRoundtripTimeout(t *testing.T) {
 }
 
 //TestDefaultDownstreamIdleTimeout
-func TestDefaultDownstreamHttpTlsPorts(t *testing.T) {
+func TestDefaultDownstreamTlsPort(t *testing.T) {
+	config := new(Config)
+	config.Connection.Downstream.Mode = "tls"
+	//TODO: should i turn the entire config method set into receiver type pointer?
+	config = config.setDefaultDownstreamParams()
+
+	got := config.Connection.Downstream.Port
+	want := 443
+	if got != want {
+		t.Errorf("default tls config got port %d, want %d", got, want)
+	}
+}
+
+//TestDefaultDownstreamIdleTimeout
+func TestDefaultDownstreamHttpPort(t *testing.T) {
 	config := new(Config).setDefaultDownstreamParams()
 	got := config.Connection.Downstream.Port
 	want := 8080
 	if got != want {
-		t.Errorf("default config got port %d, want %d", got, want)
-	}
-
-	config.Connection.Downstream.Mode = "tls"
-	config.setDefaultDownstreamParams()
-	got = config.Connection.Downstream.Port
-	want = 443
-	if got != want {
-		t.Errorf("default config got port %d, want %d", got, want)
+		t.Errorf("default http config got port %d, want %d", got, want)
 	}
 }
 
-func TestDefautDownstreamMode(t *testing.T) {
+func TestDefaultDownstreamMode(t *testing.T) {
 	config := new(Config).setDefaultDownstreamParams()
 	got := config.Connection.Downstream.Mode
-	want := HTTP
+	want := "HTTP"
 	if got != want {
 		t.Errorf("default config got mode %s, want %s", got, want)
 	}
@@ -310,7 +316,7 @@ func TestReadConfigFile(t *testing.T) {
 }
 
 func TestReApplyScheme(t *testing.T) {
-	want := map[string]string{HTTP:HTTP, HTTPS:HTTPS}
+	want := map[string]string{"http":"", "https":""}
 	config := new(Config).read("./jabba.json").reApplySchemes()
 
 	for name := range config.Resources {
