@@ -86,8 +86,8 @@ func (config Config) addDefaultPolicy() *Config {
 	return &config
 }
 
-func (config Config) setDefaultValues() *Config {
-	//Downstream params
+func (config Config) setDefaultDownstreamParams() *Config {
+
 	if config.Connection.Downstream.ReadTimeoutSeconds == 0 {
 		config.Connection.Downstream.ReadTimeoutSeconds = 120
 	}
@@ -98,7 +98,11 @@ func (config Config) setDefaultValues() *Config {
 		config.Connection.Downstream.IdleTimeoutSeconds = 120
 	}
 
-	//Upstream params
+	return &config
+}
+
+func (config Config) setDefaultUpstreamParams() *Config {
+
 	if config.Connection.Upstream.SocketTimeoutSeconds == 0 {
 		config.Connection.Upstream.SocketTimeoutSeconds = 3
 	}

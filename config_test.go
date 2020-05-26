@@ -21,7 +21,7 @@ func testSetup() {
 
 //TestDefaultDownstreamReadTimeout
 func TestDefaultDownstreamReadTimeout(t *testing.T) {
-	config := new(Config).setDefaultValues()
+	config := new(Config).setDefaultDownstreamParams()
 	got := config.Connection.Downstream.ReadTimeoutSeconds
 	want := 120
 	if got != want {
@@ -31,7 +31,7 @@ func TestDefaultDownstreamReadTimeout(t *testing.T) {
 
 //TestDefaultDownstreamIdleTimeout
 func TestDefaultDownstreamIdleTimeout(t *testing.T) {
-	config := new(Config).setDefaultValues()
+	config := new(Config).setDefaultDownstreamParams()
 	got := config.Connection.Downstream.IdleTimeoutSeconds
 	want := 120
 	if got != want {
@@ -41,7 +41,7 @@ func TestDefaultDownstreamIdleTimeout(t *testing.T) {
 
 //TestDefaultDownstreamRoundtripTimeout
 func TestDefaultDownstreamRoundtripTimeout(t *testing.T) {
-	config := new(Config).setDefaultValues()
+	config := new(Config).setDefaultDownstreamParams()
 	got := config.Connection.Downstream.RoundTripTimeoutSeconds
 	want := 240
 	if got != want {
@@ -51,7 +51,7 @@ func TestDefaultDownstreamRoundtripTimeout(t *testing.T) {
 
 //TestDefaultUpstreamSocketTimeout
 func TestDefaultUpstreamSocketTimeout(t *testing.T) {
-	config := new(Config).setDefaultValues()
+	config := new(Config).setDefaultUpstreamParams()
 	got := config.Connection.Upstream.SocketTimeoutSeconds
 	want := 3
 	if got != want {
@@ -61,7 +61,7 @@ func TestDefaultUpstreamSocketTimeout(t *testing.T) {
 
 //TestDefaultUpstreamSocketTimeout
 func TestDefaultUpstreamReadTimeout(t *testing.T) {
-	config := new(Config).setDefaultValues()
+	config := new(Config).setDefaultUpstreamParams()
 	got := config.Connection.Upstream.ReadTimeoutSeconds
 	want := 120
 	if got != want {
@@ -71,7 +71,7 @@ func TestDefaultUpstreamReadTimeout(t *testing.T) {
 
 //TestDefaultUpstreamIdleTimeout
 func TestDefaultUpstreamIdleTimeout(t *testing.T) {
-	config := new(Config).setDefaultValues()
+	config := new(Config).setDefaultUpstreamParams()
 	got := config.Connection.Upstream.IdleTimeoutSeconds
 	want := 120
 	if got != want {
@@ -81,7 +81,7 @@ func TestDefaultUpstreamIdleTimeout(t *testing.T) {
 
 //TestDefaultUpstreamConnectionPoolSize
 func TestDefaultUpstreamConnectionPoolSize(t *testing.T) {
-	config := new(Config).setDefaultValues()
+	config := new(Config).setDefaultUpstreamParams()
 	got := config.Connection.Upstream.PoolSize
 	want := 32768
 	if got != want {
@@ -91,7 +91,7 @@ func TestDefaultUpstreamConnectionPoolSize(t *testing.T) {
 
 //TestDefaultUpstreamConnectionMaxAttempts
 func TestDefaultUpstreamConnectionMaxAttempts(t *testing.T) {
-	config := new(Config).setDefaultValues()
+	config := new(Config).setDefaultUpstreamParams()
 	got := config.Connection.Upstream.MaxAttempts
 	want := 1
 	if got != want {
@@ -180,7 +180,7 @@ func TestParseConnection(t *testing.T) {
 		//this whole test runs twice. the first pass validates the parsing of config object. the 2nd pass
 		//validates the setDefaultValues() method does not inadvertently overwrite it
 		if i == 1 {
-			config = config.setDefaultValues()
+			config = config.setDefaultDownstreamParams().setDefaultUpstreamParams()
 		}
 
 		c := config.Connection
