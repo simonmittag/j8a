@@ -19,6 +19,7 @@ type Config struct {
 
 const HTTP = "http"
 const HTTPS = "https"
+const TLS = "TLS"
 
 func (config Config) read(file string) *Config {
 	jsonFile, err := os.Open(file)
@@ -91,14 +92,34 @@ func (config Config) setDefaultDownstreamParams() *Config {
 	if config.Connection.Downstream.ReadTimeoutSeconds == 0 {
 		config.Connection.Downstream.ReadTimeoutSeconds = 120
 	}
+
 	if config.Connection.Downstream.RoundTripTimeoutSeconds == 0 {
 		config.Connection.Downstream.RoundTripTimeoutSeconds = 240
 	}
+
 	if config.Connection.Downstream.IdleTimeoutSeconds == 0 {
 		config.Connection.Downstream.IdleTimeoutSeconds = 120
 	}
 
+	if len(config.Connection.Downstream.Mode) == 0 {
+		config.Connection.Downstream.Mode = HTTP
+	} else {
+		config.Connection.Downstream.Mode = strings.ToUpper(config.Connection.Downstream.Mode)
+	}
+
+	if config.Connection.Downstream.Port == 0 {
+		if config.isTLSMode() {
+			config.Connection.Downstream.Port = 443
+		} else {
+			config.Connection.Downstream.Port = 8080
+		}
+	}
+
 	return &config
+}
+
+func (config Config) isTLSMode() bool {
+	return strings.ToUpper(config.Connection.Downstream.Mode) == TLS
 }
 
 func (config Config) setDefaultUpstreamParams() *Config {

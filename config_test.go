@@ -49,6 +49,33 @@ func TestDefaultDownstreamRoundtripTimeout(t *testing.T) {
 	}
 }
 
+//TestDefaultDownstreamIdleTimeout
+func TestDefaultDownstreamHttpTlsPorts(t *testing.T) {
+	config := new(Config).setDefaultDownstreamParams()
+	got := config.Connection.Downstream.Port
+	want := 8080
+	if got != want {
+		t.Errorf("default config got port %d, want %d", got, want)
+	}
+
+	config.Connection.Downstream.Mode = "tls"
+	config.setDefaultDownstreamParams()
+	got = config.Connection.Downstream.Port
+	want = 443
+	if got != want {
+		t.Errorf("default config got port %d, want %d", got, want)
+	}
+}
+
+func TestDefautDownstreamMode(t *testing.T) {
+	config := new(Config).setDefaultDownstreamParams()
+	got := config.Connection.Downstream.Mode
+	want := HTTP
+	if got != want {
+		t.Errorf("default config got mode %s, want %s", got, want)
+	}
+}
+
 //TestDefaultUpstreamSocketTimeout
 func TestDefaultUpstreamSocketTimeout(t *testing.T) {
 	config := new(Config).setDefaultUpstreamParams()
