@@ -17,8 +17,8 @@ type Config struct {
 	Connection Connection
 }
 
-const HTTP = "http"
-const HTTPS = "https"
+const HTTP = "HTTP"
+const TLS = "TLS"
 
 func (config Config) read(file string) *Config {
 	jsonFile, err := os.Open(file)
@@ -51,17 +51,19 @@ func (config Config) reApplyResourceNames() *Config {
 }
 
 func (config Config) reApplySchemes() *Config {
+	const http = "http"
+	const https = "https"
 	for name := range config.Resources {
 		resourceMappings := config.Resources[name]
 		for i, resourceMapping := range resourceMappings {
 			scheme := resourceMapping.URL.Scheme
 			if len(scheme) == 0 {
-				scheme = HTTP
+				scheme = http
 			} else {
-				if strings.Contains(scheme, HTTPS) {
-					scheme = HTTPS
-				} else if strings.Contains(scheme, HTTP) {
-					scheme = HTTP
+				if strings.Contains(scheme, https) {
+					scheme = https
+				} else if strings.Contains(scheme, http) {
+					scheme = http
 				}
 			}
 			resourceMappings[i].URL.Scheme = scheme
@@ -86,19 +88,43 @@ func (config Config) addDefaultPolicy() *Config {
 	return &config
 }
 
-func (config Config) setDefaultValues() *Config {
-	//Downstream params
+func (config Config) setDefaultDownstreamParams() *Config {
+
 	if config.Connection.Downstream.ReadTimeoutSeconds == 0 {
 		config.Connection.Downstream.ReadTimeoutSeconds = 120
 	}
+
 	if config.Connection.Downstream.RoundTripTimeoutSeconds == 0 {
 		config.Connection.Downstream.RoundTripTimeoutSeconds = 240
 	}
+
 	if config.Connection.Downstream.IdleTimeoutSeconds == 0 {
 		config.Connection.Downstream.IdleTimeoutSeconds = 120
 	}
 
-	//Upstream params
+	if len(config.Connection.Downstream.Mode) == 0 {
+		config.Connection.Downstream.Mode = HTTP
+	} else {
+		config.Connection.Downstream.Mode = strings.ToUpper(config.Connection.Downstream.Mode)
+	}
+
+	if config.Connection.Downstream.Port == 0 {
+		if config.isTLSMode() {
+			config.Connection.Downstream.Port = 443
+		} else {
+			config.Connection.Downstream.Port = 8080
+		}
+	}
+
+	return &config
+}
+
+func (config Config) isTLSMode() bool {
+	return strings.ToUpper(config.Connection.Downstream.Mode) == TLS
+}
+
+func (config Config) setDefaultUpstreamParams() *Config {
+
 	if config.Connection.Upstream.SocketTimeoutSeconds == 0 {
 		config.Connection.Upstream.SocketTimeoutSeconds = 3
 	}
