@@ -36,7 +36,8 @@ func BootStrap() {
 		reApplySchemes().
 		reApplyResourceNames().
 		addDefaultPolicy().
-		setDefaultValues()
+		setDefaultUpstreamParams().
+		setDefaultDownstreamParams()
 
 	Runner = &Runtime{Config: *config}
 	Runner.initStats().

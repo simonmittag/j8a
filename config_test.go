@@ -21,7 +21,7 @@ func testSetup() {
 
 //TestDefaultDownstreamReadTimeout
 func TestDefaultDownstreamReadTimeout(t *testing.T) {
-	config := new(Config).setDefaultValues()
+	config := new(Config).setDefaultDownstreamParams()
 	got := config.Connection.Downstream.ReadTimeoutSeconds
 	want := 120
 	if got != want {
@@ -31,7 +31,7 @@ func TestDefaultDownstreamReadTimeout(t *testing.T) {
 
 //TestDefaultDownstreamIdleTimeout
 func TestDefaultDownstreamIdleTimeout(t *testing.T) {
-	config := new(Config).setDefaultValues()
+	config := new(Config).setDefaultDownstreamParams()
 	got := config.Connection.Downstream.IdleTimeoutSeconds
 	want := 120
 	if got != want {
@@ -41,7 +41,7 @@ func TestDefaultDownstreamIdleTimeout(t *testing.T) {
 
 //TestDefaultDownstreamRoundtripTimeout
 func TestDefaultDownstreamRoundtripTimeout(t *testing.T) {
-	config := new(Config).setDefaultValues()
+	config := new(Config).setDefaultDownstreamParams()
 	got := config.Connection.Downstream.RoundTripTimeoutSeconds
 	want := 240
 	if got != want {
@@ -49,9 +49,42 @@ func TestDefaultDownstreamRoundtripTimeout(t *testing.T) {
 	}
 }
 
+//TestDefaultDownstreamIdleTimeout
+func TestDefaultDownstreamTlsPort(t *testing.T) {
+	config := new(Config)
+	config.Connection.Downstream.Mode = "tls"
+	//TODO: should i turn the entire config method set into receiver type pointer?
+	config = config.setDefaultDownstreamParams()
+
+	got := config.Connection.Downstream.Port
+	want := 443
+	if got != want {
+		t.Errorf("default tls config got port %d, want %d", got, want)
+	}
+}
+
+//TestDefaultDownstreamIdleTimeout
+func TestDefaultDownstreamHttpPort(t *testing.T) {
+	config := new(Config).setDefaultDownstreamParams()
+	got := config.Connection.Downstream.Port
+	want := 8080
+	if got != want {
+		t.Errorf("default http config got port %d, want %d", got, want)
+	}
+}
+
+func TestDefaultDownstreamMode(t *testing.T) {
+	config := new(Config).setDefaultDownstreamParams()
+	got := config.Connection.Downstream.Mode
+	want := "HTTP"
+	if got != want {
+		t.Errorf("default config got mode %s, want %s", got, want)
+	}
+}
+
 //TestDefaultUpstreamSocketTimeout
 func TestDefaultUpstreamSocketTimeout(t *testing.T) {
-	config := new(Config).setDefaultValues()
+	config := new(Config).setDefaultUpstreamParams()
 	got := config.Connection.Upstream.SocketTimeoutSeconds
 	want := 3
 	if got != want {
@@ -61,7 +94,7 @@ func TestDefaultUpstreamSocketTimeout(t *testing.T) {
 
 //TestDefaultUpstreamSocketTimeout
 func TestDefaultUpstreamReadTimeout(t *testing.T) {
-	config := new(Config).setDefaultValues()
+	config := new(Config).setDefaultUpstreamParams()
 	got := config.Connection.Upstream.ReadTimeoutSeconds
 	want := 120
 	if got != want {
@@ -71,7 +104,7 @@ func TestDefaultUpstreamReadTimeout(t *testing.T) {
 
 //TestDefaultUpstreamIdleTimeout
 func TestDefaultUpstreamIdleTimeout(t *testing.T) {
-	config := new(Config).setDefaultValues()
+	config := new(Config).setDefaultUpstreamParams()
 	got := config.Connection.Upstream.IdleTimeoutSeconds
 	want := 120
 	if got != want {
@@ -81,7 +114,7 @@ func TestDefaultUpstreamIdleTimeout(t *testing.T) {
 
 //TestDefaultUpstreamConnectionPoolSize
 func TestDefaultUpstreamConnectionPoolSize(t *testing.T) {
-	config := new(Config).setDefaultValues()
+	config := new(Config).setDefaultUpstreamParams()
 	got := config.Connection.Upstream.PoolSize
 	want := 32768
 	if got != want {
@@ -91,7 +124,7 @@ func TestDefaultUpstreamConnectionPoolSize(t *testing.T) {
 
 //TestDefaultUpstreamConnectionMaxAttempts
 func TestDefaultUpstreamConnectionMaxAttempts(t *testing.T) {
-	config := new(Config).setDefaultValues()
+	config := new(Config).setDefaultUpstreamParams()
 	got := config.Connection.Upstream.MaxAttempts
 	want := 1
 	if got != want {
@@ -180,7 +213,7 @@ func TestParseConnection(t *testing.T) {
 		//this whole test runs twice. the first pass validates the parsing of config object. the 2nd pass
 		//validates the setDefaultValues() method does not inadvertently overwrite it
 		if i == 1 {
-			config = config.setDefaultValues()
+			config = config.setDefaultDownstreamParams().setDefaultUpstreamParams()
 		}
 
 		c := config.Connection
@@ -283,7 +316,7 @@ func TestReadConfigFile(t *testing.T) {
 }
 
 func TestReApplyScheme(t *testing.T) {
-	want := map[string]string{HTTP:HTTP, HTTPS:HTTPS}
+	want := map[string]string{"http":"", "https":""}
 	config := new(Config).read("./jabba.json").reApplySchemes()
 
 	for name := range config.Resources {
