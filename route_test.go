@@ -28,6 +28,9 @@ func TestRouteMatchWithSlug(t *testing.T) {
 }
 
 func TestRouteMatchWithTerminatedSlug(t *testing.T) {
+	testNoMatch(t, "some", "/some/")
+	testNoMatch(t, "", "/some/")
+	testNoMatch(t, "/", "/some/")
 	testNoMatch(t, "/some", "/some/")
 	testMatch(t, "/some/", "/some/")
 	testMatch(t, "/some/more", "/some/")
