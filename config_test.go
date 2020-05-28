@@ -313,6 +313,28 @@ func TestSortRoutes(t *testing.T) {
 	}
 }
 
+func BenchmarkRouteMatchingRegex(b *testing.B) {
+	config := new(Config).read("./jabba.json")
+	config = config.compileRoutePaths().sortRoutes()
+
+	for _, route := range config.Routes {
+		if ok := route.matchURI(requestFactory("/")); ok {
+			break
+		}
+	}
+}
+
+func BenchmarkRouteMatchingString(b *testing.B) {
+	config := new(Config).read("./jabba.json")
+	config = config.sortRoutes()
+
+	for _, route := range config.Routes {
+		if ok := route.matchURI(requestFactory("/")); ok {
+			break
+		}
+	}
+}
+
 //TestReadConfigFile
 func TestReadConfigFile(t *testing.T) {
 	config := new(Config).read("./jabba.json")
@@ -331,14 +353,14 @@ func TestReadConfigFile(t *testing.T) {
 }
 
 func TestReApplyScheme(t *testing.T) {
-	want := map[string]string{"http":"", "https":""}
+	want := map[string]string{"http": "", "https": ""}
 	config := new(Config).read("./jabba.json").reApplyResourceSchemes()
 
 	for name := range config.Resources {
 		resourceMappings := config.Resources[name]
 		for _, resourceMapping := range resourceMappings {
 			scheme := resourceMapping.URL.Scheme
-			if _,ok := want[scheme];!ok {
+			if _, ok := want[scheme]; !ok {
 				t.Errorf("incorrectly reapplied scheme, want any of %v, got %v", want, scheme)
 			}
 		}
