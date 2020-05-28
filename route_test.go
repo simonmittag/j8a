@@ -1,8 +1,38 @@
 package jabba
 
 import (
+	"net/http"
+	"regexp"
 	"testing"
 )
+
+func TestRouteMatchRoot(t *testing.T) {
+	doMatch(t, "/some", "/")
+	doMatch(t, "/", "/")
+}
+
+func doMatch(t *testing.T, path string, route string) {
+	r := routeFactory("/")
+	req := requestFactory(path)
+	if !r.matchURI(req) {
+		t.Errorf("route %v did not match path: %v", route, path)
+	}
+}
+
+func requestFactory(path string) *http.Request {
+	req, _ := http.NewRequest("GET", path, nil)
+	req.RequestURI = path
+	return req
+}
+
+func routeFactory(route string) (Route) {
+	pR, _ := regexp.Compile("^"+route)
+	r := Route{
+		Path:  route,
+		Regex: pR,
+	}
+	return r
+}
 
 func TestRouteMapDefault(t *testing.T) {
 	Runner = mockRuntime()
