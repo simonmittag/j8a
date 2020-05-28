@@ -9,10 +9,31 @@ import (
 func TestRouteMatchRoot(t *testing.T) {
 	doMatch(t, "/some", "/")
 	doMatch(t, "/", "/")
+	doMatch(t, "/some/more", "/")
+	doMatch(t, "/some/more?param", "/")
+	doMatch(t, "/some/more?param=value", "/")
+	doMatch(t, "/some/more?param=value&param2=value2", "/")
+	//path is never empty string, http server inserts "/"
+}
+
+func TestRouteMatchWithSlug(t *testing.T) {
+	doMatch(t, "/some", "/so")
+	doMatch(t, "/some/more", "/so")
+	doMatch(t, "/some/more?param", "/so")
+	doMatch(t, "/some/more?param=value", "/so")
+	doMatch(t, "/some/more?param=value&param2=value2", "/so")
+}
+
+func TestRouteMatchWithTerminatedSlug(t *testing.T) {
+	doMatch(t, "/some", "/some/")
+	doMatch(t, "/some/more", "/some/")
+	doMatch(t, "/some/more?param", "/some/")
+	doMatch(t, "/some/more?param=value", "/some/")
+	doMatch(t, "/some/more?param=value&param2=value2", "/some/")
 }
 
 func doMatch(t *testing.T, path string, route string) {
-	r := routeFactory("/")
+	r := routeFactory(route)
 	req := requestFactory(path)
 	if !r.matchURI(req) {
 		t.Errorf("route %v did not match path: %v", route, path)
