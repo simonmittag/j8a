@@ -9,6 +9,18 @@ import (
 //AboutJabba special Route alias for internal endpoint
 const AboutJabba string = "aboutJabba"
 
+type Routes []Route
+
+func (s Routes) Len() int {
+	return len(s)
+}
+func (s Routes) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+func (s Routes) Less(i, j int) bool {
+	return len(s[i].Path) > len(s[j].Path)
+}
+
 //Route maps a Path to an upstream resource
 type Route struct {
 	Path     string

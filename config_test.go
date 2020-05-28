@@ -317,7 +317,7 @@ func TestReadConfigFile(t *testing.T) {
 
 func TestReApplyScheme(t *testing.T) {
 	want := map[string]string{"http":"", "https":""}
-	config := new(Config).read("./jabba.json").reApplySchemes()
+	config := new(Config).read("./jabba.json").reApplyResourceSchemes()
 
 	for name := range config.Resources {
 		resourceMappings := config.Resources[name]

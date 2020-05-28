@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/rs/zerolog/log"
@@ -13,7 +14,7 @@ import (
 //Config is the system wide configuration for Jabba
 type Config struct {
 	Policies   map[string]Policy
-	Routes     []Route
+	Routes     Routes
 	Resources  map[string][]ResourceMapping
 	Connection Connection
 }
@@ -51,14 +52,25 @@ func (config Config) reApplyResourceNames() *Config {
 	return &config
 }
 
-func (config Config) compilePaths() *Config {
+func (config Config) sortRoutes() *Config {
+	//prep routes with leading slash
+	for i, _ := range config.Routes {
+		if strings.Index(config.Routes[i].Path, "/") != 0 {
+			config.Routes[i].Path = "/" + config.Routes[i].Path
+		}
+	}
+	sort.Sort(Routes(config.Routes))
+	return &config
+}
+
+func (config Config) compileRoutePaths() *Config {
 	for i, route := range config.Routes {
 		config.Routes[i].Regex, _ = regexp.Compile("^"+route.Path)
 	}
 	return &config
 }
 
-func (config Config) reApplySchemes() *Config {
+func (config Config) reApplyResourceSchemes() *Config {
 	const http = "http"
 	const https = "https"
 	for name := range config.Resources {
