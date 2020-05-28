@@ -318,7 +318,7 @@ func BenchmarkRouteMatchingRegex(b *testing.B) {
 	config = config.compileRoutePaths().sortRoutes()
 
 	for _, route := range config.Routes {
-		if ok := route.matchURI(requestFactory("/")); ok {
+		if ok := route.matchURI(requestFactory("/mse6")); ok {
 			break
 		}
 	}
@@ -329,7 +329,7 @@ func BenchmarkRouteMatchingString(b *testing.B) {
 	config = config.sortRoutes()
 
 	for _, route := range config.Routes {
-		if ok := route.matchURI(requestFactory("/")); ok {
+		if ok := route.matchURI(requestFactory("/mse6")); ok {
 			break
 		}
 	}
