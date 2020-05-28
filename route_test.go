@@ -7,59 +7,52 @@ import (
 )
 
 func TestRouteMatchRoot(t *testing.T) {
-	testNoMatch(t, "", "/")
-	testMatch(t, "/some", "/")
-	testMatch(t, "/", "/")
-	testMatch(t, "/some/more", "/")
-	testMatch(t, "/some/more?param", "/")
-	testMatch(t, "/some/more?param=value", "/")
-	testMatch(t, "/some/more?param=value&param2=value2", "/")
+	routeNoMatch("/", "", t)
+	routeMatch("/", "/some", t)
+	routeMatch("/", "/", t)
+	routeMatch("/", "/some/more", t)
+	routeMatch("/", "/some/more?param", t)
+	routeMatch("/", "/some/more?param=value", t)
+	routeMatch("/", "/some/more?param=value&param2=value2", t)
 	//path is never empty string, http server inserts "/"
 }
 
 func TestRouteMatchWithSlug(t *testing.T) {
-	testNoMatch(t, "so", "/so")
-	testNoMatch(t, "/os", "/so")
-	testMatch(t, "/some", "/so")
-	testMatch(t, "/some/more", "/so")
-	testMatch(t, "/some/more?param", "/so")
-	testMatch(t, "/some/more?param=value", "/so")
-	testMatch(t, "/some/more?param=value&param2=value2", "/so")
+	routeNoMatch("/so", "so", t)
+	routeNoMatch("/so", "/os", t)
+	routeMatch("/so", "/some", t)
+	routeMatch("/so", "/some/more", t)
+	routeMatch("/so", "/some/more?param", t)
+	routeMatch("/so", "/some/more?param=value", t)
+	routeMatch("/so", "/some/more?param=value&param2=value2", t)
 }
 
 func TestRouteMatchWithTerminatedSlug(t *testing.T) {
-	testNoMatch(t, "some", "/some/")
-	testNoMatch(t, "", "/some/")
-	testNoMatch(t, "/", "/some/")
-	testNoMatch(t, "/some", "/some/")
-	testMatch(t, "/some/", "/some/")
-	testMatch(t, "/some/more", "/some/")
-	testMatch(t, "/some/more?param", "/some/")
-	testMatch(t, "/some/more?param=value", "/some/")
-	testMatch(t, "/some/more?param=value&param2=value2", "/some/")
+	routeNoMatch("/some/", "some", t)
+	routeNoMatch("/some/", "", t)
+	routeNoMatch("/some/", "/", t)
+	routeNoMatch("/some/", "/some", t)
+	routeMatch("/some/", "/some/", t)
+	routeMatch("/some/", "/some/more", t)
+	routeMatch("/some/", "/some/more?param", t)
+	routeMatch("/some/", "/some/more?param=value", t)
+	routeMatch("/some/", "/some/more?param=value&param2=value2", t)
 }
 
-func testMatch(t *testing.T, path string, route string) {
-	doMatch(t, path, route, true)
-}
-
-func testNoMatch(t *testing.T, path string, route string) {
-	doMatch(t, path, route, false)
-}
-
-func doMatch(t *testing.T, path string, route string, yes bool) {
+func routeMatch(route string, path string, t *testing.T) {
 	r := routeFactory(route)
 	req := requestFactory(path)
-	if yes {
-		if !r.matchURI(req) {
-			t.Errorf("route %v did not match path: %v", route, path)
-		}
-	} else {
-		if r.matchURI(req) {
-			t.Errorf("route %v did match unwanted path: %v", route, path)
-		}
+	if !r.matchURI(req) {
+		t.Errorf("route %v did not match desired path: %v", route, path)
 	}
+}
 
+func routeNoMatch(route string, path string, t *testing.T) {
+	r := routeFactory(route)
+	req := requestFactory(path)
+	if r.matchURI(req) {
+		t.Errorf("route %v did match undesired path: %v", route, path)
+	}
 }
 
 func requestFactory(path string) *http.Request {
