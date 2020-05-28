@@ -7,6 +7,7 @@ import (
 )
 
 func TestRouteMatchRoot(t *testing.T) {
+	testNoMatch(t, "", "/")
 	testMatch(t, "/some", "/")
 	testMatch(t, "/", "/")
 	testMatch(t, "/some/more", "/")
@@ -17,6 +18,8 @@ func TestRouteMatchRoot(t *testing.T) {
 }
 
 func TestRouteMatchWithSlug(t *testing.T) {
+	testNoMatch(t, "so", "/so")
+	testNoMatch(t, "/os", "/so")
 	testMatch(t, "/some", "/so")
 	testMatch(t, "/some/more", "/so")
 	testMatch(t, "/some/more?param", "/so")
