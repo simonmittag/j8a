@@ -33,9 +33,10 @@ func BootStrap() {
 
 	config := new(Config).
 		read("./jabba.json").
-		reApplySchemes().
+		reApplyResourceSchemes().
 		reApplyResourceNames().
-		compilePaths().
+		compileRoutePaths().
+		sortRoutes().
 		addDefaultPolicy().
 		setDefaultUpstreamParams().
 		setDefaultDownstreamParams()
