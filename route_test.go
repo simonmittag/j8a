@@ -7,29 +7,38 @@ import (
 )
 
 func TestRouteMatchRoot(t *testing.T) {
-	doMatch(t, "/some", "/", true)
-	doMatch(t, "/", "/", true)
-	doMatch(t, "/some/more", "/", true)
-	doMatch(t, "/some/more?param", "/", true)
-	doMatch(t, "/some/more?param=value", "/", true)
-	doMatch(t, "/some/more?param=value&param2=value2", "/", true)
+	testMatch(t, "/some", "/")
+	testMatch(t, "/", "/")
+	testMatch(t, "/some/more", "/")
+	testMatch(t, "/some/more?param", "/")
+	testMatch(t, "/some/more?param=value", "/")
+	testMatch(t, "/some/more?param=value&param2=value2", "/")
 	//path is never empty string, http server inserts "/"
 }
 
 func TestRouteMatchWithSlug(t *testing.T) {
-	doMatch(t, "/some", "/so", true)
-	doMatch(t, "/some/more", "/so", true)
-	doMatch(t, "/some/more?param", "/so", true)
-	doMatch(t, "/some/more?param=value", "/so", true)
-	doMatch(t, "/some/more?param=value&param2=value2", "/so", true)
+	testMatch(t, "/some", "/so")
+	testMatch(t, "/some/more", "/so")
+	testMatch(t, "/some/more?param", "/so")
+	testMatch(t, "/some/more?param=value", "/so")
+	testMatch(t, "/some/more?param=value&param2=value2", "/so")
 }
 
 func TestRouteMatchWithTerminatedSlug(t *testing.T) {
-	doMatch(t, "/some/", "/some/", true)
-	doMatch(t, "/some/more", "/some/", true)
-	doMatch(t, "/some/more?param", "/some/", true)
-	doMatch(t, "/some/more?param=value", "/some/", true)
-	doMatch(t, "/some/more?param=value&param2=value2", "/some/", true)
+	testNoMatch(t, "/some", "/some/")
+	testMatch(t, "/some/", "/some/")
+	testMatch(t, "/some/more", "/some/")
+	testMatch(t, "/some/more?param", "/some/")
+	testMatch(t, "/some/more?param=value", "/some/")
+	testMatch(t, "/some/more?param=value&param2=value2", "/some/")
+}
+
+func testMatch(t *testing.T, path string, route string) {
+	doMatch(t, path, route, true)
+}
+
+func testNoMatch(t *testing.T, path string, route string) {
+	doMatch(t, path, route, false)
 }
 
 func doMatch(t *testing.T, path string, route string, yes bool) {
