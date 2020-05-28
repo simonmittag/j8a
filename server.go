@@ -35,6 +35,7 @@ func BootStrap() {
 		read("./jabba.json").
 		reApplySchemes().
 		reApplyResourceNames().
+		compilePaths().
 		addDefaultPolicy().
 		setDefaultUpstreamParams().
 		setDefaultDownstreamParams()

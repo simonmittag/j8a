@@ -1,8 +1,74 @@
 package jabba
 
 import (
+	"net/http"
+	"regexp"
 	"testing"
 )
+
+func TestRouteMatchRoot(t *testing.T) {
+	routeNoMatch("/", "", t)
+	routeMatch("/", "/some", t)
+	routeMatch("/", "/", t)
+	routeMatch("/", "/some/more", t)
+	routeMatch("/", "/some/more?param", t)
+	routeMatch("/", "/some/more?param=value", t)
+	routeMatch("/", "/some/more?param=value&param2=value2", t)
+	//path is never empty string, http server inserts "/"
+}
+
+func TestRouteMatchWithSlug(t *testing.T) {
+	routeNoMatch("/so", "so", t)
+	routeNoMatch("/so", "/os", t)
+	routeMatch("/so", "/some", t)
+	routeMatch("/so", "/some/more", t)
+	routeMatch("/so", "/some/more?param", t)
+	routeMatch("/so", "/some/more?param=value", t)
+	routeMatch("/so", "/some/more?param=value&param2=value2", t)
+}
+
+func TestRouteMatchWithTerminatedSlug(t *testing.T) {
+	routeNoMatch("/some/", "some", t)
+	routeNoMatch("/some/", "", t)
+	routeNoMatch("/some/", "/", t)
+	routeNoMatch("/some/", "/some", t)
+	routeMatch("/some/", "/some/", t)
+	routeMatch("/some/", "/some/more", t)
+	routeMatch("/some/", "/some/more?param", t)
+	routeMatch("/some/", "/some/more?param=value", t)
+	routeMatch("/some/", "/some/more?param=value&param2=value2", t)
+}
+
+func routeMatch(route string, path string, t *testing.T) {
+	r := routeFactory(route)
+	req := requestFactory(path)
+	if !r.matchURI(req) {
+		t.Errorf("route %v did not match desired path: %v", route, path)
+	}
+}
+
+func routeNoMatch(route string, path string, t *testing.T) {
+	r := routeFactory(route)
+	req := requestFactory(path)
+	if r.matchURI(req) {
+		t.Errorf("route %v did match undesired path: %v", route, path)
+	}
+}
+
+func requestFactory(path string) *http.Request {
+	req, _ := http.NewRequest("GET", path, nil)
+	req.RequestURI = path
+	return req
+}
+
+func routeFactory(route string) (Route) {
+	pR, _ := regexp.Compile("^"+route)
+	r := Route{
+		Path:  route,
+		Regex: pR,
+	}
+	return r
+}
 
 func TestRouteMapDefault(t *testing.T) {
 	Runner = mockRuntime()

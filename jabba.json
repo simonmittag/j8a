@@ -33,7 +33,11 @@
       "resource": "aboutJabba"
     },
     {
-      "path": "/mse6",
+      "path": "/mse6/some",
+      "resource": "mse61"
+    },
+    {
+      "path": "/mse6/",
       "resource": "mse6",
       "policy": "ab"
     },
@@ -121,7 +125,7 @@
   "resources": {
     "badip": [
       {
-        "url":{
+        "url": {
           "scheme": "http",
           "host": "10.247.13.14",
           "port": 29471
@@ -130,7 +134,7 @@
     ],
     "baddns": [
       {
-        "url":{
+        "url": {
           "scheme": "http",
           "host": "kajsdkfj23848392sdfjsj332jkjkjdkshhhhimnotahost.com",
           "port": 29471
@@ -139,7 +143,7 @@
     ],
     "badremote": [
       {
-        "url":{
+        "url": {
           "scheme": "http",
           "host": "google.com",
           "port": 29471
@@ -148,10 +152,19 @@
     ],
     "badlocal": [
       {
-        "url":{
+        "url": {
           "scheme": "http",
           "host": "localhost",
           "port": 29471
+        }
+      }
+    ],
+    "mse61": [
+      {
+        "url": {
+          "scheme": "http:",
+          "host": "localhost",
+          "port": 60083
         }
       }
     ],

@@ -2,6 +2,8 @@ package jabba
 
 import (
 	"github.com/rs/zerolog/log"
+	"net/http"
+	"regexp"
 )
 
 //AboutJabba special Route alias for internal endpoint
@@ -10,8 +12,20 @@ const AboutJabba string = "aboutJabba"
 //Route maps a Path to an upstream resource
 type Route struct {
 	Path     string
+	Regex    *regexp.Regexp
 	Resource string
 	Policy   string
+}
+
+func (route Route) matchURI(request *http.Request) bool {
+	matched := false
+	if route.Regex != nil {
+		matched = route.Regex.MatchString(request.RequestURI)
+	} else {
+		matched, _ = regexp.MatchString("^"+route.Path, request.RequestURI)
+	}
+
+	return matched
 }
 
 // maps a route to a URL. Returns the URL, the name of the mapped policy and whether mapping was successful

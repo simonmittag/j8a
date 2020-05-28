@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/rs/zerolog/log"
@@ -46,6 +47,13 @@ func (config Config) reApplyResourceNames() *Config {
 			resourceMapping.Name = name
 			resourceMappings[i] = resourceMapping
 		}
+	}
+	return &config
+}
+
+func (config Config) compilePaths() *Config {
+	for i, route := range config.Routes {
+		config.Routes[i].Regex, _ = regexp.Compile("^"+route.Path)
 	}
 	return &config
 }

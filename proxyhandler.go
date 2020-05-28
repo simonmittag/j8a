@@ -5,7 +5,6 @@ import (
 	"github.com/rs/zerolog/log"
 	"io/ioutil"
 	"net/http"
-	"regexp"
 	"strings"
 )
 
@@ -40,7 +39,7 @@ func proxyHandler(response http.ResponseWriter, request *http.Request) {
 
 	//once a route is matched, it needs to be mapped to an upstream resource via a policy
 	for _, route := range Runner.Routes {
-		if matched = matchRouteInURI(route, request); matched {
+		if matched = route.matchURI(request); matched {
 			url, label, mapped := route.mapURL()
 			if mapped {
 				//mapped requests are sent to httpclient
@@ -63,11 +62,6 @@ func proxyHandler(response http.ResponseWriter, request *http.Request) {
 
 func validate(proxy *Proxy) bool {
 	return proxy.hasLegalHTTPMethod()
-}
-
-func matchRouteInURI(route Route, request *http.Request) bool {
-	matched, _ := regexp.MatchString("^"+route.Path, request.RequestURI)
-	return matched
 }
 
 func scaffoldUpstreamRequest(proxy *Proxy) *http.Request {
@@ -104,10 +98,10 @@ func handle(proxy *Proxy) {
 		Str(XRequestID, proxy.XRequestID).
 		Int("upstreamAttempt", proxy.Up.Atmpt.Count).
 		Int("upstreamMaxAttempt", Runner.Connection.Upstream.MaxAttempts)
-	if upstreamResponse!=nil && upstreamResponse.StatusCode>0 {
+	if upstreamResponse != nil && upstreamResponse.StatusCode > 0 {
 		ev = ev.Int("upstreamResponseCode", upstreamResponse.StatusCode)
 	}
-	if upstreamError!=nil {
+	if upstreamError != nil {
 		ev = ev.Err(upstreamError)
 	}
 	ev.Msg("upstream attempt not proxied")
