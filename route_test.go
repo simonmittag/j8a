@@ -44,15 +44,16 @@ func testNoMatch(t *testing.T, path string, route string) {
 func doMatch(t *testing.T, path string, route string, yes bool) {
 	r := routeFactory(route)
 	req := requestFactory(path)
-	m := false
 	if yes {
-		m = !r.matchURI(req)
+		if !r.matchURI(req) {
+			t.Errorf("route %v did not match path: %v", route, path)
+		}
 	} else {
-		m = r.matchURI(req)
+		if r.matchURI(req) {
+			t.Errorf("route %v did match unwanted path: %v", route, path)
+		}
 	}
-	if m {
-		t.Errorf("route %v did not match path: %v", route, path)
-	}
+
 }
 
 func requestFactory(path string) *http.Request {
