@@ -1,8 +1,8 @@
 package jabba
 
 import (
+	"github.com/rs/zerolog"
 	"net/http"
-	"os"
 	"regexp"
 	"testing"
 )
@@ -127,7 +127,8 @@ func TestRouteMapIncorrectPolicyFails(t *testing.T) {
 }
 
 func BenchmarkRouteMatchingRegex(b *testing.B) {
-	os.Setenv("LOGLEVEL", "INFO")
+	//suppress noise
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 
 	config := new(Config).read("./jabba.json")
 	config = config.compileRoutePaths().sortRoutes()
@@ -140,7 +141,8 @@ func BenchmarkRouteMatchingRegex(b *testing.B) {
 }
 
 func BenchmarkRouteMatchingString(b *testing.B) {
-	os.Setenv("LOGLEVEL", "INFO")
+	//suppress noise
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 
 	config := new(Config).read("./jabba.json")
 	config = config.sortRoutes()
