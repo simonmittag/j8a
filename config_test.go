@@ -8,7 +8,6 @@ import (
 func TestMain(m *testing.M) {
 	testSetup()
 	code := m.Run()
-	//teardown()
 	os.Exit(code)
 }
 
@@ -16,7 +15,6 @@ func testSetup() {
 	os.Setenv("TZ", "Australia/Sydney")
 	os.Setenv("LOGLEVEL", "TRACE")
 	os.Setenv("LOGCOLOR", "true")
-	setupJabba()
 }
 
 //TestDefaultDownstreamReadTimeout
@@ -310,28 +308,6 @@ func TestSortRoutes(t *testing.T) {
 	about := config.Routes[1]
 	if about.Path != "/about" {
 		t.Error("incorrectly sorted routes")
-	}
-}
-
-func BenchmarkRouteMatchingRegex(b *testing.B) {
-	config := new(Config).read("./jabba.json")
-	config = config.compileRoutePaths().sortRoutes()
-
-	for _, route := range config.Routes {
-		if ok := route.matchURI(requestFactory("/mse6")); ok {
-			break
-		}
-	}
-}
-
-func BenchmarkRouteMatchingString(b *testing.B) {
-	config := new(Config).read("./jabba.json")
-	config = config.sortRoutes()
-
-	for _, route := range config.Routes {
-		if ok := route.matchURI(requestFactory("/mse6")); ok {
-			break
-		}
 	}
 }
 
