@@ -1,7 +1,7 @@
 {
   "connection": {
     "downstream": {
-      "readTimeoutSeconds": 120,
+      "readTimeoutSeconds": 3,
       "roundTripTimeoutSeconds": 240,
       "idleTimeoutSeconds": 30,
       "port": 8080,
@@ -9,7 +9,7 @@
     },
     "upstream": {
       "socketTimeoutSeconds": 3,
-      "readTimeoutSeconds": 3,
+      "readTimeoutSeconds": 4,
       "idleTimeoutSeconds": 10,
       "maxAttempts": 4,
       "poolSize": 8
