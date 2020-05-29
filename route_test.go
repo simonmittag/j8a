@@ -133,9 +133,11 @@ func BenchmarkRouteMatchingRegex(b *testing.B) {
 	config := new(Config).read("./jabba.json")
 	config = config.compileRoutePaths().sortRoutes()
 
-	for _, route := range config.Routes {
-		if ok := route.matchURI(requestFactory("/mse6")); ok {
-			break
+	for i := 0; i < b.N; i++ {
+		for _, route := range config.Routes {
+			if ok := route.matchURI(requestFactory("/mse6")); ok {
+				break
+			}
 		}
 	}
 }
@@ -147,9 +149,11 @@ func BenchmarkRouteMatchingString(b *testing.B) {
 	config := new(Config).read("./jabba.json")
 	config = config.sortRoutes()
 
-	for _, route := range config.Routes {
-		if ok := route.matchURI(requestFactory("/mse6")); ok {
-			break
+	for i := 0; i < b.N; i++ {
+		for _, route := range config.Routes {
+			if ok := route.matchURI(requestFactory("/mse6")); ok {
+				break
+			}
 		}
 	}
 }
