@@ -9,7 +9,9 @@ import (
 
 func TestServerHangsUpOnDownstreamIfRoundTripTimeoutExceeded(t *testing.T) {
 	//if this test fails, check the jabba configuration for connection.downstream.ReadTimeoutSeconds
-	serverReadTimeoutSeconds := 4
+	grace := 1
+	serverRoundTripTimeoutSeconds := 20 + grace
+	//note this test assumes upstreamReadTimeoutSeconds := 30, double check config if failing.
 
 	//step 1 make a connection
 	c, err := net.Dial("tcp", ":8080")
@@ -17,32 +19,25 @@ func TestServerHangsUpOnDownstreamIfRoundTripTimeoutExceeded(t *testing.T) {
 		t.Errorf("unable to connect to jabba server for integration test, cause: %v", err)
 	}
 
-	//step 2 we send headers but do not terminate http message.
-	checkWrite(t, c, "GET /mse6/some/get HTTP/1.1\r\n")
+	//step 2 we send headers and terminate http message so Jabba sends request upstream.
+	//note this time interval needs to be < upstreamReadTimeoutSeconds to prevent another timeout to fire during test.
+	checkWrite(t, c, "GET /mse6/some/slowbody?wait=21 HTTP/1.1\r\n")
 	checkWrite(t, c, "Host: localhost:8080\r\n")
+	checkWrite(t, c, "\r\n")
 
 	//step 3 we sleep locally until we should hit timeout
-	t.Logf("going to sleep for %d seconds to trigger remote jabba read timeout", serverReadTimeoutSeconds)
-	time.Sleep(time.Second * time.Duration(serverReadTimeoutSeconds))
+	t.Logf("going to sleep for %d seconds to trigger remote jabba roundtrip timeout", serverRoundTripTimeoutSeconds)
+	time.Sleep(time.Second * time.Duration(serverRoundTripTimeoutSeconds))
 
-	//step 4 we try to send another header however by now the server should have hung up on us.
-	b := 0
-	var err2 error
+	buf := make([]byte, 1024)
+	b, err2 := c.Read(buf)
+	t.Logf("jabba responded with %v bytes and error code %v", b, err)
+	t.Logf("jabba partial response: %v", string(buf))
 
-	WriteLoop:
-	for i:=0;i<100;i++ {
-		payload := []byte("User-Agent: integration\r\n")
-		b, err2 = c.Write(payload)
-		if err2 != nil {
-			t.Logf("exiting post sleep write loop after %d bytes", i*len(payload))
-			break WriteLoop
-		}
-	}
-
-	if err2 == nil {
+	if err2.Error() != "EOF" {
 		t.Errorf("error: %v ", err2)
 		t.Errorf("bytes written: %d", b)
-		t.Error("expected jabba server to hang up on us after 3s, but it didn't. check downstream read timeout")
+		t.Errorf("expected jabba server to hang up on us after %ds, but it didn't. check downstream roundtrip timeout", serverRoundTripTimeoutSeconds)
 	} else {
 		t.Logf("jabba hung up as expected with error: %v", err2)
 	}
