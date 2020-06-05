@@ -1,14 +1,13 @@
 package integration
 
 import (
-	"fmt"
 	"net"
 	"strings"
 	"testing"
 	"time"
 )
 
-func TestServerHangsUpOnDownstreamIfReadTimeoutExceeded(t *testing.T) {
+func TestServerHangsUpOnDownstreamIfRoundTripTimeoutExceeded(t *testing.T) {
 	//if this test fails, check the jabba configuration for connection.downstream.ReadTimeoutSeconds
 	serverReadTimeoutSeconds := 4
 
@@ -49,7 +48,7 @@ func TestServerHangsUpOnDownstreamIfReadTimeoutExceeded(t *testing.T) {
 	}
 }
 
-func TestServerConnectsNormallyWithoutHangingUp(t *testing.T) {
+func TestServerRoundTripNormalWithoutHangingUp(t *testing.T) {
 	//step 1 we connect to Jabba with net.dial
 	c, err := net.Dial("tcp", ":8080")
 	if err != nil {
@@ -59,7 +58,7 @@ func TestServerConnectsNormallyWithoutHangingUp(t *testing.T) {
 	defer c.Close()
 
 	//step 2 we send headers and terminate HTTP message.
-	checkWrite(t, c, "GET /mse6/some/get HTTP/1.1\r\n")
+	checkWrite(t, c, "GET /mse6/some/slowbody?wait=3 HTTP/1.1\r\n")
 	checkWrite(t, c, "Host: localhost:8080\r\n")
 	checkWrite(t, c, "User-Agent: integration\r\n")
 	checkWrite(t, c, "Accept: */*\r\n")
@@ -77,14 +76,5 @@ func TestServerConnectsNormallyWithoutHangingUp(t *testing.T) {
 	response := string(buf)
 	if !strings.Contains(response, "Server: Jabba") {
 		t.Error("jabba did not respond, server information not found on response ")
-	}
-}
-
-func checkWrite(t *testing.T, c net.Conn, msg string) {
-	j, err2 := c.Write([]byte(msg))
-	if j == 0 || err2 != nil {
-		t.Errorf("uh oh, unable to send data to jabba for integration test. bytes %v, err: %v", j, err2)
-	} else {
-		fmt.Printf("sent %v bytes to jabba, content %v", j, msg)
 	}
 }
