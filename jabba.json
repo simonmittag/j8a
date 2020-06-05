@@ -2,7 +2,7 @@
   "connection": {
     "downstream": {
       "readTimeoutSeconds": 3,
-      "roundTripTimeoutSeconds": 240,
+      "roundTripTimeoutSeconds": 11,
       "idleTimeoutSeconds": 30,
       "port": 8080,
       "mode": "TLS"
