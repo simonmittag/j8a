@@ -1,6 +1,7 @@
 package jabba
 
 import (
+	"github.com/rs/zerolog"
 	"net/http"
 	"regexp"
 	"testing"
@@ -61,8 +62,8 @@ func requestFactory(path string) *http.Request {
 	return req
 }
 
-func routeFactory(route string) (Route) {
-	pR, _ := regexp.Compile("^"+route)
+func routeFactory(route string) Route {
+	pR, _ := regexp.Compile("^" + route)
 	r := Route{
 		Path:  route,
 		Regex: pR,
@@ -122,5 +123,37 @@ func TestRouteMapIncorrectPolicyFails(t *testing.T) {
 	_, _, got := r.mapURL()
 	if got != false {
 		t.Error("route with bad policy is not allowed to map. this is a configuration error")
+	}
+}
+
+func BenchmarkRouteMatchingRegex(b *testing.B) {
+	//suppress noise
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+
+	config := new(Config).read("./jabba.json")
+	config = config.compileRoutePaths().sortRoutes()
+
+	for i := 0; i < b.N; i++ {
+		for _, route := range config.Routes {
+			if ok := route.matchURI(requestFactory("/mse6")); ok {
+				break
+			}
+		}
+	}
+}
+
+func BenchmarkRouteMatchingString(b *testing.B) {
+	//suppress noise
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+
+	config := new(Config).read("./jabba.json")
+	config = config.sortRoutes()
+
+	for i := 0; i < b.N; i++ {
+		for _, route := range config.Routes {
+			if ok := route.matchURI(requestFactory("/mse6")); ok {
+				break
+			}
+		}
 	}
 }

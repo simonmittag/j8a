@@ -12,7 +12,7 @@ import (
 )
 
 //Version is the server version
-var Version string = "v0.4.0"
+var Version string = "v0.4.1"
 
 //ID is a unique server ID
 var ID string = "unknown"
@@ -63,6 +63,7 @@ func (runtime Runtime) startListening() {
 	server := &http.Server{
 		Addr:         ":" + strconv.Itoa(runtime.Connection.Downstream.Port),
 		Handler:      nil,
+		ReadHeaderTimeout:  readTimeoutDuration,
 		ReadTimeout:  readTimeoutDuration,
 		WriteTimeout: writeTimeoutDuration,
 		IdleTimeout:  idleTimeoutDuration,
