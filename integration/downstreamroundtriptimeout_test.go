@@ -21,7 +21,7 @@ func TestServerHangsUpOnDownstreamIfRoundTripTimeoutExceeded(t *testing.T) {
 
 	//step 2 we send headers and terminate http message so Jabba sends request upstream.
 	//note this time interval needs to be < upstreamReadTimeoutSeconds to prevent another timeout to fire during test.
-	checkWrite(t, c, "GET /mse6/some/slowbody?wait=21 HTTP/1.1\r\n")
+	checkWrite(t, c, "GET /mse6/slowbody?wait=21 HTTP/1.1\r\n")
 	checkWrite(t, c, "Host: localhost:8080\r\n")
 	checkWrite(t, c, "\r\n")
 
@@ -53,7 +53,7 @@ func TestServerRoundTripNormalWithoutHangingUp(t *testing.T) {
 	defer c.Close()
 
 	//step 2 we send headers and terminate HTTP message.
-	checkWrite(t, c, "GET /mse6/some/slowbody?wait=3 HTTP/1.1\r\n")
+	checkWrite(t, c, "GET /mse6/slowbody?wait=3 HTTP/1.1\r\n")
 	checkWrite(t, c, "Host: localhost:8080\r\n")
 	checkWrite(t, c, "User-Agent: integration\r\n")
 	checkWrite(t, c, "Accept: */*\r\n")

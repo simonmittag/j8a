@@ -19,7 +19,7 @@ func TestServerHangsUpOnDownstreamIfReadTimeoutExceeded(t *testing.T) {
 	}
 
 	//step 2 we send headers but do not terminate http message.
-	checkWrite(t, c, "GET /mse6/some/get HTTP/1.1\r\n")
+	checkWrite(t, c, "GET /mse6/get HTTP/1.1\r\n")
 	checkWrite(t, c, "Host: localhost:8080\r\n")
 
 	//step 3 we sleep locally until we should hit timeout
@@ -59,7 +59,7 @@ func TestServerConnectsNormallyWithoutHangingUp(t *testing.T) {
 	defer c.Close()
 
 	//step 2 we send headers and terminate HTTP message.
-	checkWrite(t, c, "GET /mse6/some/get HTTP/1.1\r\n")
+	checkWrite(t, c, "GET /mse6/get HTTP/1.1\r\n")
 	checkWrite(t, c, "Host: localhost:8080\r\n")
 	checkWrite(t, c, "User-Agent: integration\r\n")
 	checkWrite(t, c, "Accept: */*\r\n")
