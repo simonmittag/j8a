@@ -54,11 +54,7 @@ func TestServerRoundTripNormalWithoutHangingUp(t *testing.T) {
 
 	//step 2 we send headers and terminate HTTP message.
 	checkWrite(t, c, "GET /mse6/slowbody?wait=3 HTTP/1.1\r\n")
-<<<<<<< HEAD
 	checkWrite(t, c, "Host: localhost:8081\r\n")
-=======
-	checkWrite(t, c, "Host: localhost:8080\r\n")
->>>>>>> ec999d0e2bacafccf74bd5d31ac4a2d43d5b1de5
 	checkWrite(t, c, "User-Agent: integration\r\n")
 	checkWrite(t, c, "Accept: */*\r\n")
 	checkWrite(t, c, "\r\n")
