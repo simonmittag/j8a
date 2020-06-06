@@ -250,7 +250,10 @@ jobs:
       UPSTREAM_TWO_SLUG: /mse6
       UPSTREAM_THREE_PORT: 60085
       UPSTREAM_THREE_SLUG: /s1
-      JABBA_PORT: 8080
+      JABBA_ONE_PORT: 8080
+      JABBA_ONE_CFG: integration/jabba1.json
+      JABBA_TWO_PORT: 8081
+      JABBA_TWO_CFG: integration/jabba2.json
       TEST_DURATION_SECONDS: 10
       TEST_CONCURRENCY: 8
     steps:
@@ -290,12 +293,19 @@ jobs:
             go build github.com/simonmittag/jabba
             go install github.com/simonmittag/jabba/cmd/jabba
       - run:
-          name: Start jabba
-          command: jabba
+          name: Start jabba one
+          command: jabba -c ${JABBA_ONE_CFG}
           background: true
       - run:
-          name: Wait for Jabba
-          command: pwt localhost:${JABBA_PORT}
+          name: Start jabba two
+          command: jabba -c ${JABBA_TWO_CFG}
+          background: true
+      - run:
+          name: Wait for Jabba one
+          command: pwt localhost:${JABBA_ONE_PORT}
+      - run:
+          name: Wait for Jabba one
+          command: pwt localhost:${JABBA_TWO_PORT}
       - run:
           name: Execute performance tests on Jabba with wrk
           command: cd performance && wrk -t ${TEST_CONCURRENCY} -c ${TEST_CONCURRENCY} -d ${TEST_DURATION_SECONDS}s -s test.lua -- http://localhost:${JABBA_PORT}/mse6/post performance_results.json

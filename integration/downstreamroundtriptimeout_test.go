@@ -14,7 +14,7 @@ func TestServerHangsUpOnDownstreamIfRoundTripTimeoutExceeded(t *testing.T) {
 	//note this test assumes upstreamReadTimeoutSeconds := 30, double check config if failing.
 
 	//step 1 make a connection
-	c, err := net.Dial("tcp", ":8080")
+	c, err := net.Dial("tcp", ":8081")
 	if err != nil {
 		t.Errorf("unable to connect to jabba server for integration test, cause: %v", err)
 	}
@@ -54,7 +54,7 @@ func TestServerRoundTripNormalWithoutHangingUp(t *testing.T) {
 
 	//step 2 we send headers and terminate HTTP message.
 	checkWrite(t, c, "GET /mse6/slowbody?wait=3 HTTP/1.1\r\n")
-	checkWrite(t, c, "Host: localhost:8080\r\n")
+	checkWrite(t, c, "Host: localhost:8081\r\n")
 	checkWrite(t, c, "User-Agent: integration\r\n")
 	checkWrite(t, c, "Accept: */*\r\n")
 	checkWrite(t, c, "\r\n")

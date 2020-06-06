@@ -1,0 +1,337 @@
+{
+  "connection": {
+    "downstream": {
+      "readTimeoutSeconds": 3,
+      "roundTripTimeoutSeconds": 20,
+      "idleTimeoutSeconds": 30,
+      "port": 8080,
+      "mode": "TLS"
+    },
+    "upstream": {
+      "socketTimeoutSeconds": 3,
+      "readTimeoutSeconds": 11,
+      "idleTimeoutSeconds": 10,
+      "maxAttempts": 4,
+      "poolSize": 8
+    }
+  },
+  "policies": {
+    "ab": [
+      {
+        "label": "green",
+        "weight": 0.8
+      },
+      {
+        "label": "blue",
+        "weight": 0.2
+      }
+    ]
+  },
+  "routes": [
+    {
+      "path": "/about",
+      "resource": "aboutJabba"
+    },
+    {
+      "path": "/mse6/some",
+      "resource": "mse61"
+    },
+    {
+      "path": "/mse6/",
+      "resource": "mse6",
+      "policy": "ab"
+    },
+    {
+      "path": "/s01",
+      "resource": "s01"
+    },
+    {
+      "path": "/s02",
+      "resource": "s02"
+    },
+    {
+      "path": "/s03",
+      "resource": "s03"
+    },
+    {
+      "path": "/s04",
+      "resource": "s04"
+    },
+    {
+      "path": "/s05",
+      "resource": "s05"
+    },
+    {
+      "path": "/s06",
+      "resource": "s06"
+    },
+    {
+      "path": "/s07",
+      "resource": "s07"
+    },
+    {
+      "path": "/s08",
+      "resource": "s08"
+    },
+    {
+      "path": "/s09",
+      "resource": "s09"
+    },
+    {
+      "path": "/s10",
+      "resource": "s10"
+    },
+    {
+      "path": "/s11",
+      "resource": "s11"
+    },
+    {
+      "path": "/s12",
+      "resource": "s12"
+    },
+    {
+      "path": "/s13",
+      "resource": "s13"
+    },
+    {
+      "path": "/s14",
+      "resource": "s14"
+    },
+    {
+      "path": "/s15",
+      "resource": "s15"
+    },
+    {
+      "path": "/s16",
+      "resource": "s16"
+    },
+    {
+      "path": "/badip",
+      "resource": "badip"
+    },
+    {
+      "path": "/baddns",
+      "resource": "baddns"
+    },
+    {
+      "path": "/badremote",
+      "resource": "badremote"
+    },
+    {
+      "path": "/badlocal",
+      "resource": "badlocal"
+    }
+  ],
+  "resources": {
+    "badip": [
+      {
+        "url": {
+          "scheme": "http",
+          "host": "10.247.13.14",
+          "port": 29471
+        }
+      }
+    ],
+    "baddns": [
+      {
+        "url": {
+          "scheme": "http",
+          "host": "kajsdkfj23848392sdfjsj332jkjkjdkshhhhimnotahost.com",
+          "port": 29471
+        }
+      }
+    ],
+    "badremote": [
+      {
+        "url": {
+          "scheme": "http",
+          "host": "google.com",
+          "port": 29471
+        }
+      }
+    ],
+    "badlocal": [
+      {
+        "url": {
+          "scheme": "http",
+          "host": "localhost",
+          "port": 29471
+        }
+      }
+    ],
+    "mse61": [
+      {
+        "url": {
+          "scheme": "http:",
+          "host": "localhost",
+          "port": 60083
+        }
+      }
+    ],
+    "mse6": [
+      {
+        "labels": [
+          "green"
+        ],
+        "url": {
+          "scheme": "http://",
+          "host": "localhost",
+          "port": 60083
+        }
+      },
+      {
+        "labels": [
+          "blue"
+        ],
+        "url": {
+          "host": "localhost",
+          "port": 60084
+        }
+      }
+    ],
+    "s01": [
+      {
+        "url": {
+          "scheme": "http",
+          "host": "localhost",
+          "port": 60085
+        }
+      }
+    ],
+    "s02": [
+      {
+        "url": {
+          "scheme": "http",
+          "host": "localhost",
+          "port": 60086
+        }
+      }
+    ],
+    "s03": [
+      {
+        "url": {
+          "scheme": "http",
+          "host": "localhost",
+          "port": 60087
+        }
+      }
+    ],
+    "s04": [
+      {
+        "url": {
+          "scheme": "http",
+          "host": "localhost",
+          "port": 60088
+        }
+      }
+    ],
+    "s05": [
+      {
+        "url": {
+          "scheme": "http",
+          "host": "localhost",
+          "port": 60089
+        }
+      }
+    ],
+    "s06": [
+      {
+        "url": {
+          "scheme": "http",
+          "host": "localhost",
+          "port": 60090
+        }
+      }
+    ],
+    "s07": [
+      {
+        "url": {
+          "scheme": "http",
+          "host": "localhost",
+          "port": 60091
+        }
+      }
+    ],
+    "s08": [
+      {
+        "url": {
+          "scheme": "http",
+          "host": "localhost",
+          "port": 60092
+        }
+      }
+    ],
+    "s09": [
+      {
+        "url": {
+          "scheme": "http",
+          "host": "localhost",
+          "port": 60093
+        }
+      }
+    ],
+    "s10": [
+      {
+        "url": {
+          "scheme": "http",
+          "host": "localhost",
+          "port": 60094
+        }
+      }
+    ],
+    "s11": [
+      {
+        "url": {
+          "scheme": "http",
+          "host": "localhost",
+          "port": 60095
+        }
+      }
+    ],
+    "s12": [
+      {
+        "url": {
+          "scheme": "http",
+          "host": "localhost",
+          "port": 60096
+        }
+      }
+    ],
+    "s13": [
+      {
+        "url": {
+          "scheme": "http",
+          "host": "localhost",
+          "port": 60097
+        }
+      }
+    ],
+    "s14": [
+      {
+        "url": {
+          "scheme": "http",
+          "host": "localhost",
+          "port": 60098
+        }
+      }
+    ],
+    "s15": [
+      {
+        "url": {
+          "scheme": "http",
+          "host": "localhost",
+          "port": 60099
+        }
+      }
+    ],
+    "s16": [
+      {
+        "url": {
+          "scheme": "http",
+          "host": "localhost",
+          "port": 60100
+        }
+      }
+    ]
+  }
+}
