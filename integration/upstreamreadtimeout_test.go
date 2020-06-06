@@ -19,7 +19,7 @@ func TestServerMakesSuccessfulUpstreamConnection(t *testing.T) {
 }
 
 func TestServerUpstreamReadTimeoutFailsWithSlowHeader(t *testing.T) {
-	resp, err := http.Get("http://localhost:8080/mse6/slowheader?wait=31")
+	resp, err := http.Get("http://localhost:8080/mse6/slowheader?wait=4")
 
 	if err != nil {
 		t.Errorf("error connecting to upstream, cause: %v", err)
@@ -31,7 +31,7 @@ func TestServerUpstreamReadTimeoutFailsWithSlowHeader(t *testing.T) {
 }
 
 func TestServerUpstreamReadTimeoutFailsWithSlowBody(t *testing.T) {
-	resp, err := http.Get("http://localhost:8080/mse6/slowbody?wait=31")
+	resp, err := http.Get("http://localhost:8080/mse6/slowbody?wait=4")
 	if err != nil {
 		t.Errorf("error connecting to upstream, cause: %v", err)
 	}

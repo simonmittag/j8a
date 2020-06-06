@@ -229,13 +229,15 @@ jobs:
             go install github.com/simonmittag/jabba/cmd/jabba
       - run:
           name: Start jabba one
-          command: jabba ${JABBA_ONE_CFG}
+          command: jabba -c ${JABBA_ONE_CFG}
+          background: true
       - run:
           name: Wait for jabba one
           command: pwt localhost:${JABBA_ONE_PORT}
       - run:
           name: Start jabba two
-          command: jabba ${JABBA_TWO_CFG}
+          command: jabba -c ${JABBA_TWO_CFG}
+          background: true
       - run:
           name: Wait for jabba two
           command: pwt localhost:${JABBA_TWO_PORT}
