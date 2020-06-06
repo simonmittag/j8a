@@ -114,7 +114,10 @@ jobs:
       UPSTREAM_17_SLUG: /s15
       UPSTREAM_18_PORT: 60100
       UPSTREAM_18_SLUG: /s16
-      JABBA_PORT: 8080
+      JABBA_ONE_PORT: 8080
+      JABBA_ONE_CFG: ./integration/jabba1.json
+      JABBA_TWO_PORT: 8080
+      JABBA_TWO_CFG: ./integration/jabba2.json
     steps:
       - checkout # check out source code to working directory
       - run:
@@ -220,15 +223,22 @@ jobs:
             pwt localhost:${UPSTREAM_18_PORT}
 
       - run:
-          name: Start jabba
+          name: Install jabba
           command: |
             go build github.com/simonmittag/jabba
             go install github.com/simonmittag/jabba/cmd/jabba
-            jabba
-          background: true
       - run:
-          name: Wait for jabba
-          command: pwt localhost:${JABBA_PORT}
+          name: Start jabba one
+          command: jabba ${JABBA_ONE_CFG}
+      - run:
+          name: Wait for jabba one
+          command: pwt localhost:${JABBA_ONE_PORT}
+      - run:
+          name: Start jabba two
+          command: jabba ${JABBA_TWO_CFG}
+      - run:
+          name: Wait for jabba two
+          command: pwt localhost:${JABBA_TWO_PORT}
       - run:
           name: Install Test dependencies
           command: |
@@ -250,10 +260,7 @@ jobs:
       UPSTREAM_TWO_SLUG: /mse6
       UPSTREAM_THREE_PORT: 60085
       UPSTREAM_THREE_SLUG: /s1
-      JABBA_ONE_PORT: 8080
-      JABBA_ONE_CFG: integration/jabba1.json
-      JABBA_TWO_PORT: 8081
-      JABBA_TWO_CFG: integration/jabba2.json
+      JABBA_PORT: 8080
       TEST_DURATION_SECONDS: 10
       TEST_CONCURRENCY: 8
     steps:
@@ -293,19 +300,12 @@ jobs:
             go build github.com/simonmittag/jabba
             go install github.com/simonmittag/jabba/cmd/jabba
       - run:
-          name: Start jabba one
-          command: jabba -c ${JABBA_ONE_CFG}
+          name: Start jabba
+          command: jabba
           background: true
       - run:
-          name: Start jabba two
-          command: jabba -c ${JABBA_TWO_CFG}
-          background: true
-      - run:
-          name: Wait for Jabba one
-          command: pwt localhost:${JABBA_ONE_PORT}
-      - run:
-          name: Wait for Jabba one
-          command: pwt localhost:${JABBA_TWO_PORT}
+          name: Wait for Jabba
+          command: pwt localhost:${JABBA_PORT}
       - run:
           name: Execute performance tests on Jabba with wrk
           command: cd performance && wrk -t ${TEST_CONCURRENCY} -c ${TEST_CONCURRENCY} -d ${TEST_DURATION_SECONDS}s -s test.lua -- http://localhost:${JABBA_PORT}/mse6/post performance_results.json
