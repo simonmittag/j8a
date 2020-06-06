@@ -291,7 +291,7 @@ jobs:
             go install github.com/simonmittag/jabba/cmd/jabba
       - run:
           name: Start jabba
-          command: jabba -p ${JABBA_PORT}
+          command: jabba
           background: true
       - run:
           name: Wait for Jabba
@@ -362,7 +362,7 @@ jobs:
             go install github.com/simonmittag/jabba/cmd/jabba
       - run:
           name: Start jabba
-          command: jabba -p ${JABBA_PORT}
+          command: jabba
           background: true
       - run:
           name: Wait for Jabba
