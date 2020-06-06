@@ -1,6 +1,6 @@
 ![](images/jabba.png)
 
-Achuta! Jabba is a json friendly reverse proxy for micro-services, written in golang.
+Achuta! Jabba is a json friendly reverse proxy for APIs, written in golang.
 
 [![Circleci Builds](https://circleci.com/gh/simonmittag/jabba.svg?style=shield)](https://circleci.com/gh/simonmittag/jabba)
 [![Github Workflows](https://github.com/simonmittag/jabba/workflows/Go/badge.svg)](https://github.com/simonmittag/jabba/actions)

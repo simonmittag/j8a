@@ -12,7 +12,7 @@ import (
 )
 
 //Version is the server version
-var Version string = "v0.4.2"
+var Version string = "v0.4.3"
 
 //ID is a unique server ID
 var ID string = "unknown"
@@ -32,7 +32,7 @@ func BootStrap() {
 	initLogger()
 
 	config := new(Config).
-		read("./jabba.json").
+		read(ConfigFile).
 		reApplyResourceSchemes().
 		reApplyResourceNames().
 		compileRoutePaths().

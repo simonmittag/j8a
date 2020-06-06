@@ -14,6 +14,7 @@ func TestServerBootStrap(t *testing.T) {
 }
 
 func setupJabba() {
+	ConfigFile = "./jabba.json"
 	Boot.Add(1)
 	go BootStrap()
 	Boot.Wait()
