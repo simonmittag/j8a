@@ -22,6 +22,8 @@ type Config struct {
 const HTTP = "HTTP"
 const TLS = "TLS"
 
+var ConfigFile = "not specified"
+
 func (config Config) read(file string) *Config {
 	jsonFile, err := os.Open(file)
 	defer jsonFile.Close()
