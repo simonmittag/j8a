@@ -116,7 +116,7 @@ jobs:
       UPSTREAM_18_SLUG: /s16
       JABBA_ONE_PORT: 8080
       JABBA_ONE_CFG: ./integration/jabba1.json
-      JABBA_TWO_PORT: 8080
+      JABBA_TWO_PORT: 8081
       JABBA_TWO_CFG: ./integration/jabba2.json
     steps:
       - checkout # check out source code to working directory
