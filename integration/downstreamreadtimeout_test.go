@@ -57,7 +57,7 @@ func TestServerConnectsNormallyWithoutHangingUp(t *testing.T) {
 	//step 1 we connect to Jabba with net.dial
 	c, err := net.Dial("tcp", ":8080")
 	if err != nil {
-		t.Errorf("unable to connect to jabba server for integration test, cause: %v", err)
+		t.Errorf("test failure. unable to connect to jabba server for integration test, cause: %v", err)
 		return
 	}
 	defer c.Close()
@@ -70,25 +70,25 @@ func TestServerConnectsNormallyWithoutHangingUp(t *testing.T) {
 	checkWrite(t, c, "\r\n")
 
 	//step 3 we try to read the server response. Warning this isn't a proper http client
-	//i.e. doesn't include parsing content length, reading response properly.
+	//i.e. doesn't include parsing content length, nor reading response properly.
 	buf := make([]byte, 1024)
 	l, err := c.Read(buf)
-	t.Logf("jabba responded with %v bytes and error code %v", l, err)
-	t.Logf("jabba partial response: %v", string(buf))
+	t.Logf("normal. jabba responded with %v bytes and error code %v", l, err)
+	t.Logf("normal. jabba partial response: %v", string(buf))
 	if l == 0 {
-		t.Error("jabba did not respond, 0 bytes read")
+		t.Error("test failure. jabba did not respond, 0 bytes read")
 	}
 	response := string(buf)
 	if !strings.Contains(response, "Server: Jabba") {
-		t.Error("jabba did not respond, server information not found on response ")
+		t.Error("test failure. jabba did not respond, server information not found on response ")
 	}
 }
 
 func checkWrite(t *testing.T, c net.Conn, msg string) {
 	j, err2 := c.Write([]byte(msg))
 	if j == 0 || err2 != nil {
-		t.Errorf("uh oh, unable to send data to jabba for integration test. bytes %v, err: %v", j, err2)
+		t.Errorf("test failure. uh oh, unable to send data to jabba for integration test. bytes %v, err: %v", j, err2)
 	} else {
-		fmt.Printf("sent %v bytes to jabba, content %v", j, msg)
+		fmt.Printf("normal. sent %v bytes to jabba, content %v", j, msg)
 	}
 }
