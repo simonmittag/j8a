@@ -22,7 +22,7 @@ func TestServerHangsUpOnDownstreamIfRoundTripTimeoutExceeded(t *testing.T) {
 	//step 2 we send headers and terminate http message so Jabba sends request upstream.
 	//note this time interval needs to be < upstreamReadTimeoutSeconds to prevent another timeout to fire during test.
 	checkWrite(t, c, "GET /mse6/slowbody?wait=21 HTTP/1.1\r\n")
-	checkWrite(t, c, "Host: localhost:8080\r\n")
+	checkWrite(t, c, "Host: localhost:8081\r\n")
 	checkWrite(t, c, "\r\n")
 
 	//step 3 we sleep locally until we should hit timeout
