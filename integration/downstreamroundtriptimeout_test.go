@@ -10,36 +10,39 @@ import (
 func TestServerHangsUpOnDownstreamIfRoundTripTimeoutExceeded(t *testing.T) {
 	//if this test fails, check the jabba configuration for connection.downstream.ReadTimeoutSeconds
 	grace := 1
-	serverRoundTripTimeoutSeconds := 20 + grace
-	//note this test assumes upstreamReadTimeoutSeconds := 30, double check config if failing.
+	serverRoundTripTimeoutSeconds := 20
+	//assumes upstreamReadTimeoutSeconds := 30 so it doesn't fire before serverRoundTripTimeoutSeconds
+	wait := serverRoundTripTimeoutSeconds+grace
 
 	//step 1 make a connection
 	c, err := net.Dial("tcp", ":8081")
 	if err != nil {
-		t.Errorf("unable to connect to jabba server for integration test, cause: %v", err)
+		t.Errorf("test failure. unable to connect to jabba server for integration test, cause: %v", err)
 	}
 
 	//step 2 we send headers and terminate http message so Jabba sends request upstream.
-	//note this time interval needs to be < upstreamReadTimeoutSeconds to prevent another timeout to fire during test.
 	checkWrite(t, c, "GET /mse6/slowbody?wait=21 HTTP/1.1\r\n")
 	checkWrite(t, c, "Host: localhost:8081\r\n")
 	checkWrite(t, c, "\r\n")
 
 	//step 3 we sleep locally until we should hit timeout
-	t.Logf("going to sleep for %d seconds to trigger remote jabba roundtrip timeout", serverRoundTripTimeoutSeconds)
-	time.Sleep(time.Second * time.Duration(serverRoundTripTimeoutSeconds))
+	t.Logf("normal. going to sleep for %d seconds to trigger remote jabba roundtrip timeout", wait)
+	time.Sleep(time.Second * time.Duration(wait))
 
+
+	//step 4 we read a response into buffer after timeout which has to fail immediately
+	//because the server already hung up on us
 	buf := make([]byte, 1024)
 	b, err2 := c.Read(buf)
-	t.Logf("jabba responded with %v bytes and error code %v", b, err)
-	t.Logf("jabba partial response: %v", string(buf))
+	t.Logf("normal. jabba responded with %v bytes and error code %v", b, err)
+	t.Logf("normal. jabba partial response (this should be empty): %v", string(buf))
 
 	if err2.Error() != "EOF" {
-		t.Errorf("error: %v ", err2)
-		t.Errorf("bytes written: %d", b)
-		t.Errorf("expected jabba server to hang up on us after %ds, but it didn't. check downstream roundtrip timeout", serverRoundTripTimeoutSeconds)
+		t.Errorf("test failure. error: %v ", err2)
+		t.Errorf("test failure. bytes written: %d", b)
+		t.Errorf("test failure. expected jabba server to hang up on us after %ds, but it didn't. check downstream roundtrip timeout", serverRoundTripTimeoutSeconds)
 	} else {
-		t.Logf("jabba hung up as expected with error: %v", err2)
+		t.Logf("normal. jabba hung up as expected with error: %v", err2)
 	}
 }
 
