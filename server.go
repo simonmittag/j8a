@@ -44,29 +44,28 @@ func BootStrap() {
 	Runner = &Runtime{Config: *config}
 	Runner.initStats().
 		initUserAgent().
-		assignHandlers().
 		startListening()
 }
 
 func (runtime Runtime) startListening() {
 	readTimeoutDuration := time.Second * time.Duration(runtime.Connection.Downstream.ReadTimeoutSeconds)
-	writeTimeoutDuration := time.Second * time.Duration(runtime.Connection.Downstream.RoundTripTimeoutSeconds)
+	roundTripTimeoutDuration := time.Second * time.Duration(runtime.Connection.Downstream.RoundTripTimeoutSeconds)
 	idleTimeoutDuration := time.Second * time.Duration(runtime.Connection.Downstream.IdleTimeoutSeconds)
 
 	log.Debug().
 		Float64("downstreamReadTimeoutSeconds", readTimeoutDuration.Seconds()).
-		Float64("downstreamWriteTimeoutSeconds", writeTimeoutDuration.Seconds()).
+		Float64("downstreamRoundTripTimeoutSeconds", roundTripTimeoutDuration.Seconds()).
 		Float64("downstreamIdleConnTimeoutSeconds", idleTimeoutDuration.Seconds()).
 		Msg("server derived downstream params")
 	log.Info().Msgf("Jabba %s listening on port %d...", Version, runtime.Connection.Downstream.Port)
 
 	server := &http.Server{
-		Addr:         ":" + strconv.Itoa(runtime.Connection.Downstream.Port),
-		Handler:      nil,
-		ReadHeaderTimeout:  readTimeoutDuration,
-		ReadTimeout:  readTimeoutDuration,
-		WriteTimeout: writeTimeoutDuration,
-		IdleTimeout:  idleTimeoutDuration,
+		Addr:              ":" + strconv.Itoa(runtime.Connection.Downstream.Port),
+		ReadHeaderTimeout: readTimeoutDuration,
+		ReadTimeout:       readTimeoutDuration,
+		WriteTimeout:      roundTripTimeoutDuration,
+		IdleTimeout:       idleTimeoutDuration,
+		Handler:           runtime.mapPathsToHandler(),
 	}
 
 	//signal the WaitGroup that boot is over.
@@ -80,16 +79,17 @@ func (runtime Runtime) startListening() {
 	}
 }
 
-func (runtime Runtime) assignHandlers() Runtime {
+func (runtime Runtime) mapPathsToHandler() *http.ServeMux {
+	handler := http.NewServeMux()
 	for _, route := range runtime.Routes {
 		if route.Resource == AboutJabba {
-			http.HandleFunc(route.Path, aboutHandler)
+			handler.Handle(route.Path, http.HandlerFunc(aboutHandler))
 			log.Debug().Msgf("assigned about handler to path %s", route.Path)
 		}
 	}
-	http.HandleFunc("/", proxyHandler)
+	handler.Handle("/", http.HandlerFunc(proxyHandler))
 	log.Debug().Msgf("assigned proxy handler to path %s", "/")
-	return runtime
+	return handler
 }
 
 func (runtime Runtime) initUserAgent() Runtime {
