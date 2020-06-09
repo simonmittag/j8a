@@ -12,7 +12,7 @@ import (
 )
 
 //Version is the server version
-var Version string = "v0.4.3"
+var Version string = "v0.4.4"
 
 //ID is a unique server ID
 var ID string = "unknown"
@@ -79,7 +79,10 @@ func (runtime Runtime) startListening() {
 	}
 }
 
-func (runtime Runtime) mapPathsToHandler() *http.ServeMux {
+func (runtime Runtime) mapPathsToHandler() http.Handler {
+	//TODO: do we need this handler with two handlerfuncs or can we map all requests to one handlerfunc to speed up?
+	//if one handlerfunc in the system, it would need to distinguish between /about and other routes.
+
 	handler := http.NewServeMux()
 	for _, route := range runtime.Routes {
 		if route.Resource == AboutJabba {
@@ -89,7 +92,13 @@ func (runtime Runtime) mapPathsToHandler() *http.ServeMux {
 	}
 	handler.Handle("/", http.HandlerFunc(proxyHandler))
 	log.Debug().Msgf("assigned proxy handler to path %s", "/")
-	return handler
+
+	//wrap handler in timeoutHandler to time control execution.
+	//TODO: we don't have access to wrapped variables after timeout fires, such as XRequestID, Path
+	return http.TimeoutHandler(handler, runtime.getDownstreamRoundTripDuration(), StatusCodeResponse{
+		Code:    503,
+		Message: "service unavailable",
+	}.AsString())
 }
 
 func (runtime Runtime) initUserAgent() Runtime {
