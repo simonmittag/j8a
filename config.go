@@ -166,6 +166,6 @@ func (config Config) setDefaultUpstreamParams() *Config {
 	return &config
 }
 
-func (config Config) getDownstreamRoundTripDuration() time.Duration {
+func (config Config) getDownstreamRoundTripTimeoutDuration() time.Duration {
 	return time.Duration(time.Second * time.Duration(config.Connection.Downstream.RoundTripTimeoutSeconds))
 }

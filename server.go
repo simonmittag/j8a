@@ -50,6 +50,7 @@ func BootStrap() {
 func (runtime Runtime) startListening() {
 	readTimeoutDuration := time.Second * time.Duration(runtime.Connection.Downstream.ReadTimeoutSeconds)
 	roundTripTimeoutDuration := time.Second * time.Duration(runtime.Connection.Downstream.RoundTripTimeoutSeconds)
+	roundTripTimeoutDurationWithGrace := roundTripTimeoutDuration + (time.Second * 1)
 	idleTimeoutDuration := time.Second * time.Duration(runtime.Connection.Downstream.IdleTimeoutSeconds)
 
 	log.Debug().
@@ -63,7 +64,7 @@ func (runtime Runtime) startListening() {
 		Addr:              ":" + strconv.Itoa(runtime.Connection.Downstream.Port),
 		ReadHeaderTimeout: readTimeoutDuration,
 		ReadTimeout:       readTimeoutDuration,
-		WriteTimeout:      roundTripTimeoutDuration,
+		WriteTimeout:      roundTripTimeoutDurationWithGrace,
 		IdleTimeout:       idleTimeoutDuration,
 		Handler:           runtime.mapPathsToHandler(),
 	}
@@ -95,7 +96,7 @@ func (runtime Runtime) mapPathsToHandler() http.Handler {
 
 	//wrap handler in timeoutHandler to time control execution.
 	//TODO: we don't have access to wrapped variables after timeout fires, such as XRequestID, Path
-	return http.TimeoutHandler(handler, runtime.getDownstreamRoundTripDuration(), StatusCodeResponse{
+	return http.TimeoutHandler(handler, runtime.getDownstreamRoundTripTimeoutDuration(), StatusCodeResponse{
 		Code:    503,
 		Message: "service unavailable",
 	}.AsString())
