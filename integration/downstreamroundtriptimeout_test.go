@@ -12,7 +12,7 @@ func TestServerHangsUpOnDownstreamIfRoundTripTimeoutExceeded(t *testing.T) {
 	grace := 1
 	serverRoundTripTimeoutSeconds := 20
 	//assumes upstreamReadTimeoutSeconds := 30 so it doesn't fire before serverRoundTripTimeoutSeconds
-	wait := serverRoundTripTimeoutSeconds+grace
+	wait := serverRoundTripTimeoutSeconds + grace
 
 	//step 1 make a connection
 	c, err := net.Dial("tcp", ":8081")
@@ -29,20 +29,24 @@ func TestServerHangsUpOnDownstreamIfRoundTripTimeoutExceeded(t *testing.T) {
 	t.Logf("normal. going to sleep for %d seconds to trigger remote jabba roundtrip timeout", wait)
 	time.Sleep(time.Second * time.Duration(wait))
 
-
-	//step 4 we read a response into buffer after timeout which has to fail immediately
-	//because the server already hung up on us
-	buf := make([]byte, 1024)
+	//step 4 we read a response into buffer which returns 503
+	buf := make([]byte, 16)
 	b, err2 := c.Read(buf)
-	t.Logf("normal. jabba responded with %v bytes and error code %v", b, err)
-	t.Logf("normal. jabba partial response (this should be empty): %v", string(buf))
+	t.Logf("normal. jabba responded with %v bytes", b)
+	if err2 != nil || !strings.Contains(string(buf), "503") {
+		t.Errorf("test failure. after timeout we should first experience a 503")
+	}
 
-	if err2.Error() != "EOF" {
-		t.Errorf("test failure. error: %v ", err2)
-		t.Errorf("test failure. bytes written: %d", b)
+	//step 5 now wait for the grace period, then re-read. the connection must now be closed.
+	//note you must read in a loop with small buffer because golang's reader has cached data
+	time.Sleep(time.Duration(grace) * time.Second)
+	for i := 0; i < 32; i++ {
+		b, err2 = c.Read(buf)
+	}
+	if err2 != nil && err2.Error() != "EOF" {
 		t.Errorf("test failure. expected jabba server to hang up on us after %ds, but it didn't. check downstream roundtrip timeout", serverRoundTripTimeoutSeconds)
 	} else {
-		t.Logf("normal. jabba hung up as expected with error: %v", err2)
+		t.Logf("normal. jabba hung up connection as expected after grace period with error: %v", err2)
 	}
 }
 
