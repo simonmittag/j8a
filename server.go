@@ -96,10 +96,11 @@ func (runtime Runtime) mapPathsToHandler() http.Handler {
 
 	//wrap handler in timeoutHandler to time control execution.
 	//TODO: we don't have access to wrapped variables after timeout fires, such as XRequestID, Path
-	return http.TimeoutHandler(handler, runtime.getDownstreamRoundTripTimeoutDuration(), StatusCodeResponse{
+	resp := StatusCodeResponse{
 		Code:    503,
 		Message: "service unavailable",
-	}.AsString())
+	}.AsString()
+	return http.TimeoutHandler(handler, runtime.getDownstreamRoundTripTimeoutDuration(), resp)
 }
 
 func (runtime Runtime) initUserAgent() Runtime {
