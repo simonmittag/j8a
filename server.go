@@ -94,13 +94,10 @@ func (runtime Runtime) mapPathsToHandler() http.Handler {
 	handler.Handle("/", http.HandlerFunc(proxyHandler))
 	log.Debug().Msgf("assigned proxy handler to path %s", "/")
 
-	//wrap handler in timeoutHandler to time control execution.
-	//TODO: we don't have access to wrapped variables after timeout fires, such as XRequestID, Path
-	resp := StatusCodeResponse{
+	return http.TimeoutHandler(handler, runtime.getDownstreamRoundTripTimeoutDuration(), StatusCodeResponse{
 		Code:    503,
 		Message: "service unavailable",
-	}.AsString()
-	return http.TimeoutHandler(handler, runtime.getDownstreamRoundTripTimeoutDuration(), resp)
+	}.AsString())
 }
 
 func (runtime Runtime) initUserAgent() Runtime {
