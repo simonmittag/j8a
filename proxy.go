@@ -75,10 +75,12 @@ func (proxy *Proxy) resolveUpstreamURI() string {
 // ShouldRepeat tells us if we can safely repeat the upstream request
 func (proxy *Proxy) shouldAttemptRetry() bool {
 	retry := false
+Retry:
 	for _, method := range httpRepeatableMethods {
 		if proxy.Dwn.Method == method {
 			if proxy.Up.Atmpt.Count < Runner.Connection.Upstream.MaxAttempts {
 				retry = true
+				break Retry
 			}
 			retry = false
 		}
