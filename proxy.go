@@ -74,15 +74,25 @@ func (proxy *Proxy) resolveUpstreamURI() string {
 
 // ShouldRepeat tells us if we can safely repeat the upstream request
 func (proxy *Proxy) shouldAttemptRetry() bool {
+	retry := false
 	for _, method := range httpRepeatableMethods {
 		if proxy.Dwn.Method == method {
 			if proxy.Up.Atmpt.Count < Runner.Connection.Upstream.MaxAttempts {
-				return true
+				retry = true
 			}
-			return false
+			retry = false
 		}
 	}
-	return false
+
+	//non blocking read if request context was aborted
+	ctx := proxy.Dwn.Req.Context()
+	select {
+	case <-ctx.Done():
+		retry = false
+	default:
+	}
+
+	return retry
 }
 
 // ParseIncoming is a factory method for a new ProxyRequest, embeds the incoming request.
