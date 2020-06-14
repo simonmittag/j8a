@@ -88,6 +88,9 @@ func (proxy *Proxy) shouldAttemptRetry() bool {
 	ctx := proxy.Dwn.Req.Context()
 	select {
 	case <-ctx.Done():
+		log.Trace().
+			Str(XRequestID, proxy.XRequestID).
+			Msgf("upstream retries stopped once downstream request context cancelled")
 		retry = false
 	default:
 	}
