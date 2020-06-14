@@ -94,7 +94,16 @@ func handle(proxy *Proxy) {
 			return
 		}
 	}
+	logUpstreamAttempt(proxy, upstreamResponse, upstreamError)
 
+	if proxy.shouldAttemptRetry() {
+		handle(proxy.nextAttempt())
+	} else {
+		sendStatusCodeAsJSON(proxy.respondWith(502, "bad gateway, unable to read upstream response"))
+	}
+}
+
+func logUpstreamAttempt(proxy *Proxy, upstreamResponse *http.Response, upstreamError error) {
 	ev := log.Trace().
 		Str(XRequestID, proxy.XRequestID).
 		Int("upstreamAttempt", proxy.Up.Atmpt.Count).
@@ -106,12 +115,6 @@ func handle(proxy *Proxy) {
 		ev = ev.Err(upstreamError)
 	}
 	ev.Msg("upstream attempt not proxied")
-
-	if proxy.shouldAttemptRetry() {
-		handle(proxy.nextAttempt())
-	} else {
-		sendStatusCodeAsJSON(proxy.respondWith(502, "bad gateway, unable to read upstream response"))
-	}
 }
 
 func shouldSendDownstreamResponse(proxy *Proxy, bodyError error) bool {
