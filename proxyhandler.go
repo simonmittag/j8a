@@ -87,23 +87,32 @@ func handle(proxy *Proxy) {
 		upstreamResponseBody, bodyError := parseUpstreamResponse(upstreamResponse, proxy)
 		upstreamError = bodyError
 		proxy.Up.Atmpt.respBody = &upstreamResponseBody
-		if shouldSendDownstreamResponse(proxy, bodyError) {
+		if shouldProxyUpstreamResponse(proxy, bodyError) {
+			//sends proxied response, 200-498
 			proxy.processHeaders()
 			proxy.copyUpstreamResponseBody()
 			logHandledRequest(proxy)
 			return
+		} else if proxy.hasDownstreamAborted() {
+			//sends 503 because of abort, but not here. handled by timeouthandler
+			//TODO all 503s in jabba today should be 504
+			logHandledRequest(proxy)
+			return
+		} else {
+			// run through below and retry
 		}
 	}
-	logUpstreamAttempt(proxy, upstreamResponse, upstreamError)
-
+	logUnsuccessfulUpstreamAttempt(proxy, upstreamResponse, upstreamError)
 	if proxy.shouldAttemptRetry() {
 		handle(proxy.nextAttempt())
 	} else {
+		//sends 502 if no more retries possible
 		sendStatusCodeAsJSON(proxy.respondWith(502, "bad gateway, unable to read upstream response"))
 	}
+
 }
 
-func logUpstreamAttempt(proxy *Proxy, upstreamResponse *http.Response, upstreamError error) {
+func logUnsuccessfulUpstreamAttempt(proxy *Proxy, upstreamResponse *http.Response, upstreamError error) {
 	ev := log.Trace().
 		Str(XRequestID, proxy.XRequestID).
 		Int("upstreamAttempt", proxy.Up.Atmpt.Count).
@@ -117,8 +126,10 @@ func logUpstreamAttempt(proxy *Proxy, upstreamResponse *http.Response, upstreamE
 	ev.Msg("upstream attempt not proxied")
 }
 
-func shouldSendDownstreamResponse(proxy *Proxy, bodyError error) bool {
-	return bodyError == nil && proxy.Up.Atmpt.resp.StatusCode < 500
+func shouldProxyUpstreamResponse(proxy *Proxy, bodyError error) bool {
+	return !proxy.hasDownstreamAborted() &&
+		bodyError == nil &&
+		proxy.Up.Atmpt.resp.StatusCode < 500
 }
 
 func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byte, error) {
