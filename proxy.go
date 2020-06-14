@@ -57,6 +57,7 @@ type Down struct {
 	URI       string
 	UserAgent string
 	Body      []byte
+	Aborted   bool
 
 	Resp Resp
 }
@@ -86,18 +87,29 @@ Retry:
 		}
 	}
 
-	//non blocking read if request context was aborted
-	ctx := proxy.Dwn.Req.Context()
-	select {
-	case <-ctx.Done():
+	if proxy.hasDownstreamAborted() {
+		retry = false
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
 			Msgf("upstream retries stopped once downstream request context cancelled")
-		retry = false
-	default:
 	}
 
 	return retry
+}
+
+func (proxy *Proxy) hasDownstreamAborted() bool {
+	ctx := proxy.Dwn.Req.Context()
+	//non blocking read if request context was aborted
+	select {
+	case <-ctx.Done():
+		proxy.Dwn.Aborted = true
+	default:
+	}
+	if proxy.Dwn.Aborted == true {
+		proxy.Dwn.Resp.StatusCode = 503
+		proxy.Dwn.Resp.Message = "service unavailable"
+	}
+	return proxy.Dwn.Aborted
 }
 
 // ParseIncoming is a factory method for a new ProxyRequest, embeds the incoming request.
