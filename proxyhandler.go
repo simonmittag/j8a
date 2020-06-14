@@ -2,6 +2,7 @@ package jabba
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/rs/zerolog/log"
 	"io/ioutil"
 	"net/http"
@@ -144,7 +145,8 @@ func logHandledRequest(proxy *Proxy) {
 	if proxy.hasMadeUpstreamAttempt() {
 		ev = ev.Str("upstreamURI", proxy.resolveUpstreamURI()).
 			Str("upstreamLabel", proxy.Up.Atmpt.Label).
-			Int("upstreamResponseCode", proxy.Up.Atmpt.StatusCode)
+			Int("upstreamResponseCode", proxy.Up.Atmpt.StatusCode).
+			Str("upstreamAttempt", fmt.Sprintf("%d/%d", proxy.Up.Atmpt.Count, Runner.Connection.Upstream.MaxAttempts))
 	}
 
 	ev.Msg(msg)
