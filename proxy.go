@@ -142,7 +142,7 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 		Str("method", proxy.Dwn.Method).
 		Int("bodyBytes", len(proxy.Dwn.Body)).
 		Str(XRequestID, proxy.XRequestID).
-		Msg("parsed request")
+		Msg("parsed downstream request")
 	return proxy
 }
 
@@ -166,7 +166,7 @@ func (proxy *Proxy) firstAttempt(URL *URL, label string) *Proxy {
 		resp:     nil,
 		respBody: nil,
 		Complete: make(chan struct{}),
-		Aborted: make(chan struct{}),
+		Aborted:  make(chan struct{}),
 	}
 	return proxy
 }

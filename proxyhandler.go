@@ -96,7 +96,7 @@ func handle(proxy *Proxy) {
 	}
 
 	//process only if we can work with upstream attempt
-	if upstreamError == nil && upstreamResponse !=nil {
+	if upstreamError == nil && upstreamResponse != nil {
 		//jabba blocks here when waiting for upstream body
 		upstreamResponseBody, bodyError := parseUpstreamResponse(upstreamResponse, proxy)
 		upstreamError = bodyError
@@ -190,11 +190,11 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 }
 
 func logHandledRequest(proxy *Proxy) {
-	msg := "request served"
+	msg := "downstream response served"
 	ev := log.Info()
 
 	if proxy.Dwn.Resp.StatusCode > 399 {
-		msg = "request not served"
+		msg = "downstream error response served"
 		ev = log.Warn()
 	}
 
