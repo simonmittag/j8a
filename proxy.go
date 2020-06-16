@@ -34,6 +34,8 @@ type Atmpt struct {
 	isGzip     bool
 	resp       *http.Response
 	respBody   *[]byte
+	Complete   chan struct{}
+	Aborted    <-chan struct{}
 }
 
 // Resp wraps downstream http response writer and data
@@ -51,15 +53,15 @@ type Up struct {
 
 //Down wraps downstream exchange
 type Down struct {
-	Req       *http.Request
-	Method    string
-	Path      string
-	URI       string
-	UserAgent string
-	Body      []byte
-	Aborted   bool
-
-	Resp Resp
+	Req         *http.Request
+	Method      string
+	Path        string
+	URI         string
+	UserAgent   string
+	Body        []byte
+	AbortedFlag bool
+	Aborted     <-chan struct{}
+	Resp        Resp
 }
 
 // Proxy wraps data for a single downstream request/response with multiple upstream HTTP request/response cycles.
@@ -75,6 +77,8 @@ func (proxy *Proxy) resolveUpstreamURI() string {
 
 // ShouldRepeat tells us if we can safely repeat the upstream request
 func (proxy *Proxy) shouldAttemptRetry() bool {
+
+	// part one is checking for repeatable methods. we don't retry i.e. POST
 	retry := false
 Retry:
 	for _, method := range httpRepeatableMethods {
@@ -87,6 +91,7 @@ Retry:
 		}
 	}
 
+	// once downstream context has signalled, do not re-attempt upstream
 	if proxy.hasDownstreamAborted() {
 		retry = false
 		log.Trace().
@@ -97,19 +102,20 @@ Retry:
 	return retry
 }
 
+// TODO downstream aborted needs to cover both timeouts and user aborted requests.
 func (proxy *Proxy) hasDownstreamAborted() bool {
-	ctx := proxy.Dwn.Req.Context()
+
 	//non blocking read if request context was aborted
 	select {
-	case <-ctx.Done():
-		proxy.Dwn.Aborted = true
+	case <-proxy.Dwn.Aborted:
+		proxy.Dwn.AbortedFlag = true
 	default:
 	}
-	if proxy.Dwn.Aborted == true {
+	if proxy.Dwn.AbortedFlag == true {
 		proxy.Dwn.Resp.StatusCode = 503
 		proxy.Dwn.Resp.Message = "service unavailable"
 	}
-	return proxy.Dwn.Aborted
+	return proxy.Dwn.AbortedFlag
 }
 
 // ParseIncoming is a factory method for a new ProxyRequest, embeds the incoming request.
@@ -127,6 +133,7 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 	proxy.Dwn.Method = strings.ToUpper(request.Method)
 	proxy.Dwn.Body = body
 	proxy.Dwn.Req = request
+	proxy.Dwn.Aborted = request.Context().Done()
 	proxy.Dwn.Resp = Resp{}
 	proxy.Dwn.Resp.SendGzip = strings.Contains(request.Header.Get("Accept-Encoding"), "gzip")
 
@@ -158,6 +165,8 @@ func (proxy *Proxy) firstAttempt(URL *URL, label string) *Proxy {
 		Count:    1,
 		resp:     nil,
 		respBody: nil,
+		Complete: make(chan struct{}),
+		Aborted: make(chan struct{}),
 	}
 	return proxy
 }
@@ -168,6 +177,8 @@ func (proxy *Proxy) nextAttempt() *Proxy {
 	proxy.Up.Atmpt.isGzip = false
 	proxy.Up.Atmpt.resp = nil
 	proxy.Up.Atmpt.respBody = nil
+	proxy.Up.Atmpt.Complete = make(chan struct{})
+	proxy.Up.Atmpt.Aborted = make(chan struct{})
 	return proxy
 }
 
