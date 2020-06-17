@@ -98,7 +98,7 @@ Retry:
 		retry = false
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
-			Msgf("upstream retries stopped once downstream request context cancelled")
+			Msgf("upstream retries stopped with downstream event (i.e timeout or user abort)")
 	}
 
 	return retry
