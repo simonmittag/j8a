@@ -27,15 +27,17 @@ var httpLegalMethods []string = append(httpRepeatableMethods, []string{"POST", "
 
 // Atmpt wraps connection attempts to specific upstreams that are already mapped by label
 type Atmpt struct {
-	URL        *URL
-	Label      string
-	Count      int
-	StatusCode int
-	isGzip     bool
-	resp       *http.Response
-	respBody   *[]byte
-	Complete   chan struct{}
-	Aborted    <-chan struct{}
+	URL            *URL
+	Label          string
+	Count          int
+	StatusCode     int
+	isGzip         bool
+	resp           *http.Response
+	respBody       *[]byte
+	CompleteHeader chan struct{}
+	CompleteBody   chan struct{}
+	Aborted        <-chan struct{}
+	AbortedFlag    bool
 }
 
 // Resp wraps downstream http response writer and data
@@ -54,14 +56,14 @@ type Up struct {
 //Down wraps downstream exchange
 type Down struct {
 	Req         *http.Request
+	Resp        Resp
 	Method      string
 	Path        string
 	URI         string
 	UserAgent   string
 	Body        []byte
-	AbortedFlag bool
 	Aborted     <-chan struct{}
-	Resp        Resp
+	AbortedFlag bool
 }
 
 // Proxy wraps data for a single downstream request/response with multiple upstream HTTP request/response cycles.
@@ -118,6 +120,16 @@ func (proxy *Proxy) hasDownstreamAborted() bool {
 	return proxy.Dwn.AbortedFlag
 }
 
+func (proxy *Proxy) hasUpstreamAtmptAborted() bool {
+	//non blocking read if request context was aborted
+	select {
+	case <-proxy.Up.Atmpt.Aborted:
+		proxy.Up.Atmpt.AbortedFlag = true
+	default:
+	}
+	return proxy.Up.Atmpt.AbortedFlag
+}
+
 // ParseIncoming is a factory method for a new ProxyRequest, embeds the incoming request.
 func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 	//TODO: we are not processing downstream body reading errors, i.e. illegal content length
@@ -134,6 +146,7 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 	proxy.Dwn.Body = body
 	proxy.Dwn.Req = request
 	proxy.Dwn.Aborted = request.Context().Done()
+	proxy.Dwn.AbortedFlag = false
 	proxy.Dwn.Resp = Resp{}
 	proxy.Dwn.Resp.SendGzip = strings.Contains(request.Header.Get("Accept-Encoding"), "gzip")
 
@@ -160,13 +173,14 @@ func (proxy Proxy) bodyReader() io.Reader {
 
 func (proxy *Proxy) firstAttempt(URL *URL, label string) *Proxy {
 	proxy.Up.Atmpt = Atmpt{
-		Label:    label,
-		URL:      URL,
-		Count:    1,
-		resp:     nil,
-		respBody: nil,
-		Complete: make(chan struct{}),
-		Aborted:  make(chan struct{}),
+		Label:          label,
+		URL:            URL,
+		Count:          1,
+		resp:           nil,
+		respBody:       nil,
+		CompleteHeader: make(chan struct{}),
+		CompleteBody:   make(chan struct{}),
+		Aborted:        make(chan struct{}),
 	}
 	return proxy
 }
@@ -177,7 +191,8 @@ func (proxy *Proxy) nextAttempt() *Proxy {
 	proxy.Up.Atmpt.isGzip = false
 	proxy.Up.Atmpt.resp = nil
 	proxy.Up.Atmpt.respBody = nil
-	proxy.Up.Atmpt.Complete = make(chan struct{})
+	proxy.Up.Atmpt.CompleteHeader = make(chan struct{})
+	proxy.Up.Atmpt.CompleteBody = make(chan struct{})
 	proxy.Up.Atmpt.Aborted = make(chan struct{})
 	return proxy
 }
