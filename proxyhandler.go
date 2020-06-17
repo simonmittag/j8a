@@ -134,18 +134,21 @@ func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
 
 	//race for upstream headers complete, upstream timeout or downstream abort (timeout or cancellation)
 	select {
-	case <-proxy.Up.Atmpt.CompleteHeader:
-		log.Trace().
-			Str(XRequestID, proxy.XRequestID).
-			Msgf("upstream response header processing complete")
+
 	case <-proxy.Up.Atmpt.Aborted:
+		proxy.Up.Atmpt.AbortedFlag = true
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
 			Msgf("upstream response header processing aborted with upstream event (i.e. timeout)")
 	case <-proxy.Dwn.Aborted:
+		proxy.Dwn.AbortedFlag = true
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
 			Msgf("upstream response header processing aborted with downstream event (i.e timeout or user abort)")
+	case <-proxy.Up.Atmpt.CompleteHeader:
+		log.Trace().
+			Str(XRequestID, proxy.XRequestID).
+			Msgf("upstream response header processing complete")
 	}
 
 	return upstreamResponse, upstreamError
@@ -184,18 +187,20 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 	}()
 
 	select {
-	case <-proxy.Up.Atmpt.CompleteBody:
-		log.Trace().
-			Str(XRequestID, proxy.XRequestID).
-			Msgf("upstream response body processing complete")
 	case <-proxy.Up.Atmpt.Aborted:
+		proxy.Up.Atmpt.AbortedFlag = true
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
 			Msgf("upstream response body processing aborted with upstream event (i.e. timeout)")
 	case <-proxy.Dwn.Aborted:
+		proxy.Dwn.AbortedFlag = true
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
 			Msgf("upstream response body processing aborted with downstream event (i.e. timeout or user abort)")
+	case <-proxy.Up.Atmpt.CompleteBody:
+		log.Trace().
+			Str(XRequestID, proxy.XRequestID).
+			Msgf("upstream response body processing complete")
 	}
 
 	return upstreamResponseBody, bodyError
