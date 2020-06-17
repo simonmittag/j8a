@@ -78,25 +78,24 @@ func scaffoldUpstreamRequest(proxy *Proxy) *http.Request {
 
 // handle the proxy request
 func handle(proxy *Proxy) {
-	var upstreamResponse *http.Response
-	var upstreamError error
-
-	//if downstream has not previously aborted, go upstream
-	if !proxy.hasDownstreamAborted() {
-		upstreamResponse, upstreamError = performUpstreamRequest(proxy)
-	} else {
-		log.Trace().
-			Str(XRequestID, proxy.XRequestID).
-			Msgf("downstream request previously aborted, not attempting to contact upstream")
-	}
-
-	//this is required, else we leak TCP connections.
+	upstreamResponse, upstreamError := performUpstreamRequest(proxy)
 	if upstreamResponse != nil && upstreamResponse.Body != nil {
 		defer upstreamResponse.Body.Close()
 	}
 
+	if !processUpstreamResponse(proxy, upstreamResponse, upstreamError) {
+		if proxy.shouldAttemptRetry() {
+			handle(proxy.nextAttempt())
+		} else {
+			//sends 502 if no more retries possible
+			sendStatusCodeAsJSON(proxy.respondWith(502, "bad gateway, unable to read upstream response"))
+		}
+	}
+}
+
+func processUpstreamResponse(proxy *Proxy, upstreamResponse *http.Response, upstreamError error) bool {
 	//process only if we can work with upstream attempt
-	if upstreamError == nil && upstreamResponse != nil {
+	if upstreamResponse != nil && upstreamError == nil && !proxy.hasUpstreamAtmptAborted() {
 		//jabba blocks here when waiting for upstream body
 		upstreamResponseBody, bodyError := parseUpstreamResponse(upstreamResponse, proxy)
 		upstreamError = bodyError
@@ -106,26 +105,17 @@ func handle(proxy *Proxy) {
 			proxy.processHeaders()
 			proxy.copyUpstreamResponseBody()
 			logHandledRequest(proxy)
-			return
+			return true
 		} else if proxy.hasDownstreamAborted() {
 			//sends 503 because of abort, but not here. handled by timeouthandler
 			//TODO all 503s in jabba today should be 504
 			logHandledRequest(proxy)
-			return
-		} else {
-			// run through below and retry
+			return true
 		}
 	}
-
 	//now log unsuccessful and retry or exit with status code.
 	logUnsuccessfulUpstreamAttempt(proxy, upstreamResponse, upstreamError)
-	if proxy.shouldAttemptRetry() {
-		handle(proxy.nextAttempt())
-	} else {
-		//sends 502 if no more retries possible
-		sendStatusCodeAsJSON(proxy.respondWith(502, "bad gateway, unable to read upstream response"))
-	}
-
+	return false
 }
 
 func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
@@ -139,23 +129,23 @@ func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
 		//this blocks until upstream headers come in
 		upstreamResponse, upstreamError = httpClient.Do(req)
 		proxy.Up.Atmpt.resp = upstreamResponse
-		close(proxy.Up.Atmpt.Complete)
+		close(proxy.Up.Atmpt.CompleteHeader)
 	}()
 
-	//race for upstream complete, upstream timeout or downstream abort (timeout or cancellation)
+	//race for upstream headers complete, upstream timeout or downstream abort (timeout or cancellation)
 	select {
-	case <-proxy.Up.Atmpt.Complete:
+	case <-proxy.Up.Atmpt.CompleteHeader:
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
-			Msgf("upstream request processing exited normally")
+			Msgf("upstream response header processing complete")
 	case <-proxy.Up.Atmpt.Aborted:
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
-			Msgf("upstream request processing terminated with upstream context signal, i.e. timeout")
+			Msgf("upstream response header processing aborted with upstream event (i.e. timeout)")
 	case <-proxy.Dwn.Aborted:
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
-			Msgf("upstream request processing terminated with downstream context signal, i.e. timeout or user abort")
+			Msgf("upstream response header processing aborted with downstream event (i.e timeout or user abort)")
 	}
 
 	return upstreamResponse, upstreamError
@@ -182,10 +172,32 @@ func shouldProxyUpstreamResponse(proxy *Proxy, bodyError error) bool {
 }
 
 func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byte, error) {
-	upstreamResponseBody, bodyError := ioutil.ReadAll(upstreamResponse.Body)
-	if c := bytes.Compare(upstreamResponseBody[0:2], gzipMagicBytes); c == 0 {
-		proxy.Up.Atmpt.isGzip = true
+	var upstreamResponseBody []byte
+	var bodyError error
+
+	go func() {
+		upstreamResponseBody, bodyError = ioutil.ReadAll(upstreamResponse.Body)
+		close(proxy.Up.Atmpt.CompleteBody)
+		if c := bytes.Compare(upstreamResponseBody[0:2], gzipMagicBytes); c == 0 {
+			proxy.Up.Atmpt.isGzip = true
+		}
+	}()
+
+	select {
+	case <-proxy.Up.Atmpt.CompleteBody:
+		log.Trace().
+			Str(XRequestID, proxy.XRequestID).
+			Msgf("upstream response body processing complete")
+	case <-proxy.Up.Atmpt.Aborted:
+		log.Trace().
+			Str(XRequestID, proxy.XRequestID).
+			Msgf("upstream response body processing aborted with upstream event (i.e. timeout)")
+	case <-proxy.Dwn.Aborted:
+		log.Trace().
+			Str(XRequestID, proxy.XRequestID).
+			Msgf("upstream response body processing aborted with downstream event (i.e. timeout or user abort)")
 	}
+
 	return upstreamResponseBody, bodyError
 }
 
