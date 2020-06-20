@@ -2,11 +2,13 @@ package jabba
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"github.com/rs/zerolog/log"
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 )
 
 //XRequestID is a per HTTP request unique identifier
@@ -66,9 +68,19 @@ func validate(proxy *Proxy) bool {
 }
 
 func scaffoldUpstreamRequest(proxy *Proxy) *http.Request {
-	upstreamRequest, _ := http.NewRequest(proxy.Dwn.Method,
+	ctx, cancel := context.WithCancel(context.TODO())
+	//will call the cancel func in it's own goroutine after timeout seconds.
+	time.AfterFunc(time.Duration(Runner.Connection.Upstream.ReadTimeoutSeconds)*time.Second, func() {
+		cancel()
+	})
+
+	upstreamRequest, _ := http.NewRequestWithContext(ctx,
+		proxy.Dwn.Method,
 		proxy.resolveUpstreamURI(),
 		proxy.bodyReader())
+
+	proxy.Up.Atmpt.Aborted = upstreamRequest.Context().Done()
+
 	//TODO: test if upstream request headers are reprocessed correctly
 	for key, values := range proxy.Dwn.Req.Header {
 		upstreamRequest.Header.Set(key, strings.Join(values, " "))
@@ -120,7 +132,6 @@ func processUpstreamResponse(proxy *Proxy, upstreamResponse *http.Response, upst
 
 func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
 	req := scaffoldUpstreamRequest(proxy)
-	proxy.Up.Atmpt.Aborted = req.Context().Done()
 
 	var upstreamResponse *http.Response
 	var upstreamError error
@@ -139,12 +150,12 @@ func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
 		proxy.Up.Atmpt.AbortedFlag = true
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
-			Msgf("upstream response header processing aborted with upstream event (i.e. timeout)")
+			Msgf("upstream response header processing aborted with upstream timeout or cancel")
 	case <-proxy.Dwn.Aborted:
 		proxy.Dwn.AbortedFlag = true
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
-			Msgf("upstream response header processing aborted with downstream event (i.e timeout or user abort)")
+			Msgf("upstream response header processing aborted with downstream timeout or cancel")
 	case <-proxy.Up.Atmpt.CompleteHeader:
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
@@ -191,12 +202,12 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 		proxy.Up.Atmpt.AbortedFlag = true
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
-			Msgf("upstream response body processing aborted with upstream event (i.e. timeout)")
+			Msgf("upstream response body processing aborted with upstream timeout or cancel")
 	case <-proxy.Dwn.Aborted:
 		proxy.Dwn.AbortedFlag = true
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
-			Msgf("upstream response body processing aborted with downstream event (i.e. timeout or user abort)")
+			Msgf("upstream response body processing aborted with downstream timeout or cancel")
 	case <-proxy.Up.Atmpt.CompleteBody:
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
