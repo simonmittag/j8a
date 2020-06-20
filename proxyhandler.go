@@ -150,18 +150,18 @@ func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
 			Int("upstreamAttempt", proxy.Up.Atmpt.Count).
-			Msgf("upstream response header processing aborted with jabba upstream timeout or user cancelled request")
+			Msgf("upstream response header processing locally aborted with jabba upstream timeout or user cancelled request")
 	case <-proxy.Dwn.Aborted:
 		proxy.Dwn.AbortedFlag = true
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
 			Int("upstreamAttempt", proxy.Up.Atmpt.Count).
-			Msgf("upstream response header processing aborted with jabba downstream timeout or user cancelled request")
+			Msgf("upstream response header processing locally aborted with jabba downstream timeout or user cancelled request")
 	case <-proxy.Up.Atmpt.CompleteHeader:
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
 			Str("upstreamAttempt", proxy.Up.Atmpt.print()).
-			Msgf("upstream response header processing complete")
+			Msgf("upstream response header processing locally complete")
 	}
 
 	return upstreamResponse, upstreamError
@@ -174,10 +174,10 @@ func logUnsuccessfulUpstreamAttempt(proxy *Proxy, upstreamResponse *http.Respons
 	if upstreamResponse != nil && upstreamResponse.StatusCode > 0 {
 		ev = ev.Int("upstreamResponseCode", upstreamResponse.StatusCode)
 	}
-	if upstreamError != nil {
-		ev = ev.Err(upstreamError)
-	}
-	ev.Msg("upstream attempt not proxied")
+	//if upstreamError != nil {
+	//	ev = ev.Err(upstreamError)
+	//}
+	ev.Msg("upstream attempt unsuccessful")
 }
 
 func shouldProxyUpstreamResponse(proxy *Proxy, bodyError error) bool {
@@ -204,18 +204,18 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
 			Str("upstreamAttempt", proxy.Up.Atmpt.print()).
-			Msgf("upstream response body processing aborted with jabba downstream timeout or user cancelled request")
+			Msgf("upstream response body processing locally aborted with jabba downstream timeout or user cancelled request")
 	case <-proxy.Dwn.Aborted:
 		proxy.Dwn.AbortedFlag = true
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
 			Str("upstreamAttempt", proxy.Up.Atmpt.print()).
-			Msgf("upstream response body processing aborted with jabba downstream timeout or user cancelled request")
+			Msgf("upstream response body processing locally aborted with jabba downstream timeout or user cancelled request")
 	case <-proxy.Up.Atmpt.CompleteBody:
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
 			Str("upstreamAttempt", proxy.Up.Atmpt.print()).
-			Msgf("upstream response body processing complete")
+			Msgf("upstream response body processing locally complete")
 	}
 
 	return upstreamResponseBody, bodyError
