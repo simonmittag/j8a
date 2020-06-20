@@ -40,6 +40,10 @@ type Atmpt struct {
 	AbortedFlag    bool
 }
 
+func (atmpt Atmpt) print() string {
+	return fmt.Sprintf("%d/%d", atmpt.Count, Runner.Connection.Upstream.MaxAttempts)
+}
+
 // Resp wraps downstream http response writer and data
 type Resp struct {
 	Writer     http.ResponseWriter
@@ -98,7 +102,7 @@ Retry:
 		retry = false
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
-			Msgf("upstream retries stopped with downstream event (i.e timeout or user abort)")
+			Msgf("upstream retries stopped with downstream timeout or user abort)")
 	}
 
 	return retry
