@@ -74,7 +74,7 @@ func routeFactory(route string) Route {
 func TestRouteMapDefault(t *testing.T) {
 	Runner = mockRuntime()
 	r := Runner.Routes[1]
-	gotUrl, gotLabel, got := r.mapURL()
+	gotUrl, gotLabel, got := r.mapURL(&Proxy{})
 
 	if got != true {
 		t.Error("routes do not successfully map")
@@ -97,7 +97,7 @@ func TestRouteMapDefault(t *testing.T) {
 func TestRouteMap(t *testing.T) {
 	Runner = mockRuntime()
 	r := Runner.Routes[0]
-	gotUrl, gotLabel, got := r.mapURL()
+	gotUrl, gotLabel, got := r.mapURL(&Proxy{})
 	if got != true {
 		t.Error("routes do not successfully map")
 	}
@@ -120,7 +120,7 @@ func TestRouteMapIncorrectPolicyFails(t *testing.T) {
 	Runner = mockRuntime()
 	r := Runner.Routes[1]
 	r.Policy = "i'm_not_real"
-	_, _, got := r.mapURL()
+	_, _, got := r.mapURL(&Proxy{})
 	if got != false {
 		t.Error("route with bad policy is not allowed to map. this is a configuration error")
 	}

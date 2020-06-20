@@ -41,7 +41,7 @@ func (route Route) matchURI(request *http.Request) bool {
 }
 
 // maps a route to a URL. Returns the URL, the name of the mapped policy and whether mapping was successful
-func (route Route) mapURL() (*URL, string, bool) {
+func (route Route) mapURL(proxy *Proxy) (*URL, string, bool) {
 	var policy Policy
 	var policyLabel string
 	if len(route.Policy) > 0 {
@@ -60,6 +60,7 @@ func (route Route) mapURL() (*URL, string, bool) {
 						Str("upstream", resourceMapping.URL.String()).
 						Str("label", resourceLabel).
 						Str("policy", route.Policy).
+						Str(XRequestID, proxy.XRequestID).
 						Msg("route mapped")
 					return &resourceMapping.URL, policyLabel, true
 				}
@@ -68,7 +69,8 @@ func (route Route) mapURL() (*URL, string, bool) {
 	} else {
 		log.Trace().
 			Str("routePath", route.Path).
-			Str( "policy", "default").
+			Str("policy", "default").
+			Str(XRequestID, proxy.XRequestID).
 			Str("upstream", resource[0].URL.String()).
 			Msg("route mapped")
 		return &resource[0].URL, "default", true
@@ -76,6 +78,7 @@ func (route Route) mapURL() (*URL, string, bool) {
 
 	log.Trace().
 		Str("routePath", route.Path).
+		Str(XRequestID, proxy.XRequestID).
 		Msg("route not mapped")
 
 	return nil, "", false

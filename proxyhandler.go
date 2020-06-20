@@ -42,7 +42,7 @@ func proxyHandler(response http.ResponseWriter, request *http.Request) {
 	//once a route is matched, it needs to be mapped to an upstream resource via a policy
 	for _, route := range Runner.Routes {
 		if matched = route.matchURI(request); matched {
-			url, label, mapped := route.mapURL()
+			url, label, mapped := route.mapURL(proxy)
 			if mapped {
 				//mapped requests are sent to httpclient
 				handle(proxy.firstAttempt(url, label))
