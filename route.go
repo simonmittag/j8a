@@ -61,7 +61,7 @@ func (route Route) mapURL(proxy *Proxy) (*URL, string, bool) {
 						Str("label", resourceLabel).
 						Str("policy", route.Policy).
 						Str(XRequestID, proxy.XRequestID).
-						Msg("route mapped")
+						Msg("upstream route mapped")
 					return &resourceMapping.URL, policyLabel, true
 				}
 			}

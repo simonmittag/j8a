@@ -102,7 +102,7 @@ Retry:
 		retry = false
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
-			Msgf("upstream retries stopped with downstream timeout or user abort)")
+			Msgf("upstream retries stopped")
 	}
 
 	return retry
@@ -186,6 +186,11 @@ func (proxy *Proxy) firstAttempt(URL *URL, label string) *Proxy {
 		CompleteBody:   make(chan struct{}),
 		Aborted:        make(chan struct{}),
 	}
+	log.Trace().
+		Str(XRequestID, proxy.XRequestID).
+		Str("upstreamAttempt", proxy.Up.Atmpt.print()).
+		Msg("first upstream attempt initialized")
+
 	return proxy
 }
 
@@ -198,6 +203,11 @@ func (proxy *Proxy) nextAttempt() *Proxy {
 	proxy.Up.Atmpt.CompleteHeader = make(chan struct{})
 	proxy.Up.Atmpt.CompleteBody = make(chan struct{})
 	proxy.Up.Atmpt.Aborted = make(chan struct{})
+
+	log.Trace().
+		Str(XRequestID, proxy.XRequestID).
+		Str("upstreamAttempt", proxy.Up.Atmpt.print()).
+		Msg("next upstream attempt initialized")
 	return proxy
 }
 
