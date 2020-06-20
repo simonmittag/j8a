@@ -34,7 +34,7 @@ func scaffoldHTTPClient(runtime Runtime) HTTPClient {
 			MaxIdleConnsPerHost: runtime.Connection.Upstream.PoolSize,
 			IdleConnTimeout:     idleConnTimeoutDuration,
 		},
-		Timeout: readTimeoutDuration,
+		//Timeout: readTimeoutDuration,
 	}
 
 	log.Debug().
