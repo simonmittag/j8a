@@ -76,7 +76,7 @@ jobs:
     docker:
       - image: circleci/golang:1.14
     environment:
-      LOGLEVEL: WARN
+      LOGLEVEL: TRACE
       LOGCOLOR: FALSE
       UPSTREAM_01_PORT: 60083
       UPSTREAM_01_SLUG: /mse6
