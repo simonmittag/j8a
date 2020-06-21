@@ -100,9 +100,13 @@ Retry:
 	// once downstream context has signalled, do not re-attempt upstream
 	if proxy.hasDownstreamAborted() {
 		retry = false
+	}
+
+	if !retry {
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
-			Msgf("upstream retries stopped")
+			Str("upstreamAttempt", proxy.Up.Atmpt.print()).
+			Msg("upstream retries stopped after upstream attempt")
 	}
 
 	return retry
@@ -203,6 +207,7 @@ func (proxy *Proxy) nextAttempt() *Proxy {
 	proxy.Up.Atmpt.CompleteHeader = make(chan struct{})
 	proxy.Up.Atmpt.CompleteBody = make(chan struct{})
 	proxy.Up.Atmpt.Aborted = make(chan struct{})
+	proxy.Up.Atmpt.AbortedFlag = false
 
 	log.Trace().
 		Str(XRequestID, proxy.XRequestID).

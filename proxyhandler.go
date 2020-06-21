@@ -194,10 +194,10 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 
 	go func() {
 		upstreamResponseBody, bodyError = ioutil.ReadAll(upstreamResponse.Body)
-		close(proxy.Up.Atmpt.CompleteBody)
 		if c := bytes.Compare(upstreamResponseBody[0:2], gzipMagicBytes); c == 0 {
 			proxy.Up.Atmpt.isGzip = true
 		}
+		close(proxy.Up.Atmpt.CompleteBody)
 	}()
 
 	select {
