@@ -139,7 +139,19 @@ func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
 		//this blocks until upstream headers come in
 		upstreamResponse, upstreamError = httpClient.Do(req)
 		proxy.Up.Atmpt.resp = upstreamResponse
-		close(proxy.Up.Atmpt.CompleteHeader)
+
+		defer func() {
+			if err := recover(); err != nil {
+				log.Trace().
+					Str(XRequestID, proxy.XRequestID).
+					Str("upstreamAttempt", proxy.Up.Atmpt.print()).
+					Msgf("recovered internally from closed header success channel after request already handled. safe to ignore")
+			}
+		}()
+
+		if proxy.Up.Atmpt.CompleteHeader != nil && !proxy.Up.Atmpt.AbortedFlag && !proxy.Dwn.AbortedFlag {
+			close(proxy.Up.Atmpt.CompleteHeader)
+		}
 	}()
 
 	//race for upstream headers complete, upstream timeout or downstream abort (timeout or cancellation)
@@ -204,7 +216,7 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 				log.Trace().
 					Str(XRequestID, proxy.XRequestID).
 					Str("upstreamAttempt", proxy.Up.Atmpt.print()).
-					Msgf("recovered internally from closed success channel after request already handled. safe to ignore")
+					Msgf("recovered internally from closed body success channel after request already handled. safe to ignore")
 			}
 		}()
 
