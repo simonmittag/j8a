@@ -184,6 +184,7 @@ func logUnsuccessfulUpstreamAttempt(proxy *Proxy, upstreamResponse *http.Respons
 
 func shouldProxyUpstreamResponse(proxy *Proxy, bodyError error) bool {
 	return !proxy.hasDownstreamAborted() &&
+		!proxy.hasUpstreamAtmptAborted() &&
 		bodyError == nil &&
 		proxy.Up.Atmpt.resp.StatusCode < 500
 }
