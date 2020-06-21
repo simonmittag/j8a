@@ -150,14 +150,14 @@ func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
 		proxy.Up.Atmpt.StatusCode = 0
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
-			Int("upstreamAttempt", proxy.Up.Atmpt.Count).
+			Str("upstreamAttempt", proxy.Up.Atmpt.print()).
 			Int("upstreamReadTimeoutSeconds", Runner.Connection.Upstream.ReadTimeoutSeconds).
 			Msg("upstream connection read timeout fired, aborting upstream response header processing.")
 	case <-proxy.Dwn.Aborted:
 		proxy.Dwn.AbortedFlag = true
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
-			Int("upstreamAttempt", proxy.Up.Atmpt.Count).
+			Str("upstreamAttempt", proxy.Up.Atmpt.print()).
 			Msg("aborting upstream response header processing. downstream connection read timeout fired or user cancelled request")
 	case <-proxy.Up.Atmpt.CompleteHeader:
 		log.Trace().
