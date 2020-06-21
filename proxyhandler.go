@@ -140,14 +140,14 @@ func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
 		upstreamResponse, upstreamError = httpClient.Do(req)
 		proxy.Up.Atmpt.resp = upstreamResponse
 
-		defer func() {
-			if err := recover(); err != nil {
-				log.Trace().
-					Str(XRequestID, proxy.XRequestID).
-					Str("upstreamAttempt", proxy.Up.Atmpt.print()).
-					Msgf("recovered internally from closed header success channel after request already handled. safe to ignore")
-			}
-		}()
+		//defer func() {
+		//	if err := recover(); err != nil {
+		//		log.Trace().
+		//			Str(XRequestID, proxy.XRequestID).
+		//			Str("upstreamAttempt", proxy.Up.Atmpt.print()).
+		//			Msgf("recovered internally from closed header success channel after request already handled. safe to ignore")
+		//	}
+		//}()
 
 		if proxy.Up.Atmpt.CompleteHeader != nil && !proxy.Up.Atmpt.AbortedFlag && !proxy.Dwn.AbortedFlag {
 			close(proxy.Up.Atmpt.CompleteHeader)
@@ -211,14 +211,14 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 			proxy.Up.Atmpt.isGzip = true
 		}
 
-		defer func() {
-			if err := recover(); err != nil {
-				log.Trace().
-					Str(XRequestID, proxy.XRequestID).
-					Str("upstreamAttempt", proxy.Up.Atmpt.print()).
-					Msgf("recovered internally from closed body success channel after request already handled. safe to ignore")
-			}
-		}()
+		//defer func() {
+		//	if err := recover(); err != nil {
+		//		log.Trace().
+		//			Str(XRequestID, proxy.XRequestID).
+		//			Str("upstreamAttempt", proxy.Up.Atmpt.print()).
+		//			Msgf("recovered internally from closed body success channel after request already handled. safe to ignore")
+		//	}
+		//}()
 
 		//this is ok, see: https://stackoverflow.com/questions/8593645/is-it-ok-to-leave-a-channel-open#:~:text=5%20Answers&text=It's%20OK%20to%20leave%20a,it%20will%20be%20garbage%20collected.&text=Closing%20the%20channel%20is%20a,that%20no%20more%20data%20follows.
 		if proxy.Up.Atmpt.CompleteBody != nil && !proxy.Up.Atmpt.AbortedFlag && !proxy.Dwn.AbortedFlag {
