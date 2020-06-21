@@ -26,7 +26,7 @@ func TestServerUpstreamReadTimeoutFailsWithSlowHeader(t *testing.T) {
 	}
 
 	if resp.StatusCode != 502 {
-		t.Errorf("slow header writes from server > upstream timeout should not return ok and fail after max attempts, want 502, got %v", resp.StatusCode)
+		t.Errorf("slow header writes! from server > upstream timeout should not return ok and fail after max attempts, want 502, got %v", resp.StatusCode)
 	}
 }
 
