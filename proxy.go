@@ -54,7 +54,9 @@ type Resp struct {
 
 //Up wraps upstream
 type Up struct {
-	Atmpt Atmpt
+	Atmpt  Atmpt
+	Atmpts []Atmpt
+	Count  int
 }
 
 //Down wraps downstream exchange
@@ -190,6 +192,9 @@ func (proxy *Proxy) firstAttempt(URL *URL, label string) *Proxy {
 		CompleteBody:   make(chan struct{}),
 		Aborted:        make(chan struct{}),
 	}
+	proxy.Up.Atmpts = []Atmpt{proxy.Up.Atmpt}
+	proxy.Up.Count = 1
+
 	log.Trace().
 		Str(XRequestID, proxy.XRequestID).
 		Str("upstreamAttempt", proxy.Up.Atmpt.print()).
@@ -199,15 +204,22 @@ func (proxy *Proxy) firstAttempt(URL *URL, label string) *Proxy {
 }
 
 func (proxy *Proxy) nextAttempt() *Proxy {
-	proxy.Up.Atmpt.Count++
-	proxy.Up.Atmpt.StatusCode = 0
-	proxy.Up.Atmpt.isGzip = false
-	proxy.Up.Atmpt.resp = nil
-	proxy.Up.Atmpt.respBody = nil
-	proxy.Up.Atmpt.CompleteHeader = make(chan struct{})
-	proxy.Up.Atmpt.CompleteBody = make(chan struct{})
-	proxy.Up.Atmpt.Aborted = make(chan struct{})
-	proxy.Up.Atmpt.AbortedFlag = false
+	next := Atmpt{
+		URL:            proxy.Up.Atmpt.URL,
+		Label:          proxy.Up.Atmpt.Label,
+		Count:          proxy.Up.Atmpt.Count+1,
+		StatusCode:     0,
+		isGzip:         false,
+		resp:           nil,
+		respBody:       nil,
+		CompleteHeader: make(chan struct{}),
+		CompleteBody:   make(chan struct{}),
+		Aborted:        make(chan struct{}),
+		AbortedFlag:    false,
+	}
+	proxy.Up.Atmpts = append(proxy.Up.Atmpts, next)
+	proxy.Up.Count = next.Count
+	proxy.Up.Atmpt = next
 
 	log.Trace().
 		Str(XRequestID, proxy.XRequestID).
