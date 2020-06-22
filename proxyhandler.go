@@ -136,7 +136,7 @@ func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
 	var upstreamError error
 
 	//get a reference to this before any race conditions may occur
-	attempt := proxy.Up.Count
+	attemptIndex := proxy.Up.Count-1
 
 	go func() {
 		//this blocks until upstream headers come in
@@ -153,7 +153,7 @@ func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
 		}()
 
 		if proxy.Up.Atmpt.CompleteHeader != nil && !proxy.Up.Atmpt.AbortedFlag && !proxy.Dwn.AbortedFlag {
-			close(proxy.Up.Atmpts[attempt].CompleteHeader)
+			close(proxy.Up.Atmpts[attemptIndex].CompleteHeader)
 		}
 	}()
 
@@ -209,7 +209,7 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 	var bodyError error
 
 	//get a reference to this before any race conditions may occur
-	attempt := proxy.Up.Count
+	attemptIndex := proxy.Up.Count-1
 
 	go func() {
 		upstreamResponseBody, bodyError = ioutil.ReadAll(upstreamResponse.Body)
@@ -228,7 +228,7 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 
 		//this is ok, see: https://stackoverflow.com/questions/8593645/is-it-ok-to-leave-a-channel-open#:~:text=5%20Answers&text=It's%20OK%20to%20leave%20a,it%20will%20be%20garbage%20collected.&text=Closing%20the%20channel%20is%20a,that%20no%20more%20data%20follows.
 		if proxy.Up.Atmpt.CompleteBody != nil && !proxy.Up.Atmpt.AbortedFlag && !proxy.Dwn.AbortedFlag {
-			close(proxy.Up.Atmpts[attempt].CompleteBody)
+			close(proxy.Up.Atmpts[attemptIndex].CompleteBody)
 		}
 	}()
 
