@@ -7,32 +7,148 @@ import (
 	"time"
 )
 
-func TestServerMakesSuccessfulUpstreamConnection(t *testing.T) {
-	resp, err := http.Get("http://localhost:8080/mse6/get")
-
-	if err != nil {
-		t.Errorf("error connecting to upstream, cause: %v", err)
-	}
-
-	if resp.StatusCode != 200 {
-		t.Errorf("server does not return ok from working upstream, want 200, got %v", resp.StatusCode)
-	}
+func TestServer1UpstreamReadTimeoutFireWithSlowHeader31S(t *testing.T) {
+	performJabbaTest(t,
+		"/slowheader",
+		31,
+		12,
+		502,
+		8080)
 }
 
-func TestServer1UpstreamReadTimeoutFailsWithSlowHeader4S(t *testing.T) {
-	performJabbaTest(t, "/slowheader", 4, 12, 502, 8080)
+func TestServer1UpstreamReadTimeoutFireWithSlowBody31S(t *testing.T) {
+	performJabbaTest(t,
+		"/slowbody",
+		31,
+		12,
+		502,
+		8080)
 }
 
-func TestServer1UpstreamReadTimeoutFailsWithSlowBody4S(t *testing.T) {
-	performJabbaTest(t, "/slowbody", 4, 12, 502, 8080)
+func TestServer1UpstreamReadTimeoutFireWithSlowHeader25S(t *testing.T) {
+	performJabbaTest(t,
+		"/slowheader",
+		25,
+		12,
+		502,
+		8080)
 }
 
-func TestServer1UpstreamReadTimeoutPassesWithSlowHeader2S(t *testing.T) {
-	performJabbaTest(t, "/slowheader", 2, 2, 200, 8080)
+func TestServer1UpstreamReadTimeoutFireWithSlowBody25S(t *testing.T) {
+	performJabbaTest(t,
+		"/slowbody",
+		25,
+		12,
+		502,
+		8080)
 }
 
-func TestServer1UpstreamReadTimeoutPassesWithSlowBody2S(t *testing.T) {
-	performJabbaTest(t, "/slowbody", 2, 2, 200, 8080)
+func TestServer1UpstreamReadTimeoutFireWithSlowHeader4S(t *testing.T) {
+	performJabbaTest(t,
+		"/slowheader",
+		4,
+		12,
+		502,
+		8080)
+}
+
+func TestServer1UpstreamReadTimeoutFireWithSlowBody4S(t *testing.T) {
+	performJabbaTest(t,
+		"/slowbody",
+		4,
+		12,
+		502,
+		8080)
+}
+
+func TestServer1UpstreamReadTimeoutNotFireWithSlowHeader2S(t *testing.T) {
+	performJabbaTest(t,
+		"/slowheader",
+		2,
+		2,
+		200,
+		8080)
+}
+
+func TestServer1UpstreamReadTimeoutNotFireWithSlowBody2S(t *testing.T) {
+	performJabbaTest(t,
+		"/slowbody",
+		2,
+		2,
+		200,
+		8080)
+}
+
+func TestServer2DownstreamRoundTripTimeoutFireWithSlowHeader31S(t *testing.T) {
+	performJabbaTest(t,
+		"/slowheader",
+		31,
+		20,
+		503,
+		8081)
+}
+
+func TestServer2DownstreamRoundTripTimeoutFireWithSlowBody31S(t *testing.T) {
+	performJabbaTest(t,
+		"/slowbody",
+		31,
+		20,
+		503,
+		8081)
+}
+
+func TestServer2DownstreamRoundTripTimeoutFireWithSlowHeader25S(t *testing.T) {
+	performJabbaTest(t,
+		"/slowheader",
+		25,
+		20,
+		503,
+		8081)
+}
+
+func TestServer2DownstreamRoundTripTimeoutFireWithSlowBody25S(t *testing.T) {
+	performJabbaTest(t,
+		"/slowbody",
+		25,
+		20,
+		503,
+		8081)
+}
+
+func TestServer2DownstreamRoundTripTimeoutNotFireWithSlowHeader4S(t *testing.T) {
+	performJabbaTest(t,
+		"/slowheader",
+		4,
+		4,
+		200,
+		8081)
+}
+
+func TestServer2DownstreamRoundTripTimeoutNotFireWithSlowBody4S(t *testing.T) {
+	performJabbaTest(t,
+		"/slowbody",
+		4,
+		4,
+		200,
+		8081)
+}
+
+func TestServer2DownstreamRoundTripTimeoutNotFireWithSlowHeader2S(t *testing.T) {
+	performJabbaTest(t,
+		"/slowheader",
+		2,
+		2,
+		200,
+		8081)
+}
+
+func TestServer2DownstreamRoundTripTimeoutNotFireWithSlowBody2S(t *testing.T) {
+	performJabbaTest(t,
+		"/slowbody",
+		2,
+		2,
+		200,
+		8081)
 }
 
 func performJabbaTest(t *testing.T, testMethod string, wantUpstreamWaitSeconds int, wantTotalWaitSeconds int, wantStatusCode int, serverPort int) {
