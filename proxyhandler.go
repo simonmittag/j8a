@@ -99,8 +99,13 @@ func handle(proxy *Proxy) {
 		if proxy.shouldAttemptRetry() {
 			handle(proxy.nextAttempt())
 		} else {
-			//sends 502 if no more retries possible
-			sendStatusCodeAsJSON(proxy.respondWith(502, "bad gateway, unable to read upstream response"))
+			//sends 504 if we locally aborted with timeout, otherwise 502 if we can't figure out what happened upstream
+			if proxy.hasUpstreamAtmptAborted() {
+				sendStatusCodeAsJSON(proxy.respondWith(504, "gateway timeout during upstream attempt"))
+			} else {
+				sendStatusCodeAsJSON(proxy.respondWith(502, "bad gateway, unable to read upstream response"))
+			}
+
 		}
 	}
 }

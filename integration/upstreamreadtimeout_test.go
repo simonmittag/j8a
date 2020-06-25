@@ -12,7 +12,7 @@ func TestServer1UpstreamReadTimeoutFireWithSlowHeader31S(t *testing.T) {
 		"/slowheader",
 		31,
 		12,
-		502,
+		504,
 		8080)
 }
 
@@ -21,7 +21,7 @@ func TestServer1UpstreamReadTimeoutFireWithSlowBody31S(t *testing.T) {
 		"/slowbody",
 		31,
 		12,
-		502,
+		504,
 		8080)
 }
 
@@ -30,7 +30,7 @@ func TestServer1UpstreamReadTimeoutFireWithSlowHeader25S(t *testing.T) {
 		"/slowheader",
 		25,
 		12,
-		502,
+		504,
 		8080)
 }
 
@@ -39,7 +39,7 @@ func TestServer1UpstreamReadTimeoutFireWithSlowBody25S(t *testing.T) {
 		"/slowbody",
 		25,
 		12,
-		502,
+		504,
 		8080)
 }
 
@@ -48,7 +48,7 @@ func TestServer1UpstreamReadTimeoutFireWithSlowHeader4S(t *testing.T) {
 		"/slowheader",
 		4,
 		12,
-		502,
+		504,
 		8080)
 }
 
@@ -57,7 +57,7 @@ func TestServer1UpstreamReadTimeoutFireWithSlowBody4S(t *testing.T) {
 		"/slowbody",
 		4,
 		12,
-		502,
+		504,
 		8080)
 }
 
