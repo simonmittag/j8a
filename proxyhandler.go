@@ -3,6 +3,7 @@ package jabba
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"github.com/rs/zerolog/log"
 	"io/ioutil"
 	"net/http"
@@ -130,13 +131,11 @@ func processUpstreamResponse(proxy *Proxy, upstreamResponse *http.Response, upst
 }
 
 func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
-	req := scaffoldUpstreamRequest(proxy)
-
-	var upstreamResponse *http.Response
-	var upstreamError error
-
 	//get a reference to this before any race conditions may occur
 	attemptIndex := proxy.Up.Count-1
+	req := scaffoldUpstreamRequest(proxy)
+	var upstreamResponse *http.Response
+	var upstreamError error
 
 	go func() {
 		//this blocks until upstream headers come in
@@ -146,13 +145,14 @@ func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
 		defer func() {
 			if err := recover(); err != nil {
 				log.Trace().
+					Str("error", fmt.Sprintf("error: %v", err)).
 					Str(XRequestID, proxy.XRequestID).
 					Str("upstreamAttempt", proxy.Up.Atmpt.print()).
-					Msgf("recovered internally from closed header success channel after request already handled. safe to ignore")
+					Msgf("=> recovered internally from closed header success channel after request already handled. safe to ignore")
 			}
 		}()
 
-		if proxy.Up.Atmpt.CompleteHeader != nil && !proxy.Up.Atmpt.AbortedFlag && !proxy.Dwn.AbortedFlag {
+		if proxy.Up.Atmpts[attemptIndex].CompleteHeader != nil && !proxy.Up.Atmpts[attemptIndex].AbortedFlag && !proxy.Dwn.AbortedFlag {
 			close(proxy.Up.Atmpts[attemptIndex].CompleteHeader)
 		}
 	}()
