@@ -68,7 +68,12 @@ func validate(proxy *Proxy) bool {
 }
 
 func scaffoldUpstreamRequest(proxy *Proxy) *http.Request {
+	//this context is used to time out the upstream request
 	ctx, cancel := context.WithCancel(context.TODO())
+
+	//remember the cancelFunc, we may need to call it earlier from the outside
+	proxy.Up.Atmpt.CancelFunc = cancel
+
 	//will call the cancel func in it's own goroutine after timeout seconds.
 	time.AfterFunc(time.Duration(Runner.Connection.Upstream.ReadTimeoutSeconds)*time.Second, func() {
 		cancel()
@@ -137,7 +142,7 @@ func processUpstreamResponse(proxy *Proxy, upstreamResponse *http.Response, upst
 
 func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
 	//get a reference to this before any race conditions may occur
-	attemptIndex := proxy.Up.Count-1
+	attemptIndex := proxy.Up.Count - 1
 	req := scaffoldUpstreamRequest(proxy)
 	var upstreamResponse *http.Response
 	var upstreamError error
@@ -174,6 +179,7 @@ func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
 			Int("upstreamReadTimeoutSeconds", Runner.Connection.Upstream.ReadTimeoutSeconds).
 			Msg("upstream connection read timeout fired, aborting upstream response header processing.")
 	case <-proxy.Dwn.Aborted:
+		proxy.abortAllUpstreamAttempts()
 		proxy.Dwn.AbortedFlag = true
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
@@ -214,7 +220,7 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 	var bodyError error
 
 	//get a reference to this before any race conditions may occur
-	attemptIndex := proxy.Up.Count-1
+	attemptIndex := proxy.Up.Count - 1
 
 	go func() {
 		upstreamResponseBody, bodyError = ioutil.ReadAll(upstreamResponse.Body)
@@ -224,10 +230,10 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 
 		defer func() {
 			if err := recover(); err != nil {
-				log.Trace().
+				log.Debug().
 					Str(XRequestID, proxy.XRequestID).
 					Str("upstreamAttempt", proxy.Up.Atmpt.print()).
-					Msgf("recovered internally from closed body success channel after request already handled. safe to ignore")
+					Msgf("safe to ignore. recovered internally from closed body success channel after request already handled.")
 			}
 		}()
 
@@ -246,6 +252,7 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 			Int("upstreamReadTimeoutSeconds", Runner.Connection.Upstream.ReadTimeoutSeconds).
 			Msg("upstream connection read timeout fired, aborting upstream response body processing")
 	case <-proxy.Dwn.Aborted:
+		proxy.abortAllUpstreamAttempts()
 		proxy.Dwn.AbortedFlag = true
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).

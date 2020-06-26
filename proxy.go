@@ -38,6 +38,7 @@ type Atmpt struct {
 	CompleteBody   chan struct{}
 	Aborted        <-chan struct{}
 	AbortedFlag    bool
+	CancelFunc     func()
 }
 
 func (atmpt Atmpt) print() string {
@@ -54,7 +55,7 @@ type Resp struct {
 
 //Up wraps upstream
 type Up struct {
-	Atmpt  Atmpt
+	Atmpt  *Atmpt
 	Atmpts []Atmpt
 	Count  int
 }
@@ -77,6 +78,19 @@ type Proxy struct {
 	XRequestID string
 	Up         Up
 	Dwn        Down
+}
+
+func (proxy *Proxy) abortAllUpstreamAttempts() {
+	for _, atmpt := range proxy.Up.Atmpts {
+		atmpt.AbortedFlag = true
+		if atmpt.CancelFunc != nil {
+			atmpt.CancelFunc()
+			log.Trace().
+				Str(XRequestID, proxy.XRequestID).
+				Str("upstreamAttempt", atmpt.print()).
+				Msgf("aborted upstream attempt after prior downstream abort.")
+		}
+	}
 }
 
 func (proxy *Proxy) resolveUpstreamURI() string {
@@ -182,7 +196,7 @@ func (proxy Proxy) bodyReader() io.Reader {
 }
 
 func (proxy *Proxy) firstAttempt(URL *URL, label string) *Proxy {
-	proxy.Up.Atmpt = Atmpt{
+	first := Atmpt{
 		Label:          label,
 		URL:            URL,
 		Count:          1,
@@ -191,8 +205,10 @@ func (proxy *Proxy) firstAttempt(URL *URL, label string) *Proxy {
 		CompleteHeader: make(chan struct{}),
 		CompleteBody:   make(chan struct{}),
 		Aborted:        make(chan struct{}),
+		CancelFunc:     nil,
 	}
-	proxy.Up.Atmpts = []Atmpt{proxy.Up.Atmpt}
+	proxy.Up.Atmpts = []Atmpt{first}
+	proxy.Up.Atmpt = &proxy.Up.Atmpts[0]
 	proxy.Up.Count = 1
 
 	log.Trace().
@@ -207,7 +223,7 @@ func (proxy *Proxy) nextAttempt() *Proxy {
 	next := Atmpt{
 		URL:            proxy.Up.Atmpt.URL,
 		Label:          proxy.Up.Atmpt.Label,
-		Count:          proxy.Up.Atmpt.Count+1,
+		Count:          proxy.Up.Atmpt.Count + 1,
 		StatusCode:     0,
 		isGzip:         false,
 		resp:           nil,
@@ -216,10 +232,11 @@ func (proxy *Proxy) nextAttempt() *Proxy {
 		CompleteBody:   make(chan struct{}),
 		Aborted:        make(chan struct{}),
 		AbortedFlag:    false,
+		CancelFunc:     nil,
 	}
 	proxy.Up.Atmpts = append(proxy.Up.Atmpts, next)
 	proxy.Up.Count = next.Count
-	proxy.Up.Atmpt = next
+	proxy.Up.Atmpt = &proxy.Up.Atmpts[len(proxy.Up.Atmpts)-1]
 
 	log.Trace().
 		Str(XRequestID, proxy.XRequestID).
@@ -270,7 +287,7 @@ func (proxy *Proxy) copyUpstreamResponseBody() {
 }
 
 func (proxy *Proxy) hasMadeUpstreamAttempt() bool {
-	return proxy.Up.Atmpt.resp != nil
+	return proxy.Up.Atmpt != nil && proxy.Up.Atmpt.resp != nil
 }
 
 func (proxy *Proxy) contentEncoding() string {
