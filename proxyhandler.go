@@ -104,13 +104,15 @@ func handle(proxy *Proxy) {
 		if proxy.shouldAttemptRetry() {
 			handle(proxy.nextAttempt())
 		} else {
-			//sends 504 if we locally aborted with timeout, otherwise 502 if we can't figure out what happened upstream
-			if proxy.hasUpstreamAtmptAborted() {
-				sendStatusCodeAsJSON(proxy.respondWith(504, "gateway timeout during upstream attempt"))
+			//sends 504 for downstream timeout, 504 for upstream timeout, 502 in all other cases
+			if proxy.hasDownstreamAborted() {
+				//timeouthandler sends the response we just wait
+				logHandledRequest(proxy)
+			} else if proxy.hasUpstreamAtmptAborted() {
+				sendStatusCodeAsJSON(proxy.respondWith(504, "gateway timeout triggered by upstream attempt"))
 			} else {
-				sendStatusCodeAsJSON(proxy.respondWith(502, "bad gateway, unable to read upstream response"))
+				sendStatusCodeAsJSON(proxy.respondWith(502, "bad gateway triggered. unable to process upstream response"))
 			}
-
 		}
 	}
 }
@@ -123,16 +125,15 @@ func processUpstreamResponse(proxy *Proxy, upstreamResponse *http.Response, upst
 		upstreamError = bodyError
 		proxy.Up.Atmpt.respBody = &upstreamResponseBody
 		if shouldProxyUpstreamResponse(proxy, bodyError) {
-			//sends proxied response, 200-498
+			//sends proxied response, 200-498. point of no return for sending a response
+			proxy.Dwn.Resp.Sending = true
 			proxy.processHeaders()
 			proxy.copyUpstreamResponseBody()
 			logHandledRequest(proxy)
 			return true
 		} else if proxy.hasDownstreamAborted() {
-			//sends 503 because of abort, but not here. handled by timeouthandler
-			//TODO all 503s in jabba today should be 504
-			logHandledRequest(proxy)
-			return true
+			//log response code, but do not write response. wrapper timeout handler will
+			return false
 		}
 	}
 	//now log unsuccessful and retry or exit with status code.

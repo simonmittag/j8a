@@ -51,6 +51,7 @@ type Resp struct {
 	StatusCode int
 	Message    string
 	SendGzip   bool
+	Sending    bool
 }
 
 //Up wraps upstream
@@ -138,8 +139,7 @@ func (proxy *Proxy) hasDownstreamAborted() bool {
 	default:
 	}
 	if proxy.Dwn.AbortedFlag == true {
-		proxy.Dwn.Resp.StatusCode = 503
-		proxy.Dwn.Resp.Message = "service unavailable"
+		proxy.respondWith(504, "gateway timeout triggered after downstream roundtripTimeoutSeconds")
 	}
 	return proxy.Dwn.AbortedFlag
 }
@@ -171,8 +171,10 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 	proxy.Dwn.Req = request
 	proxy.Dwn.Aborted = request.Context().Done()
 	proxy.Dwn.AbortedFlag = false
-	proxy.Dwn.Resp = Resp{}
-	proxy.Dwn.Resp.SendGzip = strings.Contains(request.Header.Get("Accept-Encoding"), "gzip")
+	proxy.Dwn.Resp = Resp{
+		Sending:  false,
+		SendGzip: strings.Contains(request.Header.Get("Accept-Encoding"), "gzip"),
+	}
 
 	log.Trace().
 		Str("path", proxy.Dwn.Path).
@@ -272,16 +274,22 @@ func (proxy *Proxy) copyUpstreamResponseBody() {
 	if proxy.shouldGzipEncodeResponseBody() {
 		proxy.Dwn.Resp.Writer.Write(Gzip(*proxy.Up.Atmpt.respBody))
 		elapsed := time.Since(start)
-		log.Trace().Msgf("copying upstream body with gzip re-encoding in %s", elapsed)
+		log.Trace().
+			Str(XRequestID, proxy.XRequestID).
+			Msgf("copying upstream body with gzip re-encoding in %s", elapsed)
 	} else {
 		if proxy.shouldGzipDecodeResponseBody() {
 			proxy.Dwn.Resp.Writer.Write(Gunzip([]byte(*proxy.Up.Atmpt.respBody)))
 			elapsed := time.Since(start)
-			log.Trace().Msgf("copying upstream body with gzip re-decoding in %s", elapsed)
+			log.Trace().
+				Str(XRequestID, proxy.XRequestID).
+				Msgf("copying upstream body with gzip re-decoding in %s", elapsed)
 		} else {
 			proxy.Dwn.Resp.Writer.Write([]byte(*proxy.Up.Atmpt.respBody))
 			elapsed := time.Since(start)
-			log.Trace().Msgf("copying upstream body without coding in %s", elapsed)
+			log.Trace().
+				Str(XRequestID, proxy.XRequestID).
+				Msgf("copying upstream body as is in %s", elapsed)
 		}
 	}
 }
@@ -309,7 +317,7 @@ func (proxy *Proxy) processHeaders() {
 	proxy.copyUpstreamResponseHeaders()
 	proxy.resetContentLengthHeader()
 	proxy.writeContentEncodingHeader()
-	proxy.writeStatusCodeHeader()
+	proxy.copyUpstreamStatusCodeHeader()
 }
 
 func (proxy *Proxy) resetContentLengthHeader() {
@@ -319,8 +327,12 @@ func (proxy *Proxy) resetContentLengthHeader() {
 }
 
 //status code must be last, no headers may be written after this one.
-func (proxy *Proxy) writeStatusCodeHeader() {
+func (proxy *Proxy) copyUpstreamStatusCodeHeader() {
 	proxy.respondWith(proxy.Up.Atmpt.StatusCode, "none")
+	proxy.sendDownstreamStatusCodeHeader()
+}
+
+func (proxy *Proxy) sendDownstreamStatusCodeHeader() {
 	proxy.Dwn.Resp.Writer.WriteHeader(proxy.Dwn.Resp.StatusCode)
 }
 

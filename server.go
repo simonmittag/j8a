@@ -94,10 +94,7 @@ func (runtime Runtime) mapPathsToHandler() http.Handler {
 	handler.Handle("/", http.HandlerFunc(proxyHandler))
 	log.Debug().Msgf("assigned proxy handler to path %s", "/")
 
-	return http.TimeoutHandler(handler, runtime.getDownstreamRoundTripTimeoutDuration(), StatusCodeResponse{
-		Code:    503,
-		Message: "service unavailable",
-	}.AsString())
+	return DownstreamTimeoutHandler(handler, runtime.getDownstreamRoundTripTimeoutDuration())
 }
 
 func (runtime Runtime) initUserAgent() Runtime {

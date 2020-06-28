@@ -29,12 +29,12 @@ func TestServerHangsUpOnDownstreamIfRoundTripTimeoutExceeded(t *testing.T) {
 	t.Logf("normal. going to sleep for %d seconds to trigger remote jabba roundtrip timeout", wait)
 	time.Sleep(time.Second * time.Duration(wait))
 
-	//step 4 we read a response into buffer which returns 503
+	//step 4 we read a response into buffer which returns 504
 	buf := make([]byte, 16)
 	b, err2 := c.Read(buf)
 	t.Logf("normal. jabba responded with %v bytes", b)
-	if err2 != nil || !strings.Contains(string(buf), "503") {
-		t.Errorf("test failure. after timeout we should first experience a 503")
+	if err2 != nil || !strings.Contains(string(buf), "504") {
+		t.Errorf("test failure. after timeout we should first experience a 504")
 	}
 
 	//step 5 now wait for the grace period, then re-read. the connection must now be closed.
