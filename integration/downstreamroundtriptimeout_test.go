@@ -80,3 +80,75 @@ func TestServerRoundTripNormalWithoutHangingUp(t *testing.T) {
 		t.Error("jabba did not respond, server information not found on response ")
 	}
 }
+
+func TestServer2DownstreamRoundTripTimeoutFireWithSlowHeader31S(t *testing.T) {
+	performJabbaTest(t,
+		"/slowheader",
+		31,
+		20,
+		504,
+		8081)
+}
+
+func TestServer2DownstreamRoundTripTimeoutFireWithSlowBody31S(t *testing.T) {
+	performJabbaTest(t,
+		"/slowbody",
+		31,
+		20,
+		504,
+		8081)
+}
+
+func TestServer2DownstreamRoundTripTimeoutFireWithSlowHeader25S(t *testing.T) {
+	performJabbaTest(t,
+		"/slowheader",
+		25,
+		20,
+		504,
+		8081)
+}
+
+func TestServer2DownstreamRoundTripTimeoutFireWithSlowBody25S(t *testing.T) {
+	performJabbaTest(t,
+		"/slowbody",
+		25,
+		20,
+		504,
+		8081)
+}
+
+func TestServer2DownstreamRoundTripTimeoutNotFireWithSlowHeader4S(t *testing.T) {
+	performJabbaTest(t,
+		"/slowheader",
+		4,
+		4,
+		200,
+		8081)
+}
+
+func TestServer2DownstreamRoundTripTimeoutNotFireWithSlowBody4S(t *testing.T) {
+	performJabbaTest(t,
+		"/slowbody",
+		4,
+		4,
+		200,
+		8081)
+}
+
+func TestServer2DownstreamRoundTripTimeoutNotFireWithSlowHeader2S(t *testing.T) {
+	performJabbaTest(t,
+		"/slowheader",
+		2,
+		2,
+		200,
+		8081)
+}
+
+func TestServer2DownstreamRoundTripTimeoutNotFireWithSlowBody2S(t *testing.T) {
+	performJabbaTest(t,
+		"/slowbody",
+		2,
+		2,
+		200,
+		8081)
+}
