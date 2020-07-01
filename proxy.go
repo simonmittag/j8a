@@ -92,8 +92,8 @@ func (proxy *Proxy) abortAllUpstreamAttempts() {
 			log.Trace().
 				Str(XRequestID, proxy.XRequestID).
 				Str("upstreamAttempt", atmpt.print()).
-				Int64("upstreamAttemptElapsedMillis", time.Since(proxy.Up.Atmpt.startDate).Milliseconds()).
-				Int64("downstreamElapsedMillis", time.Since(proxy.Dwn.startDate).Milliseconds()).
+				Int64("upstreamAttemptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
+				Int64("downstreamElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
 				Msgf("aborted upstream attempt after prior downstream abort.")
 		}
 	}
@@ -128,8 +128,8 @@ Retry:
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
 			Str("upstreamAttempt", proxy.Up.Atmpt.print()).
-			Int64("upstreamAttemptElapsedMillis", time.Since(proxy.Up.Atmpt.startDate).Milliseconds()).
-			Int64("downstreamElapsedMillis", time.Since(proxy.Dwn.startDate).Milliseconds()).
+			Int64("upstreamAttemptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
+			Int64("downstreamElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
 			Msg("upstream retries stopped after upstream attempt")
 	}
 
@@ -196,7 +196,7 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 		Str("path", proxy.Dwn.Path).
 		Str("method", proxy.Dwn.Method).
 		Int("bodyBytes", len(proxy.Dwn.Body)).
-		Int64("downstreamElapsedMillis", time.Since(proxy.Dwn.startDate).Milliseconds()).
+		Int64("downstreamElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
 		Str(XRequestID, proxy.XRequestID).
 		Msg("parsed downstream request")
 	return proxy
@@ -234,8 +234,8 @@ func (proxy *Proxy) firstAttempt(URL *URL, label string) *Proxy {
 	log.Trace().
 		Str(XRequestID, proxy.XRequestID).
 		Str("upstreamAttempt", proxy.Up.Atmpt.print()).
-		Int64("upstreamAttemptElapsedMillis", time.Since(proxy.Up.Atmpt.startDate).Milliseconds()).
-		Int64("downstreamElapsedMillis", time.Since(proxy.Dwn.startDate).Milliseconds()).
+		Int64("upstreamAttemptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
+		Int64("downstreamElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
 		Msg("first upstream attempt initialized")
 
 	return proxy
@@ -264,8 +264,8 @@ func (proxy *Proxy) nextAttempt() *Proxy {
 	log.Trace().
 		Str(XRequestID, proxy.XRequestID).
 		Str("upstreamAttempt", proxy.Up.Atmpt.print()).
-		Int64("upstreamAttemptElapsedMillis", time.Since(proxy.Up.Atmpt.startDate).Milliseconds()).
-		Int64("downstreamElapsedMillis", time.Since(proxy.Dwn.startDate).Milliseconds()).
+		Int64("upstreamAttemptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
+		Int64("downstreamElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
 		Msg("next upstream attempt initialized")
 	return proxy
 }
@@ -299,20 +299,29 @@ func (proxy *Proxy) copyUpstreamResponseBody() {
 		elapsed := time.Since(start)
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
-			Msgf("copying upstream body with gzip re-encoding in %s", elapsed)
+			Int64("copyBodyElapsedMicros", elapsed.Microseconds()).
+			Int64("upstreamAttemptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
+			Int64("downstreamElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+			Msg("copying upstream body with gzip re-encoding")
 	} else {
 		if proxy.shouldGzipDecodeResponseBody() {
 			proxy.Dwn.Resp.Writer.Write(Gunzip([]byte(*proxy.Up.Atmpt.respBody)))
 			elapsed := time.Since(start)
 			log.Trace().
 				Str(XRequestID, proxy.XRequestID).
-				Msgf("copying upstream body with gzip re-decoding in %s", elapsed)
+				Int64("copyBodyElapsedMicros", elapsed.Microseconds()).
+				Int64("upstreamAttemptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
+				Int64("downstreamElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+				Msg("copying upstream body with gzip re-decoding")
 		} else {
 			proxy.Dwn.Resp.Writer.Write([]byte(*proxy.Up.Atmpt.respBody))
 			elapsed := time.Since(start)
 			log.Trace().
 				Str(XRequestID, proxy.XRequestID).
-				Msgf("copying upstream body as is in %s", elapsed)
+				Int64("copyBodyElapsedMicros", elapsed.Microseconds()).
+				Int64("upstreamAttemptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
+				Int64("downstreamElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+				Msgf("copying upstream body as is")
 		}
 	}
 }
