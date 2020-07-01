@@ -40,6 +40,7 @@ type Atmpt struct {
 	Aborted        <-chan struct{}
 	AbortedFlag    bool
 	CancelFunc     func()
+	startDate      time.Time
 }
 
 func (atmpt Atmpt) print() string {
@@ -73,6 +74,7 @@ type Down struct {
 	Body        []byte
 	Aborted     <-chan struct{}
 	AbortedFlag bool
+	startDate   time.Time
 }
 
 // Proxy wraps data for a single downstream request/response with multiple upstream HTTP request/response cycles.
@@ -90,6 +92,8 @@ func (proxy *Proxy) abortAllUpstreamAttempts() {
 			log.Trace().
 				Str(XRequestID, proxy.XRequestID).
 				Str("upstreamAttempt", atmpt.print()).
+				Int64("upstreamAttemptElapsedMillis", time.Since(proxy.Up.Atmpt.startDate).Milliseconds()).
+				Int64("downstreamElapsedMillis", time.Since(proxy.Dwn.startDate).Milliseconds()).
 				Msgf("aborted upstream attempt after prior downstream abort.")
 		}
 	}
@@ -124,6 +128,8 @@ Retry:
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
 			Str("upstreamAttempt", proxy.Up.Atmpt.print()).
+			Int64("upstreamAttemptElapsedMillis", time.Since(proxy.Up.Atmpt.startDate).Milliseconds()).
+			Int64("downstreamElapsedMillis", time.Since(proxy.Dwn.startDate).Milliseconds()).
 			Msg("upstream retries stopped after upstream attempt")
 	}
 
@@ -157,6 +163,8 @@ func (proxy *Proxy) hasUpstreamAtmptAborted() bool {
 
 // ParseIncoming is a factory method for a new ProxyRequest, embeds the incoming request.
 func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
+	proxy.Dwn.startDate = time.Now()
+
 	//TODO: we are not processing downstream body reading errors, i.e. illegal content length
 	body, _ := ioutil.ReadAll(request.Body)
 	proxy.Dwn.Path = request.URL.EscapedPath()
@@ -188,6 +196,7 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 		Str("path", proxy.Dwn.Path).
 		Str("method", proxy.Dwn.Method).
 		Int("bodyBytes", len(proxy.Dwn.Body)).
+		Int64("downstreamElapsedMillis", time.Since(proxy.Dwn.startDate).Milliseconds()).
 		Str(XRequestID, proxy.XRequestID).
 		Msg("parsed downstream request")
 	return proxy
@@ -216,6 +225,7 @@ func (proxy *Proxy) firstAttempt(URL *URL, label string) *Proxy {
 		CompleteBody:   make(chan struct{}),
 		Aborted:        make(chan struct{}),
 		CancelFunc:     nil,
+		startDate:      time.Now(),
 	}
 	proxy.Up.Atmpts = []Atmpt{first}
 	proxy.Up.Atmpt = &proxy.Up.Atmpts[0]
@@ -224,6 +234,8 @@ func (proxy *Proxy) firstAttempt(URL *URL, label string) *Proxy {
 	log.Trace().
 		Str(XRequestID, proxy.XRequestID).
 		Str("upstreamAttempt", proxy.Up.Atmpt.print()).
+		Int64("upstreamAttemptElapsedMillis", time.Since(proxy.Up.Atmpt.startDate).Milliseconds()).
+		Int64("downstreamElapsedMillis", time.Since(proxy.Dwn.startDate).Milliseconds()).
 		Msg("first upstream attempt initialized")
 
 	return proxy
@@ -243,6 +255,7 @@ func (proxy *Proxy) nextAttempt() *Proxy {
 		Aborted:        make(chan struct{}),
 		AbortedFlag:    false,
 		CancelFunc:     nil,
+		startDate:      time.Now(),
 	}
 	proxy.Up.Atmpts = append(proxy.Up.Atmpts, next)
 	proxy.Up.Count = next.Count
@@ -251,6 +264,8 @@ func (proxy *Proxy) nextAttempt() *Proxy {
 	log.Trace().
 		Str(XRequestID, proxy.XRequestID).
 		Str("upstreamAttempt", proxy.Up.Atmpt.print()).
+		Int64("upstreamAttemptElapsedMillis", time.Since(proxy.Up.Atmpt.startDate).Milliseconds()).
+		Int64("downstreamElapsedMillis", time.Since(proxy.Dwn.startDate).Milliseconds()).
 		Msg("next upstream attempt initialized")
 	return proxy
 }

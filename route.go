@@ -4,6 +4,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"net/http"
 	"regexp"
+	"time"
 )
 
 //AboutJabba special Route alias for internal endpoint
@@ -61,6 +62,7 @@ func (route Route) mapURL(proxy *Proxy) (*URL, string, bool) {
 						Str("label", resourceLabel).
 						Str("policy", route.Policy).
 						Str(XRequestID, proxy.XRequestID).
+						Int64("downstreamElapsedMillis", time.Since(proxy.Dwn.startDate).Milliseconds()).
 						Msg("upstream route mapped")
 					return &resourceMapping.URL, policyLabel, true
 				}
