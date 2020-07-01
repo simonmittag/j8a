@@ -94,7 +94,7 @@ func (runtime Runtime) mapPathsToHandler() http.Handler {
 	handler.Handle("/", http.HandlerFunc(proxyHandler))
 	log.Debug().Msgf("assigned proxy handler to path %s", "/")
 
-	return DownstreamTimeoutHandler(handler, runtime.getDownstreamRoundTripTimeoutDuration())
+	return handler
 }
 
 func (runtime Runtime) initUserAgent() Runtime {
