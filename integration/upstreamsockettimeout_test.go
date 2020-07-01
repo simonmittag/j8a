@@ -48,8 +48,8 @@ func TestServerUpstreamSocketTimeoutWithBadRemote(t *testing.T) {
 		t.Errorf("error connecting to upstream, cause: %v", err)
 	}
 
-	if resp.StatusCode != 502 {
-		t.Errorf("upstream connection failure, want 502, got %v", resp.StatusCode)
+	if resp.StatusCode != 504 {
+		t.Errorf("upstream connection failure, want 504, got %v", resp.StatusCode)
 	}
 }
 
@@ -67,8 +67,8 @@ func TestServerUpstreamSocketTimeoutWithBadIp(t *testing.T) {
 		t.Errorf("error connecting to upstream, cause: %v", err)
 	}
 
-	if resp.StatusCode != 502 {
-		t.Errorf("upstream connection failure, want 502, got %v", resp.StatusCode)
+	if resp.StatusCode != 504 {
+		t.Errorf("upstream connection failure, want 504, got %v", resp.StatusCode)
 	}
 }
 

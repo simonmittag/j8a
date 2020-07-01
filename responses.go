@@ -51,6 +51,10 @@ func (statusCodeResponse StatusCodeResponse) AsJSON() []byte {
 	return response
 }
 
+func (statusCodeResponse StatusCodeResponse) AsString() string {
+	return string(statusCodeResponse.AsJSON())
+}
+
 func randomHuttese() string {
 	rand.Seed(time.Now().Unix())
 	return huttese[rand.Int()%len(huttese)]

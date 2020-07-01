@@ -12,7 +12,7 @@ import (
 )
 
 //Version is the server version
-var Version string = "v0.4.3"
+var Version string = "v0.4.4"
 
 //ID is a unique server ID
 var ID string = "unknown"
@@ -44,29 +44,29 @@ func BootStrap() {
 	Runner = &Runtime{Config: *config}
 	Runner.initStats().
 		initUserAgent().
-		assignHandlers().
 		startListening()
 }
 
 func (runtime Runtime) startListening() {
 	readTimeoutDuration := time.Second * time.Duration(runtime.Connection.Downstream.ReadTimeoutSeconds)
-	writeTimeoutDuration := time.Second * time.Duration(runtime.Connection.Downstream.RoundTripTimeoutSeconds)
+	roundTripTimeoutDuration := time.Second * time.Duration(runtime.Connection.Downstream.RoundTripTimeoutSeconds)
+	roundTripTimeoutDurationWithGrace := roundTripTimeoutDuration + (time.Second * 1)
 	idleTimeoutDuration := time.Second * time.Duration(runtime.Connection.Downstream.IdleTimeoutSeconds)
 
 	log.Debug().
 		Float64("downstreamReadTimeoutSeconds", readTimeoutDuration.Seconds()).
-		Float64("downstreamWriteTimeoutSeconds", writeTimeoutDuration.Seconds()).
+		Float64("downstreamRoundTripTimeoutSeconds", roundTripTimeoutDuration.Seconds()).
 		Float64("downstreamIdleConnTimeoutSeconds", idleTimeoutDuration.Seconds()).
 		Msg("server derived downstream params")
 	log.Info().Msgf("Jabba %s listening on port %d...", Version, runtime.Connection.Downstream.Port)
 
 	server := &http.Server{
-		Addr:         ":" + strconv.Itoa(runtime.Connection.Downstream.Port),
-		Handler:      nil,
-		ReadHeaderTimeout:  readTimeoutDuration,
-		ReadTimeout:  readTimeoutDuration,
-		WriteTimeout: writeTimeoutDuration,
-		IdleTimeout:  idleTimeoutDuration,
+		Addr:              ":" + strconv.Itoa(runtime.Connection.Downstream.Port),
+		ReadHeaderTimeout: readTimeoutDuration,
+		ReadTimeout:       readTimeoutDuration,
+		WriteTimeout:      roundTripTimeoutDurationWithGrace,
+		IdleTimeout:       idleTimeoutDuration,
+		Handler:           runtime.mapPathsToHandler(),
 	}
 
 	//signal the WaitGroup that boot is over.
@@ -80,16 +80,21 @@ func (runtime Runtime) startListening() {
 	}
 }
 
-func (runtime Runtime) assignHandlers() Runtime {
+func (runtime Runtime) mapPathsToHandler() http.Handler {
+	//TODO: do we need this handler with two handlerfuncs or can we map all requests to one handlerfunc to speed up?
+	//if one handlerfunc in the system, it would need to distinguish between /about and other routes.
+
+	handler := http.NewServeMux()
 	for _, route := range runtime.Routes {
 		if route.Resource == AboutJabba {
-			http.HandleFunc(route.Path, aboutHandler)
+			handler.Handle(route.Path, http.HandlerFunc(aboutHandler))
 			log.Debug().Msgf("assigned about handler to path %s", route.Path)
 		}
 	}
-	http.HandleFunc("/", proxyHandler)
+	handler.Handle("/", http.HandlerFunc(proxyHandler))
 	log.Debug().Msgf("assigned proxy handler to path %s", "/")
-	return runtime
+
+	return handler
 }
 
 func (runtime Runtime) initUserAgent() Runtime {

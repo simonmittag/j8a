@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/rs/zerolog/log"
 )
@@ -67,7 +68,7 @@ func (config Config) sortRoutes() *Config {
 
 func (config Config) compileRoutePaths() *Config {
 	for i, route := range config.Routes {
-		config.Routes[i].Regex, _ = regexp.Compile("^"+route.Path)
+		config.Routes[i].Regex, _ = regexp.Compile("^" + route.Path)
 	}
 	return &config
 }
@@ -163,4 +164,8 @@ func (config Config) setDefaultUpstreamParams() *Config {
 		config.Connection.Upstream.MaxAttempts = 1
 	}
 	return &config
+}
+
+func (config Config) getDownstreamRoundTripTimeoutDuration() time.Duration {
+	return time.Duration(time.Second * time.Duration(config.Connection.Downstream.RoundTripTimeoutSeconds))
 }

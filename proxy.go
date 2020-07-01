@@ -2,6 +2,7 @@ package jabba
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -27,13 +28,22 @@ var httpLegalMethods []string = append(httpRepeatableMethods, []string{"POST", "
 
 // Atmpt wraps connection attempts to specific upstreams that are already mapped by label
 type Atmpt struct {
-	URL        *URL
-	Label      string
-	Count      int
-	StatusCode int
-	isGzip     bool
-	resp       *http.Response
-	respBody   *[]byte
+	URL            *URL
+	Label          string
+	Count          int
+	StatusCode     int
+	isGzip         bool
+	resp           *http.Response
+	respBody       *[]byte
+	CompleteHeader chan struct{}
+	CompleteBody   chan struct{}
+	Aborted        <-chan struct{}
+	AbortedFlag    bool
+	CancelFunc     func()
+}
+
+func (atmpt Atmpt) print() string {
+	return fmt.Sprintf("%d/%d", atmpt.Count, Runner.Connection.Upstream.MaxAttempts)
 }
 
 // Resp wraps downstream http response writer and data
@@ -42,23 +52,27 @@ type Resp struct {
 	StatusCode int
 	Message    string
 	SendGzip   bool
+	Sending    bool
 }
 
 //Up wraps upstream
 type Up struct {
-	Atmpt Atmpt
+	Atmpt  *Atmpt
+	Atmpts []Atmpt
+	Count  int
 }
 
 //Down wraps downstream exchange
 type Down struct {
-	Req       *http.Request
-	Method    string
-	Path      string
-	URI       string
-	UserAgent string
-	Body      []byte
-
-	Resp Resp
+	Req         *http.Request
+	Resp        Resp
+	Method      string
+	Path        string
+	URI         string
+	UserAgent   string
+	Body        []byte
+	Aborted     <-chan struct{}
+	AbortedFlag bool
 }
 
 // Proxy wraps data for a single downstream request/response with multiple upstream HTTP request/response cycles.
@@ -68,21 +82,77 @@ type Proxy struct {
 	Dwn        Down
 }
 
+func (proxy *Proxy) abortAllUpstreamAttempts() {
+	for _, atmpt := range proxy.Up.Atmpts {
+		atmpt.AbortedFlag = true
+		if atmpt.CancelFunc != nil {
+			atmpt.CancelFunc()
+			log.Trace().
+				Str(XRequestID, proxy.XRequestID).
+				Str("upstreamAttempt", atmpt.print()).
+				Msgf("aborted upstream attempt after prior downstream abort.")
+		}
+	}
+}
+
 func (proxy *Proxy) resolveUpstreamURI() string {
 	return proxy.Up.Atmpt.URL.String() + proxy.Dwn.URI
 }
 
 // ShouldRepeat tells us if we can safely repeat the upstream request
 func (proxy *Proxy) shouldAttemptRetry() bool {
+
+	// part one is checking for repeatable methods. we don't retry i.e. POST
+	retry := false
+Retry:
 	for _, method := range httpRepeatableMethods {
 		if proxy.Dwn.Method == method {
 			if proxy.Up.Atmpt.Count < Runner.Connection.Upstream.MaxAttempts {
-				return true
+				retry = true
+				break Retry
 			}
-			return false
+			retry = false
 		}
 	}
-	return false
+
+	// once downstream context has signalled, do not re-attempt upstream
+	if proxy.hasDownstreamAborted() {
+		retry = false
+	}
+
+	if !retry {
+		log.Trace().
+			Str(XRequestID, proxy.XRequestID).
+			Str("upstreamAttempt", proxy.Up.Atmpt.print()).
+			Msg("upstream retries stopped after upstream attempt")
+	}
+
+	return retry
+}
+
+// TODO downstream aborted needs to cover both timeouts and user aborted requests.
+func (proxy *Proxy) hasDownstreamAborted() bool {
+
+	//non blocking read if request context was aborted
+	select {
+	case <-proxy.Dwn.Aborted:
+		proxy.Dwn.AbortedFlag = true
+	default:
+	}
+	if proxy.Dwn.AbortedFlag == true {
+		proxy.respondWith(504, "gateway timeout triggered after downstream roundtripTimeoutSeconds")
+	}
+	return proxy.Dwn.AbortedFlag
+}
+
+func (proxy *Proxy) hasUpstreamAtmptAborted() bool {
+	//non blocking read if request context was aborted
+	select {
+	case <-proxy.Up.Atmpt.Aborted:
+		proxy.Up.Atmpt.AbortedFlag = true
+	default:
+	}
+	return proxy.Up.Atmpt.AbortedFlag
 }
 
 // ParseIncoming is a factory method for a new ProxyRequest, embeds the incoming request.
@@ -100,15 +170,26 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 	proxy.Dwn.Method = strings.ToUpper(request.Method)
 	proxy.Dwn.Body = body
 	proxy.Dwn.Req = request
-	proxy.Dwn.Resp = Resp{}
-	proxy.Dwn.Resp.SendGzip = strings.Contains(request.Header.Get("Accept-Encoding"), "gzip")
+
+	//set request context and initialise timeout func
+	ctx, cancel := context.WithCancel(context.TODO())
+	proxy.Dwn.Aborted = ctx.Done()
+	time.AfterFunc(Runner.getDownstreamRoundTripTimeoutDuration(), func() {
+		cancel()
+	})
+
+	proxy.Dwn.AbortedFlag = false
+	proxy.Dwn.Resp = Resp{
+		Sending:  false,
+		SendGzip: strings.Contains(request.Header.Get("Accept-Encoding"), "gzip"),
+	}
 
 	log.Trace().
 		Str("path", proxy.Dwn.Path).
 		Str("method", proxy.Dwn.Method).
 		Int("bodyBytes", len(proxy.Dwn.Body)).
 		Str(XRequestID, proxy.XRequestID).
-		Msg("parsed request")
+		Msg("parsed downstream request")
 	return proxy
 }
 
@@ -125,22 +206,52 @@ func (proxy Proxy) bodyReader() io.Reader {
 }
 
 func (proxy *Proxy) firstAttempt(URL *URL, label string) *Proxy {
-	proxy.Up.Atmpt = Atmpt{
-		Label:    label,
-		URL:      URL,
-		Count:    1,
-		resp:     nil,
-		respBody: nil,
+	first := Atmpt{
+		Label:          label,
+		URL:            URL,
+		Count:          1,
+		resp:           nil,
+		respBody:       nil,
+		CompleteHeader: make(chan struct{}),
+		CompleteBody:   make(chan struct{}),
+		Aborted:        make(chan struct{}),
+		CancelFunc:     nil,
 	}
+	proxy.Up.Atmpts = []Atmpt{first}
+	proxy.Up.Atmpt = &proxy.Up.Atmpts[0]
+	proxy.Up.Count = 1
+
+	log.Trace().
+		Str(XRequestID, proxy.XRequestID).
+		Str("upstreamAttempt", proxy.Up.Atmpt.print()).
+		Msg("first upstream attempt initialized")
+
 	return proxy
 }
 
 func (proxy *Proxy) nextAttempt() *Proxy {
-	proxy.Up.Atmpt.Count++
-	proxy.Up.Atmpt.StatusCode = 0
-	proxy.Up.Atmpt.isGzip = false
-	proxy.Up.Atmpt.resp = nil
-	proxy.Up.Atmpt.respBody = nil
+	next := Atmpt{
+		URL:            proxy.Up.Atmpt.URL,
+		Label:          proxy.Up.Atmpt.Label,
+		Count:          proxy.Up.Atmpt.Count + 1,
+		StatusCode:     0,
+		isGzip:         false,
+		resp:           nil,
+		respBody:       nil,
+		CompleteHeader: make(chan struct{}),
+		CompleteBody:   make(chan struct{}),
+		Aborted:        make(chan struct{}),
+		AbortedFlag:    false,
+		CancelFunc:     nil,
+	}
+	proxy.Up.Atmpts = append(proxy.Up.Atmpts, next)
+	proxy.Up.Count = next.Count
+	proxy.Up.Atmpt = &proxy.Up.Atmpts[len(proxy.Up.Atmpts)-1]
+
+	log.Trace().
+		Str(XRequestID, proxy.XRequestID).
+		Str("upstreamAttempt", proxy.Up.Atmpt.print()).
+		Msg("next upstream attempt initialized")
 	return proxy
 }
 
@@ -171,22 +282,28 @@ func (proxy *Proxy) copyUpstreamResponseBody() {
 	if proxy.shouldGzipEncodeResponseBody() {
 		proxy.Dwn.Resp.Writer.Write(Gzip(*proxy.Up.Atmpt.respBody))
 		elapsed := time.Since(start)
-		log.Trace().Msgf("copying upstream body with gzip re-encoding in %s", elapsed)
+		log.Trace().
+			Str(XRequestID, proxy.XRequestID).
+			Msgf("copying upstream body with gzip re-encoding in %s", elapsed)
 	} else {
 		if proxy.shouldGzipDecodeResponseBody() {
 			proxy.Dwn.Resp.Writer.Write(Gunzip([]byte(*proxy.Up.Atmpt.respBody)))
 			elapsed := time.Since(start)
-			log.Trace().Msgf("copying upstream body with gzip re-decoding in %s", elapsed)
+			log.Trace().
+				Str(XRequestID, proxy.XRequestID).
+				Msgf("copying upstream body with gzip re-decoding in %s", elapsed)
 		} else {
 			proxy.Dwn.Resp.Writer.Write([]byte(*proxy.Up.Atmpt.respBody))
 			elapsed := time.Since(start)
-			log.Trace().Msgf("copying upstream body without coding in %s", elapsed)
+			log.Trace().
+				Str(XRequestID, proxy.XRequestID).
+				Msgf("copying upstream body as is in %s", elapsed)
 		}
 	}
 }
 
 func (proxy *Proxy) hasMadeUpstreamAttempt() bool {
-	return proxy.Up.Atmpt.resp != nil
+	return proxy.Up.Atmpt != nil && proxy.Up.Atmpt.resp != nil
 }
 
 func (proxy *Proxy) contentEncoding() string {
@@ -208,7 +325,7 @@ func (proxy *Proxy) processHeaders() {
 	proxy.copyUpstreamResponseHeaders()
 	proxy.resetContentLengthHeader()
 	proxy.writeContentEncodingHeader()
-	proxy.writeStatusCodeHeader()
+	proxy.copyUpstreamStatusCodeHeader()
 }
 
 func (proxy *Proxy) resetContentLengthHeader() {
@@ -218,8 +335,12 @@ func (proxy *Proxy) resetContentLengthHeader() {
 }
 
 //status code must be last, no headers may be written after this one.
-func (proxy *Proxy) writeStatusCodeHeader() {
+func (proxy *Proxy) copyUpstreamStatusCodeHeader() {
 	proxy.respondWith(proxy.Up.Atmpt.StatusCode, "none")
+	proxy.sendDownstreamStatusCodeHeader()
+}
+
+func (proxy *Proxy) sendDownstreamStatusCodeHeader() {
 	proxy.Dwn.Resp.Writer.WriteHeader(proxy.Dwn.Resp.StatusCode)
 }
 

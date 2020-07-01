@@ -76,7 +76,7 @@ jobs:
     docker:
       - image: circleci/golang:1.14
     environment:
-      LOGLEVEL: WARN
+      LOGLEVEL: TRACE
       LOGCOLOR: FALSE
       UPSTREAM_01_PORT: 60083
       UPSTREAM_01_SLUG: /mse6
@@ -114,7 +114,10 @@ jobs:
       UPSTREAM_17_SLUG: /s15
       UPSTREAM_18_PORT: 60100
       UPSTREAM_18_SLUG: /s16
-      JABBA_PORT: 8080
+      JABBA_ONE_PORT: 8080
+      JABBA_ONE_CFG: ./integration/jabba1.json
+      JABBA_TWO_PORT: 8081
+      JABBA_TWO_CFG: ./integration/jabba2.json
     steps:
       - checkout # check out source code to working directory
       - run:
@@ -220,15 +223,24 @@ jobs:
             pwt localhost:${UPSTREAM_18_PORT}
 
       - run:
-          name: Start jabba
+          name: Install jabba
           command: |
             go build github.com/simonmittag/jabba
             go install github.com/simonmittag/jabba/cmd/jabba
-            jabba
+      - run:
+          name: Start jabba one
+          command: jabba -c ${JABBA_ONE_CFG}
           background: true
       - run:
-          name: Wait for jabba
-          command: pwt localhost:${JABBA_PORT}
+          name: Wait for jabba one
+          command: pwt localhost:${JABBA_ONE_PORT}
+      - run:
+          name: Start jabba two
+          command: jabba -c ${JABBA_TWO_CFG}
+          background: true
+      - run:
+          name: Wait for jabba two
+          command: pwt localhost:${JABBA_TWO_PORT}
       - run:
           name: Install Test dependencies
           command: |
