@@ -106,8 +106,7 @@ func handle(proxy *Proxy) {
 		} else {
 			//sends 504 for downstream timeout, 504 for upstream timeout, 502 in all other cases
 			if proxy.hasDownstreamAborted() {
-				//timeouthandler sends the response we just wait
-				logHandledRequest(proxy)
+				sendStatusCodeAsJSON(proxy.respondWith(504, "gateway timeout triggered by downstream event"))
 			} else if proxy.hasUpstreamAtmptAborted() {
 				sendStatusCodeAsJSON(proxy.respondWith(504, "gateway timeout triggered by upstream attempt"))
 			} else {
@@ -131,9 +130,6 @@ func processUpstreamResponse(proxy *Proxy, upstreamResponse *http.Response, upst
 			proxy.copyUpstreamResponseBody()
 			logHandledRequest(proxy)
 			return true
-		} else if proxy.hasDownstreamAborted() {
-			//log response code, but do not write response. wrapper timeout handler will
-			return false
 		}
 	}
 	//now log unsuccessful and retry or exit with status code.

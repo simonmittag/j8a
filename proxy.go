@@ -2,6 +2,7 @@ package jabba
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -169,7 +170,14 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 	proxy.Dwn.Method = strings.ToUpper(request.Method)
 	proxy.Dwn.Body = body
 	proxy.Dwn.Req = request
-	proxy.Dwn.Aborted = request.Context().Done()
+
+	//set request context and initialise timeout func
+	ctx, cancel := context.WithCancel(context.TODO())
+	proxy.Dwn.Aborted = ctx.Done()
+	time.AfterFunc(Runner.getDownstreamRoundTripTimeoutDuration(), func() {
+		cancel()
+	})
+
 	proxy.Dwn.AbortedFlag = false
 	proxy.Dwn.Resp = Resp{
 		Sending:  false,
