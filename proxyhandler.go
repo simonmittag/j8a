@@ -133,7 +133,7 @@ func processUpstreamResponse(proxy *Proxy, upstreamResponse *http.Response, upst
 		}
 	}
 	//now log unsuccessful and retry or exit with status code.
-	logUnsuccessfulUpstreamAttempt(proxy, upstreamResponse, upstreamError)
+	logUnsuccessfulupAtmpt(proxy, upstreamResponse, upstreamError)
 	return false
 }
 
@@ -154,8 +154,8 @@ func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
 				log.Trace().
 					Str("error", fmt.Sprintf("error: %v", err)).
 					Str(XRequestID, proxy.XRequestID).
-					Int64("upstreamAttemptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
-					Str("upstreamAttempt", proxy.Up.Atmpt.print()).
+					Int64("upAtmptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
+					Str("upAtmpt", proxy.Up.Atmpt.print()).
 					Msgf("safe to ignore. recovered internally from closed header success channel after request already handled.")
 			}
 		}()
@@ -173,40 +173,40 @@ func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
 		proxy.Up.Atmpt.StatusCode = 0
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
-			Str("upstreamAttempt", proxy.Up.Atmpt.print()).
-			Int64("upstreamAttemptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
-			Int64("downstreamElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
-			Int("upstreamReadTimeoutSeconds", Runner.Connection.Upstream.ReadTimeoutSeconds).
+			Str("upAtmpt", proxy.Up.Atmpt.print()).
+			Int64("upAtmptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
+			Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+			Int("upReadTimeoutSecs", Runner.Connection.Upstream.ReadTimeoutSeconds).
 			Msg("upstream connection read timeout fired, aborting upstream response header processing.")
 	case <-proxy.Dwn.Aborted:
-		proxy.abortAllUpstreamAttempts()
+		proxy.abortAllupAtmpts()
 		proxy.Dwn.AbortedFlag = true
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
-			Str("upstreamAttempt", proxy.Up.Atmpt.print()).
-			Int64("downstreamElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+			Str("upAtmpt", proxy.Up.Atmpt.print()).
+			Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
 			Msg("aborting upstream response header processing. downstream connection read timeout fired or user cancelled request")
 	case <-proxy.Up.Atmpt.CompleteHeader:
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
-			Str("upstreamAttempt", proxy.Up.Atmpt.print()).
-			Int64("downstreamElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
-			Int64("upstreamAttemptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
+			Str("upAtmpt", proxy.Up.Atmpt.print()).
+			Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+			Int64("upAtmptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
 			Msg("upstream response headers processed")
 	}
 
 	return upstreamResponse, upstreamError
 }
 
-func logUnsuccessfulUpstreamAttempt(proxy *Proxy, upstreamResponse *http.Response, upstreamError error) {
+func logUnsuccessfulupAtmpt(proxy *Proxy, upstreamResponse *http.Response, upstreamError error) {
 	elapsed := time.Since(proxy.Up.Atmpt.startDate)
 	ev := log.Trace().
 		Str(XRequestID, proxy.XRequestID).
-		Int64("upstreamAttemptElapsedMillis", elapsed.Milliseconds()).
-		Int64("downstreamElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
-		Str("upstreamAttempt", proxy.Up.Atmpt.print())
+		Int64("upAtmptElapsedMillis", elapsed.Milliseconds()).
+		Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+		Str("upAtmpt", proxy.Up.Atmpt.print())
 	if upstreamResponse != nil && upstreamResponse.StatusCode > 0 {
-		ev = ev.Int("upstreamResponseCode", upstreamResponse.StatusCode)
+		ev = ev.Int("upAtmptResCode", upstreamResponse.StatusCode)
 	}
 	//if upstreamError != nil {
 	//	ev = ev.Err(upstreamError)
@@ -238,9 +238,9 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 			if err := recover(); err != nil {
 				log.Debug().
 					Str(XRequestID, proxy.XRequestID).
-					Str("upstreamAttempt", proxy.Up.Atmpt.print()).
-					Int64("upstreamAttemptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
-					Int64("downstreamElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+					Str("upAtmpt", proxy.Up.Atmpt.print()).
+					Int64("upAtmptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
+					Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
 					Msgf("safe to ignore. recovered internally from closed body success channel after request already handled.")
 			}
 		}()
@@ -256,26 +256,26 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 		proxy.Up.Atmpt.AbortedFlag = true
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
-			Str("upstreamAttempt", proxy.Up.Atmpt.print()).
-			Int64("upstreamAttemptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
-			Int("upstreamReadTimeoutSeconds", Runner.Connection.Upstream.ReadTimeoutSeconds).
-			Int64("downstreamElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+			Str("upAtmpt", proxy.Up.Atmpt.print()).
+			Int64("upAtmptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
+			Int("upReadTimeoutSecs", Runner.Connection.Upstream.ReadTimeoutSeconds).
+			Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
 			Msg("upstream connection read timeout fired, aborting upstream response body processing")
 	case <-proxy.Dwn.Aborted:
-		proxy.abortAllUpstreamAttempts()
+		proxy.abortAllupAtmpts()
 		proxy.Dwn.AbortedFlag = true
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
-			Str("upstreamAttempt", proxy.Up.Atmpt.print()).
-			Int64("upstreamAttemptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
-			Int64("downstreamElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+			Str("upAtmpt", proxy.Up.Atmpt.print()).
+			Int64("upAtmptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
+			Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
 			Msg("aborting upstream response body processing. downstream connection read timeout fired or user cancelled request")
 	case <-proxy.Up.Atmpt.CompleteBody:
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
-			Int64("upstreamAttemptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
-			Str("upstreamAttempt", proxy.Up.Atmpt.print()).
-			Int64("downstreamElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+			Int64("upAtmptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
+			Str("upAtmpt", proxy.Up.Atmpt.print()).
+			Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
 			Msg("upstream response body processed")
 	}
 
@@ -290,22 +290,24 @@ func logHandledRequest(proxy *Proxy) {
 	if proxy.Dwn.Resp.StatusCode > 399 {
 		msg = "downstream error response served"
 		ev = log.Warn()
+		ev = ev.Str("dwnResErrMsg", proxy.Dwn.Resp.Message)
 	}
 
-	ev = ev.Str("path", proxy.Dwn.Path).
-		Str("method", proxy.Dwn.Method).
-		Str("userAgent", proxy.Dwn.UserAgent).
-		Int("downstreamResponseCode", proxy.Dwn.Resp.StatusCode).
-		Str("downstreamContentEncoding", proxy.contentEncoding()).
-		Int64("downstreamElapsedMicros", elapsed.Microseconds()).
+	ev = ev.Str("dwnReqPath", proxy.Dwn.Path).
+		Str("dwnReqMethod", proxy.Dwn.Method).
+		Str("dwnReqUserAgent", proxy.Dwn.UserAgent).
+		Int("dwnResCode", proxy.Dwn.Resp.StatusCode).
+		Str("dwnResContentEnc", proxy.contentEncoding()).
+		Int64("dwnElapsedMicros", elapsed.Microseconds()).
 		Str(XRequestID, proxy.XRequestID)
 
-	if proxy.hasMadeUpstreamAttempt() {
-		ev = ev.Str("upstreamURI", proxy.resolveUpstreamURI()).
-			Str("upstreamLabel", proxy.Up.Atmpt.Label).
-			Int("upstreamAttemptResponseCode", proxy.Up.Atmpt.StatusCode).
-			Int64("upstreamAttemptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
-			Str("upstreamAttempt", proxy.Up.Atmpt.print())
+	if proxy.hasMadeupAtmpt() {
+		ev = ev.Str("upURI", proxy.resolveUpstreamURI()).
+			Str("upLabel", proxy.Up.Atmpt.Label).
+			Int("upAtmptResCode", proxy.Up.Atmpt.StatusCode).
+			Int64("upAtmptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
+			Bool("upAtmptAbort", proxy.Up.Atmpt.AbortedFlag).
+			Str("upAtmpt", proxy.Up.Atmpt.print())
 	}
 
 	ev.Msg(msg)

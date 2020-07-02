@@ -17,8 +17,8 @@ func initServerID() {
 	hasher := md5.New()
 	hasher.Write([]byte(getHost() + getVersion()))
 	ID = hex.EncodeToString(hasher.Sum(nil))[0:8]
-	log.Debug().Str("serverID", ID).Msg("determined serverID")
-	log.Logger = log.With().Str("serverId", ID).Logger()
+	log.Debug().Str("srvID", ID).Msg("determined srvID")
+	log.Logger = log.With().Str("srvId", ID).Logger()
 }
 
 func getHost() string {

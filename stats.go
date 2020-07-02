@@ -11,11 +11,11 @@ const cpuSampleMilliSeconds = 2000
 const samplerSleepSeconds = 60
 
 type sample struct {
-	pid int
-	cpuPc float64
-	mPc float32
-	rssBytes uint64
-	vmsBytes uint64
+	pid       int
+	cpuPc     float64
+	mPc       float32
+	rssBytes  uint64
+	vmsBytes  uint64
 	swapBytes uint64
 }
 
@@ -28,7 +28,7 @@ func stats(pid int) {
 	}
 }
 
-func getSample(pid int, proc *process.Process) (sample) {
+func getSample(pid int, proc *process.Process) sample {
 	cpuPc, _ := proc.Percent(time.Millisecond * cpuSampleMilliSeconds)
 	mPc, _ := proc.MemoryPercent()
 	mInfo, _ := proc.MemoryInfo()
@@ -44,7 +44,7 @@ func getSample(pid int, proc *process.Process) (sample) {
 }
 
 func logSample(s sample) {
-	log.Debug().Int("pid", s.pid).Float64("cpuPercent", s.cpuPc).Float32("memPercent", s.mPc).
+	log.Debug().Int("pid", s.pid).Float64("cpuPct", s.cpuPc).Float32("memPct", s.mPc).
 		Uint64("rssBytes", s.rssBytes).Uint64("vmsBytes", s.vmsBytes).Uint64("swapBytes", s.swapBytes).
 		Msg("server performance stats sample")
 }
