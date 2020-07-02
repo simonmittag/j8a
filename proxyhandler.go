@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"io/ioutil"
 	"net/http"
@@ -133,7 +134,7 @@ func processUpstreamResponse(proxy *Proxy, upstreamResponse *http.Response, upst
 		}
 	}
 	//now log unsuccessful and retry or exit with status code.
-	logUnsuccessfulupAtmpt(proxy, upstreamResponse, upstreamError)
+	logUnsuccessfulUpstreamAttempt(proxy, upstreamResponse, upstreamError)
 	return false
 }
 
@@ -171,46 +172,41 @@ func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
 	case <-proxy.Up.Atmpt.Aborted:
 		proxy.Up.Atmpt.AbortedFlag = true
 		proxy.Up.Atmpt.StatusCode = 0
-		log.Trace().
-			Str(XRequestID, proxy.XRequestID).
-			Str("upAtmpt", proxy.Up.Atmpt.print()).
-			Int64("upAtmptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
-			Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+		scaffoldUpAttemptLog(proxy).
 			Int("upReadTimeoutSecs", Runner.Connection.Upstream.ReadTimeoutSeconds).
 			Msg("upstream connection read timeout fired, aborting upstream response header processing.")
 	case <-proxy.Dwn.Aborted:
 		proxy.abortAllupAtmpts()
 		proxy.Dwn.AbortedFlag = true
-		log.Trace().
-			Str(XRequestID, proxy.XRequestID).
-			Str("upAtmpt", proxy.Up.Atmpt.print()).
-			Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+		scaffoldUpAttemptLog(proxy).
 			Msg("aborting upstream response header processing. downstream connection read timeout fired or user cancelled request")
 	case <-proxy.Up.Atmpt.CompleteHeader:
-		log.Trace().
-			Str(XRequestID, proxy.XRequestID).
-			Str("upAtmpt", proxy.Up.Atmpt.print()).
-			Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
-			Int64("upAtmptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
+		scaffoldUpAttemptLog(proxy).
 			Msg("upstream response headers processed")
 	}
 
 	return upstreamResponse, upstreamError
 }
 
-func logUnsuccessfulupAtmpt(proxy *Proxy, upstreamResponse *http.Response, upstreamError error) {
-	elapsed := time.Since(proxy.Up.Atmpt.startDate)
-	ev := log.Trace().
+func scaffoldUpAttemptLog(proxy *Proxy) *zerolog.Event {
+	return log.Trace().
 		Str(XRequestID, proxy.XRequestID).
-		Int64("upAtmptElapsedMillis", elapsed.Milliseconds()).
+		Int64("upAtmptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
 		Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
 		Str("upAtmpt", proxy.Up.Atmpt.print())
+}
+
+func logSuccessfulUpstreamAttempt(proxy *Proxy, upstreamResponse *http.Response, upstreamError error) {
+	scaffoldUpAttemptLog(proxy).
+		Int("upAtmptResCode", upstreamResponse.StatusCode).
+		Msgf("upstream attempt successful")
+}
+
+func logUnsuccessfulUpstreamAttempt(proxy *Proxy, upstreamResponse *http.Response, upstreamError error) {
+	ev := scaffoldUpAttemptLog(proxy)
 	if upstreamResponse != nil && upstreamResponse.StatusCode > 0 {
 		ev = ev.Int("upAtmptResCode", upstreamResponse.StatusCode)
 	}
-	//if upstreamError != nil {
-	//	ev = ev.Err(upstreamError)
-	//}
 	ev.Msgf("upstream attempt unsuccessful")
 }
 
@@ -236,11 +232,7 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 
 		defer func() {
 			if err := recover(); err != nil {
-				log.Debug().
-					Str(XRequestID, proxy.XRequestID).
-					Str("upAtmpt", proxy.Up.Atmpt.print()).
-					Int64("upAtmptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
-					Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+				scaffoldUpAttemptLog(proxy).
 					Msgf("safe to ignore. recovered internally from closed body success channel after request already handled.")
 			}
 		}()
@@ -254,28 +246,16 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 	select {
 	case <-proxy.Up.Atmpt.Aborted:
 		proxy.Up.Atmpt.AbortedFlag = true
-		log.Trace().
-			Str(XRequestID, proxy.XRequestID).
-			Str("upAtmpt", proxy.Up.Atmpt.print()).
-			Int64("upAtmptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
+		scaffoldUpAttemptLog(proxy).
 			Int("upReadTimeoutSecs", Runner.Connection.Upstream.ReadTimeoutSeconds).
-			Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
 			Msg("upstream connection read timeout fired, aborting upstream response body processing")
 	case <-proxy.Dwn.Aborted:
 		proxy.abortAllupAtmpts()
 		proxy.Dwn.AbortedFlag = true
-		log.Trace().
-			Str(XRequestID, proxy.XRequestID).
-			Str("upAtmpt", proxy.Up.Atmpt.print()).
-			Int64("upAtmptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
-			Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+		scaffoldUpAttemptLog(proxy).
 			Msg("aborting upstream response body processing. downstream connection read timeout fired or user cancelled request")
 	case <-proxy.Up.Atmpt.CompleteBody:
-		log.Trace().
-			Str(XRequestID, proxy.XRequestID).
-			Int64("upAtmptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
-			Str("upAtmpt", proxy.Up.Atmpt.print()).
-			Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+		scaffoldUpAttemptLog(proxy).
 			Msg("upstream response body processed")
 	}
 
