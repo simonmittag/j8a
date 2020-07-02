@@ -129,6 +129,7 @@ func processUpstreamResponse(proxy *Proxy, upstreamResponse *http.Response, upst
 			proxy.Dwn.Resp.Sending = true
 			proxy.processHeaders()
 			proxy.copyUpstreamResponseBody()
+			logSuccessfulUpstreamAttempt(proxy, upstreamResponse)
 			logHandledRequest(proxy)
 			return true
 		}
@@ -196,7 +197,7 @@ func scaffoldUpAttemptLog(proxy *Proxy) *zerolog.Event {
 		Str("upAtmpt", proxy.Up.Atmpt.print())
 }
 
-func logSuccessfulUpstreamAttempt(proxy *Proxy, upstreamResponse *http.Response, upstreamError error) {
+func logSuccessfulUpstreamAttempt(proxy *Proxy, upstreamResponse *http.Response) {
 	scaffoldUpAttemptLog(proxy).
 		Int("upAtmptResCode", upstreamResponse.StatusCode).
 		Msgf("upstream attempt successful")
