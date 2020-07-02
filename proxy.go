@@ -121,11 +121,7 @@ Retry:
 	}
 
 	if !retry {
-		log.Trace().
-			Str(XRequestID, proxy.XRequestID).
-			Str("upAtmpt", proxy.Up.Atmpt.print()).
-			Int64("upAtmptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
-			Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+		scaffoldUpAttemptLog(proxy).
 			Msg("upstream retries stopped after upstream attempt")
 	}
 
