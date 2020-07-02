@@ -242,11 +242,7 @@ func (proxy *Proxy) firstAttempt(URL *URL, label string) *Proxy {
 	proxy.Up.Atmpt = &proxy.Up.Atmpts[0]
 	proxy.Up.Count = 1
 
-	log.Trace().
-		Str(XRequestID, proxy.XRequestID).
-		Str("upAtmpt", proxy.Up.Atmpt.print()).
-		Int64("upAtmptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
-		Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+	scaffoldUpAttemptLog(proxy).
 		Msg("first upstream attempt initialized")
 
 	return proxy
@@ -272,11 +268,7 @@ func (proxy *Proxy) nextAttempt() *Proxy {
 	proxy.Up.Count = next.Count
 	proxy.Up.Atmpt = &proxy.Up.Atmpts[len(proxy.Up.Atmpts)-1]
 
-	log.Trace().
-		Str(XRequestID, proxy.XRequestID).
-		Str("upAtmpt", proxy.Up.Atmpt.print()).
-		Int64("upAtmptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
-		Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+	scaffoldUpAttemptLog(proxy).
 		Msg("next upstream attempt initialized")
 	return proxy
 }
