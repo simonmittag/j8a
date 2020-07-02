@@ -89,11 +89,7 @@ func (proxy *Proxy) abortAllupAtmpts() {
 		atmpt.AbortedFlag = true
 		if atmpt.CancelFunc != nil {
 			atmpt.CancelFunc()
-			log.Trace().
-				Str(XRequestID, proxy.XRequestID).
-				Str("upAtmpt", atmpt.print()).
-				Int64("upAtmptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
-				Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+			scaffoldUpAttemptLog(proxy).
 				Msgf("aborted upstream attempt after prior downstream abort.")
 		}
 	}
