@@ -293,34 +293,18 @@ func (proxy *Proxy) copyUpstreamResponseHeaders() {
 }
 
 func (proxy *Proxy) copyUpstreamResponseBody() {
-	start := time.Now()
 	if proxy.shouldGzipEncodeResponseBody() {
 		proxy.Dwn.Resp.Writer.Write(Gzip(*proxy.Up.Atmpt.respBody))
-		elapsed := time.Since(start)
-		log.Trace().
-			Str(XRequestID, proxy.XRequestID).
-			Int64("copyBodyElapsedMicros", elapsed.Microseconds()).
-			Int64("upAtmptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
-			Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+		scaffoldUpAttemptLog(proxy).
 			Msg("copying upstream body with gzip re-encoding")
 	} else {
 		if proxy.shouldGzipDecodeResponseBody() {
 			proxy.Dwn.Resp.Writer.Write(Gunzip([]byte(*proxy.Up.Atmpt.respBody)))
-			elapsed := time.Since(start)
-			log.Trace().
-				Str(XRequestID, proxy.XRequestID).
-				Int64("copyBodyElapsedMicros", elapsed.Microseconds()).
-				Int64("upAtmptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
-				Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+			scaffoldUpAttemptLog(proxy).
 				Msg("copying upstream body with gzip re-decoding")
 		} else {
 			proxy.Dwn.Resp.Writer.Write([]byte(*proxy.Up.Atmpt.respBody))
-			elapsed := time.Since(start)
-			log.Trace().
-				Str(XRequestID, proxy.XRequestID).
-				Int64("copyBodyElapsedMicros", elapsed.Microseconds()).
-				Int64("upAtmptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
-				Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+			scaffoldUpAttemptLog(proxy).
 				Msgf("copying upstream body as is")
 		}
 	}
