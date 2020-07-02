@@ -62,7 +62,6 @@ func randomHuttese() string {
 
 func aboutHandler(w http.ResponseWriter, r *http.Request) {
 	proxy := new(Proxy).
-		initXRequestID().
 		parseIncoming(r).
 		setOutgoing(w)
 
@@ -84,5 +83,5 @@ func aboutHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write(res)
 	}
 
-	logHandledRequest(proxy)
+	logHandledDownstreamRoundtrip(proxy)
 }

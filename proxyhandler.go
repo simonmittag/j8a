@@ -25,13 +25,11 @@ var httpClient HTTPClient
 //httpResponseHeadersNoRewrite contains a list of headers that are not copied from upstream to downstream to avoid bugs.
 var httpResponseHeadersNoRewrite []string = []string{date, contentLength, contentEncoding, server}
 
-// main proxy handling
 func proxyHandler(response http.ResponseWriter, request *http.Request) {
 	matched := false
 
 	//preprocess incoming request in proxy object
 	proxy := new(Proxy).
-		initXRequestID().
 		parseIncoming(request).
 		setOutgoing(response)
 
@@ -68,6 +66,28 @@ func validate(proxy *Proxy) bool {
 	return proxy.hasLegalHTTPMethod()
 }
 
+func handle(proxy *Proxy) {
+	upstreamResponse, upstreamError := performUpstreamRequest(proxy)
+	if upstreamResponse != nil && upstreamResponse.Body != nil {
+		defer upstreamResponse.Body.Close()
+	}
+
+	if !processUpstreamResponse(proxy, upstreamResponse, upstreamError) {
+		if proxy.shouldRetryUpstreamAttempt() {
+			handle(proxy.nextAttempt())
+		} else {
+			//sends 504 for downstream timeout, 504 for upstream timeout, 502 in all other cases
+			if proxy.hasDownstreamAborted() {
+				sendStatusCodeAsJSON(proxy.respondWith(504, "gateway timeout triggered by downstream event"))
+			} else if proxy.hasUpstreamAttemptAborted() {
+				sendStatusCodeAsJSON(proxy.respondWith(504, "gateway timeout triggered by upstream attempt"))
+			} else {
+				sendStatusCodeAsJSON(proxy.respondWith(502, "bad gateway triggered. unable to process upstream response"))
+			}
+		}
+	}
+}
+
 func scaffoldUpstreamRequest(proxy *Proxy) *http.Request {
 	//this context is used to time out the upstream request
 	ctx, cancel := context.WithCancel(context.TODO())
@@ -92,51 +112,6 @@ func scaffoldUpstreamRequest(proxy *Proxy) *http.Request {
 		upstreamRequest.Header.Set(key, strings.Join(values, " "))
 	}
 	return upstreamRequest
-}
-
-// handle the proxy request
-func handle(proxy *Proxy) {
-	upstreamResponse, upstreamError := performUpstreamRequest(proxy)
-	if upstreamResponse != nil && upstreamResponse.Body != nil {
-		defer upstreamResponse.Body.Close()
-	}
-
-	if !processUpstreamResponse(proxy, upstreamResponse, upstreamError) {
-		if proxy.shouldAttemptRetry() {
-			handle(proxy.nextAttempt())
-		} else {
-			//sends 504 for downstream timeout, 504 for upstream timeout, 502 in all other cases
-			if proxy.hasDownstreamAborted() {
-				sendStatusCodeAsJSON(proxy.respondWith(504, "gateway timeout triggered by downstream event"))
-			} else if proxy.hasUpstreamAtmptAborted() {
-				sendStatusCodeAsJSON(proxy.respondWith(504, "gateway timeout triggered by upstream attempt"))
-			} else {
-				sendStatusCodeAsJSON(proxy.respondWith(502, "bad gateway triggered. unable to process upstream response"))
-			}
-		}
-	}
-}
-
-func processUpstreamResponse(proxy *Proxy, upstreamResponse *http.Response, upstreamError error) bool {
-	//process only if we can work with upstream attempt
-	if upstreamResponse != nil && upstreamError == nil && !proxy.hasUpstreamAtmptAborted() {
-		//jabba blocks here when waiting for upstream body
-		upstreamResponseBody, bodyError := parseUpstreamResponse(upstreamResponse, proxy)
-		upstreamError = bodyError
-		proxy.Up.Atmpt.respBody = &upstreamResponseBody
-		if shouldProxyUpstreamResponse(proxy, bodyError) {
-			//sends proxied response, 200-498. point of no return for sending a response
-			proxy.Dwn.Resp.Sending = true
-			proxy.processHeaders()
-			proxy.copyUpstreamResponseBody()
-			logSuccessfulUpstreamAttempt(proxy, upstreamResponse)
-			logHandledRequest(proxy)
-			return true
-		}
-	}
-	//now log unsuccessful and retry or exit with status code.
-	logUnsuccessfulUpstreamAttempt(proxy, upstreamResponse, upstreamError)
-	return false
 }
 
 func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
@@ -177,7 +152,7 @@ func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
 			Int("upReadTimeoutSecs", Runner.Connection.Upstream.ReadTimeoutSeconds).
 			Msg("upstream connection read timeout fired, aborting upstream response header processing.")
 	case <-proxy.Dwn.Aborted:
-		proxy.abortAllupAtmpts()
+		proxy.abortAllUpstreamAttempts()
 		proxy.Dwn.AbortedFlag = true
 		scaffoldUpAttemptLog(proxy).
 			Msg("aborting upstream response header processing. downstream connection read timeout fired or user cancelled request")
@@ -187,35 +162,6 @@ func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
 	}
 
 	return upstreamResponse, upstreamError
-}
-
-func scaffoldUpAttemptLog(proxy *Proxy) *zerolog.Event {
-	return log.Trace().
-		Str(XRequestID, proxy.XRequestID).
-		Int64("upAtmptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
-		Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
-		Str("upAtmpt", proxy.Up.Atmpt.print())
-}
-
-func logSuccessfulUpstreamAttempt(proxy *Proxy, upstreamResponse *http.Response) {
-	scaffoldUpAttemptLog(proxy).
-		Int("upAtmptResCode", upstreamResponse.StatusCode).
-		Msgf("upstream attempt successful")
-}
-
-func logUnsuccessfulUpstreamAttempt(proxy *Proxy, upstreamResponse *http.Response, upstreamError error) {
-	ev := scaffoldUpAttemptLog(proxy)
-	if upstreamResponse != nil && upstreamResponse.StatusCode > 0 {
-		ev = ev.Int("upAtmptResCode", upstreamResponse.StatusCode)
-	}
-	ev.Msgf("upstream attempt unsuccessful")
-}
-
-func shouldProxyUpstreamResponse(proxy *Proxy, bodyError error) bool {
-	return !proxy.hasDownstreamAborted() &&
-		!proxy.hasUpstreamAtmptAborted() &&
-		bodyError == nil &&
-		proxy.Up.Atmpt.resp.StatusCode < 500
 }
 
 func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byte, error) {
@@ -251,7 +197,7 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 			Int("upReadTimeoutSecs", Runner.Connection.Upstream.ReadTimeoutSeconds).
 			Msg("upstream connection read timeout fired, aborting upstream response body processing")
 	case <-proxy.Dwn.Aborted:
-		proxy.abortAllupAtmpts()
+		proxy.abortAllUpstreamAttempts()
 		proxy.Dwn.AbortedFlag = true
 		scaffoldUpAttemptLog(proxy).
 			Msg("aborting upstream response body processing. downstream connection read timeout fired or user cancelled request")
@@ -263,7 +209,60 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 	return upstreamResponseBody, bodyError
 }
 
-func logHandledRequest(proxy *Proxy) {
+func processUpstreamResponse(proxy *Proxy, upstreamResponse *http.Response, upstreamError error) bool {
+	//process only if we can work with upstream attempt
+	if upstreamResponse != nil && upstreamError == nil && !proxy.hasUpstreamAttemptAborted() {
+		//jabba blocks here when waiting for upstream body
+		upstreamResponseBody, bodyError := parseUpstreamResponse(upstreamResponse, proxy)
+		upstreamError = bodyError
+		proxy.Up.Atmpt.respBody = &upstreamResponseBody
+		if shouldProxyUpstreamResponse(proxy, bodyError) {
+			//sends proxied response, 200-498. point of no return for sending a response
+			proxy.Dwn.Resp.Sending = true
+			proxy.processHeaders()
+			proxy.copyUpstreamResponseBody()
+			logSuccessfulUpstreamAttempt(proxy, upstreamResponse)
+			logHandledDownstreamRoundtrip(proxy)
+			return true
+		}
+	}
+	//now log unsuccessful and retry or exit with status code.
+	logUnsuccessfulUpstreamAttempt(proxy, upstreamResponse, upstreamError)
+	return false
+}
+
+func shouldProxyUpstreamResponse(proxy *Proxy, bodyError error) bool {
+	return !proxy.hasDownstreamAborted() &&
+		!proxy.hasUpstreamAttemptAborted() &&
+		bodyError == nil &&
+		proxy.Up.Atmpt.resp.StatusCode < 500
+}
+
+func shouldProxyHeader(header string) bool {
+	for _, dont := range httpResponseHeadersNoRewrite {
+		if header == dont {
+			return false
+		}
+	}
+	return true
+}
+
+func scaffoldUpAttemptLog(proxy *Proxy) *zerolog.Event {
+	var ev *zerolog.Event
+	if proxy.XRequestDebug {
+		ev = log.Debug()
+	} else {
+		ev = log.Trace()
+	}
+
+	return ev.
+		Str(XRequestID, proxy.XRequestID).
+		Int64("upAtmptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
+		Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+		Str("upAtmpt", proxy.Up.Atmpt.print())
+}
+
+func logHandledDownstreamRoundtrip(proxy *Proxy) {
 	elapsed := time.Since(proxy.Dwn.startDate)
 	msg := "downstream response served"
 	ev := log.Info()
@@ -282,7 +281,7 @@ func logHandledRequest(proxy *Proxy) {
 		Int64("dwnElapsedMicros", elapsed.Microseconds()).
 		Str(XRequestID, proxy.XRequestID)
 
-	if proxy.hasMadeupAtmpt() {
+	if proxy.hasMadeUpstreamAttempt() {
 		ev = ev.Str("upURI", proxy.resolveUpstreamURI()).
 			Str("upLabel", proxy.Up.Atmpt.Label).
 			Int("upAtmptResCode", proxy.Up.Atmpt.StatusCode).
@@ -294,11 +293,16 @@ func logHandledRequest(proxy *Proxy) {
 	ev.Msg(msg)
 }
 
-func shouldRewrite(header string) bool {
-	for _, dont := range httpResponseHeadersNoRewrite {
-		if header == dont {
-			return false
-		}
+func logSuccessfulUpstreamAttempt(proxy *Proxy, upstreamResponse *http.Response) {
+	scaffoldUpAttemptLog(proxy).
+		Int("upAtmptResCode", upstreamResponse.StatusCode).
+		Msgf("upstream attempt successful")
+}
+
+func logUnsuccessfulUpstreamAttempt(proxy *Proxy, upstreamResponse *http.Response, upstreamError error) {
+	ev := scaffoldUpAttemptLog(proxy)
+	if upstreamResponse != nil && upstreamResponse.StatusCode > 0 {
+		ev = ev.Int("upAtmptResCode", upstreamResponse.StatusCode)
 	}
-	return true
+	ev.Msgf("upstream attempt unsuccessful")
 }

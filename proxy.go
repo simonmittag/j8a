@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/google/uuid"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 )
 
@@ -79,12 +79,32 @@ type Down struct {
 
 // Proxy wraps data for a single downstream request/response with multiple upstream HTTP request/response cycles.
 type Proxy struct {
-	XRequestID string
-	Up         Up
-	Dwn        Down
+	XRequestID    string
+	XRequestDebug bool
+	Up            Up
+	Dwn           Down
 }
 
-func (proxy *Proxy) abortAllupAtmpts() {
+// TODO downstream aborted needs to cover both timeouts and user aborted requests.
+func (proxy *Proxy) hasDownstreamAborted() bool {
+
+	//non blocking read if request context was aborted
+	select {
+	case <-proxy.Dwn.Aborted:
+		proxy.Dwn.AbortedFlag = true
+	default:
+	}
+	if proxy.Dwn.AbortedFlag == true {
+		proxy.respondWith(504, "gateway timeout triggered after downstream roundtripTimeoutSeconds")
+	}
+	return proxy.Dwn.AbortedFlag
+}
+
+func (proxy *Proxy) resolveUpstreamURI() string {
+	return proxy.Up.Atmpt.URL.String() + proxy.Dwn.URI
+}
+
+func (proxy *Proxy) abortAllUpstreamAttempts() {
 	for _, atmpt := range proxy.Up.Atmpts {
 		atmpt.AbortedFlag = true
 		if atmpt.CancelFunc != nil {
@@ -95,12 +115,18 @@ func (proxy *Proxy) abortAllupAtmpts() {
 	}
 }
 
-func (proxy *Proxy) resolveUpstreamURI() string {
-	return proxy.Up.Atmpt.URL.String() + proxy.Dwn.URI
+func (proxy *Proxy) hasUpstreamAttemptAborted() bool {
+	//non blocking read if request context was aborted
+	select {
+	case <-proxy.Up.Atmpt.Aborted:
+		proxy.Up.Atmpt.AbortedFlag = true
+	default:
+	}
+	return proxy.Up.Atmpt.AbortedFlag
 }
 
-// ShouldRepeat tells us if we can safely repeat the upstream request
-func (proxy *Proxy) shouldAttemptRetry() bool {
+// tells us if we can safely retry with another upstream attempt
+func (proxy *Proxy) shouldRetryUpstreamAttempt() bool {
 
 	// part one is checking for repeatable methods. we don't retry i.e. POST
 	retry := false
@@ -128,29 +154,8 @@ Retry:
 	return retry
 }
 
-// TODO downstream aborted needs to cover both timeouts and user aborted requests.
-func (proxy *Proxy) hasDownstreamAborted() bool {
-
-	//non blocking read if request context was aborted
-	select {
-	case <-proxy.Dwn.Aborted:
-		proxy.Dwn.AbortedFlag = true
-	default:
-	}
-	if proxy.Dwn.AbortedFlag == true {
-		proxy.respondWith(504, "gateway timeout triggered after downstream roundtripTimeoutSeconds")
-	}
-	return proxy.Dwn.AbortedFlag
-}
-
-func (proxy *Proxy) hasUpstreamAtmptAborted() bool {
-	//non blocking read if request context was aborted
-	select {
-	case <-proxy.Up.Atmpt.Aborted:
-		proxy.Up.Atmpt.AbortedFlag = true
-	default:
-	}
-	return proxy.Up.Atmpt.AbortedFlag
+func (proxy *Proxy) hasMadeUpstreamAttempt() bool {
+	return proxy.Up.Atmpt != nil && proxy.Up.Atmpt.resp != nil
 }
 
 // ParseIncoming is a factory method for a new ProxyRequest, embeds the incoming request.
@@ -161,6 +166,20 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 	body, _ := ioutil.ReadAll(request.Body)
 	proxy.Dwn.Path = request.URL.EscapedPath()
 	proxy.Dwn.URI = request.URL.RequestURI()
+
+	proxy.XRequestID = func() string {
+		xr := request.Header.Get(XRequestID)
+		if len(xr)==0 {
+			uuid, _ := uuid.NewRandom()
+			xr = fmt.Sprintf("XR-%s-%s", ID, uuid)
+		}
+		return xr
+	}()
+
+	proxy.XRequestDebug = func() bool{
+		h := request.Header.Get("X-REQUEST-DEBUG")
+		return len(h)>0 && strings.ToLower(h) == "true"
+	}()
 
 	proxy.Dwn.UserAgent = request.Header.Get("User-Agent")
 	if len(proxy.Dwn.UserAgent) == 0 {
@@ -262,13 +281,6 @@ func (proxy *Proxy) nextAttempt() *Proxy {
 	return proxy
 }
 
-func (proxy *Proxy) initXRequestID() *Proxy {
-	uuid, _ := uuid.NewRandom()
-	xr := fmt.Sprintf("XR-%s-%s", ID, uuid)
-	proxy.XRequestID = xr
-	return proxy
-}
-
 func (proxy *Proxy) writeContentEncodingHeader() {
 	proxy.Dwn.Resp.Writer.Header().Set(contentEncoding, proxy.contentEncoding())
 }
@@ -276,7 +288,7 @@ func (proxy *Proxy) writeContentEncodingHeader() {
 func (proxy *Proxy) copyUpstreamResponseHeaders() {
 	proxy.Up.Atmpt.StatusCode = proxy.Up.Atmpt.resp.StatusCode
 	for key, values := range proxy.Up.Atmpt.resp.Header {
-		if shouldRewrite(key) {
+		if shouldProxyHeader(key) {
 			for _, mval := range values {
 				proxy.Dwn.Resp.Writer.Header().Set(key, mval)
 			}
@@ -302,15 +314,11 @@ func (proxy *Proxy) copyUpstreamResponseBody() {
 	}
 }
 
-func (proxy *Proxy) hasMadeupAtmpt() bool {
-	return proxy.Up.Atmpt != nil && proxy.Up.Atmpt.resp != nil
-}
-
 func (proxy *Proxy) contentEncoding() string {
 	ce := "identity"
 	if proxy.Dwn.Resp.SendGzip {
 		ce = "gzip"
-	} else if proxy.hasMadeupAtmpt() && !proxy.shouldGzipDecodeResponseBody() {
+	} else if proxy.hasMadeUpstreamAttempt() && !proxy.shouldGzipDecodeResponseBody() {
 		ceA := proxy.Up.Atmpt.resp.Header[contentEncoding]
 		if len(ceA) > 0 {
 			ce = strings.Join(ceA, " ")

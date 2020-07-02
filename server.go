@@ -146,5 +146,5 @@ func sendStatusCodeAsJSON(proxy *Proxy) {
 		proxy.Dwn.Resp.Writer.Write(statusCodeResponse.AsJSON())
 	}
 
-	logHandledRequest(proxy)
+	logHandledDownstreamRoundtrip(proxy)
 }
