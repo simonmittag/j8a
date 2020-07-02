@@ -54,9 +54,9 @@ func (runtime Runtime) startListening() {
 	idleTimeoutDuration := time.Second * time.Duration(runtime.Connection.Downstream.IdleTimeoutSeconds)
 
 	log.Debug().
-		Float64("downstreamReadTimeoutSeconds", readTimeoutDuration.Seconds()).
-		Float64("downstreamRoundTripTimeoutSeconds", roundTripTimeoutDuration.Seconds()).
-		Float64("downstreamIdleConnTimeoutSeconds", idleTimeoutDuration.Seconds()).
+		Float64("dwnReadTimeoutSeconds", readTimeoutDuration.Seconds()).
+		Float64("dwnRoundTripTimeoutSeconds", roundTripTimeoutDuration.Seconds()).
+		Float64("dwnIdleConnTimeoutSeconds", idleTimeoutDuration.Seconds()).
 		Msg("server derived downstream params")
 	log.Info().Msgf("Jabba %s listening on port %d...", Version, runtime.Connection.Downstream.Port)
 
@@ -146,5 +146,5 @@ func sendStatusCodeAsJSON(proxy *Proxy) {
 		proxy.Dwn.Resp.Writer.Write(statusCodeResponse.AsJSON())
 	}
 
-	logHandledRequest(proxy)
+	logHandledDownstreamRoundtrip(proxy)
 }

@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/google/uuid"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 )
 
@@ -79,9 +79,29 @@ type Down struct {
 
 // Proxy wraps data for a single downstream request/response with multiple upstream HTTP request/response cycles.
 type Proxy struct {
-	XRequestID string
-	Up         Up
-	Dwn        Down
+	XRequestID    string
+	XRequestDebug bool
+	Up            Up
+	Dwn           Down
+}
+
+// TODO downstream aborted needs to cover both timeouts and user aborted requests.
+func (proxy *Proxy) hasDownstreamAborted() bool {
+
+	//non blocking read if request context was aborted
+	select {
+	case <-proxy.Dwn.Aborted:
+		proxy.Dwn.AbortedFlag = true
+	default:
+	}
+	if proxy.Dwn.AbortedFlag == true {
+		proxy.respondWith(504, "gateway timeout triggered after downstream roundtripTimeoutSeconds")
+	}
+	return proxy.Dwn.AbortedFlag
+}
+
+func (proxy *Proxy) resolveUpstreamURI() string {
+	return proxy.Up.Atmpt.URL.String() + proxy.Dwn.URI
 }
 
 func (proxy *Proxy) abortAllUpstreamAttempts() {
@@ -89,22 +109,24 @@ func (proxy *Proxy) abortAllUpstreamAttempts() {
 		atmpt.AbortedFlag = true
 		if atmpt.CancelFunc != nil {
 			atmpt.CancelFunc()
-			log.Trace().
-				Str(XRequestID, proxy.XRequestID).
-				Str("upstreamAttempt", atmpt.print()).
-				Int64("upstreamAttemptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
-				Int64("downstreamElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+			scaffoldUpAttemptLog(proxy).
 				Msgf("aborted upstream attempt after prior downstream abort.")
 		}
 	}
 }
 
-func (proxy *Proxy) resolveUpstreamURI() string {
-	return proxy.Up.Atmpt.URL.String() + proxy.Dwn.URI
+func (proxy *Proxy) hasUpstreamAttemptAborted() bool {
+	//non blocking read if request context was aborted
+	select {
+	case <-proxy.Up.Atmpt.Aborted:
+		proxy.Up.Atmpt.AbortedFlag = true
+	default:
+	}
+	return proxy.Up.Atmpt.AbortedFlag
 }
 
-// ShouldRepeat tells us if we can safely repeat the upstream request
-func (proxy *Proxy) shouldAttemptRetry() bool {
+// tells us if we can safely retry with another upstream attempt
+func (proxy *Proxy) shouldRetryUpstreamAttempt() bool {
 
 	// part one is checking for repeatable methods. we don't retry i.e. POST
 	retry := false
@@ -125,40 +147,15 @@ Retry:
 	}
 
 	if !retry {
-		log.Trace().
-			Str(XRequestID, proxy.XRequestID).
-			Str("upstreamAttempt", proxy.Up.Atmpt.print()).
-			Int64("upstreamAttemptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
-			Int64("downstreamElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+		scaffoldUpAttemptLog(proxy).
 			Msg("upstream retries stopped after upstream attempt")
 	}
 
 	return retry
 }
 
-// TODO downstream aborted needs to cover both timeouts and user aborted requests.
-func (proxy *Proxy) hasDownstreamAborted() bool {
-
-	//non blocking read if request context was aborted
-	select {
-	case <-proxy.Dwn.Aborted:
-		proxy.Dwn.AbortedFlag = true
-	default:
-	}
-	if proxy.Dwn.AbortedFlag == true {
-		proxy.respondWith(504, "gateway timeout triggered after downstream roundtripTimeoutSeconds")
-	}
-	return proxy.Dwn.AbortedFlag
-}
-
-func (proxy *Proxy) hasUpstreamAtmptAborted() bool {
-	//non blocking read if request context was aborted
-	select {
-	case <-proxy.Up.Atmpt.Aborted:
-		proxy.Up.Atmpt.AbortedFlag = true
-	default:
-	}
-	return proxy.Up.Atmpt.AbortedFlag
+func (proxy *Proxy) hasMadeUpstreamAttempt() bool {
+	return proxy.Up.Atmpt != nil && proxy.Up.Atmpt.resp != nil
 }
 
 // ParseIncoming is a factory method for a new ProxyRequest, embeds the incoming request.
@@ -169,6 +166,20 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 	body, _ := ioutil.ReadAll(request.Body)
 	proxy.Dwn.Path = request.URL.EscapedPath()
 	proxy.Dwn.URI = request.URL.RequestURI()
+
+	proxy.XRequestID = func() string {
+		xr := request.Header.Get(XRequestID)
+		if len(xr)==0 {
+			uuid, _ := uuid.NewRandom()
+			xr = fmt.Sprintf("XR-%s-%s", ID, uuid)
+		}
+		return xr
+	}()
+
+	proxy.XRequestDebug = func() bool{
+		h := request.Header.Get("X-REQUEST-DEBUG")
+		return len(h)>0 && strings.ToLower(h) == "true"
+	}()
 
 	proxy.Dwn.UserAgent = request.Header.Get("User-Agent")
 	if len(proxy.Dwn.UserAgent) == 0 {
@@ -196,7 +207,7 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 		Str("path", proxy.Dwn.Path).
 		Str("method", proxy.Dwn.Method).
 		Int("bodyBytes", len(proxy.Dwn.Body)).
-		Int64("downstreamElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+		Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
 		Str(XRequestID, proxy.XRequestID).
 		Msg("parsed downstream request")
 	return proxy
@@ -233,9 +244,9 @@ func (proxy *Proxy) firstAttempt(URL *URL, label string) *Proxy {
 
 	log.Trace().
 		Str(XRequestID, proxy.XRequestID).
-		Str("upstreamAttempt", proxy.Up.Atmpt.print()).
-		Int64("upstreamAttemptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
-		Int64("downstreamElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+		Str("upAtmpt", proxy.Up.Atmpt.print()).
+		Int64("upAtmptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
+		Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
 		Msg("first upstream attempt initialized")
 
 	return proxy
@@ -263,17 +274,10 @@ func (proxy *Proxy) nextAttempt() *Proxy {
 
 	log.Trace().
 		Str(XRequestID, proxy.XRequestID).
-		Str("upstreamAttempt", proxy.Up.Atmpt.print()).
-		Int64("upstreamAttemptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
-		Int64("downstreamElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+		Str("upAtmpt", proxy.Up.Atmpt.print()).
+		Int64("upAtmptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
+		Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
 		Msg("next upstream attempt initialized")
-	return proxy
-}
-
-func (proxy *Proxy) initXRequestID() *Proxy {
-	uuid, _ := uuid.NewRandom()
-	xr := fmt.Sprintf("XR-%s-%s", ID, uuid)
-	proxy.XRequestID = xr
 	return proxy
 }
 
@@ -284,7 +288,7 @@ func (proxy *Proxy) writeContentEncodingHeader() {
 func (proxy *Proxy) copyUpstreamResponseHeaders() {
 	proxy.Up.Atmpt.StatusCode = proxy.Up.Atmpt.resp.StatusCode
 	for key, values := range proxy.Up.Atmpt.resp.Header {
-		if shouldRewrite(key) {
+		if shouldProxyHeader(key) {
 			for _, mval := range values {
 				proxy.Dwn.Resp.Writer.Header().Set(key, mval)
 			}
@@ -293,41 +297,21 @@ func (proxy *Proxy) copyUpstreamResponseHeaders() {
 }
 
 func (proxy *Proxy) copyUpstreamResponseBody() {
-	start := time.Now()
 	if proxy.shouldGzipEncodeResponseBody() {
 		proxy.Dwn.Resp.Writer.Write(Gzip(*proxy.Up.Atmpt.respBody))
-		elapsed := time.Since(start)
-		log.Trace().
-			Str(XRequestID, proxy.XRequestID).
-			Int64("copyBodyElapsedMicros", elapsed.Microseconds()).
-			Int64("upstreamAttemptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
-			Int64("downstreamElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+		scaffoldUpAttemptLog(proxy).
 			Msg("copying upstream body with gzip re-encoding")
 	} else {
 		if proxy.shouldGzipDecodeResponseBody() {
 			proxy.Dwn.Resp.Writer.Write(Gunzip([]byte(*proxy.Up.Atmpt.respBody)))
-			elapsed := time.Since(start)
-			log.Trace().
-				Str(XRequestID, proxy.XRequestID).
-				Int64("copyBodyElapsedMicros", elapsed.Microseconds()).
-				Int64("upstreamAttemptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
-				Int64("downstreamElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+			scaffoldUpAttemptLog(proxy).
 				Msg("copying upstream body with gzip re-decoding")
 		} else {
 			proxy.Dwn.Resp.Writer.Write([]byte(*proxy.Up.Atmpt.respBody))
-			elapsed := time.Since(start)
-			log.Trace().
-				Str(XRequestID, proxy.XRequestID).
-				Int64("copyBodyElapsedMicros", elapsed.Microseconds()).
-				Int64("upstreamAttemptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
-				Int64("downstreamElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+			scaffoldUpAttemptLog(proxy).
 				Msgf("copying upstream body as is")
 		}
 	}
-}
-
-func (proxy *Proxy) hasMadeUpstreamAttempt() bool {
-	return proxy.Up.Atmpt != nil && proxy.Up.Atmpt.resp != nil
 }
 
 func (proxy *Proxy) contentEncoding() string {

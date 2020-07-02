@@ -38,13 +38,13 @@ func scaffoldHTTPClient(runtime Runtime) HTTPClient {
 	}
 
 	log.Debug().
-		Int("upstreamMaxIdleConns", runtime.Connection.Upstream.PoolSize).
-		Int("upstreamMaxIdleConnsPerHost", runtime.Connection.Upstream.PoolSize).
-		Float64("upstreamTransportDialTimeoutSeconds", socketTimeoutDuration.Seconds()).
-		Float64("upstreamTlsHandshakeTimeoutSeconds", tLSHandshakeTimeoutDuration.Seconds()).
-		Float64("upstreamIdleConnTimeoutSeconds", idleConnTimeoutDuration.Seconds()).
-		Float64("upstreamReadTimeoutSeconds", readTimeoutDuration.Seconds()).
-		Float64("upstreamTransportDialKeepAliveIntervalSeconds", getKeepAliveIntervalDuration().Seconds()).
+		Int("upMaxIdleConns", runtime.Connection.Upstream.PoolSize).
+		Int("upMaxIdleConnsPerHost", runtime.Connection.Upstream.PoolSize).
+		Float64("upTransportDialTimeoutSecs", socketTimeoutDuration.Seconds()).
+		Float64("upTlsHandshakeTimeoutSecs", tLSHandshakeTimeoutDuration.Seconds()).
+		Float64("upIdleConnTimeoutSecs", idleConnTimeoutDuration.Seconds()).
+		Float64("upReadTimeoutSecs", readTimeoutDuration.Seconds()).
+		Float64("upTransportDialKeepAliveIntervalSecs", getKeepAliveIntervalDuration().Seconds()).
 		Msg("server derived upstream params")
 
 	return httpClient
