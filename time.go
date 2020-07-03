@@ -8,10 +8,12 @@ import (
 
 var TZ = "UTC"
 
-func initTime() {
-	TZ = os.Getenv("TZ")
-	if len(TZ) == 0 {
-		TZ = "UTC"
+func initTime() string {
+	tz := os.Getenv("TZ")
+	if len(tz) == 0 {
+		tz = "UTC"
 	}
-	log.Debug().Str("timeZone", TZ).Msg("timeZone determined")
+	log.Debug().Str("timeZone", tz).Msg("timeZone determined")
+	TZ = tz
+	return tz
 }
