@@ -31,6 +31,33 @@ func (t ProxyHttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	proxyHandler(w, r)
 }
 
+func TestIllegalRequestMethod(t *testing.T) {
+	Runner = mockRuntime()
+	httpClient = &MockHttp{}
+	mockDoFunc = func(req *http.Request) (*http.Response, error) {
+		json := `{"key":"value"}`
+		return &http.Response{
+			StatusCode: 200,
+			Body:       ioutil.NopCloser(bytes.NewReader([]byte(json))),
+		}, nil
+	}
+
+	h := &ProxyHttpHandler{}
+	server := httptest.NewServer(h)
+	defer server.Close()
+
+	c := &http.Client{}
+	req, _ := http.NewRequest("BAD", server.URL, nil)
+	resp, err := c.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if resp.StatusCode != 400 {
+		t.Errorf("server did not return 400 error code on illegal request method")
+	}
+}
+
 // mocks a 200 upstream response and tests the proxy handler returns clean.
 func TestUpstreamSuccess(t *testing.T) {
 	Runner = mockRuntime()
