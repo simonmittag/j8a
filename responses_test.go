@@ -113,9 +113,6 @@ func TestStatusCodeResponse_AsString(t *testing.T) {
 	if !strings.Contains(str, "Jabba") {
 		t.Errorf("about response Jabba not included")
 	}
-	if !strings.Contains(str, "unknown") {
-		t.Errorf("about response ServerID not included")
-	}
 	if !strings.Contains(str, "0") {
 		t.Errorf("about response Code not included")
 	}
