@@ -58,7 +58,6 @@ func proxyHandler(response http.ResponseWriter, request *http.Request) {
 	//unmatched paths means we have no route for this and always return a 404
 	if !matched {
 		sendStatusCodeAsJSON(proxy.respondWith(404, "upstream resource not found"))
-		return
 	}
 }
 
