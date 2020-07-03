@@ -41,6 +41,36 @@ func TestAboutHandlerContentEncodingIdentity(t *testing.T) {
 	}
 }
 
+func TestAboutHandlerContentEncodingNotSpecified(t *testing.T) {
+	Runner = mockRuntime()
+
+	server := httptest.NewServer(&AboutHttpHandler{})
+	defer server.Close()
+
+	c := &http.Client{
+		Transport: &http.Transport{
+			DisableCompression: true,
+		},
+	}
+	req, _ := http.NewRequest("GET", server.URL, nil)
+	req.Header.Del("Accept-Encoding")
+	resp, err := c.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	gotBody, _ := ioutil.ReadAll(resp.Body)
+	if c := bytes.Compare(gotBody[0:2], gzipMagicBytes); c == 0 {
+		t.Errorf("body should not have gzip response magic bytes but does: %v", gotBody[0:2])
+	}
+
+	want := "identity"
+	got := resp.Header["Content-Encoding"][0]
+	if got != want {
+		t.Errorf("response does have correct Content-Encoding header, want %v, got %v", want, got)
+	}
+}
+
 func TestAboutHandlerContentEncodingGzip(t *testing.T) {
 	Runner = mockRuntime()
 
