@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -94,5 +95,34 @@ func TestAboutHandlerContentEncodingGzip(t *testing.T) {
 	got := resp.Header["Content-Encoding"][0]
 	if got != want {
 		t.Errorf("response does have correct Content-Encoding header, want %v, got %v", want, got)
+	}
+}
+
+func TestStatusCodeResponse_AsString(t *testing.T) {
+	res := StatusCodeResponse{
+		AboutResponse: AboutResponse{
+			Version:  "1",
+		},
+		Code:          0,
+		Message:       "msg",
+		XRequestID:    "xri",
+	}
+
+	str := res.AsString()
+
+	if !strings.Contains(str, "Jabba") {
+		t.Errorf("about response Jabba not included")
+	}
+	if !strings.Contains(str, "unknown") {
+		t.Errorf("about response ServerID not included")
+	}
+	if !strings.Contains(str, "0") {
+		t.Errorf("about response Code not included")
+	}
+	if !strings.Contains(str, "msg") {
+		t.Errorf("about response Message not included")
+	}
+	if !strings.Contains(str, "xri") {
+		t.Errorf("about response XRequestID not included")
 	}
 }
