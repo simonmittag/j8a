@@ -53,7 +53,6 @@ type Resp struct {
 	StatusCode int
 	Message    string
 	SendGzip   bool
-	Sending    bool
 }
 
 //Up wraps upstream
@@ -199,7 +198,6 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 
 	proxy.Dwn.AbortedFlag = false
 	proxy.Dwn.Resp = Resp{
-		Sending:  false,
 		SendGzip: strings.Contains(request.Header.Get("Accept-Encoding"), "gzip"),
 	}
 
@@ -320,7 +318,7 @@ func (proxy *Proxy) contentEncoding() string {
 	return ce
 }
 
-func (proxy *Proxy) processHeaders() {
+func (proxy *Proxy) prepareDownstreamResponseHeaders() {
 	proxy.writeStandardResponseHeaders()
 	proxy.copyUpstreamResponseHeaders()
 	proxy.resetContentLengthHeader()
@@ -337,7 +335,6 @@ func (proxy *Proxy) resetContentLengthHeader() {
 //status code must be last, no headers may be written after this one.
 func (proxy *Proxy) copyUpstreamStatusCodeHeader() {
 	proxy.respondWith(proxy.Up.Atmpt.StatusCode, "none")
-	proxy.sendDownstreamStatusCodeHeader()
 }
 
 func (proxy *Proxy) sendDownstreamStatusCodeHeader() {

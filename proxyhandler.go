@@ -47,7 +47,7 @@ func proxyHandler(response http.ResponseWriter, request *http.Request) {
 				//mapped requests are sent to httpclient
 				handle(proxy.firstAttempt(url, label))
 			} else {
-				//unmapped request mean an internal configuration error in server
+				//unmapped request means an internal configuration error in server
 				sendStatusCodeAsJSON(proxy.respondWith(503, "unable to map upstream resource"))
 				return
 			}
@@ -171,6 +171,7 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 	attemptIndex := proxy.Up.Count - 1
 
 	go func() {
+		proxy.Up.Atmpt.StatusCode = upstreamResponse.StatusCode
 		upstreamResponseBody, bodyError = ioutil.ReadAll(upstreamResponse.Body)
 		if c := bytes.Compare(upstreamResponseBody[0:2], gzipMagicBytes); c == 0 {
 			proxy.Up.Atmpt.isGzip = true
@@ -216,18 +217,26 @@ func processUpstreamResponse(proxy *Proxy, upstreamResponse *http.Response, upst
 		upstreamError = bodyError
 		proxy.Up.Atmpt.respBody = &upstreamResponseBody
 		if shouldProxyUpstreamResponse(proxy, bodyError) {
-			//sends proxied response, 200-498. point of no return for sending a response
-			proxy.Dwn.Resp.Sending = true
-			proxy.processHeaders()
-			proxy.copyUpstreamResponseBody()
 			logSuccessfulUpstreamAttempt(proxy, upstreamResponse)
-			logHandledDownstreamRoundtrip(proxy)
+			if isUpstreamClientError(proxy) {
+				proxy.copyUpstreamStatusCodeHeader()
+				sendStatusCodeAsJSON(proxy)
+			} else {
+				proxy.prepareDownstreamResponseHeaders()
+				proxy.sendDownstreamStatusCodeHeader()
+				proxy.copyUpstreamResponseBody()
+				logHandledDownstreamRoundtrip(proxy)
+			}
 			return true
 		}
 	}
 	//now log unsuccessful and retry or exit with status code.
 	logUnsuccessfulUpstreamAttempt(proxy, upstreamResponse, upstreamError)
 	return false
+}
+
+func isUpstreamClientError(proxy *Proxy) bool {
+	return proxy.Up.Atmpt.StatusCode > 399 && proxy.Up.Atmpt.StatusCode < 500
 }
 
 func shouldProxyUpstreamResponse(proxy *Proxy, bodyError error) bool {
