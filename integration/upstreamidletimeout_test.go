@@ -54,7 +54,6 @@ func TestServerDoesNotExceedConnectionPoolSize(t *testing.T) {
 
 //This is a brittle helper method to get the number of upstream connections for a pid.
 //If this test starts failing check your os output of lsof.
-//TODO do no rely on lsof output formatting
 func osConnsWithLsof(pid string) int {
 	lsofc := exec.Command("lsof", "-ai", "-p", pid)
 	outlsofc, _ := lsofc.CombinedOutput()
