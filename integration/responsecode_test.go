@@ -57,17 +57,46 @@ func TestStatusCodeOfProxiedResponses500To599(t *testing.T) {
 	wg2.Wait()
 }
 
+func TestStatusCode300fProxiedResponse(t *testing.T) {
+	performOneJabbaResponseCodeTest(t, 300, 300, 8080)
+}
+
+func TestStatusCode301OfProxiedResponse(t *testing.T) {
+	performOneJabbaResponseCodeTest(t, 301, 301, 8080)
+}
+
+func TestStatusCode302OfProxiedResponse(t *testing.T) {
+	performOneJabbaResponseCodeTest(t, 302, 302, 8080)
+}
+
+func TestStatusCode303OfProxiedResponse(t *testing.T) {
+	performOneJabbaResponseCodeTest(t, 303, 303, 8080)
+}
+
 func TestStatusCode216OfProxiedResponse(t *testing.T) {
+	performOneJabbaResponseCodeTest(t, 216, 216, 8080)
+}
+
+func performOneJabbaResponseCodeTest(t *testing.T, getUpstreamStatusCode int, wantDownstreamStatusCode int, serverPort int) {
 	var wg sync.WaitGroup
 	wg.Add(1)
-	performJabbaResponseCodeTest(&wg, t, 216, 216, 8080)
+	performJabbaResponseCodeTest(&wg, t, getUpstreamStatusCode, wantDownstreamStatusCode, serverPort)
 	wg.Wait()
 }
 
-func performJabbaResponseCodeTest(wg *sync.WaitGroup, t *testing.T, getUpstreamStatusCode, wantDownstreamStatusCode int, serverPort int) {
+func performJabbaResponseCodeTest(wg *sync.WaitGroup, t *testing.T, getUpstreamStatusCode int, wantDownstreamStatusCode int, serverPort int) {
+	//for multithreaded tests we need to count them all down
 	defer wg.Done()
-	resp, err := http.Get(fmt.Sprintf("http://localhost:%d/mse6/send?code=%d", serverPort, getUpstreamStatusCode))
-	if resp!=nil && resp.Body!=nil {
+
+	//test client do not follow redirects mate!
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+
+	resp, err := client.Get(fmt.Sprintf("http://localhost:%d/mse6/send?code=%d", serverPort, getUpstreamStatusCode))
+	if resp != nil && resp.Body != nil {
 		defer resp.Body.Close()
 	}
 

@@ -34,7 +34,10 @@ func scaffoldHTTPClient(runtime Runtime) HTTPClient {
 			MaxIdleConnsPerHost: runtime.Connection.Upstream.PoolSize,
 			IdleConnTimeout:     idleConnTimeoutDuration,
 		},
-		//Timeout: readTimeoutDuration,
+		//Timeout: readTimeoutDuration, don't use this anymore, proxyHandler now has it built-in
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
 	}
 
 	log.Debug().
