@@ -39,7 +39,7 @@ var httpResponses = map[int]string{
 	303: "see other",
 	304: "not modified",
 	305: "use proxy",
-	306: "unused / subsequent requests should use the specified proxy",
+	306: "switch proxy",
 	307: "temporary redirect",
 	308: "permanent redirect",
 	400: "bad request",
