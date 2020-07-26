@@ -4,12 +4,50 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
+	"strings"
 	"sync"
 	"testing"
 )
 
-func TestStatusCode100SentFromProxyWithPutIfExpectedReturns200(t *testing.T) {
+//TODO: once we start supporting max body size, this needs to be revisited. it sends 100 every time right now.
+func TestStatusCode100SentFromProxyWithPutIfExpected(t *testing.T) {
+	//step 1 we connect to Jabba with net.dial
+	c, err := net.Dial("tcp", ":8080")
+	if err != nil {
+		t.Errorf("unable to connect to jabba server for integration test, cause: %v", err)
+		return
+	}
+	defer c.Close()
+
+	//step 2 we send headers and terminate HTTP message.
+	checkWrite(t, c, "PUT /mse6/put HTTP/1.1\r\n")
+	checkWrite(t, c, "Host: localhost:8081\r\n")
+	checkWrite(t, c, "Content-Type: application/json\r\n")
+	checkWrite(t, c, "Content-Length: 37\r\n")
+	checkWrite(t, c, "User-Agent: integration\r\n")
+	checkWrite(t, c, "Expect: 100-continue\r\n")
+	checkWrite(t, c, "Accept: */*\r\n")
+	checkWrite(t, c, "\r\n")
+	checkWrite(t, c, `{"key":"100 continue test request"}`+"\r\n")
+
+	//step 3 we try to read the server response. Warning this isn't a proper http client
+	//i.e. doesn't include parsing content length, reading response properly.
+	buf := make([]byte, 1024)
+	l, err := c.Read(buf)
+	t.Logf("jabba responded with %v bytes and error code %v", l, err)
+	t.Logf("jabba partial response: %v", string(buf))
+	if l == 0 {
+		t.Error("jabba did not respond, 0 bytes read")
+	}
+	response := string(buf)
+	if !strings.Contains(response, "100 Continue") {
+		t.Error("jabba did not respond with 100 continue")
+	}
+}
+
+func TestStatusCode200SentFromProxyWithPutIfExpected(t *testing.T) {
 	client := &http.Client{}
 	serverPort := 8080
 	wantDownstreamStatusCode := 200
