@@ -53,7 +53,6 @@ type Resp struct {
 	StatusCode int
 	Message    string
 	SendGzip   bool
-	Sending    bool
 }
 
 //Up wraps upstream
@@ -169,16 +168,16 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 
 	proxy.XRequestID = func() string {
 		xr := request.Header.Get(XRequestID)
-		if len(xr)==0 {
+		if len(xr) == 0 {
 			uuid, _ := uuid.NewRandom()
 			xr = fmt.Sprintf("XR-%s-%s", ID, uuid)
 		}
 		return xr
 	}()
 
-	proxy.XRequestDebug = func() bool{
+	proxy.XRequestDebug = func() bool {
 		h := request.Header.Get("X-REQUEST-DEBUG")
-		return len(h)>0 && strings.ToLower(h) == "true"
+		return len(h) > 0 && strings.ToLower(h) == "true"
 	}()
 
 	proxy.Dwn.UserAgent = request.Header.Get("User-Agent")
@@ -199,7 +198,6 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 
 	proxy.Dwn.AbortedFlag = false
 	proxy.Dwn.Resp = Resp{
-		Sending:  false,
 		SendGzip: strings.Contains(request.Header.Get("Accept-Encoding"), "gzip"),
 	}
 
@@ -278,7 +276,6 @@ func (proxy *Proxy) writeContentEncodingHeader() {
 }
 
 func (proxy *Proxy) copyUpstreamResponseHeaders() {
-	proxy.Up.Atmpt.StatusCode = proxy.Up.Atmpt.resp.StatusCode
 	for key, values := range proxy.Up.Atmpt.resp.Header {
 		if shouldProxyHeader(key) {
 			for _, mval := range values {
@@ -320,7 +317,7 @@ func (proxy *Proxy) contentEncoding() string {
 	return ce
 }
 
-func (proxy *Proxy) processHeaders() {
+func (proxy *Proxy) prepareDownstreamResponseHeaders() {
 	proxy.writeStandardResponseHeaders()
 	proxy.copyUpstreamResponseHeaders()
 	proxy.resetContentLengthHeader()
@@ -337,7 +334,6 @@ func (proxy *Proxy) resetContentLengthHeader() {
 //status code must be last, no headers may be written after this one.
 func (proxy *Proxy) copyUpstreamStatusCodeHeader() {
 	proxy.respondWith(proxy.Up.Atmpt.StatusCode, "none")
-	proxy.sendDownstreamStatusCodeHeader()
 }
 
 func (proxy *Proxy) sendDownstreamStatusCodeHeader() {

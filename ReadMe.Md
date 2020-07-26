@@ -28,6 +28,18 @@ Please see project milestones for details.
 go install github.com/simonmittag/jabba/cmd/jabba && jabba
 ```
 
+## Supported headers
+
+Specify these headers to control server behaviour
+
+
+### X-REQUEST-DEBUG
+Set this to true to include a full trace of the request in the server log
+
+```bash
+X-REQUEST-DEBUG: true
+```
+
 ## Supported environment variables
 
 Specify these env vars to control server behaviour

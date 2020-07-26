@@ -127,7 +127,6 @@ func (proxy *Proxy) writeStandardResponseHeaders() {
 }
 
 func sendStatusCodeAsJSON(proxy *Proxy) {
-
 	proxy.writeStandardResponseHeaders()
 	proxy.Dwn.Resp.Writer.Header().Set("Content-Type", "application/json")
 	proxy.writeContentEncodingHeader()
@@ -138,6 +137,11 @@ func sendStatusCodeAsJSON(proxy *Proxy) {
 		Code:       proxy.Dwn.Resp.StatusCode,
 		Message:    proxy.Dwn.Resp.Message,
 		XRequestID: proxy.XRequestID,
+	}
+
+	if len(proxy.Dwn.Resp.Message) == 0 || proxy.Dwn.Resp.Message == "none" {
+		statusCodeResponse.withCode(proxy.Dwn.Resp.StatusCode)
+		proxy.Dwn.Resp.Message = statusCodeResponse.Message
 	}
 
 	if proxy.Dwn.Resp.SendGzip {
