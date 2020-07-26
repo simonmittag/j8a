@@ -1,11 +1,45 @@
 package integration
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"sync"
 	"testing"
 )
+
+func TestStatusCode100SentFromProxyWithPutIfExpectedReturns200(t *testing.T) {
+	client := &http.Client{}
+	serverPort := 8080
+	wantDownstreamStatusCode := 200
+
+	jsonData := map[string]string{"firstname": "Simon", "lastname": "Mittag", "rank": "Corporal"}
+	jsonValue, _ := json.Marshal(jsonData)
+	buf := bytes.NewBuffer(jsonValue)
+
+	url := fmt.Sprintf("http://localhost:%d/mse6/put", serverPort)
+	req, _ := http.NewRequest("PUT", url, buf)
+
+	req.Header.Add("Expect", "100-continue")
+	req.Header.Add("Content-Type", "application/json")
+	resp, err := client.Do(req)
+	if resp != nil && resp.Body != nil {
+		defer resp.Body.Close()
+	}
+
+	gotDownstreamStatusCode := 0
+	if err != nil {
+		t.Errorf("error connecting to upstream for port %d, /send, cause: %v", serverPort, err)
+		return
+	} else {
+		gotDownstreamStatusCode = resp.StatusCode
+	}
+
+	if gotDownstreamStatusCode != wantDownstreamStatusCode {
+		t.Errorf("PUT with Expect: 100-continue did not result in OK, want %d, got %d", wantDownstreamStatusCode, gotDownstreamStatusCode)
+	}
+}
 
 //Test normal responses
 func TestStatusCodeOfProxiedResponses200To226(t *testing.T) {
