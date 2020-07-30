@@ -152,6 +152,7 @@ func aboutHandler(w http.ResponseWriter, r *http.Request) {
 
 	ae := r.Header["Accept-Encoding"]
 	res := AboutResponse{}.AsJSON()
+	w.Header().Set("Content-Type", "application/json")
 	if len(ae) > 0 {
 		s := strings.Join(ae, " ")
 		if strings.Contains(s, "gzip") {
