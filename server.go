@@ -1,6 +1,7 @@
 package jabba
 
 import (
+	"crypto/tls"
 	"fmt"
 	"net/http"
 	"os"
@@ -67,13 +68,20 @@ func (runtime Runtime) startListening() {
 		WriteTimeout:      roundTripTimeoutDurationWithGrace,
 		IdleTimeout:       idleTimeoutDuration,
 		Handler:           runtime.mapPathsToHandler(),
+		TLSConfig: 		   tlsConfig(),
 	}
 
 	//signal the WaitGroup that boot is over.
 	Boot.Done()
 
 	//this line blocks execution and the server stays up
-	err := server.ListenAndServe()
+	var err error
+	if runtime.isTLSMode() {
+		err = server.ListenAndServeTLS("./certs/_wildcard.jabbatest.com+4.pem", "./certs/_wildcard.jabbatest.com+4-key.pem")
+	} else {
+		err = server.ListenAndServe()
+	}
+
 	if err != nil {
 		log.Fatal().Err(err).Msgf("unable to start HTTP server on port %d, exiting...", runtime.Connection.Downstream.Port)
 		panic(err.Error())
@@ -124,6 +132,22 @@ func (proxy *Proxy) writeStandardResponseHeaders() {
 	header.Set("X-frame-options", "sameorigin")
 	//copy the X-REQUEST-ID from the request
 	header.Set(XRequestID, proxy.XRequestID)
+}
+
+func tlsConfig() *tls.Config {
+	return &tls.Config{
+		MinVersion:               tls.VersionTLS12,
+		CurvePreferences:         []tls.CurveID{tls.CurveP521, tls.CurveP384, tls.CurveP256},
+		PreferServerCipherSuites: true,
+		CipherSuites: []uint16{
+			tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+			tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+			tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+			tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
+			tls.TLS_RSA_WITH_AES_256_CBC_SHA,
+		},
+	}
 }
 
 func sendStatusCodeAsJSON(proxy *Proxy) {
