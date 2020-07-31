@@ -5,7 +5,7 @@
       "roundTripTimeoutSeconds": 20,
       "idleTimeoutSeconds": 30,
       "port": 8081,
-      "mode": "TLS"
+      "mode": "HTTP"
     },
     "upstream": {
       "socketTimeoutSeconds": 3,
