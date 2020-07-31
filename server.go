@@ -2,7 +2,10 @@ package jabba
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
+	"github.com/hako/durafmt"
+	"github.com/rs/zerolog"
 	"net/http"
 	"os"
 	"strconv"
@@ -68,7 +71,6 @@ func (runtime Runtime) startListening() {
 		WriteTimeout:      roundTripTimeoutDurationWithGrace,
 		IdleTimeout:       idleTimeoutDuration,
 		Handler:           runtime.mapPathsToHandler(),
-		TLSConfig:         runtime.tlsConfig(),
 	}
 
 	//signal the WaitGroup that boot is over.
@@ -77,7 +79,7 @@ func (runtime Runtime) startListening() {
 	//this line blocks execution and the server stays up
 	var err error
 	if runtime.isTLSMode() {
-
+		server.TLSConfig = runtime.tlsConfig()
 		err = server.ListenAndServeTLS("", "")
 	} else {
 		err = server.ListenAndServe()
@@ -135,12 +137,18 @@ func (proxy *Proxy) writeStandardResponseHeaders() {
 	header.Set(XRequestID, proxy.XRequestID)
 }
 
+//TODO: this needs to crash nicely when TLS config produces garbage reads and shut  down the server with error message.
 func (runtime Runtime) tlsConfig() *tls.Config {
+	//here we create a keypair from the PEM string in the config file
 	var cert []byte = []byte(runtime.Connection.Downstream.Cert)
 	var key []byte = []byte(runtime.Connection.Downstream.Key)
 	kp, _ := tls.X509KeyPair(cert, key)
 
-	return &tls.Config{
+	//parse the first cert in the config, so we can report on it.
+	kp.Leaf, _ = x509.ParseCertificate(kp.Certificate[0])
+
+	//now create the TLS config.
+	config := &tls.Config{
 		MinVersion:               tls.VersionTLS12,
 		CurvePreferences:         []tls.CurveID{tls.CurveP521, tls.CurveP384, tls.CurveP256},
 		PreferServerCipherSuites: true,
@@ -154,6 +162,24 @@ func (runtime Runtime) tlsConfig() *tls.Config {
 		},
 		Certificates: []tls.Certificate{kp},
 	}
+
+	//and tell our users what we found.
+	until := time.Until(kp.Leaf.NotAfter)
+	monthy := time.Hour * 24 * 30
+	var ev *zerolog.Event
+
+	//if the certificate expires in less than 30 days we send this as a log.Warn event instead.
+	if until < monthy {
+		ev = log.Warn()
+	} else {
+		ev = log.Debug()
+	}
+	ev.Msgf("parsed TLS certificate for DNS names %s from issuer %s, expires in %s",
+		kp.Leaf.DNSNames,
+		kp.Leaf.Issuer.CommonName,
+		durafmt.Parse(until).LimitFirstN(3).String(),
+	)
+	return config
 }
 
 func sendStatusCodeAsJSON(proxy *Proxy) {
