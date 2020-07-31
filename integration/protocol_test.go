@@ -20,52 +20,21 @@ var (
 )
 
 func TestHTTP11GetOverTLS12(t *testing.T) {
-	var conn *tls.Conn
-	var err error
-
-	url := "https://localhost:8443/about"
-	tlsConfig := &tls.Config{
-		MinVersion: tls.VersionTLS12,
-		MaxVersion: tls.VersionTLS12,
-	}
-
-	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: tlsConfig,
-			//disable HTTP/2 support for TLS
-			TLSNextProto: map[string]func(authority string, c *tls.Conn) http.RoundTripper{},
-			DialTLS: func(network, addr string) (net.Conn, error) {
-				conn, err = tls.Dial(network, addr, tlsConfig)
-				return conn, err
-			},
-		},
-	}
-	response, err := client.Get(url)
-	defer response.Body.Close()
-	if err != nil {
-		t.Errorf("unable to establish GET, cause %v", err)
-	}
-
-	body, _ := ioutil.ReadAll(response.Body)
-	if !strings.Contains(string(body), "Jabba") {
-		t.Errorf("unable to establish GET, body response: %v", string(body))
-	}
-
-	wantTls := "TLS 1.2"
-	gotTls := versions[conn.ConnectionState().Version]
-	if gotTls != wantTls {
-		t.Errorf("illegal TLS version want %v, got %v", wantTls, gotTls)
-	}
+	HTTP11GetOverTlsVersion(t, tls.VersionTLS12)
 }
 
 func TestHTTP11GetOverTLS13(t *testing.T) {
+	HTTP11GetOverTlsVersion(t, tls.VersionTLS13)
+}
+
+func HTTP11GetOverTlsVersion(t *testing.T, tlsVersion uint16) {
 	var conn *tls.Conn
 	var err error
 
 	url := "https://localhost:8443/about"
 	tlsConfig := &tls.Config{
-		MinVersion: tls.VersionTLS13,
-		MaxVersion: tls.VersionTLS13,
+		MinVersion: tlsVersion,
+		MaxVersion: tlsVersion,
 	}
 
 	client := &http.Client{
@@ -90,7 +59,7 @@ func TestHTTP11GetOverTLS13(t *testing.T) {
 		t.Errorf("unable to establish GET, body response: %v", string(body))
 	}
 
-	wantTls := "TLS 1.3"
+	wantTls := versions[tlsVersion]
 	gotTls := versions[conn.ConnectionState().Version]
 	if gotTls != wantTls {
 		t.Errorf("illegal TLS version want %v, got %v", wantTls, gotTls)
