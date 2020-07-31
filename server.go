@@ -68,7 +68,7 @@ func (runtime Runtime) startListening() {
 		WriteTimeout:      roundTripTimeoutDurationWithGrace,
 		IdleTimeout:       idleTimeoutDuration,
 		Handler:           runtime.mapPathsToHandler(),
-		TLSConfig: 		   tlsConfig(),
+		TLSConfig:         runtime.tlsConfig(),
 	}
 
 	//signal the WaitGroup that boot is over.
@@ -77,7 +77,8 @@ func (runtime Runtime) startListening() {
 	//this line blocks execution and the server stays up
 	var err error
 	if runtime.isTLSMode() {
-		err = server.ListenAndServeTLS("./certs/_wildcard.jabbatest.com+4.pem", "./certs/_wildcard.jabbatest.com+4-key.pem")
+
+		err = server.ListenAndServeTLS("", "")
 	} else {
 		err = server.ListenAndServe()
 	}
@@ -134,7 +135,11 @@ func (proxy *Proxy) writeStandardResponseHeaders() {
 	header.Set(XRequestID, proxy.XRequestID)
 }
 
-func tlsConfig() *tls.Config {
+func (runtime Runtime) tlsConfig() *tls.Config {
+	var cert []byte = []byte(runtime.Connection.Downstream.Cert)
+	var key []byte = []byte(runtime.Connection.Downstream.Key)
+	kp, _ := tls.X509KeyPair(cert, key)
+
 	return &tls.Config{
 		MinVersion:               tls.VersionTLS12,
 		CurvePreferences:         []tls.CurveID{tls.CurveP521, tls.CurveP384, tls.CurveP256},
@@ -147,6 +152,7 @@ func tlsConfig() *tls.Config {
 			tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
 			tls.TLS_RSA_WITH_AES_256_CBC_SHA,
 		},
+		Certificates: []tls.Certificate{kp},
 	}
 }
 
