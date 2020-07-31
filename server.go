@@ -62,7 +62,6 @@ func (runtime Runtime) startListening() {
 		Float64("dwnRoundTripTimeoutSeconds", roundTripTimeoutDuration.Seconds()).
 		Float64("dwnIdleConnTimeoutSeconds", idleTimeoutDuration.Seconds()).
 		Msg("server derived downstream params")
-	log.Info().Msgf("Jabba %s listening on port %d...", Version, runtime.Connection.Downstream.Port)
 
 	server := &http.Server{
 		Addr:              ":" + strconv.Itoa(runtime.Connection.Downstream.Port),
@@ -78,10 +77,13 @@ func (runtime Runtime) startListening() {
 
 	//this line blocks execution and the server stays up
 	var err error
+
 	if runtime.isTLSMode() {
 		server.TLSConfig = runtime.tlsConfig()
+		log.Info().Msgf("Jabba %s listening in TLS mode on port %d...", Version, runtime.Connection.Downstream.Port)
 		err = server.ListenAndServeTLS("", "")
 	} else {
+		log.Info().Msgf("Jabba %s listening on port %d...", Version, runtime.Connection.Downstream.Port)
 		err = server.ListenAndServe()
 	}
 
@@ -139,6 +141,13 @@ func (proxy *Proxy) writeStandardResponseHeaders() {
 
 //TODO: this needs to crash nicely when TLS config produces garbage reads and shut  down the server with error message.
 func (runtime Runtime) tlsConfig() *tls.Config {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Fatal().Msg("unable to parse TLS configuration, check your certificate and/or private key. Jabba is exiting ...")
+			os.Exit(-1)
+		}
+	}()
+
 	//here we create a keypair from the PEM string in the config file
 	var cert []byte = []byte(runtime.Connection.Downstream.Cert)
 	var key []byte = []byte(runtime.Connection.Downstream.Key)
