@@ -19,15 +19,31 @@ var (
 	}
 )
 
+const golangTlsProtoUnsupported = "remote error: tls: protocol version not supported"
+const golangNoSupportedVersions = "tls: no supported versions satisfy MinVersion and MaxVersion"
+const weDontWantAnyError = ""
+
+func TestHTTP11GetOverSSL30(t *testing.T) {
+	HTTP11GetOverTlsVersion(t, tls.VersionSSL30, golangNoSupportedVersions)
+}
+
+func TestHTTP11GetOverTLS10(t *testing.T) {
+	HTTP11GetOverTlsVersion(t, tls.VersionTLS10, golangTlsProtoUnsupported)
+}
+
+func TestHTTP11GetOverTLS11(t *testing.T) {
+	HTTP11GetOverTlsVersion(t, tls.VersionTLS11, golangTlsProtoUnsupported)
+}
+
 func TestHTTP11GetOverTLS12(t *testing.T) {
-	HTTP11GetOverTlsVersion(t, tls.VersionTLS12)
+	HTTP11GetOverTlsVersion(t, tls.VersionTLS12, weDontWantAnyError)
 }
 
 func TestHTTP11GetOverTLS13(t *testing.T) {
-	HTTP11GetOverTlsVersion(t, tls.VersionTLS13)
+	HTTP11GetOverTlsVersion(t, tls.VersionTLS13, weDontWantAnyError)
 }
 
-func HTTP11GetOverTlsVersion(t *testing.T, tlsVersion uint16) {
+func HTTP11GetOverTlsVersion(t *testing.T, tlsVersion uint16, wantErr string) {
 	var conn *tls.Conn
 	var err error
 
@@ -48,20 +64,29 @@ func HTTP11GetOverTlsVersion(t *testing.T, tlsVersion uint16) {
 			},
 		},
 	}
-	response, err := client.Get(url)
-	defer response.Body.Close()
-	if err != nil {
-		t.Errorf("unable to establish GET, cause %v", err)
-	}
+	response, err2 := client.Get(url)
 
-	body, _ := ioutil.ReadAll(response.Body)
-	if !strings.Contains(string(body), "Jabba") {
-		t.Errorf("unable to establish GET, body response: %v", string(body))
-	}
+	if err==nil && err2==nil {
+		defer response.Body.Close()
+		body, _ := ioutil.ReadAll(response.Body)
+		if !strings.Contains(string(body), "Jabba") {
+			t.Errorf("unable to establish GET, body response: %v", string(body))
+		}
 
-	wantTls := versions[tlsVersion]
-	gotTls := versions[conn.ConnectionState().Version]
-	if gotTls != wantTls {
-		t.Errorf("illegal TLS version want %v, got %v", wantTls, gotTls)
+		wantTls := versions[tlsVersion]
+		gotTls := versions[conn.ConnectionState().Version]
+		if gotTls != wantTls {
+			t.Errorf("illegal TLS version want %v, got %v", wantTls, gotTls)
+		}
+	} else {
+		if len(wantErr)==0 {
+			t.Errorf("connection error, cause %v or %v", err, err2)
+		} else {
+			if  wantErr == err.Error() || wantErr == err2.Error() {
+				t.Logf("ok. got expected error: %v", wantErr)
+			} else {
+				t.Errorf("got unexpected error, want %v, got %v and %v", wantErr, err, err2)
+			}
+		}
 	}
 }
