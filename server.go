@@ -122,14 +122,14 @@ func (runtime Runtime) initStats() Runtime {
 	return runtime
 }
 
-//TODO: this really needs to be configurable. it adds a lot of options to every response otherewise.
+//TODO: this really needs to be configurable. it adds a lot of options to every response otherwise.
 func (proxy *Proxy) writeStandardResponseHeaders() {
 	header := proxy.Dwn.Resp.Writer.Header()
 
 	header.Set("Server", fmt.Sprintf("Jabba %s %s", Version, ID))
 	header.Set("Cache-control:", "no-store, no-cache, must-revalidate, proxy-revalidate")
 	//for TLS response, we set HSTS header see RFC6797
-	if Runner.Connection.Downstream.Mode == "TLS" {
+	if Runner.isTLSMode() {
 		header.Set("Strict-Transport-Security", "max-age=31536000")
 	}
 	header.Set("X-xss-protection", "1;mode=block")
@@ -139,7 +139,6 @@ func (proxy *Proxy) writeStandardResponseHeaders() {
 	header.Set(XRequestID, proxy.XRequestID)
 }
 
-//TODO: this needs to crash nicely when TLS config produces garbage reads and shut  down the server with error message.
 func (runtime Runtime) tlsConfig() *tls.Config {
 	defer func() {
 		if err := recover(); err != nil {

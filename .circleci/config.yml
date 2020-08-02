@@ -118,6 +118,8 @@ jobs:
       JABBA_ONE_CFG: ./integration/jabba1.json
       JABBA_TWO_PORT: 8081
       JABBA_TWO_CFG: ./integration/jabba2.json
+      JABBA_THREE_PORT: 8443
+      JABBA_THREE_CFG: ./integration/jabba3.json
     steps:
       - checkout # check out source code to working directory
       - run:
@@ -241,6 +243,13 @@ jobs:
       - run:
           name: Wait for jabba two
           command: pwt localhost:${JABBA_TWO_PORT}
+      - run:
+          name: Start jabba three
+          command: jabba -c ${JABBA_TWO_THREE}
+          background: true
+      - run:
+          name: Wait for jabba three
+          command: pwt localhost:${JABBA_THREE_PORT}
       - run:
           name: Install Test dependencies
           command: |
