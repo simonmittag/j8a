@@ -245,7 +245,7 @@ jobs:
           command: pwt localhost:${JABBA_TWO_PORT}
       - run:
           name: Start jabba three
-          command: jabba -c ${JABBA_TWO_THREE}
+          command: jabba -c ${JABBA_THREE_CFG}
           background: true
       - run:
           name: Wait for jabba three
@@ -342,7 +342,10 @@ jobs:
       UPSTREAM_TWO_SLUG: /mse6
       UPSTREAM_THREE_PORT: 60085
       UPSTREAM_THREE_SLUG: /s1
-      JABBA_PORT: 8080
+      JABBA_ONE_PORT: 8080
+      JABBA_ONE_CFG: ./integration/jabba1.json
+      JABBA_THREE_PORT: 8443
+      JABBA_THREE_CFG: ./integration/jabba3.json
       TEST_DURATION_SECONDS: 10
       TEST_CONCURRENCY: 8
     steps:
@@ -382,17 +385,24 @@ jobs:
             go build github.com/simonmittag/jabba
             go install github.com/simonmittag/jabba/cmd/jabba
       - run:
-          name: Start jabba
-          command: jabba
+          name: Start jabba one
+          command: jabba -c ${JABBA_ONE_CFG}
           background: true
       - run:
-          name: Wait for Jabba
-          command: pwt localhost:${JABBA_PORT}
+          name: Wait for jabba one
+          command: pwt localhost:${JABBA_ONE_PORT}
       - run:
-          name: Execute performance tests on Jabba with wrk
-          command: cd performance && wrk -t ${TEST_CONCURRENCY} -c ${TEST_CONCURRENCY} -d ${TEST_DURATION_SECONDS}s -s test.lua -- http://localhost:${JABBA_PORT}/mse6/post performance_results.json
+          name: Start jabba three
+          command: jabba -c ${JABBA_THREE_CFG}
+          background: true
+      - run:
+          name: Wait for jabba three
+          command: pwt localhost:${JABBA_THREE_PORT}
+      - run:
+          name: Execute performance tests on Jabba one with wrk
+          command: cd performance && wrk -t ${TEST_CONCURRENCY} -c ${TEST_CONCURRENCY} -d ${TEST_DURATION_SECONDS}s -s test.lua -- http://localhost:${JABBA_ONE_PORT}/mse6/post performance_results.json
       - store_artifacts:
-          path: Performance/performance_results.json
+          path: performance/performance_results.json
           destination: performance_results.json
       - run:
           name: Check performance test results against threshold
