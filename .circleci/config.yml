@@ -411,7 +411,7 @@ jobs:
             test ${reqss} -gt ${PERFORMANCE_REQUEST_SECOND_THRESHOLD} && (echo "performance test passed, ${reqss} req/s > ${PERFORMANCE_REQUEST_SECOND_THRESHOLD} req/s";exit 0) || (echo "performance test failed, ${reqss} req/s < ${PERFORMANCE_REQUEST_SECOND_THRESHOLD} req/s";pkill jq)
       - run:
           name: Execute performance tests on Jabba three in TLS mode with wrk
-          command: cd performance && wrk -t ${TEST_CONCURRENCY} -c ${TEST_CONCURRENCY} -d ${TEST_DURATION_SECONDS}s -s test.lua -- https://localhost:${JABBA_THREE_PORT}/mse6/post performance_results.json
+          command: cd performance && wrk -t ${TEST_CONCURRENCY} -c ${TEST_CONCURRENCY} -d ${TEST_DURATION_SECONDS}s -s test.lua -- https://localhost:${JABBA_THREE_PORT}/mse6/post performance_results_tls.json
       - store_artifacts:
           path: performance/performance_results_tls.json
           destination: performance_results_tls.json
