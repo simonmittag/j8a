@@ -51,10 +51,26 @@ func HTTP11GetOverTlsVersion(t *testing.T, tlsVersion uint16, wantErr string) {
 
 	url := "https://localhost:8443/about"
 
-	certpool := x509.NewCertPool()
-	caPemFile, _ := os.Open("./certs/rootCA.pem")
-	caPem, _ := ioutil.ReadAll(caPemFile)
-	certpool.AppendCertsFromPEM(caPem)
+	certpool, _ := x509.SystemCertPool()
+	caPemFile, err := os.Open("./certs/rootCA.pem")
+	if err!=nil {
+		t.Errorf("unable to open root CA file, cause: %v", err)
+	}
+	caPem, err2 := ioutil.ReadAll(caPemFile)
+	if err2!=nil {
+		t.Errorf("unable to read root CA, cause: %v", err2)
+	}
+	ok := certpool.AppendCertsFromPEM(caPem)
+	if !ok {
+		t.Errorf("no certs appended using system certs only")
+	}
+
+	//cert, err3 := x509.ParseCertificate(caPem)
+	//if err3 == nil {
+	//	t.Logf("testing ROOT CA issuer common name: %v", cert.Issuer.CommonName)
+	//} else {
+	//	t.Errorf("unable to parse root CA certificate, cause: %v", err3)
+	//}
 
 	tlsConfig := &tls.Config{
 		MinVersion: tlsVersion,
