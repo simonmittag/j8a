@@ -399,13 +399,13 @@ jobs:
           name: Wait for jabba three
           command: pwt localhost:${JABBA_THREE_PORT}
       - run:
-          name: Execute performance tests on Jabba one with wrk
+          name: Execute performance tests on Jabba one in HTTP mode with wrk
           command: cd performance && wrk -t ${TEST_CONCURRENCY} -c ${TEST_CONCURRENCY} -d ${TEST_DURATION_SECONDS}s -s test.lua -- http://localhost:${JABBA_ONE_PORT}/mse6/post performance_results.json
       - store_artifacts:
           path: performance/performance_results.json
           destination: performance_results.json
       - run:
-          name: Check performance test results against threshold
+          name: Check performance test results from Jabba one in HTTP mode against threshold
           command: |
             export reqss=`cat performance/performance_results.json | jq .requestspersecond`
             test ${reqss} -gt ${PERFORMANCE_REQUEST_SECOND_THRESHOLD} && (echo "performance test passed, ${reqss} req/s > ${PERFORMANCE_REQUEST_SECOND_THRESHOLD} req/s";exit 0) || (echo "performance test failed, ${reqss} req/s < ${PERFORMANCE_REQUEST_SECOND_THRESHOLD} req/s";pkill jq)

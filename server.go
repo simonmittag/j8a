@@ -152,7 +152,7 @@ func (runtime Runtime) tlsConfig() *tls.Config {
 	var key []byte = []byte(runtime.Connection.Downstream.Key)
 	kp, _ := tls.X509KeyPair(cert, key)
 
-	//parse the first cert in the config, so we can report on it.
+	//parse the first cert in the config, so we can report on it. we assume certs are in order of cert, intermediate, root.
 	kp.Leaf, _ = x509.ParseCertificate(kp.Certificate[0])
 
 	//now create the TLS config.

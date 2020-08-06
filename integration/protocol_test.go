@@ -2,9 +2,11 @@ package integration
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"io/ioutil"
 	"net"
 	"net/http"
+	"os"
 	"strings"
 	"testing"
 )
@@ -48,9 +50,16 @@ func HTTP11GetOverTlsVersion(t *testing.T, tlsVersion uint16, wantErr string) {
 	var err error
 
 	url := "https://localhost:8443/about"
+
+	certpool := x509.NewCertPool()
+	caPemFile, _ := os.Open("./certs/rootCA.pem")
+	caPem, _ := ioutil.ReadAll(caPemFile)
+	certpool.AppendCertsFromPEM(caPem)
+
 	tlsConfig := &tls.Config{
 		MinVersion: tlsVersion,
 		MaxVersion: tlsVersion,
+		RootCAs:    certpool,
 	}
 
 	client := &http.Client{
@@ -66,7 +75,7 @@ func HTTP11GetOverTlsVersion(t *testing.T, tlsVersion uint16, wantErr string) {
 	}
 	response, err2 := client.Get(url)
 
-	if err==nil && err2==nil {
+	if err == nil && err2 == nil {
 		defer response.Body.Close()
 		body, _ := ioutil.ReadAll(response.Body)
 		if !strings.Contains(string(body), "Jabba") {
@@ -79,10 +88,10 @@ func HTTP11GetOverTlsVersion(t *testing.T, tlsVersion uint16, wantErr string) {
 			t.Errorf("illegal TLS version want %v, got %v", wantTls, gotTls)
 		}
 	} else {
-		if len(wantErr)==0 {
+		if len(wantErr) == 0 {
 			t.Errorf("connection error, cause %v or %v", err, err2)
 		} else {
-			if  wantErr == err.Error() || wantErr == err2.Error() {
+			if wantErr == err.Error() || wantErr == err2.Error() {
 				t.Logf("ok. got expected error: %v", wantErr)
 			} else {
 				t.Errorf("got unexpected error, want %v, got %v and %v", wantErr, err, err2)
