@@ -74,6 +74,7 @@ type Down struct {
 	Aborted     <-chan struct{}
 	AbortedFlag bool
 	startDate   time.Time
+	HttpVer     string
 }
 
 // Proxy wraps data for a single downstream request/response with multiple upstream HTTP request/response cycles.
@@ -165,6 +166,7 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 	body, _ := ioutil.ReadAll(request.Body)
 	proxy.Dwn.Path = request.URL.EscapedPath()
 	proxy.Dwn.URI = request.URL.RequestURI()
+	proxy.Dwn.HttpVer = fmt.Sprintf("%d.%d", request.ProtoMajor, request.ProtoMinor)
 
 	proxy.XRequestID = func() string {
 		xr := request.Header.Get(XRequestID)
