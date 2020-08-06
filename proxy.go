@@ -17,6 +17,15 @@ import (
 
 var httpUpstreamMaxAttempts int
 
+type TLSType string
+
+const (
+	TLS12       TLSType = "TLS1.2"
+	TLS13       TLSType = "TLS1.3"
+	TLS_UNKNOWN TLSType = "unknown"
+	TLS_NONE    TLSType = "none"
+)
+
 //RFC7231 4.2.1
 var httpSafeMethods []string = []string{"GET", "HEAD", "OPTIONS", "TRACE"}
 
@@ -173,14 +182,14 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 	proxy.Dwn.TlsVer = func() string {
 		if request.TLS != nil {
 			if request.TLS.Version == tls.VersionTLS12 {
-				return "TLS1.2"
+				return string(TLS12)
 			}
 			if request.TLS.Version == tls.VersionTLS13 {
-				return "TLS1.3"
+				return string(TLS13)
 			}
-			return "unknown SSL/TLS"
+			return string(TLS_UNKNOWN)
 		} else {
-			return ""
+			return string(TLS_NONE)
 		}
 	}()
 
