@@ -3,6 +3,7 @@ package jabba
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"fmt"
 	"github.com/google/uuid"
 	"io"
@@ -75,6 +76,7 @@ type Down struct {
 	AbortedFlag bool
 	startDate   time.Time
 	HttpVer     string
+	TlsVer      string
 }
 
 // Proxy wraps data for a single downstream request/response with multiple upstream HTTP request/response cycles.
@@ -167,6 +169,20 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 	proxy.Dwn.Path = request.URL.EscapedPath()
 	proxy.Dwn.URI = request.URL.RequestURI()
 	proxy.Dwn.HttpVer = fmt.Sprintf("%d.%d", request.ProtoMajor, request.ProtoMinor)
+
+	proxy.Dwn.TlsVer = func() string {
+		if request.TLS != nil {
+			if request.TLS.Version == tls.VersionTLS12 {
+				return "TLS1.2"
+			}
+			if request.TLS.Version == tls.VersionTLS13 {
+				return "TLS1.3"
+			}
+			return "unknown SSL/TLS"
+		} else {
+			return ""
+		}
+	}()
 
 	proxy.XRequestID = func() string {
 		xr := request.Header.Get(XRequestID)
