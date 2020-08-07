@@ -371,7 +371,6 @@ jobs:
     environment:
       LOGLEVEL: WARN
       LOGCOLOR: FALSE
-      PERFORMANCE_REQUEST_SECOND_THRESHOLD: 2500
       UPSTREAM_ONE_PORT: 60083
       UPSTREAM_ONE_SLUG: /mse6
       UPSTREAM_TWO_PORT: 60084
@@ -384,7 +383,9 @@ jobs:
       JABBA_THREE_CFG: ./integration/jabba3.json
       TEST_DURATION_SECONDS: 10
       TEST_CONCURRENCY_LOW: 8
+      TEST_CONCURRENCY_LOW_THRESHOLD: 2500
       TEST_CONCURRENCY_HIGH: 25
+      TEST_CONCURRENCY_HIGH_THRESHOLD: 1000
     steps:
       - checkout
       - run:
@@ -448,7 +449,7 @@ jobs:
           name: Check concurrency ${TEST_CONCURRENCY_LOW} performance tests in HTTP mode
           command: |
             export reqss=`cat performance/performance_results_http_low.json | jq .requestspersecond`
-            test ${reqss} -gt ${PERFORMANCE_REQUEST_SECOND_THRESHOLD} && (echo "performance test passed, ${reqss} req/s > ${PERFORMANCE_REQUEST_SECOND_THRESHOLD} req/s";exit 0) || (echo "performance test failed, ${reqss} req/s < ${PERFORMANCE_REQUEST_SECOND_THRESHOLD} req/s";pkill jq)
+            test ${reqss} -gt ${TEST_CONCURRENCY_LOW_THRESHOLD} && (echo "performance test passed, ${reqss} req/s > ${TEST_CONCURRENCY_LOW_THRESHOLD} req/s";exit 0) || (echo "performance test failed, ${reqss} req/s < ${TEST_CONCURRENCY_LOW_THRESHOLD} req/s";pkill jq)
       - run:
           name: Execute concurrency ${TEST_CONCURRENCY_LOW} performance tests in TLS mode
           command: cd performance && wrk -t ${TEST_CONCURRENCY_LOW} -c ${TEST_CONCURRENCY_LOW} -d ${TEST_DURATION_SECONDS}s -s test.lua -- https://localhost:${JABBA_THREE_PORT}/mse6/post performance_results_tls_low.json
@@ -462,7 +463,7 @@ jobs:
           name: Check concurrency ${TEST_CONCURRENCY_LOW} performance tests in TLS mode
           command: |
             export reqss=`cat performance/performance_results_tls_low.json | jq .requestspersecond`
-            test ${reqss} -gt ${PERFORMANCE_REQUEST_SECOND_THRESHOLD} && (echo "performance test passed, ${reqss} req/s > ${PERFORMANCE_REQUEST_SECOND_THRESHOLD} req/s";exit 0) || (echo "performance test failed, ${reqss} req/s < ${PERFORMANCE_REQUEST_SECOND_THRESHOLD} req/s";pkill jq)
+            test ${reqss} -gt ${TEST_CONCURRENCY_LOW_THRESHOLD} && (echo "performance test passed, ${reqss} req/s > ${TEST_CONCURRENCY_LOW_THRESHOLD} req/s";exit 0) || (echo "performance test failed, ${reqss} req/s < ${TEST_CONCURRENCY_LOW_THRESHOLD} req/s";pkill jq)
       - run:
           name: Execute concurrency ${TEST_CONCURRENCY_HIGH} performance tests in HTTP mode
           command: cd performance && wrk -t ${TEST_CONCURRENCY_HIGH} -c ${TEST_CONCURRENCY_HIGH} -d ${TEST_DURATION_SECONDS}s -s test.lua -- http://localhost:${JABBA_ONE_PORT}/mse6/post performance_results_http_high.json
@@ -476,7 +477,7 @@ jobs:
           name: Check concurrency ${TEST_CONCURRENCY_HIGH} performance tests in HTTP mode
           command: |
             export reqss=`cat performance/performance_results_http_high.json | jq .requestspersecond`
-            test ${reqss} -gt ${PERFORMANCE_REQUEST_SECOND_THRESHOLD} && (echo "performance test passed, ${reqss} req/s > ${PERFORMANCE_REQUEST_SECOND_THRESHOLD} req/s";exit 0) || (echo "performance test failed, ${reqss} req/s < ${PERFORMANCE_REQUEST_SECOND_THRESHOLD} req/s";pkill jq)
+            test ${reqss} -gt ${TEST_CONCURRENCY_HIGH_THRESHOLD} && (echo "performance test passed, ${reqss} req/s > ${TEST_CONCURRENCY_HIGH_THRESHOLD} req/s";exit 0) || (echo "performance test failed, ${reqss} req/s < ${TEST_CONCURRENCY_HIGH_THRESHOLD} req/s";pkill jq)
       - run:
           name: Execute concurrency ${TEST_CONCURRENCY_HIGH} performance tests in TLS mode
           command: cd performance && wrk -t ${TEST_CONCURRENCY_HIGH} -c ${TEST_CONCURRENCY_HIGH} -d ${TEST_DURATION_SECONDS}s -s test.lua -- https://localhost:${JABBA_THREE_PORT}/mse6/post performance_results_tls_high.json
@@ -490,4 +491,4 @@ jobs:
           name: Check concurrency ${TEST_CONCURRENCY_HIGH} performance tests in TLS mode
           command: |
             export reqss=`cat performance/performance_results_tls_high.json | jq .requestspersecond`
-            test ${reqss} -gt ${PERFORMANCE_REQUEST_SECOND_THRESHOLD} && (echo "performance test passed, ${reqss} req/s > ${PERFORMANCE_REQUEST_SECOND_THRESHOLD} req/s";exit 0) || (echo "performance test failed, ${reqss} req/s < ${PERFORMANCE_REQUEST_SECOND_THRESHOLD} req/s";pkill jq)
+            test ${reqss} -gt ${TEST_CONCURRENCY_HIGH_THRESHOLD} && (echo "performance test passed, ${reqss} req/s > ${TEST_CONCURRENCY_HIGH_THRESHOLD} req/s";exit 0) || (echo "performance test failed, ${reqss} req/s < ${TEST_CONCURRENCY_HIGH_THRESHOLD} req/s";pkill jq)
