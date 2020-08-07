@@ -277,7 +277,7 @@ jobs:
       JABBA_THREE_CFG: ./integration/jabba3.json
       TEST_DURATION_SECONDS: 10
       TEST_CONCURRENCY_LOW: 8
-      TEST_CONCURRENCY_HIGH: 100
+      TEST_CONCURRENCY_HIGH: 40
     steps:
       - checkout # check out source code to working directory
       - run:
@@ -329,7 +329,7 @@ jobs:
           name: Wait for Jabba three
           command: pwt localhost:${JABBA_THREE_PORT}
       - run:
-          name: Execute concurrency ${TEST_CONCURRENCY_LOW} performance tests in HTTP mode with wrk
+          name: Execute concurrency ${TEST_CONCURRENCY_LOW} performance tests in HTTP mode
           command: cd performance && wrk -t ${TEST_CONCURRENCY_LOW} -c ${TEST_CONCURRENCY_LOW} -d ${TEST_DURATION_SECONDS}s -s test.lua -- http://localhost:${JABBA_ONE_PORT}/mse6/post performance_results_http_low.json
       - run:
           name: Display concurrency ${TEST_CONCURRENCY_LOW} performance test results in HTTP mode
@@ -383,7 +383,8 @@ jobs:
       JABBA_THREE_PORT: 8443
       JABBA_THREE_CFG: ./integration/jabba3.json
       TEST_DURATION_SECONDS: 10
-      TEST_CONCURRENCY: 8
+      TEST_CONCURRENCY_LOW: 8
+      TEST_CONCURRENCY_HIGH: 40
     steps:
       - checkout
       - run:
@@ -435,24 +436,58 @@ jobs:
           name: Wait for jabba three
           command: pwt localhost:${JABBA_THREE_PORT}
       - run:
-          name: Execute performance tests on Jabba one in HTTP mode with wrk
-          command: cd performance && wrk -t ${TEST_CONCURRENCY} -c ${TEST_CONCURRENCY} -d ${TEST_DURATION_SECONDS}s -s test.lua -- http://localhost:${JABBA_ONE_PORT}/mse6/post performance_results.json
-      - store_artifacts:
-          path: performance/performance_results.json
-          destination: performance_results.json
+          name: Execute concurrency ${TEST_CONCURRENCY_LOW} performance tests in HTTP mode
+          command: cd performance && wrk -t ${TEST_CONCURRENCY_LOW} -c ${TEST_CONCURRENCY_LOW} -d ${TEST_DURATION_SECONDS}s -s test.lua -- http://localhost:${JABBA_ONE_PORT}/mse6/post performance_results_http_low.json
       - run:
-          name: Check HTTP performance test results from Jabba one against threshold
+          name: Display concurrency ${TEST_CONCURRENCY_LOW} performance test results in HTTP mode
           command: |
-            export reqss=`cat performance/performance_results.json | jq .requestspersecond`
+            export reqss=`cat performance/performance_results_http_low.json | jq .requestspersecond`
+            echo "(ignore 'Step cancelled' messages upstream, Jabba shutdown related)"
+            echo "=> performance test results http, concurrency ${TEST_CONCURRENCY_LOW}, ${reqss} req/s"
+      - run:
+          name: Check concurrency ${TEST_CONCURRENCY_LOW} performance tests in HTTP mode
+          command: |
+            export reqss=`cat performance/performance_results_http_low.json | jq .requestspersecond`
             test ${reqss} -gt ${PERFORMANCE_REQUEST_SECOND_THRESHOLD} && (echo "performance test passed, ${reqss} req/s > ${PERFORMANCE_REQUEST_SECOND_THRESHOLD} req/s";exit 0) || (echo "performance test failed, ${reqss} req/s < ${PERFORMANCE_REQUEST_SECOND_THRESHOLD} req/s";pkill jq)
       - run:
-          name: Execute performance tests on Jabba three in TLS mode with wrk
-          command: cd performance && wrk -t ${TEST_CONCURRENCY} -c ${TEST_CONCURRENCY} -d ${TEST_DURATION_SECONDS}s -s test.lua -- https://localhost:${JABBA_THREE_PORT}/mse6/post performance_results_tls.json
-      - store_artifacts:
-          path: performance/performance_results_tls.json
-          destination: performance_results_tls.json
+          name: Execute concurrency ${TEST_CONCURRENCY_LOW} performance tests in TLS mode
+          command: cd performance && wrk -t ${TEST_CONCURRENCY_LOW} -c ${TEST_CONCURRENCY_LOW} -d ${TEST_DURATION_SECONDS}s -s test.lua -- https://localhost:${JABBA_THREE_PORT}/mse6/post performance_results_tls_low.json
       - run:
-          name: Check TLS performance test results from Jabba three against threshold
+          name: Display concurrency ${TEST_CONCURRENCY_LOW} performance test results in TLS mode
           command: |
-            export reqss=`cat performance/performance_results_tls.json | jq .requestspersecond`
+            export reqss=`cat performance/performance_results_tls_low.json | jq .requestspersecond`
+            echo "(ignore 'Step cancelled' messages upstream, Jabba shutdown related)"
+            echo "=> performance test results TLS, concurrency ${TEST_CONCURRENCY_LOW}, ${reqss} req/s"
+      - run:
+          name: Check concurrency ${TEST_CONCURRENCY_LOW} performance tests in TLS mode
+          command: |
+            export reqss=`cat performance/performance_results_tls_low.json | jq .requestspersecond`
+            test ${reqss} -gt ${PERFORMANCE_REQUEST_SECOND_THRESHOLD} && (echo "performance test passed, ${reqss} req/s > ${PERFORMANCE_REQUEST_SECOND_THRESHOLD} req/s";exit 0) || (echo "performance test failed, ${reqss} req/s < ${PERFORMANCE_REQUEST_SECOND_THRESHOLD} req/s";pkill jq)
+      - run:
+          name: Execute concurrency ${TEST_CONCURRENCY_HIGH} performance tests in HTTP mode
+          command: cd performance && wrk -t ${TEST_CONCURRENCY_HIGH} -c ${TEST_CONCURRENCY_HIGH} -d ${TEST_DURATION_SECONDS}s -s test.lua -- http://localhost:${JABBA_ONE_PORT}/mse6/post performance_results_http_high.json
+      - run:
+          name: Display concurrency ${TEST_CONCURRENCY_HIGH} performance test results in HTTP mode
+          command: |
+            export reqss=`cat performance/performance_results_http_high.json | jq .requestspersecond`
+            echo "(ignore 'Step cancelled' messages upstream, Jabba shutdown related)"
+            echo "=> performance test results HTTP, concurrency ${TEST_CONCURRENCY_HIGH}, ${reqss} req/s"
+      - run:
+          name: Check concurrency ${TEST_CONCURRENCY_HIGH} performance tests in HTTP mode
+          command: |
+            export reqss=`cat performance/performance_results_http_high.json | jq .requestspersecond`
+            test ${reqss} -gt ${PERFORMANCE_REQUEST_SECOND_THRESHOLD} && (echo "performance test passed, ${reqss} req/s > ${PERFORMANCE_REQUEST_SECOND_THRESHOLD} req/s";exit 0) || (echo "performance test failed, ${reqss} req/s < ${PERFORMANCE_REQUEST_SECOND_THRESHOLD} req/s";pkill jq)
+      - run:
+          name: Execute concurrency ${TEST_CONCURRENCY_HIGH} performance tests in TLS mode
+          command: cd performance && wrk -t ${TEST_CONCURRENCY_HIGH} -c ${TEST_CONCURRENCY_HIGH} -d ${TEST_DURATION_SECONDS}s -s test.lua -- https://localhost:${JABBA_THREE_PORT}/mse6/post performance_results_tls_high.json
+      - run:
+          name: Display concurrency ${TEST_CONCURRENCY_HIGH} test results in TLS mode
+          command: |
+            export reqss=`cat performance/performance_results_tls_high.json | jq .requestspersecond`
+            echo "(ignore 'Step cancelled' messages upstream, Jabba shutdown related)"
+            echo "=> performance test results TLS, concurrency ${TEST_CONCURRENCY_HIGH}, ${reqss} req/s"
+      - run:
+          name: Check concurrency ${TEST_CONCURRENCY_HIGH} performance tests in TLS mode
+          command: |
+            export reqss=`cat performance/performance_results_tls_high.json | jq .requestspersecond`
             test ${reqss} -gt ${PERFORMANCE_REQUEST_SECOND_THRESHOLD} && (echo "performance test passed, ${reqss} req/s > ${PERFORMANCE_REQUEST_SECOND_THRESHOLD} req/s";exit 0) || (echo "performance test failed, ${reqss} req/s < ${PERFORMANCE_REQUEST_SECOND_THRESHOLD} req/s";pkill jq)
