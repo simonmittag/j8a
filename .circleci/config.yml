@@ -277,7 +277,7 @@ jobs:
       JABBA_THREE_CFG: ./integration/jabba3.json
       TEST_DURATION_SECONDS: 10
       TEST_CONCURRENCY_LOW: 8
-      TEST_CONCURRENCY_HIGH: 40
+      TEST_CONCURRENCY_HIGH: 25
     steps:
       - checkout # check out source code to working directory
       - run:
@@ -384,7 +384,7 @@ jobs:
       JABBA_THREE_CFG: ./integration/jabba3.json
       TEST_DURATION_SECONDS: 10
       TEST_CONCURRENCY_LOW: 8
-      TEST_CONCURRENCY_HIGH: 40
+      TEST_CONCURRENCY_HIGH: 25
     steps:
       - checkout
       - run:
