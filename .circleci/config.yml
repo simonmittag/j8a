@@ -492,3 +492,15 @@ jobs:
           command: |
             export reqss=`cat performance/performance_results_tls_high.json | jq .requestspersecond`
             test ${reqss} -gt ${TEST_CONCURRENCY_HIGH_THRESHOLD} && (echo "performance test passed, ${reqss} req/s > ${TEST_CONCURRENCY_HIGH_THRESHOLD} req/s";exit 0) || (echo "performance test failed, ${reqss} req/s < ${TEST_CONCURRENCY_HIGH_THRESHOLD} req/s";pkill jq)
+      - store_artifacts:
+          path: performance/performance_results_http_low.json
+          destination: performance_results_http_low.json
+      - store_artifacts:
+          path: performance/performance_results_http_high.json
+          destination: performance_results_http_high.json
+      - store_artifacts:
+          path: performance/performance_results_tls_low.json
+          destination: performance_results_tls_low.json
+      - store_artifacts:
+          path: performance/performance_results_tls_high.json
+          destination: performance_results_tls_high.json
