@@ -445,6 +445,10 @@ jobs:
             export reqss=`cat performance/performance_results_http_low.json | jq .requestspersecond`
             echo "(ignore 'Step cancelled' messages upstream, Jabba shutdown related)"
             echo "=> performance test results http, concurrency ${TEST_CONCURRENCY_LOW}, ${reqss} req/s"
+            cat performance/performance_results_http_low.json | jq .
+      - store_artifacts:
+          path: performance/performance_results_http_low.json
+          destination: performance_results_http_low.json
       - run:
           name: Check concurrency ${TEST_CONCURRENCY_LOW} performance tests in HTTP mode
           command: |
@@ -459,6 +463,10 @@ jobs:
             export reqss=`cat performance/performance_results_tls_low.json | jq .requestspersecond`
             echo "(ignore 'Step cancelled' messages upstream, Jabba shutdown related)"
             echo "=> performance test results TLS, concurrency ${TEST_CONCURRENCY_LOW}, ${reqss} req/s"
+            cat performance/performance_results_tls_low.json | jq .
+      - store_artifacts:
+          path: performance/performance_results_http_high.json
+          destination: performance_results_http_high.json
       - run:
           name: Check concurrency ${TEST_CONCURRENCY_LOW} performance tests in TLS mode
           command: |
@@ -473,6 +481,10 @@ jobs:
             export reqss=`cat performance/performance_results_http_high.json | jq .requestspersecond`
             echo "(ignore 'Step cancelled' messages upstream, Jabba shutdown related)"
             echo "=> performance test results HTTP, concurrency ${TEST_CONCURRENCY_HIGH}, ${reqss} req/s"
+            cat performance/performance_results_http_high.json | jq .
+      - store_artifacts:
+          path: performance/performance_results_http_high.json
+          destination: performance_results_http_high.json
       - run:
           name: Check concurrency ${TEST_CONCURRENCY_HIGH} performance tests in HTTP mode
           command: |
@@ -487,20 +499,12 @@ jobs:
             export reqss=`cat performance/performance_results_tls_high.json | jq .requestspersecond`
             echo "(ignore 'Step cancelled' messages upstream, Jabba shutdown related)"
             echo "=> performance test results TLS, concurrency ${TEST_CONCURRENCY_HIGH}, ${reqss} req/s"
+            cat performance/performance_results_tls_high.json | jq .
+      - store_artifacts:
+          path: performance/performance_results_tls_high.json
+          destination: performance_results_tls_high.json
       - run:
           name: Check concurrency ${TEST_CONCURRENCY_HIGH} performance tests in TLS mode
           command: |
             export reqss=`cat performance/performance_results_tls_high.json | jq .requestspersecond`
             test ${reqss} -gt ${TEST_CONCURRENCY_HIGH_THRESHOLD} && (echo "performance test passed, ${reqss} req/s > ${TEST_CONCURRENCY_HIGH_THRESHOLD} req/s";exit 0) || (echo "performance test failed, ${reqss} req/s < ${TEST_CONCURRENCY_HIGH_THRESHOLD} req/s";pkill jq)
-      - store_artifacts:
-          path: performance/performance_results_http_low.json
-          destination: performance_results_http_low.json
-      - store_artifacts:
-          path: performance/performance_results_http_high.json
-          destination: performance_results_http_high.json
-      - store_artifacts:
-          path: performance/performance_results_tls_low.json
-          destination: performance_results_tls_low.json
-      - store_artifacts:
-          path: performance/performance_results_tls_high.json
-          destination: performance_results_tls_high.json
