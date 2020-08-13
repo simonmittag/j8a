@@ -91,6 +91,16 @@ func TestServer2DownstreamRoundTripTimeoutFireWithSlowHeader31S(t *testing.T) {
 		false)
 }
 
+func TestServer3TLSDownstreamRoundTripTimeoutFireWithSlowHeader31S(t *testing.T) {
+	performJabbaTest(t,
+		"/slowheader",
+		31,
+		20,
+		504,
+		8443,
+		true)
+}
+
 func TestServer2DownstreamRoundTripTimeoutFireWithSlowBody31S(t *testing.T) {
 	performJabbaTest(t,
 		"/slowbody",
@@ -99,6 +109,16 @@ func TestServer2DownstreamRoundTripTimeoutFireWithSlowBody31S(t *testing.T) {
 		504,
 		8081,
 		false)
+}
+
+func TestServer3TLSDownstreamRoundTripTimeoutFireWithSlowBody31S(t *testing.T) {
+	performJabbaTest(t,
+		"/slowbody",
+		31,
+		20,
+		504,
+		8443,
+		true)
 }
 
 func TestServer2DownstreamRoundTripTimeoutFireWithSlowHeader25S(t *testing.T) {
@@ -111,6 +131,16 @@ func TestServer2DownstreamRoundTripTimeoutFireWithSlowHeader25S(t *testing.T) {
 		false)
 }
 
+func TestServer3TLSDownstreamRoundTripTimeoutFireWithSlowHeader25S(t *testing.T) {
+	performJabbaTest(t,
+		"/slowheader",
+		25,
+		20,
+		504,
+		8443,
+		true)
+}
+
 func TestServer2DownstreamRoundTripTimeoutFireWithSlowBody25S(t *testing.T) {
 	performJabbaTest(t,
 		"/slowbody",
@@ -119,6 +149,16 @@ func TestServer2DownstreamRoundTripTimeoutFireWithSlowBody25S(t *testing.T) {
 		504,
 		8081,
 		false)
+}
+
+func TestServer3TLSDownstreamRoundTripTimeoutFireWithSlowBody25S(t *testing.T) {
+	performJabbaTest(t,
+		"/slowbody",
+		25,
+		20,
+		504,
+		8443,
+		true)
 }
 
 func TestServer2DownstreamRoundTripTimeoutNotFireWithSlowHeader4S(t *testing.T) {
@@ -131,6 +171,16 @@ func TestServer2DownstreamRoundTripTimeoutNotFireWithSlowHeader4S(t *testing.T) 
 		false)
 }
 
+func TestServer3TLSDownstreamRoundTripTimeoutNotFireWithSlowHeader4S(t *testing.T) {
+	performJabbaTest(t,
+		"/slowheader",
+		4,
+		4,
+		200,
+		8443,
+		true)
+}
+
 func TestServer2DownstreamRoundTripTimeoutNotFireWithSlowBody4S(t *testing.T) {
 	performJabbaTest(t,
 		"/slowbody",
@@ -139,6 +189,16 @@ func TestServer2DownstreamRoundTripTimeoutNotFireWithSlowBody4S(t *testing.T) {
 		200,
 		8081,
 		false)
+}
+
+func TestServer3TLSDownstreamRoundTripTimeoutNotFireWithSlowBody4S(t *testing.T) {
+	performJabbaTest(t,
+		"/slowbody",
+		4,
+		4,
+		200,
+		8443,
+		true)
 }
 
 func TestServer2DownstreamRoundTripTimeoutNotFireWithSlowHeader2S(t *testing.T) {
@@ -151,6 +211,16 @@ func TestServer2DownstreamRoundTripTimeoutNotFireWithSlowHeader2S(t *testing.T) 
 		false)
 }
 
+func TestServer3TLSDownstreamRoundTripTimeoutNotFireWithSlowHeader2S(t *testing.T) {
+	performJabbaTest(t,
+		"/slowheader",
+		2,
+		2,
+		200,
+		8443,
+		true)
+}
+
 func TestServer2DownstreamRoundTripTimeoutNotFireWithSlowBody2S(t *testing.T) {
 	performJabbaTest(t,
 		"/slowbody",
@@ -159,4 +229,14 @@ func TestServer2DownstreamRoundTripTimeoutNotFireWithSlowBody2S(t *testing.T) {
 		200,
 		8081,
 		false)
+}
+
+func TestServer3DownstreamRoundTripTimeoutNotFireWithSlowBody2S(t *testing.T) {
+	performJabbaTest(t,
+		"/slowbody",
+		2,
+		2,
+		200,
+		8443,
+		true)
 }
