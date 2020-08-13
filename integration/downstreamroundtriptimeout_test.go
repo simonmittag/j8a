@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func TestServerHangsUpOnDownstreamIfRoundTripTimeoutExceeded(t *testing.T) {
+func TestServer2HangsUpOnDownstreamIfRoundTripTimeoutExceeded(t *testing.T) {
 	//if this test fails, check the jabba configuration for connection.downstream.ReadTimeoutSeconds
 	grace := 1
 	serverRoundTripTimeoutSeconds := 20
@@ -50,7 +50,7 @@ func TestServerHangsUpOnDownstreamIfRoundTripTimeoutExceeded(t *testing.T) {
 	}
 }
 
-func TestServerRoundTripNormalWithoutHangingUp(t *testing.T) {
+func TestServer1RoundTripNormalWithoutHangingUp(t *testing.T) {
 	//step 1 we connect to Jabba with net.dial
 	c, err := net.Dial("tcp", ":8080")
 	if err != nil {
