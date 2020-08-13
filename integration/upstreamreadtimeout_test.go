@@ -13,7 +13,8 @@ func TestServer1UpstreamReadTimeoutFireWithSlowHeader31S(t *testing.T) {
 		31,
 		12,
 		504,
-		8080)
+		8080,
+		false)
 }
 
 func TestServer1UpstreamReadTimeoutFireWithSlowBody31S(t *testing.T) {
@@ -22,7 +23,8 @@ func TestServer1UpstreamReadTimeoutFireWithSlowBody31S(t *testing.T) {
 		31,
 		12,
 		504,
-		8080)
+		8080,
+		false)
 }
 
 func TestServer1UpstreamReadTimeoutFireWithSlowHeader25S(t *testing.T) {
@@ -31,7 +33,8 @@ func TestServer1UpstreamReadTimeoutFireWithSlowHeader25S(t *testing.T) {
 		25,
 		12,
 		504,
-		8080)
+		8080,
+		false)
 }
 
 func TestServer1UpstreamReadTimeoutFireWithSlowBody25S(t *testing.T) {
@@ -40,7 +43,8 @@ func TestServer1UpstreamReadTimeoutFireWithSlowBody25S(t *testing.T) {
 		25,
 		12,
 		504,
-		8080)
+		8080,
+		false)
 }
 
 func TestServer1UpstreamReadTimeoutFireWithSlowHeader4S(t *testing.T) {
@@ -49,7 +53,8 @@ func TestServer1UpstreamReadTimeoutFireWithSlowHeader4S(t *testing.T) {
 		4,
 		12,
 		504,
-		8080)
+		8080,
+		false)
 }
 
 func TestServer1UpstreamReadTimeoutFireWithSlowBody4S(t *testing.T) {
@@ -58,7 +63,8 @@ func TestServer1UpstreamReadTimeoutFireWithSlowBody4S(t *testing.T) {
 		4,
 		12,
 		504,
-		8080)
+		8080,
+		false)
 }
 
 func TestServer1UpstreamReadTimeoutNotFireWithSlowHeader2S(t *testing.T) {
@@ -67,7 +73,8 @@ func TestServer1UpstreamReadTimeoutNotFireWithSlowHeader2S(t *testing.T) {
 		2,
 		2,
 		200,
-		8080)
+		8080,
+		false)
 }
 
 func TestServer1UpstreamReadTimeoutNotFireWithSlowBody2S(t *testing.T) {
@@ -76,18 +83,23 @@ func TestServer1UpstreamReadTimeoutNotFireWithSlowBody2S(t *testing.T) {
 		2,
 		2,
 		200,
-		8080)
+		8080,
+		false)
 }
 
-func performJabbaTest(t *testing.T, testMethod string, wantUpstreamWaitSeconds int, wantTotalWaitSeconds int, wantStatusCode int, serverPort int) {
+func performJabbaTest(t *testing.T, testMethod string, wantUpstreamWaitSeconds int, wantTotalWaitSeconds int, wantStatusCode int, serverPort int, tls bool) {
 	start := time.Now()
-	resp, err := http.Get(fmt.Sprintf("http://localhost:%d/mse6%s?wait=%d", serverPort, testMethod, wantUpstreamWaitSeconds))
+	scheme := "http"
+	if tls {
+		scheme = "https"
+	}
+	resp, err := http.Get(fmt.Sprintf("%s://localhost:%d/mse6%s?wait=%d", scheme, serverPort, testMethod, wantUpstreamWaitSeconds))
 	gotTotalWait := time.Since(start)
-	gotStatusCode := resp.StatusCode
 
 	if err != nil {
 		t.Errorf("error connecting to upstream for port %d, testMethod %s, cause: %v", serverPort, testMethod, err)
 	}
+	gotStatusCode := resp.StatusCode
 
 	if !okayTimeDrift(gotTotalWait, wantTotalWaitSeconds) {
 		t.Errorf("bad time drift for port %d, testMethod %s, want seconds %d, got %f", serverPort, testMethod, wantTotalWaitSeconds, gotTotalWait.Seconds())

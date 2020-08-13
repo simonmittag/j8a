@@ -87,7 +87,8 @@ func TestServer2DownstreamRoundTripTimeoutFireWithSlowHeader31S(t *testing.T) {
 		31,
 		20,
 		504,
-		8081)
+		8081,
+		false)
 }
 
 func TestServer2DownstreamRoundTripTimeoutFireWithSlowBody31S(t *testing.T) {
@@ -96,7 +97,8 @@ func TestServer2DownstreamRoundTripTimeoutFireWithSlowBody31S(t *testing.T) {
 		31,
 		20,
 		504,
-		8081)
+		8081,
+		false)
 }
 
 func TestServer2DownstreamRoundTripTimeoutFireWithSlowHeader25S(t *testing.T) {
@@ -105,7 +107,8 @@ func TestServer2DownstreamRoundTripTimeoutFireWithSlowHeader25S(t *testing.T) {
 		25,
 		20,
 		504,
-		8081)
+		8081,
+		false)
 }
 
 func TestServer2DownstreamRoundTripTimeoutFireWithSlowBody25S(t *testing.T) {
@@ -114,7 +117,8 @@ func TestServer2DownstreamRoundTripTimeoutFireWithSlowBody25S(t *testing.T) {
 		25,
 		20,
 		504,
-		8081)
+		8081,
+		false)
 }
 
 func TestServer2DownstreamRoundTripTimeoutNotFireWithSlowHeader4S(t *testing.T) {
@@ -123,7 +127,8 @@ func TestServer2DownstreamRoundTripTimeoutNotFireWithSlowHeader4S(t *testing.T) 
 		4,
 		4,
 		200,
-		8081)
+		8081,
+		false)
 }
 
 func TestServer2DownstreamRoundTripTimeoutNotFireWithSlowBody4S(t *testing.T) {
@@ -132,7 +137,8 @@ func TestServer2DownstreamRoundTripTimeoutNotFireWithSlowBody4S(t *testing.T) {
 		4,
 		4,
 		200,
-		8081)
+		8081,
+		false)
 }
 
 func TestServer2DownstreamRoundTripTimeoutNotFireWithSlowHeader2S(t *testing.T) {
@@ -141,7 +147,8 @@ func TestServer2DownstreamRoundTripTimeoutNotFireWithSlowHeader2S(t *testing.T) 
 		2,
 		2,
 		200,
-		8081)
+		8081,
+		false)
 }
 
 func TestServer2DownstreamRoundTripTimeoutNotFireWithSlowBody2S(t *testing.T) {
@@ -150,5 +157,6 @@ func TestServer2DownstreamRoundTripTimeoutNotFireWithSlowBody2S(t *testing.T) {
 		2,
 		2,
 		200,
-		8081)
+		8081,
+		false)
 }
