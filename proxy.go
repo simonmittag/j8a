@@ -175,12 +175,13 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 
 	//TODO: we are not processing downstream body reading errors, i.e. illegal content length
 	body, _ := ioutil.ReadAll(request.Body)
+	proxy.XRequestID = createXRequestID(request)
+	proxy.XRequestDebug = parseXRequestDebug(request)
+
 	proxy.Dwn.Path = request.URL.EscapedPath()
 	proxy.Dwn.URI = request.URL.RequestURI()
 	proxy.Dwn.HttpVer = parseHTTPVer(request)
 	proxy.Dwn.TlsVer = parseTlsVersion(request)
-	proxy.XRequestID = createXRequestID(request)
-	proxy.XRequestDebug = parseXRequestDebug(request)
 	proxy.Dwn.UserAgent = parseUserAgent(request)
 	proxy.Dwn.Method = parseMethod(request)
 	proxy.Dwn.Body = body
