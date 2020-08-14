@@ -180,7 +180,7 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 	proxy.Dwn.HttpVer = parseHTTPVer(request)
 	proxy.Dwn.TlsVer = parseTlsVersion(request)
 	proxy.XRequestID = createXRequestID(request)
-	proxy.XRequestDebug = proxy.parseXRequestDebug(request)
+	proxy.XRequestDebug = parseXRequestDebug(request)
 	proxy.Dwn.UserAgent = parseUserAgent(request)
 	proxy.Dwn.Method = parseMethod(request)
 	proxy.Dwn.Body = body
@@ -224,7 +224,7 @@ func parseHTTPVer(request *http.Request) string {
 	return fmt.Sprintf("%d.%d", request.ProtoMajor, request.ProtoMinor)
 }
 
-func (proxy *Proxy) parseXRequestDebug(request *http.Request) bool {
+func parseXRequestDebug(request *http.Request) bool {
 	h := request.Header.Get("X-REQUEST-DEBUG")
 	return len(h) > 0 && strings.ToLower(h) == "true"
 }
