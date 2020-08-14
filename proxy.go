@@ -177,42 +177,12 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 	body, _ := ioutil.ReadAll(request.Body)
 	proxy.Dwn.Path = request.URL.EscapedPath()
 	proxy.Dwn.URI = request.URL.RequestURI()
-	proxy.Dwn.HttpVer = fmt.Sprintf("%d.%d", request.ProtoMajor, request.ProtoMinor)
-
-	proxy.Dwn.TlsVer = func() string {
-		if request.TLS != nil {
-			if request.TLS.Version == tls.VersionTLS12 {
-				return string(TLS12)
-			}
-			if request.TLS.Version == tls.VersionTLS13 {
-				return string(TLS13)
-			}
-			return string(TLS_UNKNOWN)
-		} else {
-			return string(TLS_NONE)
-		}
-	}()
-
-	proxy.XRequestID = func() string {
-		xr := request.Header.Get(XRequestID)
-		if len(xr) == 0 {
-			uuid, _ := uuid.NewRandom()
-			xr = fmt.Sprintf("XR-%s-%s", ID, uuid)
-		}
-		return xr
-	}()
-
-	proxy.XRequestDebug = func() bool {
-		h := request.Header.Get("X-REQUEST-DEBUG")
-		return len(h) > 0 && strings.ToLower(h) == "true"
-	}()
-
-	proxy.Dwn.UserAgent = request.Header.Get("User-Agent")
-	if len(proxy.Dwn.UserAgent) == 0 {
-		proxy.Dwn.UserAgent = "unknown"
-	}
-
-	proxy.Dwn.Method = strings.ToUpper(request.Method)
+	proxy.Dwn.HttpVer = parseHTTPVer(request)
+	proxy.Dwn.TlsVer = parseTlsVersion(request)
+	proxy.XRequestID = createXRequestID(request)
+	proxy.XRequestDebug = proxy.parseXRequestDebug(request)
+	proxy.Dwn.UserAgent = parseUserAgent(request)
+	proxy.Dwn.Method = parseMethod(request)
 	proxy.Dwn.Body = body
 	proxy.Dwn.Req = request
 
@@ -236,6 +206,50 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 		Str(XRequestID, proxy.XRequestID).
 		Msg("parsed downstream request")
 	return proxy
+}
+
+func parseMethod(request *http.Request) string {
+	return strings.ToUpper(request.Method)
+}
+
+func parseUserAgent(request *http.Request) string {
+	ua := request.Header.Get("User-Agent")
+	if len(ua) == 0 {
+		ua = "unknown"
+	}
+	return ua
+}
+
+func parseHTTPVer(request *http.Request) string {
+	return fmt.Sprintf("%d.%d", request.ProtoMajor, request.ProtoMinor)
+}
+
+func (proxy *Proxy) parseXRequestDebug(request *http.Request) bool {
+	h := request.Header.Get("X-REQUEST-DEBUG")
+	return len(h) > 0 && strings.ToLower(h) == "true"
+}
+
+func parseTlsVersion(request *http.Request) string {
+	if request.TLS != nil {
+		if request.TLS.Version == tls.VersionTLS12 {
+			return string(TLS12)
+		}
+		if request.TLS.Version == tls.VersionTLS13 {
+			return string(TLS13)
+		}
+		return string(TLS_UNKNOWN)
+	} else {
+		return string(TLS_NONE)
+	}
+}
+
+func createXRequestID(request *http.Request) string {
+	xr := request.Header.Get(XRequestID)
+	if len(xr) == 0 {
+		uuid, _ := uuid.NewRandom()
+		xr = fmt.Sprintf("XR-%s-%s", ID, uuid)
+	}
+	return xr
 }
 
 func (proxy *Proxy) setOutgoing(out http.ResponseWriter) *Proxy {
