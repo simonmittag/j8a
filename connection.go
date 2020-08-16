@@ -26,6 +26,12 @@ type Downstream struct {
 
 	// Serving on this port
 	Port int
+
+	// TLS x509 certificate
+	Cert string
+
+	// TLS secret key
+	Key string
 }
 
 // Upstream connection params for remote servers that are being proxied

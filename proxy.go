@@ -3,6 +3,7 @@ package jabba
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"fmt"
 	"github.com/google/uuid"
 	"io"
@@ -15,6 +16,15 @@ import (
 )
 
 var httpUpstreamMaxAttempts int
+
+type TLSType string
+
+const (
+	TLS12       TLSType = "TLS1.2"
+	TLS13       TLSType = "TLS1.3"
+	TLS_UNKNOWN TLSType = "unknown"
+	TLS_NONE    TLSType = "none"
+)
 
 //RFC7231 4.2.1
 var httpSafeMethods []string = []string{"GET", "HEAD", "OPTIONS", "TRACE"}
@@ -74,6 +84,8 @@ type Down struct {
 	Aborted     <-chan struct{}
 	AbortedFlag bool
 	startDate   time.Time
+	HttpVer     string
+	TlsVer      string
 }
 
 // Proxy wraps data for a single downstream request/response with multiple upstream HTTP request/response cycles.
@@ -163,29 +175,15 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 
 	//TODO: we are not processing downstream body reading errors, i.e. illegal content length
 	body, _ := ioutil.ReadAll(request.Body)
+	proxy.XRequestID = createXRequestID(request)
+	proxy.XRequestDebug = parseXRequestDebug(request)
+
 	proxy.Dwn.Path = request.URL.EscapedPath()
 	proxy.Dwn.URI = request.URL.RequestURI()
-
-	proxy.XRequestID = func() string {
-		xr := request.Header.Get(XRequestID)
-		if len(xr) == 0 {
-			uuid, _ := uuid.NewRandom()
-			xr = fmt.Sprintf("XR-%s-%s", ID, uuid)
-		}
-		return xr
-	}()
-
-	proxy.XRequestDebug = func() bool {
-		h := request.Header.Get("X-REQUEST-DEBUG")
-		return len(h) > 0 && strings.ToLower(h) == "true"
-	}()
-
-	proxy.Dwn.UserAgent = request.Header.Get("User-Agent")
-	if len(proxy.Dwn.UserAgent) == 0 {
-		proxy.Dwn.UserAgent = "unknown"
-	}
-
-	proxy.Dwn.Method = strings.ToUpper(request.Method)
+	proxy.Dwn.HttpVer = parseHTTPVer(request)
+	proxy.Dwn.TlsVer = parseTlsVersion(request)
+	proxy.Dwn.UserAgent = parseUserAgent(request)
+	proxy.Dwn.Method = parseMethod(request)
 	proxy.Dwn.Body = body
 	proxy.Dwn.Req = request
 
@@ -209,6 +207,50 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 		Str(XRequestID, proxy.XRequestID).
 		Msg("parsed downstream request")
 	return proxy
+}
+
+func parseMethod(request *http.Request) string {
+	return strings.ToUpper(request.Method)
+}
+
+func parseUserAgent(request *http.Request) string {
+	ua := request.Header.Get("User-Agent")
+	if len(ua) == 0 {
+		ua = "unknown"
+	}
+	return ua
+}
+
+func parseHTTPVer(request *http.Request) string {
+	return fmt.Sprintf("%d.%d", request.ProtoMajor, request.ProtoMinor)
+}
+
+func parseXRequestDebug(request *http.Request) bool {
+	h := request.Header.Get("X-REQUEST-DEBUG")
+	return len(h) > 0 && strings.ToLower(h) == "true"
+}
+
+func parseTlsVersion(request *http.Request) string {
+	if request.TLS != nil {
+		if request.TLS.Version == tls.VersionTLS12 {
+			return string(TLS12)
+		}
+		if request.TLS.Version == tls.VersionTLS13 {
+			return string(TLS13)
+		}
+		return string(TLS_UNKNOWN)
+	} else {
+		return string(TLS_NONE)
+	}
+}
+
+func createXRequestID(request *http.Request) string {
+	xr := request.Header.Get(XRequestID)
+	if len(xr) == 0 {
+		uuid, _ := uuid.NewRandom()
+		xr = fmt.Sprintf("XR-%s-%s", ID, uuid)
+	}
+	return xr
 }
 
 func (proxy *Proxy) setOutgoing(out http.ResponseWriter) *Proxy {
