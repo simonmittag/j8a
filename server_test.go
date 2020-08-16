@@ -30,7 +30,7 @@ func TestServerTlsConfig(t *testing.T) {
 }
 
 func setupJabba() {
-	ConfigFile = "./jabba.json"
+	ConfigFile = "./jabba.yml"
 	Boot.Add(1)
 	go BootStrap()
 	Boot.Wait()

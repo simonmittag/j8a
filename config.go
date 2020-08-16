@@ -2,6 +2,7 @@ package jabba
 
 import (
 	"encoding/json"
+	"github.com/ghodss/yaml"
 	"io/ioutil"
 	"os"
 	"regexp"
@@ -38,6 +39,7 @@ func (config Config) read(file string) *Config {
 }
 
 func (config Config) parse(jsonConfig []byte) *Config {
+	jsonConfig, _ = yaml.YAMLToJSON(jsonConfig)
 	json.Unmarshal(jsonConfig, &config)
 	//todo tell me about more of the config, number of routes
 	log.Debug().Msgf("parsed server configuration with %d live routes", len(config.Routes))

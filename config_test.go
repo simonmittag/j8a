@@ -313,7 +313,7 @@ func TestSortRoutes(t *testing.T) {
 
 //TestReadConfigFile
 func TestReadConfigFile(t *testing.T) {
-	config := new(Config).read("./jabba.json")
+	config := new(Config).read("./jabba.yml")
 	if config.Routes == nil {
 		t.Error("incorrectly parsed routes in config file")
 	}
@@ -330,7 +330,7 @@ func TestReadConfigFile(t *testing.T) {
 
 func TestReApplyScheme(t *testing.T) {
 	want := map[string]string{"http": "", "https": ""}
-	config := new(Config).read("./jabba.json").reApplyResourceSchemes()
+	config := new(Config).read("./jabba.yml").reApplyResourceSchemes()
 
 	for name := range config.Resources {
 		resourceMappings := config.Resources[name]
