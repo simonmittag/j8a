@@ -115,11 +115,11 @@ jobs:
       UPSTREAM_18_PORT: 60100
       UPSTREAM_18_SLUG: /s16
       JABBA_ONE_PORT: 8080
-      JABBA_ONE_CFG: ./integration/jabba1.json
+      JABBA_ONE_CFG: ./integration/jabba1.yml
       JABBA_TWO_PORT: 8081
-      JABBA_TWO_CFG: ./integration/jabba2.json
+      JABBA_TWO_CFG: ./integration/jabba2.yml
       JABBA_THREE_PORT: 8443
-      JABBA_THREE_CFG: ./integration/jabba3.json
+      JABBA_THREE_CFG: ./integration/jabba3.yml
     steps:
       - checkout # check out source code to working directory
       - run:
@@ -272,9 +272,9 @@ jobs:
       UPSTREAM_THREE_PORT: 60085
       UPSTREAM_THREE_SLUG: /s1
       JABBA_ONE_PORT: 8080
-      JABBA_ONE_CFG: ./integration/jabba1.json
+      JABBA_ONE_CFG: ./integration/jabba1.yml
       JABBA_THREE_PORT: 8443
-      JABBA_THREE_CFG: ./integration/jabba3.json
+      JABBA_THREE_CFG: ./integration/jabba3.yml
       TEST_DURATION_SECONDS: 10
       TEST_CONCURRENCY_LOW: 8
       TEST_CONCURRENCY_HIGH: 25
@@ -378,9 +378,9 @@ jobs:
       UPSTREAM_THREE_PORT: 60085
       UPSTREAM_THREE_SLUG: /s1
       JABBA_ONE_PORT: 8080
-      JABBA_ONE_CFG: ./integration/jabba1.json
+      JABBA_ONE_CFG: ./integration/jabba1.yml
       JABBA_THREE_PORT: 8443
-      JABBA_THREE_CFG: ./integration/jabba3.json
+      JABBA_THREE_CFG: ./integration/jabba3.yml
       TEST_DURATION_SECONDS: 10
       TEST_CONCURRENCY_LOW: 8
       TEST_CONCURRENCY_LOW_THRESHOLD: 2500

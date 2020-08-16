@@ -130,7 +130,7 @@ func BenchmarkRouteMatchingRegex(b *testing.B) {
 	//suppress noise
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 
-	config := new(Config).read("./jabba.json")
+	config := new(Config).read("./jabba.yml")
 	config = config.compileRoutePaths().sortRoutes()
 
 	for i := 0; i < b.N; i++ {
@@ -146,7 +146,7 @@ func BenchmarkRouteMatchingString(b *testing.B) {
 	//suppress noise
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 
-	config := new(Config).read("./jabba.json")
+	config := new(Config).read("./jabba.yml")
 	config = config.sortRoutes()
 
 	for i := 0; i < b.N; i++ {

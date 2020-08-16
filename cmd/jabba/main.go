@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	cfg := flag.String("c", "./jabba.json", "config file location")
+	cfg := flag.String("c", "./jabba.yml", "config file location")
 	flag.Usage = func() {
 		fmt.Printf(`jabba[%s] "a json friendly reverse TLS proxy for APIs"`, jabba.Version)
 		fmt.Print("\n")
