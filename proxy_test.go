@@ -1,7 +1,9 @@
 package jabba
 
 import (
+	"crypto/tls"
 	"fmt"
+	"net/http"
 	"testing"
 	"time"
 )
@@ -60,5 +62,25 @@ func TestAbortAllUpstreamAttempts(t *testing.T) {
 
 	if want != got {
 		t.Errorf("cancel func on proxy upstream attempt not triggered")
+	}
+}
+
+func TestParseTlsVersionV12(t *testing.T) {
+	req, _ := http.NewRequest("GET", "/hello", nil)
+	req.TLS = &tls.ConnectionState{
+		Version: tls.VersionTLS12,
+	}
+	if "TLS1.2" != parseTlsVersion(req) {
+		t.Errorf("wrong TLS version")
+	}
+}
+
+func TestParseTlsVersionV13(t *testing.T) {
+	req, _ := http.NewRequest("GET", "/hello", nil)
+	req.TLS = &tls.ConnectionState{
+		Version: tls.VersionTLS13,
+	}
+	if "TLS1.3" != parseTlsVersion(req) {
+		t.Errorf("wrong TLS version")
 	}
 }
