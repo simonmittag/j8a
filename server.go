@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"github.com/hako/durafmt"
 	"github.com/rs/zerolog"
+	"math"
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -150,10 +152,9 @@ func (runtime Runtime) tlsConfig() *tls.Config {
 	//here we create a keypair from the PEM string in the config file
 	var cert []byte = []byte(runtime.Connection.Downstream.Cert)
 	var key []byte = []byte(runtime.Connection.Downstream.Key)
-	kp, _ := tls.X509KeyPair(cert, key)
+	chain, _ := tls.X509KeyPair(cert, key)
 
-	//parse the first cert in the config, so we can report on it. we assume certs are in order of cert, intermediate, root.
-	kp.Leaf, _ = x509.ParseCertificate(kp.Certificate[0])
+	logCertificateStats(chain)
 
 	//now create the TLS config.
 	config := &tls.Config{
@@ -172,26 +173,76 @@ func (runtime Runtime) tlsConfig() *tls.Config {
 			//clients, it still gives us an A+ result on: https://www.ssllabs.com/ssltest/analyze.html?d=j8a.io
 			tls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,
 		},
-		Certificates: []tls.Certificate{kp},
+		Certificates: []tls.Certificate{chain},
 	}
 
-	//and tell our users what we found.
-	until := time.Until(kp.Leaf.NotAfter)
-	monthy := time.Hour * 24 * 30
-	var ev *zerolog.Event
+	return config
+}
 
+func logCertificateStats(chain tls.Certificate) {
+	var shortest time.Duration = math.MaxInt64
+	var sb strings.Builder
+	monthy := time.Hour * 24 * 30
+	sb.WriteString("Your certificate chain explained ")
+
+	root := x509.NewCertPool()
+	inter := x509.NewCertPool()
+	for i, c := range chain.Certificate {
+		if i>0 && i<len(chain.Certificate)-1 {
+			c1, _ := x509.ParseCertificate(c)
+			inter.AddCert(c1)
+		}
+		if i==len(chain.Certificate)-1 {
+			c1, _ := x509.ParseCertificate(c)
+			root.AddCert(c1)
+		}
+	}
+
+	for i, c := range chain.Certificate {
+		leaf, _ := x509.ParseCertificate(c)
+		//and tell our users what we found.
+		until := time.Until(leaf.NotAfter)
+
+		if until < shortest {
+			shortest = until
+		}
+
+		if !leaf.IsCA {
+			used, _ := leaf.Verify(x509.VerifyOptions{
+				Intermediates: inter,
+				Roots: root})
+			sb.WriteString(fmt.Sprintf("with %d/%d chain elements used to locate root CA. ", len(used[0]), len(chain.Certificate)))
+			sb.WriteString(fmt.Sprintf("#%d TLS certificate for DNS names %s, Common name [%s], signed by issuer [%s], expires in %s. ",
+				i+1,
+				leaf.DNSNames,
+				leaf.Subject.CommonName,
+				leaf.Issuer.CommonName,
+				durafmt.Parse(until).LimitFirstN(3).String(),
+			))
+		} else {
+			caType := "intermediate"
+			if leaf.Issuer.CommonName == leaf.Subject.CommonName {
+				caType = "root"
+			}
+			sb.WriteString(fmt.Sprintf("#%d %s CA for Common name [%s], signed by issuer [%s], expires in %s. ",
+				i+1,
+				caType,
+				leaf.Subject.CommonName,
+				leaf.Issuer.CommonName,
+				durafmt.Parse(until).LimitFirstN(3).String(),
+			))
+		}
+	}
+
+	var ev *zerolog.Event
 	//if the certificate expires in less than 30 days we send this as a log.Warn event instead.
-	if until < monthy {
+	if shortest < monthy {
 		ev = log.Warn()
 	} else {
 		ev = log.Debug()
 	}
-	ev.Msgf("parsed TLS certificate for DNS names %s from issuer %s, expires in %s",
-		kp.Leaf.DNSNames,
-		kp.Leaf.Issuer.CommonName,
-		durafmt.Parse(until).LimitFirstN(3).String(),
-	)
-	return config
+
+	ev.Msg(sb.String())
 }
 
 func sendStatusCodeAsJSON(proxy *Proxy) {
