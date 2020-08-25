@@ -2,15 +2,10 @@ package jabba
 
 import (
 	"crypto/tls"
-	"crypto/x509"
 	"fmt"
-	"github.com/hako/durafmt"
-	"github.com/rs/zerolog"
-	"math"
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 
@@ -177,72 +172,6 @@ func (runtime Runtime) tlsConfig() *tls.Config {
 	}
 
 	return config
-}
-
-func logCertificateStats(chain tls.Certificate) {
-	var shortest time.Duration = math.MaxInt64
-	var sb strings.Builder
-	monthy := time.Hour * 24 * 30
-	sb.WriteString("Your certificate chain explained ")
-
-	root := x509.NewCertPool()
-	inter := x509.NewCertPool()
-	for i, c := range chain.Certificate {
-		if i>0 && i<len(chain.Certificate)-1 {
-			c1, _ := x509.ParseCertificate(c)
-			inter.AddCert(c1)
-		}
-		if i==len(chain.Certificate)-1 {
-			c1, _ := x509.ParseCertificate(c)
-			root.AddCert(c1)
-		}
-	}
-
-	for i, c := range chain.Certificate {
-		leaf, _ := x509.ParseCertificate(c)
-		//and tell our users what we found.
-		until := time.Until(leaf.NotAfter)
-
-		if until < shortest {
-			shortest = until
-		}
-
-		if !leaf.IsCA {
-			used, _ := leaf.Verify(x509.VerifyOptions{
-				Intermediates: inter,
-				Roots: root})
-			sb.WriteString(fmt.Sprintf("with %d/%d chain elements used to locate root CA. ", len(used[0]), len(chain.Certificate)))
-			sb.WriteString(fmt.Sprintf("#%d TLS certificate for DNS names %s, Common name [%s], signed by issuer [%s], expires in %s. ",
-				i+1,
-				leaf.DNSNames,
-				leaf.Subject.CommonName,
-				leaf.Issuer.CommonName,
-				durafmt.Parse(until).LimitFirstN(3).String(),
-			))
-		} else {
-			caType := "intermediate"
-			if leaf.Issuer.CommonName == leaf.Subject.CommonName {
-				caType = "root"
-			}
-			sb.WriteString(fmt.Sprintf("#%d %s CA for Common name [%s], signed by issuer [%s], expires in %s. ",
-				i+1,
-				caType,
-				leaf.Subject.CommonName,
-				leaf.Issuer.CommonName,
-				durafmt.Parse(until).LimitFirstN(3).String(),
-			))
-		}
-	}
-
-	var ev *zerolog.Event
-	//if the certificate expires in less than 30 days we send this as a log.Warn event instead.
-	if shortest < monthy {
-		ev = log.Warn()
-	} else {
-		ev = log.Debug()
-	}
-
-	ev.Msg(sb.String())
 }
 
 func sendStatusCodeAsJSON(proxy *Proxy) {
