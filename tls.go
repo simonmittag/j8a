@@ -12,58 +12,66 @@ import (
 	"time"
 )
 
-type TlsLink struct {
-	cert           *x509.Certificate
-	expiryDuration time.Duration
-	expiryString   string
-	shortestExpiry bool
-	isCA           bool
+type PDuration time.Duration
+
+func (p PDuration) AsString() string {
+	return durafmt.Parse(time.Duration(p)).LimitFirstN(3).String()
 }
 
-func logCertificateStats(chain tls.Certificate) {
-	monthDuration := time.Hour * 24 * 30
-	majorBrowserExpiryDuration := time.Hour * 24 * 398
-	root, inter := splitCertPools(chain)
+func (p PDuration) AsDuration() time.Duration {
+	return time.Duration(p)
+}
 
-	var tlsLinks []TlsLink
+func (p PDuration) AsDays() int {
+	return int(p.AsDuration().Hours() / 24)
+}
 
-	var shortest time.Duration = math.MaxInt64
-	si := 0
-	for i, c := range chain.Certificate {
-		cert, _ := x509.ParseCertificate(c)
-		link := TlsLink{
-			cert:           cert,
-			expiryDuration: time.Until(cert.NotAfter),
-			expiryString:   durafmt.Parse(time.Until(cert.NotAfter)).LimitFirstN(3).String(),
-			shortestExpiry: false,
-			isCA:           cert.IsCA,
-		}
-		tlsLinks = append(tlsLinks, link)
-		if link.expiryDuration < shortest {
-			si = i
-			shortest = link.expiryDuration
-		}
+type TlsLink struct {
+	cert              *x509.Certificate
+	remainingValidity PDuration
+	totalValidity     PDuration
+	browserValidity   PDuration
+	earliestExpiry    bool
+	isCA              bool
+}
+
+func (t TlsLink) browserExpiry() PDuration {
+	return PDuration(time.Hour * 24 * 398)
+}
+
+func (t TlsLink) printRemainingValidity() string {
+	rv := t.remainingValidity.AsString()
+	if t.earliestExpiry {
+		rv = rv + ", which is the earliest in your chain"
 	}
-	tlsLinks[si].shortestExpiry = true
-	tlsLinks[si].expiryString += " which is the earliest expiry period in your chain"
+	return rv
+}
+
+func logCertificateStats(chain tls.Certificate) []TlsLink {
+	root, inter := splitCertPools(chain)
+	month := PDuration(time.Hour * 24 * 30)
+	tlsLinks := parseTlsLinks(chain)
 
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("Your certificate chain size %d explained. ", len(chain.Certificate)))
+	sb.WriteString(fmt.Sprintf("Snapshot of your cert chain size %d explained. ", len(chain.Certificate)))
 	for i, link := range tlsLinks {
 		if !link.isCA {
 			link.cert.Verify(x509.VerifyOptions{
 				Intermediates: inter,
 				Roots:         root})
-			sb.WriteString(fmt.Sprintf("TLS certificate (%d/%d) for DNS names %s, Common name [%s], signed by issuer [%s], expires in %s. ",
+			sb.WriteString(fmt.Sprintf("TLS cert (%d/%d) for DNS names %s, common name [%s], signed by issuer [%s], expires in %s. ",
 				i+1,
 				len(chain.Certificate),
 				link.cert.DNSNames,
 				link.cert.Subject.CommonName,
 				link.cert.Issuer.CommonName,
-				link.expiryString,
+				link.printRemainingValidity(),
 			))
-			if link.expiryDuration > majorBrowserExpiryDuration {
-				sb.WriteString(fmt.Sprintf("Note this is above 398 day threshold accepted by major browsers. "))
+			if link.totalValidity > link.browserExpiry() {
+				sb.WriteString(fmt.Sprintf("Total validity period of %d/%d days is above browser max. You may experience disruption in %s, consider cert update beforehand. ",
+					int(link.totalValidity.AsDays()),
+					int(link.browserExpiry().AsDays()),
+					link.browserValidity.AsString()))
 			}
 		} else {
 			caType := "Intermediate"
@@ -76,20 +84,51 @@ func logCertificateStats(chain tls.Certificate) {
 				len(chain.Certificate),
 				link.cert.Subject.CommonName,
 				link.cert.Issuer.CommonName,
-				link.expiryString,
+				link.remainingValidity.AsString(),
 			))
 		}
 	}
 
-	var ev *zerolog.Event
-	//if the certificate expires in less than 30 days we send this as a log.Warn event instead.
-	if shortest < monthDuration {
-		ev = log.Warn()
-	} else {
-		ev = log.Debug()
+	for _, t := range tlsLinks {
+		if t.earliestExpiry {
+			var ev *zerolog.Event
+			//if the certificate expires in less than 30 days we send this as a log.Warn event instead.
+			if t.remainingValidity < month {
+				ev = log.Warn()
+			} else {
+				ev = log.Debug()
+			}
+			ev.Msg(sb.String())
+		}
 	}
 
-	ev.Msg(sb.String())
+	return tlsLinks
+}
+
+func parseTlsLinks(chain tls.Certificate) []TlsLink {
+	browserExpiry := PDuration(time.Hour * 24 * 398)
+	earliestExpiry := PDuration(math.MaxInt64)
+
+	var tlsLinks []TlsLink
+	si := 0
+	for i, c := range chain.Certificate {
+		cert, _ := x509.ParseCertificate(c)
+		link := TlsLink{
+			cert:              cert,
+			remainingValidity: PDuration(time.Until(cert.NotAfter)),
+			totalValidity:     PDuration(cert.NotAfter.Sub(cert.NotBefore)),
+			browserValidity:   PDuration(time.Until(cert.NotBefore.Add(browserExpiry.AsDuration()))),
+			earliestExpiry:    false,
+			isCA:              cert.IsCA,
+		}
+		tlsLinks = append(tlsLinks, link)
+		if link.remainingValidity < earliestExpiry {
+			si = i
+			earliestExpiry = link.remainingValidity
+		}
+	}
+	tlsLinks[si].earliestExpiry = true
+	return tlsLinks
 }
 
 func splitCertPools(chain tls.Certificate) (*x509.CertPool, *x509.CertPool) {
