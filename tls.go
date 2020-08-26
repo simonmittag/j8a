@@ -48,7 +48,7 @@ func logCertificateStats(chain tls.Certificate) {
 	tlsLinks[si].expiryString += " which is the earliest expiry period in your chain"
 
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("Your certificate chain with %d links explained. ", len(chain.Certificate)))
+	sb.WriteString(fmt.Sprintf("Your certificate chain size %d explained. ", len(chain.Certificate)))
 	for i, link := range tlsLinks {
 		if !link.isCA {
 			link.cert.Verify(x509.VerifyOptions{
@@ -66,9 +66,9 @@ func logCertificateStats(chain tls.Certificate) {
 				sb.WriteString(fmt.Sprintf("Note this is above 398 day threshold accepted by major browsers. "))
 			}
 		} else {
-			caType := "intermediate"
+			caType := "Intermediate"
 			if link.cert.Issuer.CommonName == link.cert.Subject.CommonName {
-				caType = "root"
+				caType = "Root"
 			}
 			sb.WriteString(fmt.Sprintf("%s CA (%d/%d) for Common name [%s], signed by issuer [%s], expires in %s. ",
 				caType,
