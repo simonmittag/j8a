@@ -28,6 +28,7 @@ func (p PDuration) AsDays() int {
 
 type TlsLink struct {
 	cert              *x509.Certificate
+	issued            time.Time
 	remainingValidity PDuration
 	totalValidity     PDuration
 	browserValidity   PDuration
@@ -59,18 +60,25 @@ func logCertificateStats(chain tls.Certificate) []TlsLink {
 			link.cert.Verify(x509.VerifyOptions{
 				Intermediates: inter,
 				Roots:         root})
-			sb.WriteString(fmt.Sprintf("TLS cert (%d/%d) for DNS names %s, common name [%s], signed by issuer [%s], expires in %s. ",
+			sb.WriteString(fmt.Sprintf("TLS cert (%d/%d) for DNS names %s, common name [%s], issued on [%s], signed by issuer [%s], expires in %s. ",
 				i+1,
 				len(chain.Certificate),
 				link.cert.DNSNames,
 				link.cert.Subject.CommonName,
+				link.issued,
 				link.cert.Issuer.CommonName,
 				link.printRemainingValidity(),
 			))
 			if link.totalValidity > link.browserExpiry() {
-				sb.WriteString(fmt.Sprintf("Total validity period of %d/%d days is above browser max. You may experience disruption in %s, consider cert update beforehand. ",
+				sb.WriteString(fmt.Sprintf("Total validity period of %d days is above legal browser max %d. ",
 					int(link.totalValidity.AsDays()),
-					int(link.browserExpiry().AsDays()),
+					int(link.browserExpiry().AsDays())))
+			}
+			if link.browserValidity > 0 {
+				sb.WriteString(fmt.Sprintf("You may experience disruption in %s, consider cert update beforehand. ",
+					link.browserValidity.AsString()))
+			} else {
+				sb.WriteString(fmt.Sprintf("Validity grace period expired %s ago, update cert now. ",
 					link.browserValidity.AsString()))
 			}
 		} else {
@@ -106,18 +114,18 @@ func logCertificateStats(chain tls.Certificate) []TlsLink {
 }
 
 func parseTlsLinks(chain tls.Certificate) []TlsLink {
-	browserExpiry := PDuration(time.Hour * 24 * 398)
 	earliestExpiry := PDuration(math.MaxInt64)
-
+	browserExpiry := TlsLink{}.browserExpiry().AsDuration()
 	var tlsLinks []TlsLink
 	si := 0
 	for i, c := range chain.Certificate {
 		cert, _ := x509.ParseCertificate(c)
 		link := TlsLink{
 			cert:              cert,
+			issued:            cert.NotBefore,
 			remainingValidity: PDuration(time.Until(cert.NotAfter)),
 			totalValidity:     PDuration(cert.NotAfter.Sub(cert.NotBefore)),
-			browserValidity:   PDuration(time.Until(cert.NotBefore.Add(browserExpiry.AsDuration()))),
+			browserValidity:   PDuration(time.Until(cert.NotBefore.Add(browserExpiry))),
 			earliestExpiry:    false,
 			isCA:              cert.IsCA,
 		}
