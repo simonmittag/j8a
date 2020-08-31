@@ -126,7 +126,7 @@ func (runtime Runtime) initStats() Runtime {
 func (proxy *Proxy) writeStandardResponseHeaders() {
 	header := proxy.Dwn.Resp.Writer.Header()
 
-	header.Set("Server", fmt.Sprintf("J8a %s %s", Version, ID))
+	header.Set("Server", fmt.Sprintf("j8a %s %s", Version, ID))
 	header.Set("Cache-control:", "no-store, no-cache, must-revalidate, proxy-revalidate")
 	//for TLS response, we set HSTS header see RFC6797
 	if Runner.isTLSMode() {
