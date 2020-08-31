@@ -111,7 +111,7 @@ func TestStatusCodeResponse_FromCode(t *testing.T) {
 func TestStatusCodeResponse_AsString(t *testing.T) {
 	res := StatusCodeResponse{
 		AboutResponse: AboutResponse{
-			version: "1",
+			Version: "1",
 		},
 		Code:       0,
 		Message:    "msg",
