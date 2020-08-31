@@ -1,4 +1,4 @@
-package jabba
+package j8a
 
 //ResourceMapping describes upstream servers
 type ResourceMapping struct {

@@ -29,4 +29,4 @@ jobs:
       run: go test -v -cover
       
     - name: Install
-      run: go install github.com/simonmittag/jabba/cmd/jabba
+      run: go install github.com/simonmittag/j8a/cmd/j8a

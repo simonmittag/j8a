@@ -1,4 +1,4 @@
-package jabba
+package j8a
 
 import (
 	"encoding/json"
@@ -94,7 +94,7 @@ var httpResponses = map[int]string{
 
 //AboutResponse exposes standard environment
 type AboutResponse struct {
-	Jabba    string
+	J8a      string
 	ServerID string
 	Version  string
 }
@@ -107,13 +107,17 @@ type StatusCodeResponse struct {
 	XRequestID string
 }
 
-//AsJSON renders the status code response into a JSON string as []byte
+//AsJSON renders the status Code response into a JSON string as []byte
 func (aboutResponse AboutResponse) AsJSON() []byte {
 	aboutResponse.ServerID = ID
 	aboutResponse.Version = Version
-	aboutResponse.Jabba = randomHuttese()
+	aboutResponse.J8a = randomHuttese()
 	response, _ := json.Marshal(aboutResponse)
 	return response
+}
+
+func (aboutResponse AboutResponse) AsString() string {
+	return strings.ToLower(string(aboutResponse.AsJSON()))
 }
 
 func (statusCodeResponse *StatusCodeResponse) withCode(code int) {
@@ -125,17 +129,17 @@ func (statusCodeResponse *StatusCodeResponse) withCode(code int) {
 	}
 }
 
-//AsJSON renders the status code response into a JSON string as []byte
+//AsJSON renders the status Code response into a JSON string as []byte
 func (statusCodeResponse StatusCodeResponse) AsJSON() []byte {
 	statusCodeResponse.ServerID = ID
 	statusCodeResponse.Version = Version
-	statusCodeResponse.Jabba = randomHuttese()
+	statusCodeResponse.J8a = randomHuttese()
 	response, _ := json.Marshal(statusCodeResponse)
 	return response
 }
 
 func (statusCodeResponse StatusCodeResponse) AsString() string {
-	return string(statusCodeResponse.AsJSON())
+	return strings.ToLower(string(statusCodeResponse.AsJSON()))
 }
 
 func randomHuttese() string {

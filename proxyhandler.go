@@ -1,4 +1,4 @@
-package jabba
+package j8a
 
 import (
 	"bytes"
@@ -212,7 +212,7 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 func processUpstreamResponse(proxy *Proxy, upstreamResponse *http.Response, upstreamError error) bool {
 	//process only if we can work with upstream attempt
 	if upstreamResponse != nil && upstreamError == nil && !proxy.hasUpstreamAttemptAborted() {
-		//jabba blocks here when waiting for upstream body
+		//J8a blocks here when waiting for upstream body
 		upstreamResponseBody, bodyError := parseUpstreamResponse(upstreamResponse, proxy)
 		upstreamError = bodyError
 		proxy.Up.Atmpt.respBody = &upstreamResponseBody
@@ -230,7 +230,7 @@ func processUpstreamResponse(proxy *Proxy, upstreamResponse *http.Response, upst
 			return true
 		}
 	}
-	//now log unsuccessful and retry or exit with status code.
+	//now log unsuccessful and retry or exit with status Code.
 	logUnsuccessfulUpstreamAttempt(proxy, upstreamResponse, upstreamError)
 	return false
 }

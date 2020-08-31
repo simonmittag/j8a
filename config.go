@@ -1,4 +1,4 @@
-package jabba
+package j8a
 
 import (
 	"encoding/json"
@@ -13,7 +13,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-//Config is the system wide configuration for Jabba
+//Config is the system wide configuration for J8a
 type Config struct {
 	Policies   map[string]Policy
 	Routes     Routes

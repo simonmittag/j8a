@@ -1,4 +1,4 @@
-package jabba
+package j8a
 
 import (
 	"bytes"
@@ -104,24 +104,24 @@ func TestStatusCodeResponse_FromCode(t *testing.T) {
 	want := "moved permanently"
 	got := res301.Message
 	if got != want {
-		t.Errorf("invalid status code response, want %v, got %v", want, got)
+		t.Errorf("invalid status Code response, want %v, got %v", want, got)
 	}
 }
 
 func TestStatusCodeResponse_AsString(t *testing.T) {
 	res := StatusCodeResponse{
 		AboutResponse: AboutResponse{
-			Version:  "1",
+			Version: "1",
 		},
-		Code:          0,
-		Message:       "msg",
-		XRequestID:    "xri",
+		Code:       0,
+		Message:    "msg",
+		XRequestID: "xri",
 	}
 
 	str := res.AsString()
 
-	if !strings.Contains(str, "Jabba") {
-		t.Errorf("about response Jabba not included")
+	if !strings.Contains(str, "j8a") {
+		t.Errorf("about response j8a not included")
 	}
 	if !strings.Contains(str, "0") {
 		t.Errorf("about response Code not included")

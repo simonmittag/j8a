@@ -1,7 +1,7 @@
 json = require "json"
 math = require "math"
 
--- This test script sends a HTTP 1.1. POST with 2580 bytes body to Jabba
+-- This test script sends a HTTP 1.1. POST with 2580 bytes body to J8a
 -- with 8 concurrent threads and records various performance metrics such as requests per second
 -- in an output file
 
@@ -37,7 +37,7 @@ wrk.body   = [[{
     \"routes\": [
         {
             \"path\": \"/about\",
-            \"alias\": \"aboutJabba\"
+            \"alias\": \"aboutj8a\"
         },
         {
             \"path\": \"/customer\",

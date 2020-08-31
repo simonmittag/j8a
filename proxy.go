@@ -1,4 +1,4 @@
-package jabba
+package j8a
 
 import (
 	"bytes"
@@ -373,7 +373,7 @@ func (proxy *Proxy) resetContentLengthHeader() {
 	}
 }
 
-//status code must be last, no headers may be written after this one.
+//status Code must be last, no headers may be written after this one.
 func (proxy *Proxy) copyUpstreamStatusCodeHeader() {
 	proxy.respondWith(proxy.Up.Atmpt.StatusCode, "none")
 }

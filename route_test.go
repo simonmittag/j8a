@@ -1,4 +1,4 @@
-package jabba
+package j8a
 
 import (
 	"github.com/rs/zerolog"
@@ -130,7 +130,7 @@ func BenchmarkRouteMatchingRegex(b *testing.B) {
 	//suppress noise
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 
-	config := new(Config).read("./jabba.yml")
+	config := new(Config).read("./J8a.yml")
 	config = config.compileRoutePaths().sortRoutes()
 
 	for i := 0; i < b.N; i++ {
@@ -146,7 +146,7 @@ func BenchmarkRouteMatchingString(b *testing.B) {
 	//suppress noise
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 
-	config := new(Config).read("./jabba.yml")
+	config := new(Config).read("./J8a.yml")
 	config = config.sortRoutes()
 
 	for i := 0; i < b.N; i++ {

@@ -1,4 +1,4 @@
-package jabba
+package j8a
 
 import (
 	"github.com/rs/zerolog/log"
@@ -7,8 +7,8 @@ import (
 	"time"
 )
 
-//AboutJabba special Route alias for internal endpoint
-const AboutJabba string = "aboutJabba"
+//Aboutj8a special Route alias for internal endpoint
+const Aboutj8a string = "aboutj8a"
 
 type Routes []Route
 

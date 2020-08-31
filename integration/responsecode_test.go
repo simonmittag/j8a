@@ -13,10 +13,10 @@ import (
 
 //TODO: once we start supporting max body size, this needs to be revisited. it sends 100 every time right now.
 func TestStatusCode100SentFromProxyWithPutIfExpected100Continue(t *testing.T) {
-	//step 1 we connect to Jabba with net.dial
+	//step 1 we connect to j8a with net.dial
 	c, err := net.Dial("tcp", ":8080")
 	if err != nil {
-		t.Errorf("unable to connect to jabba server for integration test, cause: %v", err)
+		t.Errorf("unable to connect to j8a server for integration test, cause: %v", err)
 		return
 	}
 	defer c.Close()
@@ -36,22 +36,22 @@ func TestStatusCode100SentFromProxyWithPutIfExpected100Continue(t *testing.T) {
 	//i.e. doesn't include parsing content length, reading response properly.
 	buf := make([]byte, 1024)
 	l, err := c.Read(buf)
-	t.Logf("jabba responded with %v bytes and error code %v", l, err)
-	t.Logf("jabba partial response: %v", string(buf))
+	t.Logf("j8a responded with %v bytes and error code %v", l, err)
+	t.Logf("j8a partial response: %v", string(buf))
 	if l == 0 {
-		t.Error("jabba did not respond, 0 bytes read")
+		t.Error("j8a did not respond, 0 bytes read")
 	}
 	response := string(buf)
 	if !strings.Contains(response, "100 Continue") {
-		t.Error("jabba did not respond with 100 continue")
+		t.Error("j8a did not respond with 100 continue")
 	}
 }
 
 func TestStatusCode100SentFromProxyWithPostIfExpected100Continue(t *testing.T) {
-	//step 1 we connect to Jabba with net.dial
+	//step 1 we connect to j8a with net.dial
 	c, err := net.Dial("tcp", ":8080")
 	if err != nil {
-		t.Errorf("unable to connect to jabba server for integration test, cause: %v", err)
+		t.Errorf("unable to connect to j8a server for integration test, cause: %v", err)
 		return
 	}
 	defer c.Close()
@@ -71,14 +71,14 @@ func TestStatusCode100SentFromProxyWithPostIfExpected100Continue(t *testing.T) {
 	//i.e. doesn't include parsing content length, reading response properly.
 	buf := make([]byte, 1024)
 	l, err := c.Read(buf)
-	t.Logf("jabba responded with %v bytes and error code %v", l, err)
-	t.Logf("jabba partial response: %v", string(buf))
+	t.Logf("j8a responded with %v bytes and error code %v", l, err)
+	t.Logf("j8a partial response: %v", string(buf))
 	if l == 0 {
-		t.Error("jabba did not respond, 0 bytes read")
+		t.Error("j8a did not respond, 0 bytes read")
 	}
 	response := string(buf)
 	if !strings.Contains(response, "100 Continue") {
-		t.Error("jabba did not respond with 100 continue")
+		t.Error("j8a did not respond with 100 continue")
 	}
 }
 
@@ -151,13 +151,13 @@ func TestStatusCodeOfProxiedResponses200To226(t *testing.T) {
 	var wg1 sync.WaitGroup
 	for i := 200; i <= 226; i++ {
 		wg1.Add(1)
-		go performJabbaResponseCodeTest(&wg1, t, i, i, 8080)
+		go performJ8aResponseCodeTest(&wg1, t, i, i, 8080)
 	}
 	wg1.Wait()
 }
 
 func TestStatusCode216OfProxiedResponse(t *testing.T) {
-	performOneJabbaResponseCodeTest(t, 216, 216, 8080)
+	performOneJ8aResponseCodeTest(t, 216, 216, 8080)
 }
 
 //Test redirects are mapped through to the calling user agent
@@ -165,7 +165,7 @@ func TestStatusCodeOfProxiedResponses300To308NonRedirected(t *testing.T) {
 	var wg1 sync.WaitGroup
 	for i := 300; i <= 308; i++ {
 		wg1.Add(1)
-		go performJabbaResponseCodeTest(&wg1, t, i, i, 8080)
+		go performJ8aResponseCodeTest(&wg1, t, i, i, 8080)
 	}
 	wg1.Wait()
 }
@@ -209,7 +209,7 @@ func TestStatusCodeOfProxiedResponses400To499(t *testing.T) {
 	var wg1 sync.WaitGroup
 	for i := 400; i <= 499; i++ {
 		wg1.Add(1)
-		go performJabbaResponseCodeTest(&wg1, t, i, i, 8080)
+		go performJ8aResponseCodeTest(&wg1, t, i, i, 8080)
 	}
 	wg1.Wait()
 }
@@ -219,19 +219,19 @@ func TestStatusCodeOfProxiedResponses500To599(t *testing.T) {
 	var wg2 sync.WaitGroup
 	for i := 500; i <= 599; i++ {
 		wg2.Add(1)
-		performJabbaResponseCodeTest(&wg2, t, i, 502, 8080)
+		performJ8aResponseCodeTest(&wg2, t, i, 502, 8080)
 	}
 	wg2.Wait()
 }
 
-func performOneJabbaResponseCodeTest(t *testing.T, getUpstreamStatusCode int, wantDownstreamStatusCode int, serverPort int) {
+func performOneJ8aResponseCodeTest(t *testing.T, getUpstreamStatusCode int, wantDownstreamStatusCode int, serverPort int) {
 	var wg sync.WaitGroup
 	wg.Add(1)
-	performJabbaResponseCodeTest(&wg, t, getUpstreamStatusCode, wantDownstreamStatusCode, serverPort)
+	performJ8aResponseCodeTest(&wg, t, getUpstreamStatusCode, wantDownstreamStatusCode, serverPort)
 	wg.Wait()
 }
 
-func performJabbaResponseCodeTest(wg *sync.WaitGroup, t *testing.T, getUpstreamStatusCode int, wantDownstreamStatusCode int, serverPort int) {
+func performJ8aResponseCodeTest(wg *sync.WaitGroup, t *testing.T, getUpstreamStatusCode int, wantDownstreamStatusCode int, serverPort int) {
 	//for multithreaded tests we need to count them all down
 	defer wg.Done()
 

@@ -1,4 +1,4 @@
-module github.com/simonmittag/jabba
+module github.com/simonmittag/j8a
 
 go 1.14
 
