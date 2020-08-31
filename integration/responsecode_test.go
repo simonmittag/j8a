@@ -151,7 +151,7 @@ func TestStatusCodeOfProxiedResponses200To226(t *testing.T) {
 	var wg1 sync.WaitGroup
 	for i := 200; i <= 226; i++ {
 		wg1.Add(1)
-		go performj8aResponseCodeTest(&wg1, t, i, i, 8080)
+		go performJ8aResponseCodeTest(&wg1, t, i, i, 8080)
 	}
 	wg1.Wait()
 }
