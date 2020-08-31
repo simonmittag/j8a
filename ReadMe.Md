@@ -1,6 +1,6 @@
 ![](images/j8a.png)
 
-Achuta! j8a is a TLS reverse proxy server for JSON APIs written in golang.
+Achuta! j8a [ dʒʌbbʌ ] is a TLS reverse proxy server for JSON APIs written in golang.
 
 [![Circleci Builds](https://circleci.com/gh/simonmittag/j8a.svg?style=shield)](https://circleci.com/gh/simonmittag/j8a)
 [![Github Workflows](https://github.com/simonmittag/j8a/workflows/Go/badge.svg)](https://github.com/simonmittag/j8a/actions)
