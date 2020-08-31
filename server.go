@@ -4,8 +4,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"github.com/hako/durafmt"
-	"github.com/rs/zerolog"
 	"net/http"
 	"os"
 	"strconv"
@@ -80,6 +78,8 @@ func (runtime Runtime) startListening() {
 
 	if runtime.isTLSMode() {
 		server.TLSConfig = runtime.tlsConfig()
+		//starts a daemon that watches TLS health.
+		go tlsHealthCheckDaemon(server.TLSConfig)
 		log.Info().Msgf("Jabba %s listening in TLS mode on port %d...", Version, runtime.Connection.Downstream.Port)
 		err = server.ListenAndServeTLS("", "")
 	} else {
@@ -150,10 +150,13 @@ func (runtime Runtime) tlsConfig() *tls.Config {
 	//here we create a keypair from the PEM string in the config file
 	var cert []byte = []byte(runtime.Connection.Downstream.Cert)
 	var key []byte = []byte(runtime.Connection.Downstream.Key)
-	kp, _ := tls.X509KeyPair(cert, key)
+	chain, _ := tls.X509KeyPair(cert, key)
 
-	//parse the first cert in the config, so we can report on it. we assume certs are in order of cert, intermediate, root.
-	kp.Leaf, _ = x509.ParseCertificate(kp.Certificate[0])
+	var nocert error
+	chain.Leaf, nocert = x509.ParseCertificate(chain.Certificate[0])
+	if nocert != nil {
+		panic("unable to parse malformed or missing x509 certificate.")
+	}
 
 	//now create the TLS config.
 	config := &tls.Config{
@@ -172,25 +175,9 @@ func (runtime Runtime) tlsConfig() *tls.Config {
 			//clients, it still gives us an A+ result on: https://www.ssllabs.com/ssltest/analyze.html?d=j8a.io
 			tls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,
 		},
-		Certificates: []tls.Certificate{kp},
+		Certificates: []tls.Certificate{chain},
 	}
 
-	//and tell our users what we found.
-	until := time.Until(kp.Leaf.NotAfter)
-	monthy := time.Hour * 24 * 30
-	var ev *zerolog.Event
-
-	//if the certificate expires in less than 30 days we send this as a log.Warn event instead.
-	if until < monthy {
-		ev = log.Warn()
-	} else {
-		ev = log.Debug()
-	}
-	ev.Msgf("parsed TLS certificate for DNS names %s from issuer %s, expires in %s",
-		kp.Leaf.DNSNames,
-		kp.Leaf.Issuer.CommonName,
-		durafmt.Parse(until).LimitFirstN(3).String(),
-	)
 	return config
 }
 
