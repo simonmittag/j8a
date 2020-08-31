@@ -82,7 +82,7 @@ func TestServer1RoundTripNormalWithoutHangingUp(t *testing.T) {
 }
 
 func TestServer2DownstreamRoundTripTimeoutFireWithSlowHeader31S(t *testing.T) {
-	performj8aTest(t,
+	performJ8aTest(t,
 		"/slowheader",
 		31,
 		20,
