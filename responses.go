@@ -116,12 +116,16 @@ func (aboutResponse AboutResponse) AsJSON() []byte {
 	return response
 }
 
+func (aboutResponse AboutResponse) AsString() string {
+	return strings.ToLower(string(aboutResponse.AsJSON()))
+}
+
 func (statusCodeResponse *StatusCodeResponse) withCode(code int) {
 	statusCodeResponse.Code = code
 	if msg, ok := httpResponses[code]; ok {
 		statusCodeResponse.Message = msg
 	} else {
-		statusCodeResponse.Message = "unspecified response Code"
+		statusCodeResponse.Message = "unspecified response code"
 	}
 }
 
@@ -135,7 +139,7 @@ func (statusCodeResponse StatusCodeResponse) AsJSON() []byte {
 }
 
 func (statusCodeResponse StatusCodeResponse) AsString() string {
-	return string(statusCodeResponse.AsJSON())
+	return strings.ToLower(string(statusCodeResponse.AsJSON()))
 }
 
 func randomHuttese() string {
