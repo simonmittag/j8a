@@ -148,10 +148,10 @@ func TestUpstreamServerHeaderNotCopied(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := "J8a " + Version + " " + ID
+	want := "j8a " + Version + " " + ID
 	got := resp.Header["Server"][0]
 	if got != want {
-		t.Errorf("J8a did not send it's own Server header, want: %v, got: %v", want, got)
+		t.Errorf("j8a did not send it's own Server header, want: %v, got: %v", want, got)
 	}
 }
 
