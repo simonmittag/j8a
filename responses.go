@@ -102,9 +102,9 @@ type AboutResponse struct {
 //StatusCodeResponse defines a JSON structure for a canned HTTP response
 type StatusCodeResponse struct {
 	AboutResponse
-	Code       int
-	Message    string
-	XRequestID string
+	code       int
+	message    string
+	xRequestID string
 }
 
 //AsJSON renders the status code response into a JSON string as []byte
@@ -117,11 +117,11 @@ func (aboutResponse AboutResponse) AsJSON() []byte {
 }
 
 func (statusCodeResponse *StatusCodeResponse) withCode(code int) {
-	statusCodeResponse.Code = code
+	statusCodeResponse.code = code
 	if msg, ok := httpResponses[code]; ok {
-		statusCodeResponse.Message = msg
+		statusCodeResponse.message = msg
 	} else {
-		statusCodeResponse.Message = "unspecified response code"
+		statusCodeResponse.message = "unspecified response code"
 	}
 }
 
