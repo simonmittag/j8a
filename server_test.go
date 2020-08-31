@@ -24,7 +24,7 @@ func TestServerTlsConfig(t *testing.T) {
 	r.Connection.Downstream.Port = 8443
 
 	tlsConfig := r.tlsConfig()
-	if tlsConfig.Certificates[0].Leaf.DNSNames[0] != "*.jabbatest.com" {
+	if tlsConfig.Certificates[0].Leaf!=nil && tlsConfig.Certificates[0].Leaf.DNSNames[0] != "*.jabbatest.com" {
 		t.Errorf("failed to read TLS certificate")
 	}
 }

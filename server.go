@@ -2,6 +2,7 @@ package jabba
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"net/http"
 	"os"
@@ -149,6 +150,11 @@ func (runtime Runtime) tlsConfig() *tls.Config {
 	var key []byte = []byte(runtime.Connection.Downstream.Key)
 	chain, _ := tls.X509KeyPair(cert, key)
 
+	var nocert error
+	chain.Leaf, nocert = x509.ParseCertificate(chain.Certificate[0])
+	if nocert !=nil {
+		panic("unable to parse malformed or missing x509 certificate.")
+	}
 	logCertificateStats(chain)
 
 	//now create the TLS config.
