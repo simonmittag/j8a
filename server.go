@@ -78,6 +78,13 @@ func (runtime Runtime) startListening() {
 
 	if runtime.isTLSMode() {
 		server.TLSConfig = runtime.tlsConfig()
+		//starts a daemon that watches TLS health.
+		go func() {
+			for {
+				logCertificateStats(server.TLSConfig.Certificates[0])
+				time.Sleep(time.Hour * 24)
+			}
+		}()
 		log.Info().Msgf("Jabba %s listening in TLS mode on port %d...", Version, runtime.Connection.Downstream.Port)
 		err = server.ListenAndServeTLS("", "")
 	} else {
@@ -152,10 +159,9 @@ func (runtime Runtime) tlsConfig() *tls.Config {
 
 	var nocert error
 	chain.Leaf, nocert = x509.ParseCertificate(chain.Certificate[0])
-	if nocert !=nil {
+	if nocert != nil {
 		panic("unable to parse malformed or missing x509 certificate.")
 	}
-	logCertificateStats(chain)
 
 	//now create the TLS config.
 	config := &tls.Config{
