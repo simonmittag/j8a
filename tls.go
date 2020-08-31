@@ -48,6 +48,13 @@ func (t TlsLink) printRemainingValidity() string {
 	return rv
 }
 
+func tlsHealthCheckDaemon(conf *tls.Config) {
+	for {
+		logCertificateStats(conf.Certificates[0])
+		time.Sleep(time.Hour * 24)
+	}
+}
+
 func logCertificateStats(chain tls.Certificate) []TlsLink {
 	root, inter := splitCertPools(chain)
 	month := PDuration(time.Hour * 24 * 30)

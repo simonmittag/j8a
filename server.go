@@ -79,12 +79,7 @@ func (runtime Runtime) startListening() {
 	if runtime.isTLSMode() {
 		server.TLSConfig = runtime.tlsConfig()
 		//starts a daemon that watches TLS health.
-		go func() {
-			for {
-				logCertificateStats(server.TLSConfig.Certificates[0])
-				time.Sleep(time.Hour * 24)
-			}
-		}()
+		go tlsHealthCheckDaemon(server.TLSConfig)
 		log.Info().Msgf("Jabba %s listening in TLS mode on port %d...", Version, runtime.Connection.Downstream.Port)
 		err = server.ListenAndServeTLS("", "")
 	} else {
