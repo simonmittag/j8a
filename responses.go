@@ -1,4 +1,4 @@
-package jabba
+package j8a
 
 import (
 	"encoding/json"
@@ -94,7 +94,7 @@ var httpResponses = map[int]string{
 
 //AboutResponse exposes standard environment
 type AboutResponse struct {
-	Jabba    string
+	J8a      string
 	ServerID string
 	Version  string
 }
@@ -111,7 +111,7 @@ type StatusCodeResponse struct {
 func (aboutResponse AboutResponse) AsJSON() []byte {
 	aboutResponse.ServerID = ID
 	aboutResponse.Version = Version
-	aboutResponse.Jabba = randomHuttese()
+	aboutResponse.J8a = randomHuttese()
 	response, _ := json.Marshal(aboutResponse)
 	return response
 }
@@ -129,7 +129,7 @@ func (statusCodeResponse *StatusCodeResponse) withCode(code int) {
 func (statusCodeResponse StatusCodeResponse) AsJSON() []byte {
 	statusCodeResponse.ServerID = ID
 	statusCodeResponse.Version = Version
-	statusCodeResponse.Jabba = randomHuttese()
+	statusCodeResponse.J8a = randomHuttese()
 	response, _ := json.Marshal(statusCodeResponse)
 	return response
 }

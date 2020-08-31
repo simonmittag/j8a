@@ -4,11 +4,11 @@ connection:
     readTimeoutSeconds: 3
     roundTripTimeoutSeconds: 20
     idleTimeoutSeconds: 30
-    port: 8081
+    port: 8080
     mode: HTTP
   upstream:
     socketTimeoutSeconds: 3
-    readTimeoutSeconds: 30
+    readTimeoutSeconds: 3
     idleTimeoutSeconds: 10
     maxAttempts: 4
     poolSize: 8
@@ -20,7 +20,7 @@ policies:
       weight: 0.2
 routes:
   - path: "/about"
-    resource: aboutJabba
+    resource: aboutj8a
   - path: "/mse6/some"
     resource: mse61
   - path: "/mse6/"

@@ -1,4 +1,4 @@
-package jabba
+package j8a
 
 import (
 	"bytes"
@@ -85,7 +85,7 @@ func TestUpstreamSuccess(t *testing.T) {
 	}
 }
 
-// mocks upstream gzip response that is passed through as gzip by Jabba
+// mocks upstream gzip response that is passed through as gzip by J8a
 func TestUpstreamGzipEncodingPassThrough(t *testing.T) {
 	Runner = mockRuntime()
 	httpClient = &MockHttp{}
@@ -148,10 +148,10 @@ func TestUpstreamServerHeaderNotCopied(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := "Jabba " + Version + " " + ID
+	want := "J8a " + Version + " " + ID
 	got := resp.Header["Server"][0]
 	if got != want {
-		t.Errorf("Jabba did not send it's own Server header, want: %v, got: %v", want, got)
+		t.Errorf("J8a did not send it's own Server header, want: %v, got: %v", want, got)
 	}
 }
 
@@ -269,7 +269,7 @@ func TestUpstreamCustomEncodingPassThroughWithIdentityAcceptEncoding(t *testing.
 	}
 }
 
-// mocks upstream identity that is re-encoded as gzip by Jabba
+// mocks upstream identity that is re-encoded as gzip by J8a
 func TestUpstreamGzipReEncoding(t *testing.T) {
 	Runner = mockRuntime()
 	httpClient = &MockHttp{}
@@ -307,7 +307,7 @@ func TestUpstreamGzipReEncoding(t *testing.T) {
 	}
 }
 
-// mocks upstream gzip that is re-decoded as identity by Jabba
+// mocks upstream gzip that is re-decoded as identity by J8a
 func TestUpstreamGzipReDecoding(t *testing.T) {
 	Runner = mockRuntime()
 	httpClient = &MockHttp{}

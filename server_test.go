@@ -1,4 +1,4 @@
-package jabba
+package j8a
 
 import (
 	"crypto/tls"
@@ -7,7 +7,7 @@ import (
 )
 
 func TestServerBootStrap(t *testing.T) {
-	setupJabba()
+	setupJ8a()
 	resp, _ := http.Get("http://localhost:8080/about")
 	if resp.StatusCode != 200 {
 		t.Errorf("server does not return ok status response after starting, want 200, got %v", resp.StatusCode)
@@ -35,8 +35,8 @@ func mockTlsConfig() *tls.Config {
 	return tlsConfig
 }
 
-func setupJabba() {
-	ConfigFile = "./jabba.yml"
+func setupJ8a() {
+	ConfigFile = "./J8a.yml"
 	Boot.Add(1)
 	go BootStrap()
 	Boot.Wait()

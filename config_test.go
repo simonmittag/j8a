@@ -1,4 +1,4 @@
-package jabba
+package j8a
 
 import (
 	"os"
@@ -279,7 +279,7 @@ func TestParseConnection(t *testing.T) {
 
 //TestParseRoute
 func TestParseRoute(t *testing.T) {
-	configJson := []byte("{\"routes\": [{\n\t\t\t\"path\": \"/about\",\n\t\t\t\"resource\": \"aboutJabba\"\n\t\t},\n\t\t{\n\t\t\t\"path\": \"/customer\",\n\t\t\t\"resource\": \"customer\",\n\t\t\t\"policy\": \"ab\"\n\t\t}\n\t]}")
+	configJson := []byte("{\"routes\": [{\n\t\t\t\"path\": \"/about\",\n\t\t\t\"resource\": \"aboutJ8a\"\n\t\t},\n\t\t{\n\t\t\t\"path\": \"/customer\",\n\t\t\t\"resource\": \"customer\",\n\t\t\t\"policy\": \"ab\"\n\t\t}\n\t]}")
 	config := new(Config).parse(configJson)
 
 	customer := config.Routes[1]
@@ -297,7 +297,7 @@ func TestParseRoute(t *testing.T) {
 }
 
 func TestSortRoutes(t *testing.T) {
-	configJson := []byte("{\"routes\": [{\n\t\t\t\"path\": \"/about\",\n\t\t\t\"resource\": \"aboutJabba\"\n\t\t},\n\t\t{\n\t\t\t\"path\": \"/customer\",\n\t\t\t\"resource\": \"customer\",\n\t\t\t\"policy\": \"ab\"\n\t\t}\n\t]}")
+	configJson := []byte("{\"routes\": [{\n\t\t\t\"path\": \"/about\",\n\t\t\t\"resource\": \"aboutJ8a\"\n\t\t},\n\t\t{\n\t\t\t\"path\": \"/customer\",\n\t\t\t\"resource\": \"customer\",\n\t\t\t\"policy\": \"ab\"\n\t\t}\n\t]}")
 	config := new(Config).parse(configJson).sortRoutes()
 
 	customer := config.Routes[0]
@@ -313,7 +313,7 @@ func TestSortRoutes(t *testing.T) {
 
 //TestReadConfigFile
 func TestReadConfigFile(t *testing.T) {
-	config := new(Config).read("./jabba.yml")
+	config := new(Config).read("./J8a.yml")
 	if config.Routes == nil {
 		t.Error("incorrectly parsed routes in config file")
 	}
@@ -330,7 +330,7 @@ func TestReadConfigFile(t *testing.T) {
 
 func TestReApplyScheme(t *testing.T) {
 	want := map[string]string{"http": "", "https": ""}
-	config := new(Config).read("./jabba.yml").reApplyResourceSchemes()
+	config := new(Config).read("./J8a.yml").reApplyResourceSchemes()
 
 	for name := range config.Resources {
 		resourceMappings := config.Resources[name]

@@ -24,6 +24,7 @@ github.com/shirou/gopsutil v2.20.3+incompatible h1:0JVooMPsT7A7HqEYdydp/OfjSOYSj
 github.com/shirou/gopsutil v2.20.3+incompatible/go.mod h1:5b4v6he4MtMOwMlS0TUMTu2PcXUg8+E1lC7eC3UO/RA=
 github.com/shirou/gopsutil v2.20.4+incompatible h1:cMT4rxS55zx9NVUnCkrmXCsEB/RNfG9SwHY9evtX8Ng=
 github.com/shirou/gopsutil v2.20.4+incompatible/go.mod h1:5b4v6he4MtMOwMlS0TUMTu2PcXUg8+E1lC7eC3UO/RA=
+github.com/simonmittag/j8a v0.6.2 h1:0A3J09jp9IZ05siI25CnaoQFlv7qlwBL5T60lsZBdwI=
 github.com/simonmittag/mse6 v0.1.1 h1:WM5a7qVaDod8qpU20Nqdl9bRx+HSuphUK+/STtQ6+lo=
 github.com/simonmittag/mse6 v0.1.1/go.mod h1:vAhv82BwwPAmXZzU9Ah0XK9B+0bnEkjgO9hcSipYWdg=
 github.com/simonmittag/mse6 v0.1.2 h1:Z5lt7bQlGuhNXued8R04diHpggXs7GkAQScpXHdMTaM=

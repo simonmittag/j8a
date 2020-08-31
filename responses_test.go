@@ -1,4 +1,4 @@
-package jabba
+package j8a
 
 import (
 	"bytes"
@@ -120,8 +120,8 @@ func TestStatusCodeResponse_AsString(t *testing.T) {
 
 	str := res.AsString()
 
-	if !strings.Contains(str, "Jabba") {
-		t.Errorf("about response Jabba not included")
+	if !strings.Contains(str, "J8a") {
+		t.Errorf("about response J8a not included")
 	}
 	if !strings.Contains(str, "0") {
 		t.Errorf("about response Code not included")

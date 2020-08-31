@@ -31,14 +31,14 @@ func TestServerDoesNotExceedConnectionPoolSize(t *testing.T) {
 	}
 
 	//does the connection pool max out properly?
-	//double check connection pool size value in jabba config if the test fails.
+	//double check connection pool size value in j8a config if the test fails.
 	wantConns := 8
-	pid := getJabbaPid()
+	pid := getj8aPid()
 	gotConns := osConnsWithLsof(pid)
 	log.Info().Msgf("tried 16x10 rotating upstream connections, "+
-		"jabba pid %s expected %d max in pool, found %d using lsof", pid, wantConns, gotConns)
+		"j8a pid %s expected %d max in pool, found %d using lsof", pid, wantConns, gotConns)
 	if gotConns > wantConns {
-		t.Errorf("jabba pid %s too many idle upstream tcp connections in pool, want %d, got %d", pid, wantConns, gotConns)
+		t.Errorf("j8a pid %s too many idle upstream tcp connections in pool, want %d, got %d", pid, wantConns, gotConns)
 	}
 
 	//we also want to know if the pool empties after timeout passes.
@@ -46,9 +46,9 @@ func TestServerDoesNotExceedConnectionPoolSize(t *testing.T) {
 	grace :=1
 	time.Sleep(time.Second*time.Duration(waitPeriodSeconds+grace))
 	gotConns = osConnsWithLsof(pid)
-	log.Info().Msgf("jabba pid %s after timeout want pool 0, found %d using lsof", pid, gotConns)
+	log.Info().Msgf("j8a pid %s after timeout want pool 0, found %d using lsof", pid, gotConns)
 	if gotConns > 0 {
-		t.Errorf("jabba pid %s connection pool not empty after timeout %d, want 0, got %d", pid, waitPeriodSeconds, gotConns)
+		t.Errorf("j8a pid %s connection pool not empty after timeout %d, want 0, got %d", pid, waitPeriodSeconds, gotConns)
 	}
 }
 
@@ -68,13 +68,13 @@ func osConnsWithLsof(pid string) int {
 	return got
 }
 
-func getJabbaPid() string {
-	pidc := exec.Command("pgrep", "jabba")
+func getj8aPid() string {
+	pidc := exec.Command("pgrep", "j8a")
 	outpidc, _ := pidc.CombinedOutput()
 	pid := string(outpidc)
 	pid = strings.TrimFunc(pid, func(r rune) bool {
 		return !unicode.IsGraphic(r)
 	})
-	log.Info().Msgf("pid for jabba %s", pid)
+	log.Info().Msgf("pid for j8a %s", pid)
 	return pid
 }

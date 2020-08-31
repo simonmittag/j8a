@@ -20,8 +20,8 @@ jobs:
       LOGLEVEL: TRACE
     steps:
       - checkout # check out source code to working directory
-      - run: go build github.com/simonmittag/jabba
-      - run: go install github.com/simonmittag/jabba/cmd/jabba
+      - run: go build github.com/simonmittag/j8a
+      - run: go install github.com/simonmittag/j8a/cmd/j8a
       - run: go test -v
 
   metrics:
@@ -58,7 +58,7 @@ jobs:
             #only run tests in this directory to exclude integration tests
             go test -cover -coverprofile=c.out .
             go tool cover -html=c.out -o coverage.html
-            ./cc-test-reporter after-build --coverage-input-type gocov -p "github.com/simonmittag/jabba"
+            ./cc-test-reporter after-build --coverage-input-type gocov -p "github.com/simonmittag/j8a"
             mv coverage.html /tmp/artifacts
 
       - store_artifacts:
@@ -114,12 +114,12 @@ jobs:
       UPSTREAM_17_SLUG: /s15
       UPSTREAM_18_PORT: 60100
       UPSTREAM_18_SLUG: /s16
-      JABBA_ONE_PORT: 8080
-      JABBA_ONE_CFG: ./integration/jabba1.yml
-      JABBA_TWO_PORT: 8081
-      JABBA_TWO_CFG: ./integration/jabba2.yml
-      JABBA_THREE_PORT: 8443
-      JABBA_THREE_CFG: ./integration/jabba3.yml
+      J8A_ONE_PORT: 8080
+      J8A_ONE_CFG: ./integration/j8a1.yml
+      J8A_TWO_PORT: 8081
+      J8A_TWO_CFG: ./integration/j8a2.yml
+      J8A_THREE_PORT: 8443
+      J8A_THREE_CFG: ./integration/j8a3.yml
     steps:
       - checkout # check out source code to working directory
       - run:
@@ -225,31 +225,31 @@ jobs:
             pwt localhost:${UPSTREAM_18_PORT}
 
       - run:
-          name: Install jabba
+          name: Install j8a
           command: |
-            go build github.com/simonmittag/jabba
-            go install github.com/simonmittag/jabba/cmd/jabba
+            go build github.com/simonmittag/j8a
+            go install github.com/simonmittag/j8a/cmd/j8a
       - run:
-          name: Start jabba one
-          command: jabba -c ${JABBA_ONE_CFG}
+          name: Start j8a one
+          command: j8a -c ${J8A_ONE_CFG}
           background: true
       - run:
-          name: Wait for jabba one
-          command: pwt localhost:${JABBA_ONE_PORT}
+          name: Wait for j8a one
+          command: pwt localhost:${J8A_ONE_PORT}
       - run:
-          name: Start jabba two
-          command: jabba -c ${JABBA_TWO_CFG}
+          name: Start j8a two
+          command: j8a -c ${J8A_TWO_CFG}
           background: true
       - run:
-          name: Wait for jabba two
-          command: pwt localhost:${JABBA_TWO_PORT}
+          name: Wait for j8a two
+          command: pwt localhost:${J8A_TWO_PORT}
       - run:
-          name: Start jabba three
-          command: jabba -c ${JABBA_THREE_CFG}
+          name: Start j8a three
+          command: j8a -c ${J8A_THREE_CFG}
           background: true
       - run:
-          name: Wait for jabba three
-          command: pwt localhost:${JABBA_THREE_PORT}
+          name: Wait for j8a three
+          command: pwt localhost:${J8A_THREE_PORT}
       - run:
           name: Install Test dependencies
           command: |
@@ -257,7 +257,7 @@ jobs:
             sudo apt-get install lsof -y
       - run:
           name: Run integration tests
-          command: go test -v github.com/simonmittag/jabba/integration
+          command: go test -v github.com/simonmittag/j8a/integration
 
   localperformance:
     docker:
@@ -271,10 +271,10 @@ jobs:
       UPSTREAM_TWO_SLUG: /mse6
       UPSTREAM_THREE_PORT: 60085
       UPSTREAM_THREE_SLUG: /s1
-      JABBA_ONE_PORT: 8080
-      JABBA_ONE_CFG: ./integration/jabba1.yml
-      JABBA_THREE_PORT: 8443
-      JABBA_THREE_CFG: ./integration/jabba3.yml
+      J8A_ONE_PORT: 8080
+      J8A_ONE_CFG: ./integration/j8a1.yml
+      J8A_THREE_PORT: 8443
+      J8A_THREE_CFG: ./integration/j8a3.yml
       TEST_DURATION_SECONDS: 10
       TEST_CONCURRENCY_LOW: 8
       TEST_CONCURRENCY_HIGH: 25
@@ -310,59 +310,59 @@ jobs:
           name: Wait for upstream server three
           command: pwt localhost:${UPSTREAM_THREE_PORT}
       - run:
-          name: Install Jabba
+          name: Install j8a
           command: |
-            go build github.com/simonmittag/jabba
-            go install github.com/simonmittag/jabba/cmd/jabba
+            go build github.com/simonmittag/j8a
+            go install github.com/simonmittag/j8a/cmd/j8a
       - run:
-          name: Start jabba one
-          command: jabba -c ${JABBA_ONE_CFG}
+          name: Start j8a one
+          command: j8a -c ${J8A_ONE_CFG}
           background: true
       - run:
-          name: Wait for Jabba one
-          command: pwt localhost:${JABBA_ONE_PORT}
+          name: Wait for J8a one
+          command: pwt localhost:${J8A_ONE_PORT}
       - run:
-          name: Start jabba three
-          command: jabba -c ${JABBA_THREE_CFG}
+          name: Start j8a three
+          command: j8a -c ${J8A_THREE_CFG}
           background: true
       - run:
-          name: Wait for Jabba three
-          command: pwt localhost:${JABBA_THREE_PORT}
+          name: Wait for J8a three
+          command: pwt localhost:${J8A_THREE_PORT}
       - run:
           name: Execute concurrency ${TEST_CONCURRENCY_LOW} performance tests in HTTP mode
-          command: cd performance && wrk -t ${TEST_CONCURRENCY_LOW} -c ${TEST_CONCURRENCY_LOW} -d ${TEST_DURATION_SECONDS}s -s test.lua -- http://localhost:${JABBA_ONE_PORT}/mse6/post performance_results_http_low.json
+          command: cd performance && wrk -t ${TEST_CONCURRENCY_LOW} -c ${TEST_CONCURRENCY_LOW} -d ${TEST_DURATION_SECONDS}s -s test.lua -- http://localhost:${J8A_ONE_PORT}/mse6/post performance_results_http_low.json
       - run:
           name: Display concurrency ${TEST_CONCURRENCY_LOW} performance test results in HTTP mode
           command: |
             export reqss=`cat performance/performance_results_http_low.json | jq .requestspersecond`
-            echo "(ignore 'Step cancelled' messages upstream, Jabba shutdown related)"
+            echo "(ignore 'Step cancelled' messages upstream, J8a shutdown related)"
             echo "=> performance test results http, concurrency ${TEST_CONCURRENCY_LOW}, ${reqss} req/s"
       - run:
           name: Execute concurrency ${TEST_CONCURRENCY_LOW} performance tests in TLS mode
-          command: cd performance && wrk -t ${TEST_CONCURRENCY_LOW} -c ${TEST_CONCURRENCY_LOW} -d ${TEST_DURATION_SECONDS}s -s test.lua -- https://localhost:${JABBA_THREE_PORT}/mse6/post performance_results_tls_low.json
+          command: cd performance && wrk -t ${TEST_CONCURRENCY_LOW} -c ${TEST_CONCURRENCY_LOW} -d ${TEST_DURATION_SECONDS}s -s test.lua -- https://localhost:${J8A_THREE_PORT}/mse6/post performance_results_tls_low.json
       - run:
           name: Display concurrency ${TEST_CONCURRENCY_LOW} performance test results in TLS mode
           command: |
             export reqss=`cat performance/performance_results_tls_low.json | jq .requestspersecond`
-            echo "(ignore 'Step cancelled' messages upstream, Jabba shutdown related)"
+            echo "(ignore 'Step cancelled' messages upstream, J8a shutdown related)"
             echo "=> performance test results TLS, concurrency ${TEST_CONCURRENCY_LOW}, ${reqss} req/s"
       - run:
           name: Execute concurrency ${TEST_CONCURRENCY_HIGH} performance tests in HTTP mode
-          command: cd performance && wrk -t ${TEST_CONCURRENCY_HIGH} -c ${TEST_CONCURRENCY_HIGH} -d ${TEST_DURATION_SECONDS}s -s test.lua -- http://localhost:${JABBA_ONE_PORT}/mse6/post performance_results_http_high.json
+          command: cd performance && wrk -t ${TEST_CONCURRENCY_HIGH} -c ${TEST_CONCURRENCY_HIGH} -d ${TEST_DURATION_SECONDS}s -s test.lua -- http://localhost:${J8A_ONE_PORT}/mse6/post performance_results_http_high.json
       - run:
           name: Display concurrency ${TEST_CONCURRENCY_HIGH} performance test results in HTTP mode
           command: |
             export reqss=`cat performance/performance_results_http_high.json | jq .requestspersecond`
-            echo "(ignore 'Step cancelled' messages upstream, Jabba shutdown related)"
+            echo "(ignore 'Step cancelled' messages upstream, J8a shutdown related)"
             echo "=> performance test results HTTP, concurrency ${TEST_CONCURRENCY_HIGH}, ${reqss} req/s"
       - run:
           name: Execute concurrency ${TEST_CONCURRENCY_HIGH} performance tests in TLS mode
-          command: cd performance && wrk -t ${TEST_CONCURRENCY_HIGH} -c ${TEST_CONCURRENCY_HIGH} -d ${TEST_DURATION_SECONDS}s -s test.lua -- https://localhost:${JABBA_THREE_PORT}/mse6/post performance_results_tls_high.json
+          command: cd performance && wrk -t ${TEST_CONCURRENCY_HIGH} -c ${TEST_CONCURRENCY_HIGH} -d ${TEST_DURATION_SECONDS}s -s test.lua -- https://localhost:${J8A_THREE_PORT}/mse6/post performance_results_tls_high.json
       - run:
           name: Display concurrency ${TEST_CONCURRENCY_HIGH} test results in TLS mode
           command: |
             export reqss=`cat performance/performance_results_tls_high.json | jq .requestspersecond`
-            echo "(ignore 'Step cancelled' messages upstream, Jabba shutdown related)"
+            echo "(ignore 'Step cancelled' messages upstream, j8a shutdown related)"
             echo "=> performance test results TLS, concurrency ${TEST_CONCURRENCY_HIGH}, ${reqss} req/s"
 
   performance:
@@ -377,10 +377,10 @@ jobs:
       UPSTREAM_TWO_SLUG: /mse6
       UPSTREAM_THREE_PORT: 60085
       UPSTREAM_THREE_SLUG: /s1
-      JABBA_ONE_PORT: 8080
-      JABBA_ONE_CFG: ./integration/jabba1.yml
-      JABBA_THREE_PORT: 8443
-      JABBA_THREE_CFG: ./integration/jabba3.yml
+      J8A_ONE_PORT: 8080
+      J8A_ONE_CFG: ./integration/j8a1.yml
+      J8A_THREE_PORT: 8443
+      J8A_THREE_CFG: ./integration/j8a3.yml
       TEST_DURATION_SECONDS: 10
       TEST_CONCURRENCY_LOW: 8
       TEST_CONCURRENCY_LOW_THRESHOLD: 2500
@@ -418,32 +418,32 @@ jobs:
           name: Wait for upstream server three
           command: pwt localhost:${UPSTREAM_THREE_PORT}
       - run:
-          name: Install Jabba
+          name: Install j8a
           command: |
-            go build github.com/simonmittag/jabba
-            go install github.com/simonmittag/jabba/cmd/jabba
+            go build github.com/simonmittag/j8a
+            go install github.com/simonmittag/j8a/cmd/j8a
       - run:
-          name: Start jabba one
-          command: jabba -c ${JABBA_ONE_CFG}
+          name: Start j8a one
+          command: j8a -c ${J8A_ONE_CFG}
           background: true
       - run:
-          name: Wait for jabba one
-          command: pwt localhost:${JABBA_ONE_PORT}
+          name: Wait for j8a one
+          command: pwt localhost:${J8A_ONE_PORT}
       - run:
-          name: Start jabba three
-          command: jabba -c ${JABBA_THREE_CFG}
+          name: Start j8a three
+          command: j8a -c ${J8A_THREE_CFG}
           background: true
       - run:
-          name: Wait for jabba three
-          command: pwt localhost:${JABBA_THREE_PORT}
+          name: Wait for j8a three
+          command: pwt localhost:${J8A_THREE_PORT}
       - run:
           name: Execute concurrency ${TEST_CONCURRENCY_LOW} performance tests in HTTP mode
-          command: cd performance && wrk -t ${TEST_CONCURRENCY_LOW} -c ${TEST_CONCURRENCY_LOW} -d ${TEST_DURATION_SECONDS}s -s test.lua -- http://localhost:${JABBA_ONE_PORT}/mse6/post performance_results_http_low.json
+          command: cd performance && wrk -t ${TEST_CONCURRENCY_LOW} -c ${TEST_CONCURRENCY_LOW} -d ${TEST_DURATION_SECONDS}s -s test.lua -- http://localhost:${J8A_ONE_PORT}/mse6/post performance_results_http_low.json
       - run:
           name: Display concurrency ${TEST_CONCURRENCY_LOW} performance test results in HTTP mode
           command: |
             export reqss=`cat performance/performance_results_http_low.json | jq .requestspersecond`
-            echo "(ignore 'Step cancelled' messages upstream, Jabba shutdown related)"
+            echo "(ignore 'Step cancelled' messages upstream, J8a shutdown related)"
             echo "=> performance test results http, concurrency ${TEST_CONCURRENCY_LOW}, ${reqss} req/s"
             cat performance/performance_results_http_low.json | jq .
       - store_artifacts:
@@ -456,12 +456,12 @@ jobs:
             test ${reqss} -gt ${TEST_CONCURRENCY_LOW_THRESHOLD} && (echo "performance test passed, ${reqss} req/s > ${TEST_CONCURRENCY_LOW_THRESHOLD} req/s";exit 0) || (echo "performance test failed, ${reqss} req/s < ${TEST_CONCURRENCY_LOW_THRESHOLD} req/s";pkill jq)
       - run:
           name: Execute concurrency ${TEST_CONCURRENCY_LOW} performance tests in TLS mode
-          command: cd performance && wrk -t ${TEST_CONCURRENCY_LOW} -c ${TEST_CONCURRENCY_LOW} -d ${TEST_DURATION_SECONDS}s -s test.lua -- https://localhost:${JABBA_THREE_PORT}/mse6/post performance_results_tls_low.json
+          command: cd performance && wrk -t ${TEST_CONCURRENCY_LOW} -c ${TEST_CONCURRENCY_LOW} -d ${TEST_DURATION_SECONDS}s -s test.lua -- https://localhost:${J8A_THREE_PORT}/mse6/post performance_results_tls_low.json
       - run:
           name: Display concurrency ${TEST_CONCURRENCY_LOW} performance test results in TLS mode
           command: |
             export reqss=`cat performance/performance_results_tls_low.json | jq .requestspersecond`
-            echo "(ignore 'Step cancelled' messages upstream, Jabba shutdown related)"
+            echo "(ignore 'Step cancelled' messages upstream, J8a shutdown related)"
             echo "=> performance test results TLS, concurrency ${TEST_CONCURRENCY_LOW}, ${reqss} req/s"
             cat performance/performance_results_tls_low.json | jq .
       - store_artifacts:
@@ -474,12 +474,12 @@ jobs:
             test ${reqss} -gt ${TEST_CONCURRENCY_LOW_THRESHOLD} && (echo "performance test passed, ${reqss} req/s > ${TEST_CONCURRENCY_LOW_THRESHOLD} req/s";exit 0) || (echo "performance test failed, ${reqss} req/s < ${TEST_CONCURRENCY_LOW_THRESHOLD} req/s";pkill jq)
       - run:
           name: Execute concurrency ${TEST_CONCURRENCY_HIGH} performance tests in HTTP mode
-          command: cd performance && wrk -t ${TEST_CONCURRENCY_HIGH} -c ${TEST_CONCURRENCY_HIGH} -d ${TEST_DURATION_SECONDS}s -s test.lua -- http://localhost:${JABBA_ONE_PORT}/mse6/post performance_results_http_high.json
+          command: cd performance && wrk -t ${TEST_CONCURRENCY_HIGH} -c ${TEST_CONCURRENCY_HIGH} -d ${TEST_DURATION_SECONDS}s -s test.lua -- http://localhost:${J8A_ONE_PORT}/mse6/post performance_results_http_high.json
       - run:
           name: Display concurrency ${TEST_CONCURRENCY_HIGH} performance test results in HTTP mode
           command: |
             export reqss=`cat performance/performance_results_http_high.json | jq .requestspersecond`
-            echo "(ignore 'Step cancelled' messages upstream, Jabba shutdown related)"
+            echo "(ignore 'Step cancelled' messages upstream, J8a shutdown related)"
             echo "=> performance test results HTTP, concurrency ${TEST_CONCURRENCY_HIGH}, ${reqss} req/s"
             cat performance/performance_results_http_high.json | jq .
       - store_artifacts:
@@ -492,12 +492,12 @@ jobs:
             test ${reqss} -gt ${TEST_CONCURRENCY_HIGH_THRESHOLD} && (echo "performance test passed, ${reqss} req/s > ${TEST_CONCURRENCY_HIGH_THRESHOLD} req/s";exit 0) || (echo "performance test failed, ${reqss} req/s < ${TEST_CONCURRENCY_HIGH_THRESHOLD} req/s";pkill jq)
       - run:
           name: Execute concurrency ${TEST_CONCURRENCY_HIGH} performance tests in TLS mode
-          command: cd performance && wrk -t ${TEST_CONCURRENCY_HIGH} -c ${TEST_CONCURRENCY_HIGH} -d ${TEST_DURATION_SECONDS}s -s test.lua -- https://localhost:${JABBA_THREE_PORT}/mse6/post performance_results_tls_high.json
+          command: cd performance && wrk -t ${TEST_CONCURRENCY_HIGH} -c ${TEST_CONCURRENCY_HIGH} -d ${TEST_DURATION_SECONDS}s -s test.lua -- https://localhost:${J8A_THREE_PORT}/mse6/post performance_results_tls_high.json
       - run:
           name: Display concurrency ${TEST_CONCURRENCY_HIGH} test results in TLS mode
           command: |
             export reqss=`cat performance/performance_results_tls_high.json | jq .requestspersecond`
-            echo "(ignore 'Step cancelled' messages upstream, Jabba shutdown related)"
+            echo "(ignore 'Step cancelled' messages upstream, J8a shutdown related)"
             echo "=> performance test results TLS, concurrency ${TEST_CONCURRENCY_HIGH}, ${reqss} req/s"
             cat performance/performance_results_tls_high.json | jq .
       - store_artifacts:

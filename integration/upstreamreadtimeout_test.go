@@ -12,7 +12,7 @@ import (
 var tlsConfig *tls.Config
 
 func TestServer1UpstreamReadTimeoutFireWithSlowHeader31S(t *testing.T) {
-	performJabbaTest(t,
+	performj8aTest(t,
 		"/slowheader",
 		31,
 		12,
@@ -22,7 +22,7 @@ func TestServer1UpstreamReadTimeoutFireWithSlowHeader31S(t *testing.T) {
 }
 
 func TestServer1UpstreamReadTimeoutFireWithSlowBody31S(t *testing.T) {
-	performJabbaTest(t,
+	performj8aTest(t,
 		"/slowbody",
 		31,
 		12,
@@ -32,7 +32,7 @@ func TestServer1UpstreamReadTimeoutFireWithSlowBody31S(t *testing.T) {
 }
 
 func TestServer1UpstreamReadTimeoutFireWithSlowHeader25S(t *testing.T) {
-	performJabbaTest(t,
+	performj8aTest(t,
 		"/slowheader",
 		25,
 		12,
@@ -42,7 +42,7 @@ func TestServer1UpstreamReadTimeoutFireWithSlowHeader25S(t *testing.T) {
 }
 
 func TestServer1UpstreamReadTimeoutFireWithSlowBody25S(t *testing.T) {
-	performJabbaTest(t,
+	performj8aTest(t,
 		"/slowbody",
 		25,
 		12,
@@ -52,7 +52,7 @@ func TestServer1UpstreamReadTimeoutFireWithSlowBody25S(t *testing.T) {
 }
 
 func TestServer1UpstreamReadTimeoutFireWithSlowHeader4S(t *testing.T) {
-	performJabbaTest(t,
+	performj8aTest(t,
 		"/slowheader",
 		4,
 		12,
@@ -62,7 +62,7 @@ func TestServer1UpstreamReadTimeoutFireWithSlowHeader4S(t *testing.T) {
 }
 
 func TestServer1UpstreamReadTimeoutFireWithSlowBody4S(t *testing.T) {
-	performJabbaTest(t,
+	performj8aTest(t,
 		"/slowbody",
 		4,
 		12,
@@ -72,7 +72,7 @@ func TestServer1UpstreamReadTimeoutFireWithSlowBody4S(t *testing.T) {
 }
 
 func TestServer1UpstreamReadTimeoutNotFireWithSlowHeader2S(t *testing.T) {
-	performJabbaTest(t,
+	performJ8aTest(t,
 		"/slowheader",
 		2,
 		2,
@@ -82,7 +82,7 @@ func TestServer1UpstreamReadTimeoutNotFireWithSlowHeader2S(t *testing.T) {
 }
 
 func TestServer1UpstreamReadTimeoutNotFireWithSlowBody2S(t *testing.T) {
-	performJabbaTest(t,
+	performJ8aTest(t,
 		"/slowbody",
 		2,
 		2,
@@ -91,7 +91,7 @@ func TestServer1UpstreamReadTimeoutNotFireWithSlowBody2S(t *testing.T) {
 		false)
 }
 
-func performJabbaTest(t *testing.T, testMethod string, wantUpstreamWaitSeconds int, wantTotalWaitSeconds int, wantStatusCode int, serverPort int, tlsMode bool) {
+func performJ8aTest(t *testing.T, testMethod string, wantUpstreamWaitSeconds int, wantTotalWaitSeconds int, wantStatusCode int, serverPort int, tlsMode bool) {
 	start := time.Now()
 	scheme := "http"
 

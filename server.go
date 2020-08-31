@@ -1,4 +1,4 @@
-package jabba
+package j8a
 
 import (
 	"crypto/tls"
@@ -80,10 +80,10 @@ func (runtime Runtime) startListening() {
 		server.TLSConfig = runtime.tlsConfig()
 		//starts a daemon that watches TLS health.
 		go tlsHealthCheckDaemon(server.TLSConfig)
-		log.Info().Msgf("Jabba %s listening in TLS mode on port %d...", Version, runtime.Connection.Downstream.Port)
+		log.Info().Msgf("J8a %s listening in TLS mode on port %d...", Version, runtime.Connection.Downstream.Port)
 		err = server.ListenAndServeTLS("", "")
 	} else {
-		log.Info().Msgf("Jabba %s listening on port %d...", Version, runtime.Connection.Downstream.Port)
+		log.Info().Msgf("J8a %s listening on port %d...", Version, runtime.Connection.Downstream.Port)
 		err = server.ListenAndServe()
 	}
 
@@ -99,7 +99,7 @@ func (runtime Runtime) mapPathsToHandler() http.Handler {
 
 	handler := http.NewServeMux()
 	for _, route := range runtime.Routes {
-		if route.Resource == AboutJabba {
+		if route.Resource == Aboutj8a {
 			handler.Handle(route.Path, http.HandlerFunc(aboutHandler))
 			log.Debug().Msgf("assigned about handler to path %s", route.Path)
 		}
@@ -126,7 +126,7 @@ func (runtime Runtime) initStats() Runtime {
 func (proxy *Proxy) writeStandardResponseHeaders() {
 	header := proxy.Dwn.Resp.Writer.Header()
 
-	header.Set("Server", fmt.Sprintf("Jabba %s %s", Version, ID))
+	header.Set("Server", fmt.Sprintf("J8a %s %s", Version, ID))
 	header.Set("Cache-control:", "no-store, no-cache, must-revalidate, proxy-revalidate")
 	//for TLS response, we set HSTS header see RFC6797
 	if Runner.isTLSMode() {
@@ -142,7 +142,7 @@ func (proxy *Proxy) writeStandardResponseHeaders() {
 func (runtime Runtime) tlsConfig() *tls.Config {
 	defer func() {
 		if err := recover(); err != nil {
-			log.Fatal().Msg("unable to parse TLS configuration, check your certificate and/or private key. Jabba is exiting ...")
+			log.Fatal().Msg("unable to parse TLS configuration, check your certificate and/or private key. J8a is exiting ...")
 			os.Exit(-1)
 		}
 	}()

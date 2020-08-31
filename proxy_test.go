@@ -1,4 +1,4 @@
-package jabba
+package j8a
 
 import (
 	"crypto/tls"

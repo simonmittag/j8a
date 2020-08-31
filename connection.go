@@ -1,4 +1,4 @@
-package jabba
+package j8a
 
 // Connection Params
 type Connection struct {
@@ -6,7 +6,7 @@ type Connection struct {
 	Upstream   Upstream
 }
 
-// Downstream params for the HTTP or TLS server that Jabba exposes
+// Downstream params for the HTTP or TLS server that J8a exposes
 type Downstream struct {
 	// ReadTimeoutSeconds is the maximum duration for reading the entire
 	// request, including the body, the downstream user agent sends to us.
