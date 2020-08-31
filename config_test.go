@@ -313,7 +313,7 @@ func TestSortRoutes(t *testing.T) {
 
 //TestReadConfigFile
 func TestReadConfigFile(t *testing.T) {
-	config := new(Config).read("./J8a.yml")
+	config := new(Config).read("./j8a.yml")
 	if config.Routes == nil {
 		t.Error("incorrectly parsed routes in config file")
 	}
@@ -330,7 +330,7 @@ func TestReadConfigFile(t *testing.T) {
 
 func TestReApplyScheme(t *testing.T) {
 	want := map[string]string{"http": "", "https": ""}
-	config := new(Config).read("./J8a.yml").reApplyResourceSchemes()
+	config := new(Config).read("./j8a.yml").reApplyResourceSchemes()
 
 	for name := range config.Resources {
 		resourceMappings := config.Resources[name]
