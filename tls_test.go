@@ -45,5 +45,12 @@ func TestParseTlsLinks(t *testing.T) {
 			t.Errorf("total validity should be %s", durafmt.Parse(tlsLinks[0].totalValidity.AsDuration()))
 		}
 	}
+}
 
+func TestLogCertificateStats(t *testing.T) {
+	tlsConfig := mockTlsConfig()
+	tlsLinks := logCertificateStats(tlsConfig.Certificates[0])
+	if len(tlsLinks) != 1 {
+		t.Errorf("tls links parsed incorrectly")
+	}
 }
