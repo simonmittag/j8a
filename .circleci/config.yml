@@ -319,14 +319,14 @@ jobs:
           command: j8a -c ${J8A_ONE_CFG}
           background: true
       - run:
-          name: Wait for J8a one
+          name: Wait for j8a one
           command: pwt localhost:${J8A_ONE_PORT}
       - run:
           name: Start j8a three
           command: j8a -c ${J8A_THREE_CFG}
           background: true
       - run:
-          name: Wait for J8a three
+          name: Wait for j8a three
           command: pwt localhost:${J8A_THREE_PORT}
       - run:
           name: Execute concurrency ${TEST_CONCURRENCY_LOW} performance tests in HTTP mode
@@ -344,7 +344,7 @@ jobs:
           name: Display concurrency ${TEST_CONCURRENCY_LOW} performance test results in TLS mode
           command: |
             export reqss=`cat performance/performance_results_tls_low.json | jq .requestspersecond`
-            echo "(ignore 'Step cancelled' messages upstream, J8a shutdown related)"
+            echo "(ignore 'Step cancelled' messages upstream, j8a shutdown related)"
             echo "=> performance test results TLS, concurrency ${TEST_CONCURRENCY_LOW}, ${reqss} req/s"
       - run:
           name: Execute concurrency ${TEST_CONCURRENCY_HIGH} performance tests in HTTP mode
@@ -353,7 +353,7 @@ jobs:
           name: Display concurrency ${TEST_CONCURRENCY_HIGH} performance test results in HTTP mode
           command: |
             export reqss=`cat performance/performance_results_http_high.json | jq .requestspersecond`
-            echo "(ignore 'Step cancelled' messages upstream, J8a shutdown related)"
+            echo "(ignore 'Step cancelled' messages upstream, j8a shutdown related)"
             echo "=> performance test results HTTP, concurrency ${TEST_CONCURRENCY_HIGH}, ${reqss} req/s"
       - run:
           name: Execute concurrency ${TEST_CONCURRENCY_HIGH} performance tests in TLS mode
@@ -443,7 +443,7 @@ jobs:
           name: Display concurrency ${TEST_CONCURRENCY_LOW} performance test results in HTTP mode
           command: |
             export reqss=`cat performance/performance_results_http_low.json | jq .requestspersecond`
-            echo "(ignore 'Step cancelled' messages upstream, J8a shutdown related)"
+            echo "(ignore 'Step cancelled' messages upstream, j8a shutdown related)"
             echo "=> performance test results http, concurrency ${TEST_CONCURRENCY_LOW}, ${reqss} req/s"
             cat performance/performance_results_http_low.json | jq .
       - store_artifacts:
@@ -461,7 +461,7 @@ jobs:
           name: Display concurrency ${TEST_CONCURRENCY_LOW} performance test results in TLS mode
           command: |
             export reqss=`cat performance/performance_results_tls_low.json | jq .requestspersecond`
-            echo "(ignore 'Step cancelled' messages upstream, J8a shutdown related)"
+            echo "(ignore 'Step cancelled' messages upstream, j8a shutdown related)"
             echo "=> performance test results TLS, concurrency ${TEST_CONCURRENCY_LOW}, ${reqss} req/s"
             cat performance/performance_results_tls_low.json | jq .
       - store_artifacts:
@@ -479,7 +479,7 @@ jobs:
           name: Display concurrency ${TEST_CONCURRENCY_HIGH} performance test results in HTTP mode
           command: |
             export reqss=`cat performance/performance_results_http_high.json | jq .requestspersecond`
-            echo "(ignore 'Step cancelled' messages upstream, J8a shutdown related)"
+            echo "(ignore 'Step cancelled' messages upstream, j8a shutdown related)"
             echo "=> performance test results HTTP, concurrency ${TEST_CONCURRENCY_HIGH}, ${reqss} req/s"
             cat performance/performance_results_http_high.json | jq .
       - store_artifacts:
