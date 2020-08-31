@@ -142,7 +142,7 @@ func (proxy *Proxy) writeStandardResponseHeaders() {
 func (runtime Runtime) tlsConfig() *tls.Config {
 	defer func() {
 		if err := recover(); err != nil {
-			log.Fatal().Msg("unable to parse TLS configuration, check your certificate and/or private key. J8a is exiting ...")
+			log.Fatal().Msg("unable to parse TLS configuration, check your certificate and/or private key. j8a is exiting ...")
 			os.Exit(-1)
 		}
 	}()

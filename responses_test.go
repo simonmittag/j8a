@@ -111,7 +111,7 @@ func TestStatusCodeResponse_FromCode(t *testing.T) {
 func TestStatusCodeResponse_AsString(t *testing.T) {
 	res := StatusCodeResponse{
 		AboutResponse: AboutResponse{
-			Version:  "1",
+			version:  "1",
 		},
 		Code:          0,
 		Message:       "msg",
@@ -120,8 +120,8 @@ func TestStatusCodeResponse_AsString(t *testing.T) {
 
 	str := res.AsString()
 
-	if !strings.Contains(str, "J8a") {
-		t.Errorf("about response J8a not included")
+	if !strings.Contains(str, "j8a") {
+		t.Errorf("about response j8a not included")
 	}
 	if !strings.Contains(str, "0") {
 		t.Errorf("about response Code not included")

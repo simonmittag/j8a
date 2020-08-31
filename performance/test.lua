@@ -37,7 +37,7 @@ wrk.body   = [[{
     \"routes\": [
         {
             \"path\": \"/about\",
-            \"alias\": \"aboutJ8a\"
+            \"alias\": \"aboutj8a\"
         },
         {
             \"path\": \"/customer\",

@@ -94,9 +94,9 @@ var httpResponses = map[int]string{
 
 //AboutResponse exposes standard environment
 type AboutResponse struct {
-	J8a      string
-	ServerID string
-	Version  string
+	j8a      string
+	serverID string
+	version  string
 }
 
 //StatusCodeResponse defines a JSON structure for a canned HTTP response
@@ -109,9 +109,9 @@ type StatusCodeResponse struct {
 
 //AsJSON renders the status code response into a JSON string as []byte
 func (aboutResponse AboutResponse) AsJSON() []byte {
-	aboutResponse.ServerID = ID
-	aboutResponse.Version = Version
-	aboutResponse.J8a = randomHuttese()
+	aboutResponse.serverID = ID
+	aboutResponse.version = Version
+	aboutResponse.j8a = randomHuttese()
 	response, _ := json.Marshal(aboutResponse)
 	return response
 }
@@ -127,9 +127,9 @@ func (statusCodeResponse *StatusCodeResponse) withCode(code int) {
 
 //AsJSON renders the status code response into a JSON string as []byte
 func (statusCodeResponse StatusCodeResponse) AsJSON() []byte {
-	statusCodeResponse.ServerID = ID
-	statusCodeResponse.Version = Version
-	statusCodeResponse.J8a = randomHuttese()
+	statusCodeResponse.serverID = ID
+	statusCodeResponse.version = Version
+	statusCodeResponse.j8a = randomHuttese()
 	response, _ := json.Marshal(statusCodeResponse)
 	return response
 }
