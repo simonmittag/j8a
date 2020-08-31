@@ -135,6 +135,8 @@ func (statusCodeResponse StatusCodeResponse) AsJSON() []byte {
 	statusCodeResponse.Version = Version
 	statusCodeResponse.J8a = randomHuttese()
 	response, _ := json.Marshal(statusCodeResponse)
+	//typo fix so we can continue to use json.Marshal which needs Uppercase struct props
+	response[2] = 0x6a
 	return response
 }
 
