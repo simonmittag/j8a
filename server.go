@@ -80,10 +80,10 @@ func (runtime Runtime) startListening() {
 		server.TLSConfig = runtime.tlsConfig()
 		//starts a daemon that watches TLS health.
 		go tlsHealthCheckDaemon(server.TLSConfig)
-		log.Info().Msgf("J8a %s listening in TLS mode on port %d...", Version, runtime.Connection.Downstream.Port)
+		log.Info().Msgf("j8a %s listening in TLS mode on port %d...", Version, runtime.Connection.Downstream.Port)
 		err = server.ListenAndServeTLS("", "")
 	} else {
-		log.Info().Msgf("J8a %s listening on port %d...", Version, runtime.Connection.Downstream.Port)
+		log.Info().Msgf("j8a %s listening on port %d...", Version, runtime.Connection.Downstream.Port)
 		err = server.ListenAndServe()
 	}
 
