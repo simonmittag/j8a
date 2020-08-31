@@ -51,6 +51,9 @@ func (route Route) mapURL(proxy *Proxy) (*URL, string, bool) {
 	}
 
 	resource := Runner.Resources[route.Resource]
+	if resource == nil {
+		return nil, "", false
+	}
 	//if a policy exists, we match resources with a label. TODO: this should be an interface
 	if len(route.Policy) > 0 {
 		for _, resourceMapping := range resource {
