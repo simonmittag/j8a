@@ -104,18 +104,18 @@ func TestStatusCodeResponse_FromCode(t *testing.T) {
 	want := "moved permanently"
 	got := res301.Message
 	if got != want {
-		t.Errorf("invalid status code response, want %v, got %v", want, got)
+		t.Errorf("invalid status Code response, want %v, got %v", want, got)
 	}
 }
 
 func TestStatusCodeResponse_AsString(t *testing.T) {
 	res := StatusCodeResponse{
 		AboutResponse: AboutResponse{
-			version:  "1",
+			version: "1",
 		},
-		Code:          0,
-		Message:       "msg",
-		XRequestID:    "xri",
+		Code:       0,
+		Message:    "msg",
+		XRequestID: "xri",
 	}
 
 	str := res.AsString()

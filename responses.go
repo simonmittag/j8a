@@ -94,42 +94,42 @@ var httpResponses = map[int]string{
 
 //AboutResponse exposes standard environment
 type AboutResponse struct {
-	j8a      string
-	serverID string
-	version  string
+	J8a      string
+	ServerID string
+	Version  string
 }
 
 //StatusCodeResponse defines a JSON structure for a canned HTTP response
 type StatusCodeResponse struct {
 	AboutResponse
-	code       int
-	message    string
-	xRequestID string
+	Code       int
+	Message    string
+	XRequestID string
 }
 
-//AsJSON renders the status code response into a JSON string as []byte
+//AsJSON renders the status Code response into a JSON string as []byte
 func (aboutResponse AboutResponse) AsJSON() []byte {
-	aboutResponse.serverID = ID
-	aboutResponse.version = Version
-	aboutResponse.j8a = randomHuttese()
+	aboutResponse.ServerID = ID
+	aboutResponse.Version = Version
+	aboutResponse.J8a = randomHuttese()
 	response, _ := json.Marshal(aboutResponse)
 	return response
 }
 
 func (statusCodeResponse *StatusCodeResponse) withCode(code int) {
-	statusCodeResponse.code = code
+	statusCodeResponse.Code = code
 	if msg, ok := httpResponses[code]; ok {
-		statusCodeResponse.message = msg
+		statusCodeResponse.Message = msg
 	} else {
-		statusCodeResponse.message = "unspecified response code"
+		statusCodeResponse.Message = "unspecified response Code"
 	}
 }
 
-//AsJSON renders the status code response into a JSON string as []byte
+//AsJSON renders the status Code response into a JSON string as []byte
 func (statusCodeResponse StatusCodeResponse) AsJSON() []byte {
-	statusCodeResponse.serverID = ID
-	statusCodeResponse.version = Version
-	statusCodeResponse.j8a = randomHuttese()
+	statusCodeResponse.ServerID = ID
+	statusCodeResponse.Version = Version
+	statusCodeResponse.J8a = randomHuttese()
 	response, _ := json.Marshal(statusCodeResponse)
 	return response
 }

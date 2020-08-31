@@ -230,7 +230,7 @@ func processUpstreamResponse(proxy *Proxy, upstreamResponse *http.Response, upst
 			return true
 		}
 	}
-	//now log unsuccessful and retry or exit with status code.
+	//now log unsuccessful and retry or exit with status Code.
 	logUnsuccessfulUpstreamAttempt(proxy, upstreamResponse, upstreamError)
 	return false
 }

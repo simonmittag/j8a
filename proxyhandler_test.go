@@ -54,7 +54,7 @@ func TestIllegalRequestMethod(t *testing.T) {
 	}
 
 	if resp.StatusCode != 400 {
-		t.Errorf("server did not return 400 error code on illegal request method")
+		t.Errorf("server did not return 400 error Code on illegal request method")
 	}
 }
 
@@ -81,7 +81,7 @@ func TestUpstreamSuccess(t *testing.T) {
 
 	want := 200
 	if resp.StatusCode != want {
-		t.Fatalf("uh oh, received incorrect status code from success proxyhandler, want %v, got %v", want, resp.StatusCode)
+		t.Fatalf("uh oh, received incorrect status Code from success proxyhandler, want %v, got %v", want, resp.StatusCode)
 	}
 }
 
@@ -399,7 +399,7 @@ func TestUpstreamPOSTNonRetry(t *testing.T) {
 
 	want := 404
 	if resp.StatusCode != want {
-		t.Fatalf("uh oh, received incorrect status code from non retrying failing proxyhandler, want %v, got %v", want, resp.StatusCode)
+		t.Fatalf("uh oh, received incorrect status Code from non retrying failing proxyhandler, want %v, got %v", want, resp.StatusCode)
 	}
 }
 
@@ -427,7 +427,7 @@ func TestUpstreamGETRetry(t *testing.T) {
 
 	want := 502
 	if resp.StatusCode != want {
-		t.Fatalf("uh oh, received incorrect status code from retrying failing proxyhandler, want %v, got %v", want, resp.StatusCode)
+		t.Fatalf("uh oh, received incorrect status Code from retrying failing proxyhandler, want %v, got %v", want, resp.StatusCode)
 	}
 }
 
