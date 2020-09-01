@@ -85,7 +85,7 @@ func TestUpstreamSuccess(t *testing.T) {
 	}
 }
 
-// mocks upstream gzip response that is passed through as gzip by J8a
+// mocks upstream gzip response that is passed through as gzip by j8a
 func TestUpstreamGzipEncodingPassThrough(t *testing.T) {
 	Runner = mockRuntime()
 	httpClient = &MockHttp{}
@@ -269,7 +269,7 @@ func TestUpstreamCustomEncodingPassThroughWithIdentityAcceptEncoding(t *testing.
 	}
 }
 
-// mocks upstream identity that is re-encoded as gzip by J8a
+// mocks upstream identity that is re-encoded as gzip by j8a
 func TestUpstreamGzipReEncoding(t *testing.T) {
 	Runner = mockRuntime()
 	httpClient = &MockHttp{}
@@ -307,7 +307,7 @@ func TestUpstreamGzipReEncoding(t *testing.T) {
 	}
 }
 
-// mocks upstream gzip that is re-decoded as identity by J8a
+// mocks upstream gzip that is re-decoded as identity by j8a
 func TestUpstreamGzipReDecoding(t *testing.T) {
 	Runner = mockRuntime()
 	httpClient = &MockHttp{}

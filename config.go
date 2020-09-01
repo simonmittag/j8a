@@ -13,7 +13,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-//Config is the system wide configuration for J8a
+//Config is the system wide configuration for j8a
 type Config struct {
 	Policies   map[string]Policy
 	Routes     Routes

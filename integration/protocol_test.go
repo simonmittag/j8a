@@ -81,7 +81,7 @@ func HTTP11GetOverTlsVersion(t *testing.T, tlsVersion uint16, wantErr string) {
 	if err == nil && err2 == nil {
 		defer response.Body.Close()
 		body, _ := ioutil.ReadAll(response.Body)
-		if !strings.Contains(string(body), "J8a") {
+		if !strings.Contains(string(body), "j8a") {
 			t.Errorf("unable to establish GET, body response: %v", string(body))
 		}
 

@@ -212,7 +212,7 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 func processUpstreamResponse(proxy *Proxy, upstreamResponse *http.Response, upstreamError error) bool {
 	//process only if we can work with upstream attempt
 	if upstreamResponse != nil && upstreamError == nil && !proxy.hasUpstreamAttemptAborted() {
-		//J8a blocks here when waiting for upstream body
+		//j8a blocks here when waiting for upstream body
 		upstreamResponseBody, bodyError := parseUpstreamResponse(upstreamResponse, proxy)
 		upstreamError = bodyError
 		proxy.Up.Atmpt.respBody = &upstreamResponseBody
