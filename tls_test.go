@@ -9,7 +9,7 @@ import (
 func TestPDurationAsString(t *testing.T) {
 	pd399 := PDuration(time.Hour * 24 * 399)
 	got := pd399.AsString()
-	want := "1 year 4 weeks 6 days"
+	want := "1 year 4 weeks"
 	if got != want {
 		t.Errorf("durafmt parse error, want %s, got %s", want, got)
 	}
