@@ -15,7 +15,7 @@ import (
 type PDuration time.Duration
 
 func (p PDuration) AsString() string {
-	return durafmt.Parse(time.Duration(p)).LimitFirstN(3).String()
+	return durafmt.Parse(time.Duration(p)).LimitFirstN(2).String()
 }
 
 func (p PDuration) AsDuration() time.Duration {
