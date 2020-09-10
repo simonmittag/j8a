@@ -8,6 +8,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"math"
+	"math/big"
 	"strings"
 	"time"
 )
@@ -50,29 +51,52 @@ func (t TlsLink) printRemainingValidity() string {
 
 func tlsHealthCheckDaemon(conf *tls.Config) {
 	for {
-		logCertificateStats(conf.Certificates[0])
+		tlsLinks := checkCertChain(conf.Certificates[0])
+		logCertStats(tlsLinks)
 		time.Sleep(time.Hour * 24)
 	}
 }
 
-func logCertificateStats(chain tls.Certificate) []TlsLink {
-	root, inter := splitCertPools(chain)
-	month := PDuration(time.Hour * 24 * 30)
+func checkCertChain(chain tls.Certificate) []TlsLink {
 	tlsLinks := parseTlsLinks(chain)
+	_, inter := splitCertPools(chain)
+	_, err := tlsLinks[0].cert.Verify(x509.VerifyOptions{
+		Intermediates: inter,
+		//Roots:         root,
+	})
+	if err != nil {
+		log.Debug().Msgf("err: %s", err)
+	} else {
+		//log.Debug().Msgf("verified: %s", verified)
+	}
+	return tlsLinks
+}
+
+func formatSerial(serial *big.Int) string {
+	hex := fmt.Sprintf("%X", serial)
+	frm := strings.Builder{}
+	for i := 0; i < len(hex); i += 2 {
+		frm.WriteString(hex[i : i+2])
+		if i != len(hex)-2 {
+			frm.WriteString("-")
+		}
+	}
+	return frm.String()
+}
+
+func logCertStats(tlsLinks []TlsLink) {
+	month := PDuration(time.Hour * 24 * 30)
 
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("Snapshot of your cert chain size %d explained. ", len(chain.Certificate)))
+	sb.WriteString(fmt.Sprintf("Snapshot of your cert chain size %d explained. ", len(tlsLinks)))
 	for i, link := range tlsLinks {
 		if !link.isCA {
-			link.cert.Verify(x509.VerifyOptions{
-				Intermediates: inter,
-				Roots:         root})
-			sb.WriteString(fmt.Sprintf("TLS cert (%d/%d) for DNS names %s, common name [%s], issued on [%s], signed by issuer [%s], expires in %s. ",
+			sb.WriteString(fmt.Sprintf("[%d/%d] TLS cert #%s for DNS names %s, issued on %s, signed by [%s], expires in %s. ",
 				i+1,
-				len(chain.Certificate),
+				len(tlsLinks),
+				formatSerial(link.cert.SerialNumber),
 				link.cert.DNSNames,
-				link.cert.Subject.CommonName,
-				link.issued,
+				link.issued.Format("2006-01-02"),
 				link.cert.Issuer.CommonName,
 				link.printRemainingValidity(),
 			))
@@ -82,10 +106,10 @@ func logCertificateStats(chain tls.Certificate) []TlsLink {
 					int(link.browserExpiry().AsDays())))
 			}
 			if link.browserValidity > 0 {
-				sb.WriteString(fmt.Sprintf("You may experience disruption in %s, consider cert update beforehand. ",
+				sb.WriteString(fmt.Sprintf("You may experience disruption in %s. ",
 					link.browserValidity.AsString()))
 			} else {
-				sb.WriteString(fmt.Sprintf("Validity grace period expired %s ago, update cert now. ",
+				sb.WriteString(fmt.Sprintf("Validity grace period expired %s ago, update now. ",
 					link.browserValidity.AsString()))
 			}
 		} else {
@@ -93,10 +117,11 @@ func logCertificateStats(chain tls.Certificate) []TlsLink {
 			if link.cert.Issuer.CommonName == link.cert.Subject.CommonName {
 				caType = "Root"
 			}
-			sb.WriteString(fmt.Sprintf("%s CA (%d/%d) for Common name [%s], signed by issuer [%s], expires in %s. ",
-				caType,
+			sb.WriteString(fmt.Sprintf("[%d/%d] %s CA #%s Common name [%s], signed by [%s], expires in %s. ",
 				i+1,
-				len(chain.Certificate),
+				len(tlsLinks),
+				caType,
+				formatSerial(link.cert.SerialNumber),
 				link.cert.Subject.CommonName,
 				link.cert.Issuer.CommonName,
 				link.remainingValidity.AsString(),
@@ -116,8 +141,6 @@ func logCertificateStats(chain tls.Certificate) []TlsLink {
 			ev.Msg(sb.String())
 		}
 	}
-
-	return tlsLinks
 }
 
 func parseTlsLinks(chain tls.Certificate) []TlsLink {
@@ -152,11 +175,21 @@ func splitCertPools(chain tls.Certificate) (*x509.CertPool, *x509.CertPool) {
 	for i, c := range chain.Certificate {
 		if i > 0 && i < len(chain.Certificate)-1 {
 			c1, _ := x509.ParseCertificate(c)
-			inter.AddCert(c1)
+			//for CA's we treat you as intermediate unless you signed yourself
+			if c1.IsCA && c1.Issuer.CommonName != c1.Subject.CommonName {
+				inter.AddCert(c1)
+			}
 		}
 		if i == len(chain.Certificate)-1 {
-			c1, _ := x509.ParseCertificate(c)
-			root.AddCert(c1)
+			c2, _ := x509.ParseCertificate(c)
+			if c2.IsCA {
+				//as above, you're intermediate in the  last position unless you signed yourself, that makes you a root cert.
+				if c2.Issuer.CommonName == c2.Subject.CommonName {
+					root.AddCert(c2)
+				} else {
+					inter.AddCert(c2)
+				}
+			}
 		}
 	}
 	return root, inter
