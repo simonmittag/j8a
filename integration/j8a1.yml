@@ -20,7 +20,7 @@ policies:
       weight: 0.2
 routes:
   - path: "/about"
-    resource: aboutj8a
+    resource: about
   - path: "/mse6/some"
     resource: mse61
   - path: "/mse6/"
