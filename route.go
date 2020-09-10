@@ -8,7 +8,7 @@ import (
 )
 
 //Aboutj8a special Route alias for internal endpoint
-const Aboutj8a string = "aboutj8a"
+const Aboutj8a string = "about"
 
 type Routes []Route
 
