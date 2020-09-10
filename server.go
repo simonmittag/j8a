@@ -99,7 +99,7 @@ func (runtime Runtime) mapPathsToHandler() http.Handler {
 
 	handler := http.NewServeMux()
 	for _, route := range runtime.Routes {
-		if route.Resource == Aboutj8a {
+		if route.Resource == about {
 			handler.Handle(route.Path, http.HandlerFunc(aboutHandler))
 			log.Debug().Msgf("assigned about handler to path %s", route.Path)
 		}
