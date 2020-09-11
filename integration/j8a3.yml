@@ -77,7 +77,7 @@ policies:
       weight: 0.2
 routes:
   - path: "/about"
-    resource: abouts
+    resource: about
   - path: "/mse6/some"
     resource: mse61
   - path: "/mse6/"
