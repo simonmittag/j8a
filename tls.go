@@ -50,38 +50,49 @@ func (t TlsLink) printRemainingValidity() string {
 }
 
 func tlsHealthCheckDaemon(conf *tls.Config) {
-	for {
-		tlsLinks := checkCertChain(conf.Certificates[0])
-		logCertStats(tlsLinks)
-		time.Sleep(time.Hour * 24)
+	defer func() {
+		if r := recover(); r != nil {
+			log.Debug().Msgf("TLS cert stats not analysed, root cause: %s", r)
+		}
+	}()
+
+	//safety first
+	if conf != nil && len(conf.Certificates) > 0 {
+		for {
+			//TODO needs to check errors in cert chain
+			tlsLinks, _ := checkCertChain(conf.Certificates[0])
+			logCertStats(tlsLinks)
+			time.Sleep(time.Hour * 24)
+		}
 	}
 }
 
-func checkCertChain(chain tls.Certificate) []TlsLink {
-	tlsLinks := parseTlsLinks(chain)
-	_, inter := splitCertPools(chain)
-	_, err := tlsLinks[0].cert.Verify(x509.VerifyOptions{
-		Intermediates: inter,
-		//Roots:         root,
+func checkCertChain(chain tls.Certificate) ([]TlsLink, error) {
+	var err error
+	cert, err := x509.ParseCertificate(chain.Certificate[0])
+	verified, err := cert.Verify(x509.VerifyOptions{
+		Intermediates: splitCertPools(chain),
 	})
-	if err != nil {
-		log.Debug().Msgf("err: %s", err)
-	} else {
-		//log.Debug().Msgf("verified: %s", verified)
-	}
-	return tlsLinks
+	tlsLinks := parseTlsLinks(verified[0])
+	return tlsLinks, err
 }
 
 func formatSerial(serial *big.Int) string {
 	hex := fmt.Sprintf("%X", serial)
-	frm := strings.Builder{}
-	for i := 0; i < len(hex); i += 2 {
-		frm.WriteString(hex[i : i+2])
-		if i != len(hex)-2 {
-			frm.WriteString("-")
-		}
+	if len(hex) == 1 || len(hex) == 31 {
+		hex = "0" + hex
 	}
-	return frm.String()
+	if len(hex) > 2 {
+		frm := strings.Builder{}
+		for i := 0; i < len(hex); i += 2 {
+			frm.WriteString(hex[i : i+2])
+			if i != len(hex)-2 {
+				frm.WriteString("-")
+			}
+		}
+		hex = frm.String()
+	}
+	return hex
 }
 
 func logCertStats(tlsLinks []TlsLink) {
@@ -143,13 +154,12 @@ func logCertStats(tlsLinks []TlsLink) {
 	}
 }
 
-func parseTlsLinks(chain tls.Certificate) []TlsLink {
+func parseTlsLinks(chain []*x509.Certificate) []TlsLink {
 	earliestExpiry := PDuration(math.MaxInt64)
 	browserExpiry := TlsLink{}.browserExpiry().AsDuration()
 	var tlsLinks []TlsLink
 	si := 0
-	for i, c := range chain.Certificate {
-		cert, _ := x509.ParseCertificate(c)
+	for i, cert := range chain {
 		link := TlsLink{
 			cert:              cert,
 			issued:            cert.NotBefore,
@@ -169,28 +179,14 @@ func parseTlsLinks(chain tls.Certificate) []TlsLink {
 	return tlsLinks
 }
 
-func splitCertPools(chain tls.Certificate) (*x509.CertPool, *x509.CertPool) {
-	root := x509.NewCertPool()
+func splitCertPools(chain tls.Certificate) *x509.CertPool {
 	inter := x509.NewCertPool()
-	for i, c := range chain.Certificate {
-		if i > 0 && i < len(chain.Certificate)-1 {
-			c1, _ := x509.ParseCertificate(c)
-			//for CA's we treat you as intermediate unless you signed yourself
-			if c1.IsCA && c1.Issuer.CommonName != c1.Subject.CommonName {
-				inter.AddCert(c1)
-			}
-		}
-		if i == len(chain.Certificate)-1 {
-			c2, _ := x509.ParseCertificate(c)
-			if c2.IsCA {
-				//as above, you're intermediate in the  last position unless you signed yourself, that makes you a root cert.
-				if c2.Issuer.CommonName == c2.Subject.CommonName {
-					root.AddCert(c2)
-				} else {
-					inter.AddCert(c2)
-				}
-			}
+	for _, c := range chain.Certificate {
+		c1, _ := x509.ParseCertificate(c)
+		//for CA's we treat you as intermediate unless you signed yourself
+		if c1.IsCA {
+			inter.AddCert(c1)
 		}
 	}
-	return root, inter
+	return inter
 }
