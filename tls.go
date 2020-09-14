@@ -59,7 +59,6 @@ func tlsHealthCheckDaemon(conf *tls.Config) {
 	//safety first
 	if conf != nil && len(conf.Certificates) > 0 {
 		for {
-			//TODO needs to check errors in cert chain
 			tlsLinks, _ := checkCertChain(conf.Certificates[0])
 			logCertStats(tlsLinks)
 			time.Sleep(time.Hour * 24)
@@ -68,12 +67,22 @@ func tlsHealthCheckDaemon(conf *tls.Config) {
 }
 
 func checkCertChain(chain tls.Certificate) ([]TlsLink, error) {
+	var tlsLinks []TlsLink
 	var err error
-	cert, err := x509.ParseCertificate(chain.Certificate[0])
-	verified, err := cert.Verify(x509.VerifyOptions{
-		Intermediates: splitCertPools(chain),
+	cert, e1 := x509.ParseCertificate(chain.Certificate[0])
+	if e1 != nil {
+		err = e1
+	}
+	inter := splitCertPools(chain)
+	verified, e2 := cert.Verify(x509.VerifyOptions{
+		Intermediates: inter,
 	})
-	tlsLinks := parseTlsLinks(verified[0])
+	if e2 != nil {
+		err = e2
+	}
+	if err == nil {
+		tlsLinks = parseTlsLinks(verified[0])
+	}
 	return tlsLinks, err
 }
 
