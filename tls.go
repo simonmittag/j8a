@@ -73,9 +73,10 @@ func checkCertChain(chain tls.Certificate) ([]TlsLink, error) {
 	if e1 != nil {
 		err = e1
 	}
-	inter := splitCertPools(chain)
+	root, inter := splitCertPools(chain)
 	verified, e2 := cert.Verify(x509.VerifyOptions{
 		Intermediates: inter,
+		Roots:         root,
 	})
 	if e2 != nil {
 		err = e2
@@ -134,7 +135,7 @@ func logCertStats(tlsLinks []TlsLink) {
 			}
 		} else {
 			caType := "Intermediate"
-			if link.cert.Issuer.CommonName == link.cert.Subject.CommonName {
+			if isRoot(link.cert) {
 				caType = "Root"
 			}
 			sb.WriteString(fmt.Sprintf("[%d/%d] %s CA #%s Common name [%s], signed by [%s], expires in %s. ",
@@ -188,14 +189,25 @@ func parseTlsLinks(chain []*x509.Certificate) []TlsLink {
 	return tlsLinks
 }
 
-func splitCertPools(chain tls.Certificate) *x509.CertPool {
+func splitCertPools(chain tls.Certificate) (*x509.CertPool, *x509.CertPool) {
+	root := x509.NewCertPool()
 	inter := x509.NewCertPool()
 	for _, c := range chain.Certificate {
 		c1, _ := x509.ParseCertificate(c)
 		//for CA's we treat you as intermediate unless you signed yourself
 		if c1.IsCA {
-			inter.AddCert(c1)
+			//as above, you're intermediate in the last position unless you signed yourself, that makes you a root cert.
+			if isRoot(c1) {
+				root.AddCert(c1)
+			} else {
+				inter.AddCert(c1)
+			}
 		}
 	}
-	return inter
+	return root, inter
+}
+
+func isRoot(c *x509.Certificate) bool {
+	//TODO: this seems to work but should we really check signature instead?
+	return c.IsCA && c.Issuer.CommonName == c.Subject.CommonName
 }
