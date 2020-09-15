@@ -1,6 +1,7 @@
 package j8a
 
 import (
+	"crypto/x509"
 	"github.com/hako/durafmt"
 	"testing"
 	"time"
@@ -34,7 +35,11 @@ func TestBrowserExpiry_AsDays(t *testing.T) {
 
 func TestParseTlsLinks(t *testing.T) {
 	tlsConfig := mockTlsConfig()
-	tlsLinks := parseTlsLinks(tlsConfig.Certificates[0])
+	c, _ := x509.ParseCertificate(tlsConfig.Certificates[0].Certificate[0])
+	tlsLinks := parseTlsLinks([]*x509.Certificate{c})
+
+	logCertStats(tlsLinks)
+
 	if len(tlsLinks) != 1 {
 		t.Errorf("tls links parsed incorrectly")
 	} else {
@@ -44,13 +49,5 @@ func TestParseTlsLinks(t *testing.T) {
 		if tlsLinks[0].totalValidity.AsDuration().Seconds() != time.Duration(time.Second*352257299).Seconds() {
 			t.Errorf("total validity should be %s", durafmt.Parse(tlsLinks[0].totalValidity.AsDuration()))
 		}
-	}
-}
-
-func TestLogCertificateStats(t *testing.T) {
-	tlsConfig := mockTlsConfig()
-	tlsLinks := logCertificateStats(tlsConfig.Certificates[0])
-	if len(tlsLinks) != 1 {
-		t.Errorf("tls links parsed incorrectly")
 	}
 }

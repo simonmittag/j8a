@@ -73,22 +73,25 @@ func (runtime Runtime) startListening() {
 	//signal the WaitGroup that boot is over.
 	Boot.Done()
 
-	//this line blocks execution and the server stays up
 	var err error
 
 	if runtime.isTLSMode() {
 		server.TLSConfig = runtime.tlsConfig()
-		//starts a daemon that watches TLS health.
-		go tlsHealthCheckDaemon(server.TLSConfig)
-		log.Info().Msgf("j8a %s listening in TLS mode on port %d...", Version, runtime.Connection.Downstream.Port)
-		err = server.ListenAndServeTLS("", "")
+		_, tlsErr := checkCertChain(server.TLSConfig.Certificates[0])
+		if tlsErr == nil {
+			go tlsHealthCheckDaemon(server.TLSConfig)
+			log.Info().Msgf("j8a %s listening in TLS mode on port %d...", Version, runtime.Connection.Downstream.Port)
+			err = server.ListenAndServeTLS("", "")
+		} else {
+			err = tlsErr
+		}
 	} else {
-		log.Info().Msgf("j8a %s listening on port %d...", Version, runtime.Connection.Downstream.Port)
+		log.Info().Msgf("j8a %s listening in HTTP mode on port %d...", Version, runtime.Connection.Downstream.Port)
 		err = server.ListenAndServe()
 	}
 
 	if err != nil {
-		log.Fatal().Err(err).Msgf("unable to start HTTP server on port %d, exiting...", runtime.Connection.Downstream.Port)
+		log.Fatal().Err(err).Msgf("unable to start j8a on port %d, exiting...", runtime.Connection.Downstream.Port)
 		panic(err.Error())
 	}
 }
@@ -99,7 +102,7 @@ func (runtime Runtime) mapPathsToHandler() http.Handler {
 
 	handler := http.NewServeMux()
 	for _, route := range runtime.Routes {
-		if route.Resource == Aboutj8a {
+		if route.Resource == about {
 			handler.Handle(route.Path, http.HandlerFunc(aboutHandler))
 			log.Debug().Msgf("assigned about handler to path %s", route.Path)
 		}

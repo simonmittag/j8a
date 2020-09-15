@@ -58,7 +58,7 @@ func initLogger() {
 
 	logColor := strings.ToUpper(os.Getenv("LOGCOLOR"))
 	switch logColor {
-	case "TRUE", "YES", "y":
+	case "TRUE", "YES", "Y":
 		w := zerolog.ConsoleWriter{
 			Out:     os.Stderr,
 			NoColor: false,
