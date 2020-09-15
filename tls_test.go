@@ -51,3 +51,13 @@ func TestParseTlsLinks(t *testing.T) {
 		}
 	}
 }
+
+func TestCheckCertChain(t *testing.T) {
+	tlsConfig := mockTlsConfig()
+	verified, err := checkCertChain(tlsConfig.Certificates[0])
+	if err != nil {
+		t.Errorf("certificate chain with 1 TLS cert, 1 root cert not validated, cause: %s", err)
+	} else {
+		t.Logf("normal. certificate chain with 1 TLS cert, 1 root cert validated, length: %d", len(verified))
+	}
+}
