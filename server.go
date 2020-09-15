@@ -77,11 +77,13 @@ func (runtime Runtime) startListening() {
 
 	if runtime.isTLSMode() {
 		server.TLSConfig = runtime.tlsConfig()
-		_, err := checkCertChain(server.TLSConfig.Certificates[0])
-		if err == nil {
+		_, tlsErr := checkCertChain(server.TLSConfig.Certificates[0])
+		if tlsErr == nil {
 			go tlsHealthCheckDaemon(server.TLSConfig)
 			log.Info().Msgf("j8a %s listening in TLS mode on port %d...", Version, runtime.Connection.Downstream.Port)
 			err = server.ListenAndServeTLS("", "")
+		} else {
+			err = tlsErr
 		}
 	} else {
 		log.Info().Msgf("j8a %s listening in HTTP mode on port %d...", Version, runtime.Connection.Downstream.Port)
@@ -89,7 +91,7 @@ func (runtime Runtime) startListening() {
 	}
 
 	if err != nil {
-		log.Fatal().Err(err).Msgf("unable to start server on port %d, exiting...", runtime.Connection.Downstream.Port)
+		log.Fatal().Err(err).Msgf("unable to start j8a on port %d, exiting...", runtime.Connection.Downstream.Port)
 		panic(err.Error())
 	}
 }

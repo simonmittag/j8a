@@ -73,11 +73,7 @@ func checkCertChain(chain tls.Certificate) ([]TlsLink, error) {
 	if e1 != nil {
 		err = e1
 	}
-	root, inter := splitCertPools(chain)
-	verified, e2 := cert.Verify(x509.VerifyOptions{
-		Intermediates: inter,
-		Roots:         root,
-	})
+	verified, e2 := cert.Verify(verifyOptions(splitCertPools(chain)))
 	if e2 != nil {
 		err = e2
 	}
@@ -85,6 +81,17 @@ func checkCertChain(chain tls.Certificate) ([]TlsLink, error) {
 		tlsLinks = parseTlsLinks(verified[0])
 	}
 	return tlsLinks, err
+}
+
+func verifyOptions(inter *x509.CertPool, root *x509.CertPool) x509.VerifyOptions {
+	opts := x509.VerifyOptions{}
+	if inter != nil && len(inter.Subjects()) > 0 {
+		opts.Intermediates = inter
+	}
+	if root != nil && len(root.Subjects()) > 0 {
+		opts.Roots = root
+	}
+	return opts
 }
 
 func formatSerial(serial *big.Int) string {
@@ -204,7 +211,7 @@ func splitCertPools(chain tls.Certificate) (*x509.CertPool, *x509.CertPool) {
 			}
 		}
 	}
-	return root, inter
+	return inter, root
 }
 
 func isRoot(c *x509.Certificate) bool {
