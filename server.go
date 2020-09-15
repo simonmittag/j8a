@@ -79,7 +79,7 @@ func (runtime Runtime) startListening() {
 		server.TLSConfig = runtime.tlsConfig()
 		_, tlsErr := checkCertChain(server.TLSConfig.Certificates[0])
 		if tlsErr == nil {
-			go tlsHealthCheckDaemon(server.TLSConfig)
+			go tlsHealthCheck(server.TLSConfig, true)
 			log.Info().Msgf("j8a %s listening in TLS mode on port %d...", Version, runtime.Connection.Downstream.Port)
 			err = server.ListenAndServeTLS("", "")
 		} else {

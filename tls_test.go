@@ -61,3 +61,8 @@ func TestCheckCertChain(t *testing.T) {
 		t.Logf("normal. certificate chain with 1 TLS cert, 1 root cert validated, length: %d", len(verified))
 	}
 }
+
+func TestTlsHealthCheck(t *testing.T) {
+	//this only needs to be covered for no runtime exceptions as it logs to console. no assertions.
+	tlsHealthCheck(mockTlsConfig(), false)
+}
