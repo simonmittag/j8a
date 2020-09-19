@@ -3,6 +3,7 @@ package j8a
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"github.com/hako/durafmt"
 	"github.com/rs/zerolog"
@@ -78,6 +79,9 @@ func checkCertChain(chain tls.Certificate) ([]TlsLink, error) {
 	cert, e1 := x509.ParseCertificate(chain.Certificate[0])
 	if e1 != nil {
 		err = e1
+	}
+	if cert.DNSNames == nil || len(cert.DNSNames) == 0 {
+		err = errors.New("no DNS name specified")
 	}
 	verified, e2 := cert.Verify(verifyOptions(splitCertPools(chain)))
 	if e2 != nil {
