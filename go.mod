@@ -1,6 +1,6 @@
 module github.com/simonmittag/j8a
 
-go 1.14
+go 1.15
 
 require (
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect

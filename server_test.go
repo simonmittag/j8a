@@ -8,9 +8,12 @@ import (
 
 func TestServerBootStrap(t *testing.T) {
 	setupJ8a()
-	resp, _ := http.Get("http://localhost:8080/about")
-	if resp.StatusCode != 200 {
+	resp, err := http.Get("http://localhost:8080/about")
+	if resp != nil && resp.StatusCode != 200 {
 		t.Errorf("server does not return ok status response after starting, want 200, got %v", resp.StatusCode)
+	}
+	if err != nil {
+		t.Errorf("GET req to /about returned error, %v", err)
 	}
 }
 
