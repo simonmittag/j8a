@@ -1,6 +1,7 @@
 package j8a
 
 import (
+	"fmt"
 	"os"
 	"testing"
 )
@@ -308,6 +309,30 @@ func TestSortRoutes(t *testing.T) {
 	about := config.Routes[1]
 	if about.Path != "/about" {
 		t.Error("incorrectly sorted routes")
+	}
+}
+
+func TestTlsInsecureSkipVerify(t *testing.T) {
+	//truisms in golang json string to bool parsing
+	TlsInsecureSkipVerify_V(t, "y", true)
+	TlsInsecureSkipVerify_V(t, "yes", true)
+	TlsInsecureSkipVerify_V(t, "Y", true)
+	TlsInsecureSkipVerify_V(t, "Yes", true)
+	TlsInsecureSkipVerify_V(t, "n", false)
+	TlsInsecureSkipVerify_V(t, "no", false)
+	TlsInsecureSkipVerify_V(t, "N", false)
+	TlsInsecureSkipVerify_V(t, "No", false)
+	TlsInsecureSkipVerify_V(t, "True", true)
+	TlsInsecureSkipVerify_V(t, "true", true)
+	TlsInsecureSkipVerify_V(t, "False", false)
+	TlsInsecureSkipVerify_V(t, "false", false)
+}
+
+func TlsInsecureSkipVerify_V(t *testing.T, v string, want bool) {
+	config := new(Config).parse([]byte(fmt.Sprintf("---\nconnection:\n  upstream:\n    tlsInsecureSkipVerify: %s\n", v)))
+	got := config.Connection.Upstream.TlsInsecureSkipVerify
+	if got != want {
+		t.Errorf("tlsInsecureSkipVerify got %v, want %v", got, want)
 	}
 }
 

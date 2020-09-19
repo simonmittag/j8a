@@ -97,6 +97,7 @@ connection:
     idleTimeoutSeconds: 10
     maxAttempts: 4
     poolSize: 8
+    tlsInsecureSkipVerify: y
 policies:
   ab:
     - label: green

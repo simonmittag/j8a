@@ -55,4 +55,8 @@ type Upstream struct {
 	// MaxAttempts is the maximum allowable number of request attempts to obtain a successful response for repeatable
 	// HTTP requests.
 	MaxAttempts int
+
+	// TlsInsecureSkipVerify skips the host name validation and certificate chain verification of upstream connections
+	// using TLS. Use this only for testing or if you know what you are doing. Defaults to false
+	TlsInsecureSkipVerify bool
 }

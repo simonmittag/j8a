@@ -27,21 +27,20 @@ const TLS = "TLS"
 var ConfigFile = "not specified"
 
 func (config Config) read(file string) *Config {
-	jsonFile, err := os.Open(file)
-	defer jsonFile.Close()
+	f, err := os.Open(file)
+	defer f.Close()
 	if err != nil {
 		msg := "cannot find config file or unable to read server configuration, exiting..."
 		log.Fatal().Msg(msg)
 		panic(msg)
 	}
-	byteValue, _ := ioutil.ReadAll(jsonFile)
+	byteValue, _ := ioutil.ReadAll(f)
 	return config.parse(byteValue)
 }
 
-func (config Config) parse(jsonConfig []byte) *Config {
-	jsonConfig, _ = yaml.YAMLToJSON(jsonConfig)
-	json.Unmarshal(jsonConfig, &config)
-	//todo tell me about more of the config, number of routes
+func (config Config) parse(yml []byte) *Config {
+	yml, _ = yaml.YAMLToJSON(yml)
+	json.Unmarshal(yml, &config)
 	log.Debug().Msgf("parsed server configuration with %d live routes", len(config.Routes))
 	return &config
 }
