@@ -19,6 +19,8 @@ policies:
     - label: blue
       weight: 0.2
 routes:
+  - path: "/todos"
+    resource: jsonplaceholder
   - path: "/about"
     resource: about
   - path: "/mse6/some"
@@ -67,6 +69,11 @@ routes:
   - path: "/badlocal"
     resource: badlocal
 resources:
+  jsonplaceholder:
+    - url:
+        scheme: https
+        host: jsonplaceholder.typicode.com
+        port: 443
   badip:
     - url:
         scheme: http
