@@ -58,8 +58,9 @@ func TestCheckCertChain(t *testing.T) {
 	verified, err := checkCertChain(tlsConfig.Certificates[0])
 	if err != nil {
 		t.Errorf("certificate chain with 1 TLS cert, 1 root cert not validated, cause: %s", err)
-	} else {
-		t.Logf("normal. certificate chain with 1 TLS cert, 1 root cert validated, length: %d", len(verified))
+	}
+	if verified!=nil && len(verified)!=2 {
+		t.Errorf("cert chain with 1 TLS cert, 1 root cert should be length 2, was %d", len(verified))
 	}
 }
 
@@ -80,8 +81,6 @@ func TestCertChainC_I_R_Invalid(t *testing.T) {
 	logCertStats(verified)
 	if err == nil {
 		t.Errorf("certificate chain with 1 TLS cert, 1 intermediate, bad root cert validated, this shouldn't happen.")
-	} else {
-		t.Logf("normal. certificate chain with 1 TLS cert, 1 intermediate, bad root cert not validated, cause: %s", err)
 	}
 }
 
@@ -98,8 +97,9 @@ func TestCertChainC_I_R_Valid(t *testing.T) {
 	logCertStats(verified)
 	if err != nil {
 		t.Errorf("certificate chain with 1 TLS cert, 1 intermediate, 1 root cert not validated, cause: %s", err)
-	} else {
-		t.Logf("normal. certificate chain with 1 TLS cert, 1 intermediate, 1 root cert validated, length: %d", len(verified))
+	}
+	if verified!=nil && len(verified)!=3 {
+		t.Logf("normal. certificate chain with 1 TLS cert, 1 intermediate, 1 root cert should be length 3, but was: %d", len(verified))
 	}
 }
 
@@ -115,8 +115,6 @@ func TestCertChainC_I_Invalid(t *testing.T) {
 	logCertStats(verified)
 	if err == nil {
 		t.Errorf("certificate chain with 1 TLS cert, 1 intermediate, unknown root cert incorrectly validated")
-	} else {
-		t.Logf("normal. certificate chain with 1 TLS cert, 1 intermediate, unknown root cert not validated with msg: %s", err)
 	}
 }
 
@@ -132,8 +130,6 @@ func TestCertChainC_Invalid(t *testing.T) {
 	logCertStats(verified)
 	if err == nil {
 		t.Errorf("certificate chain with 1 TLS cert, 0 intermediate, 0 root cert incorrectly validated")
-	} else {
-		t.Logf("normal. certificate chain with 1 TLS cert, 0 intermediate, unknown root cert not validated with msg: %s", err)
 	}
 }
 
