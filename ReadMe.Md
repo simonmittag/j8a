@@ -12,14 +12,13 @@ Achuta! j8a [ dʒʌbbʌ ] is a TLS reverse proxy server for JSON APIs written in
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 ## Features
-* HTTP 1.1 compatible, buffering reverse proxy.
-* Supports TLS1.2, 1.3 with A+ SSLLabs rating*.
+* HTTP/1.1, HTTP/2 compatible, buffering reverse proxy.
+* Supports TLS1.2, 1.3 with A+ SSLLabs rating.
 * JSON API friendly, with auto-recovery of idempotent requests.
-* policy based routing to multiple upstream servers for a/b testing
 * highly concurrent with multiprocessor support, tested to 10k req/s
 
 ## What's new
-j8a has released alpha version 0.6.4 in August 2020. See project milestones
+j8a has released alpha version 0.6.5 in September 2020. See project milestones
  for details on general availability.
 
 ## Up and running
