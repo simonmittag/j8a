@@ -336,6 +336,15 @@ func TlsInsecureSkipVerify_V(t *testing.T, v string, want bool) {
 	}
 }
 
+func TestTlsInsecureSkipVerify_Optional(t *testing.T) {
+	config := new(Config).parse([]byte("---\nconnection:\n  upstream:\n"))
+	got := config.Connection.Upstream.TlsInsecureSkipVerify
+	want := false
+	if got != want {
+		t.Errorf("tlsInsecureSkipVerify not specified in config, got %v, want %v", got, want)
+	}
+}
+
 //TestReadConfigFile
 func TestReadConfigFile(t *testing.T) {
 	config := new(Config).read("./j8a.yml")
