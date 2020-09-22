@@ -114,6 +114,8 @@ jobs:
       UPSTREAM_17_SLUG: /s15
       UPSTREAM_18_PORT: 60100
       UPSTREAM_18_SLUG: /s16
+      UPSTREAM_19_PORT: 60101
+      UPSTREAM_19_SLUG: /badssl
       J8A_ONE_PORT: 8080
       J8A_ONE_CFG: ./integration/j8a1.yml
       J8A_TWO_PORT: 8081
@@ -201,6 +203,10 @@ jobs:
           name: Start upstream server 18
           command: mse6 -p ${UPSTREAM_18_PORT} -u ${UPSTREAM_18_SLUG}
           background: true
+      - run:
+          name: Start upstream server 19 (TLS)
+          command: mse6 -p ${UPSTREAM_19_PORT} -u ${UPSTREAM_19_SLUG}
+          background: true
 
       - run:
           name: Wait for upstream servers
@@ -223,6 +229,7 @@ jobs:
             pwt localhost:${UPSTREAM_16_PORT}
             pwt localhost:${UPSTREAM_17_PORT}
             pwt localhost:${UPSTREAM_18_PORT}
+            pwt localhost:${UPSTREAM_19_PORT}
 
       - run:
           name: Install j8a

@@ -69,12 +69,19 @@ routes:
     resource: badremote
   - path: "/badlocal"
     resource: badlocal
+  - path: /badssl
+    resource: badssl
 resources:
   jsonplaceholder:
     - url:
         scheme: https
         host: jsonplaceholder.typicode.com
         port: 443
+  badssl:
+    - url:
+        scheme: https
+        host: localhost
+        port: 60101
   badip:
     - url:
         scheme: http
