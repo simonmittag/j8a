@@ -205,7 +205,7 @@ jobs:
           background: true
       - run:
           name: Start upstream server 19 (TLS)
-          command: mse6 -p ${UPSTREAM_19_PORT} -u ${UPSTREAM_19_SLUG}
+          command: mse6 -p ${UPSTREAM_19_PORT} -u ${UPSTREAM_19_SLUG} -s
           background: true
 
       - run:
