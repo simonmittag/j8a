@@ -1,6 +1,7 @@
 package j8a
 
 import (
+	"crypto/tls"
 	"net"
 	"net/http"
 	"os"
@@ -21,6 +22,7 @@ func scaffoldHTTPClient(runtime Runtime) HTTPClient {
 	tLSHandshakeTimeoutDuration := time.Duration(runtime.Connection.Upstream.SocketTimeoutSeconds) * time.Second
 	socketTimeoutDuration := time.Duration(runtime.Connection.Upstream.SocketTimeoutSeconds) * time.Second
 	readTimeoutDuration := time.Duration(runtime.Connection.Upstream.ReadTimeoutSeconds) * time.Second
+	tlsInsecureSkipVerify := runtime.Connection.Upstream.TlsInsecureSkipVerify
 
 	httpClient = &http.Client{
 		Transport: &http.Transport{
@@ -30,6 +32,9 @@ func scaffoldHTTPClient(runtime Runtime) HTTPClient {
 			}).Dial,
 			//TLS handshake timeout is the same as connection timeout
 			TLSHandshakeTimeout: tLSHandshakeTimeoutDuration,
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: tlsInsecureSkipVerify,
+			},
 			MaxIdleConns:        runtime.Connection.Upstream.PoolSize,
 			MaxIdleConnsPerHost: runtime.Connection.Upstream.PoolSize,
 			IdleConnTimeout:     idleConnTimeoutDuration,
@@ -48,6 +53,7 @@ func scaffoldHTTPClient(runtime Runtime) HTTPClient {
 		Float64("upIdleConnTimeoutSecs", idleConnTimeoutDuration.Seconds()).
 		Float64("upReadTimeoutSecs", readTimeoutDuration.Seconds()).
 		Float64("upTransportDialKeepAliveIntervalSecs", getKeepAliveIntervalDuration().Seconds()).
+		Bool("upTlsInsecureSkipVerify", tlsInsecureSkipVerify).
 		Msg("server derived upstream params")
 
 	return httpClient

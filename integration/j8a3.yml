@@ -97,6 +97,7 @@ connection:
     idleTimeoutSeconds: 10
     maxAttempts: 4
     poolSize: 8
+    tlsInsecureSkipVerify: yes
 policies:
   ab:
     - label: green
@@ -151,7 +152,14 @@ routes:
     resource: badremote
   - path: "/badlocal"
     resource: badlocal
+  - path: /badssl
+    resource: badssl
 resources:
+  badssl:
+    - url:
+        scheme: https
+        host: localhost
+        port: 60101
   badip:
     - url:
         scheme: http
