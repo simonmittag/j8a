@@ -245,6 +245,7 @@ func parseTlsVersion(request *http.Request) string {
 }
 
 func createXRequestID(request *http.Request) string {
+	//matches case insensitive
 	xr := request.Header.Get(XRequestID)
 	if len(xr) == 0 {
 		uuid, _ := uuid.NewRandom()

@@ -13,7 +13,7 @@ import (
 )
 
 //XRequestID is a per HTTP request unique identifier
-const XRequestID = "X-REQUEST-ID"
+const XRequestID = "X-Request-Id"
 const contentEncoding = "Content-Encoding"
 const contentLength = "Content-Length"
 const date = "Date"
@@ -110,6 +110,8 @@ func scaffoldUpstreamRequest(proxy *Proxy) *http.Request {
 	for key, values := range proxy.Dwn.Req.Header {
 		upstreamRequest.Header.Set(key, strings.Join(values, " "))
 	}
+	upstreamRequest.Header.Set(XRequestID, proxy.XRequestID)
+
 	return upstreamRequest
 }
 
