@@ -104,7 +104,6 @@ type StatusCodeResponse struct {
 	AboutResponse
 	Code       int
 	Message    string
-	XRequestID string
 }
 
 //AsJSON renders the status Code response into a JSON string as []byte

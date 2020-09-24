@@ -115,7 +115,6 @@ func TestStatusCodeResponse_AsString(t *testing.T) {
 		},
 		Code:       0,
 		Message:    "msg",
-		XRequestID: "xri",
 	}
 
 	str := res.AsString()
@@ -128,8 +127,5 @@ func TestStatusCodeResponse_AsString(t *testing.T) {
 	}
 	if !strings.Contains(str, "msg") {
 		t.Errorf("about response Message not included")
-	}
-	if !strings.Contains(str, "xri") {
-		t.Errorf("about response XRequestID not included")
 	}
 }

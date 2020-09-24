@@ -125,19 +125,14 @@ func (runtime Runtime) initStats() Runtime {
 	return runtime
 }
 
-//TODO: this really needs to be configurable. it adds a lot of options to every response otherwise.
 func (proxy *Proxy) writeStandardResponseHeaders() {
 	header := proxy.Dwn.Resp.Writer.Header()
 
 	header.Set("Server", fmt.Sprintf("j8a %s %s", Version, ID))
-	header.Set("Cache-control:", "no-store, no-cache, must-revalidate, proxy-revalidate")
 	//for TLS response, we set HSTS header see RFC6797
 	if Runner.isTLSMode() {
 		header.Set("Strict-Transport-Security", "max-age=31536000")
 	}
-	header.Set("X-xss-protection", "1;mode=block")
-	header.Set("X-content-type-options", "nosniff")
-	header.Set("X-frame-options", "sameorigin")
 	//copy the X-REQUEST-ID from the request
 	header.Set(XRequestID, proxy.XRequestID)
 }
@@ -194,7 +189,6 @@ func sendStatusCodeAsJSON(proxy *Proxy) {
 	statusCodeResponse := StatusCodeResponse{
 		Code:       proxy.Dwn.Resp.StatusCode,
 		Message:    proxy.Dwn.Resp.Message,
-		XRequestID: proxy.XRequestID,
 	}
 
 	if len(proxy.Dwn.Resp.Message) == 0 || proxy.Dwn.Resp.Message == "none" {
