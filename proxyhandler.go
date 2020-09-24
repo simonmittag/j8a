@@ -8,7 +8,6 @@ import (
 	"github.com/rs/zerolog/log"
 	"io/ioutil"
 	"net/http"
-	"strings"
 	"time"
 )
 
@@ -22,8 +21,9 @@ const server = "Server"
 //httpClient is the global user agent for upstream requests
 var httpClient HTTPClient
 
-//httpResponseHeadersNoRewrite contains a list of headers that are not copied from upstream to downstream to avoid bugs.
-var httpResponseHeadersNoRewrite []string = []string{date, contentLength, contentEncoding, server}
+//httpHeadersNoRewrite contains a list of headers that are not copied in either direction. they must be set by the
+//server or are ignored.
+var httpHeadersNoRewrite []string = []string{date, contentLength, contentEncoding, server}
 
 func proxyHandler(response http.ResponseWriter, request *http.Request) {
 	matched := false
@@ -106,9 +106,13 @@ func scaffoldUpstreamRequest(proxy *Proxy) *http.Request {
 
 	proxy.Up.Atmpt.Aborted = upstreamRequest.Context().Done()
 
-	//TODO: test if upstream request headers are reprocessed correctly
+	//set upstream headers
 	for key, values := range proxy.Dwn.Req.Header {
-		upstreamRequest.Header.Set(key, strings.Join(values, " "))
+		if shouldProxyHeader(key) {
+			for _, value := range values {
+				upstreamRequest.Header.Add(key, value)
+			}
+		}
 	}
 	upstreamRequest.Header.Set(XRequestID, proxy.XRequestID)
 
@@ -249,7 +253,7 @@ func shouldProxyUpstreamResponse(proxy *Proxy, bodyError error) bool {
 }
 
 func shouldProxyHeader(header string) bool {
-	for _, dont := range httpResponseHeadersNoRewrite {
+	for _, dont := range httpHeadersNoRewrite {
 		if header == dont {
 			return false
 		}
