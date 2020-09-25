@@ -321,8 +321,8 @@ func (proxy *Proxy) writeContentEncodingHeader() {
 func (proxy *Proxy) copyUpstreamResponseHeaders() {
 	for key, values := range proxy.Up.Atmpt.resp.Header {
 		if shouldProxyHeader(key) {
-			for _, mval := range values {
-				proxy.Dwn.Resp.Writer.Header().Set(key, mval)
+			for _, value := range values {
+				proxy.Dwn.Resp.Writer.Header().Add(key, value)
 			}
 		}
 	}
