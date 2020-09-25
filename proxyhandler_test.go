@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 )
 
@@ -346,7 +347,7 @@ func TestUpstreamGzipReDecoding(t *testing.T) {
 }
 
 // tests upstream headers are rewritten
-func TestUpstreamHeadersAreRewritten(t *testing.T) {
+func TestUpstreamHeadersAreRewrittenInOrder(t *testing.T) {
 	Runner = mockRuntime()
 	httpClient = &MockHttp{}
 	mockDoFunc = func(req *http.Request) (*http.Response, error) {
@@ -354,7 +355,7 @@ func TestUpstreamHeadersAreRewritten(t *testing.T) {
 		return &http.Response{
 			StatusCode: 200,
 			Header: map[string][]string{
-				"Cookie": []string{"$Version=1; Skin=new"},
+				"X": []string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"},
 			},
 			Body: ioutil.NopCloser(bytes.NewReader([]byte(json))),
 		}, nil
@@ -369,9 +370,9 @@ func TestUpstreamHeadersAreRewritten(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := "$Version=1; Skin=new"
-	got := resp.Header["Cookie"][0]
-	if got != want {
+	want := []string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}
+	got := resp.Header["X"]
+	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("Cookie header was not rewritten, want %v, got %v", want, got)
 	}
 }
