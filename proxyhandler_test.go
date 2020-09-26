@@ -432,6 +432,13 @@ func TestUpstreamGETRetry(t *testing.T) {
 	}
 }
 
+func TestProxyHeaderRewrite(t *testing.T) {
+	cl := "conTenT-LEngtH"
+	if shouldProxyHeader(cl) {
+		t.Errorf("should not proxy %s", cl)
+	}
+}
+
 func mockRuntime() *Runtime {
 	return &Runtime{
 		Config: Config{
