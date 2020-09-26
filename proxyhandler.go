@@ -8,12 +8,14 @@ import (
 	"github.com/rs/zerolog/log"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 )
 
 //XRequestID is a per HTTP request unique identifier
 const XRequestID = "X-Request-Id"
 const contentEncoding = "Content-Encoding"
+const transferEncoding = "Transfer-Encoding"
 const contentLength = "Content-Length"
 const date = "Date"
 const server = "Server"
@@ -23,7 +25,7 @@ var httpClient HTTPClient
 
 //httpHeadersNoRewrite contains a list of headers that are not copied in either direction. they must be set by the
 //server or are ignored.
-var httpHeadersNoRewrite []string = []string{date, contentLength, contentEncoding, server}
+var httpHeadersNoRewrite []string = []string{date, contentLength, transferEncoding, contentEncoding, server}
 
 func proxyHandler(response http.ResponseWriter, request *http.Request) {
 	matched := false
@@ -253,8 +255,8 @@ func shouldProxyUpstreamResponse(proxy *Proxy, bodyError error) bool {
 }
 
 func shouldProxyHeader(header string) bool {
-	for _, dont := range httpHeadersNoRewrite {
-		if header == dont {
+	for _, illegal := range httpHeadersNoRewrite {
+		if strings.EqualFold(header, illegal) {
 			return false
 		}
 	}
