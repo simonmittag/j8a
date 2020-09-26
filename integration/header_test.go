@@ -34,3 +34,37 @@ func TestHeaderOrderRewriteDownstreamToUpstream(t *testing.T) {
 		t.Errorf("should have sent X headers upstream in order, but sent this %s", body)
 	}
 }
+
+func TestServerContentLengthResponses(t *testing.T) {
+	ServerInsertsContentLength(t, "GET", "http://localhost:8080/about", "Identity")
+	ServerInsertsContentLength(t, "GET", "http://localhost:8080/about", "identity")
+	ServerInsertsContentLength(t, "GET", "http://localhost:8080/about", "gzip")
+	ServerInsertsContentLength(t, "GET", "http://localhost:8080/about", "Gzip")
+
+	ServerInsertsContentLength(t, "GET", "http://localhost:8080/mse6/get", "gzip")
+	ServerInsertsContentLength(t, "GET", "http://localhost:8080/mse6/get", "identity")
+}
+
+func ServerInsertsContentLength(t *testing.T, method string, url string, acceptEncoding string) {
+	client := &http.Client{}
+	req, _ := http.NewRequest(method, url, nil)
+	req.Header.Add("Accept-Encoding", acceptEncoding)
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Errorf("error connecting to server, cause: %s", err)
+	}
+	if resp != nil && resp.Body != nil {
+		defer resp.Body.Close()
+	}
+
+	got := int(resp.ContentLength)
+	notwant := -1
+	if got == notwant {
+		t.Errorf("illegal response Content-Length got %d", got)
+	}
+
+	bodyBytes, _ := ioutil.ReadAll(resp.Body)
+	if got != len(bodyBytes) {
+		t.Errorf("content-length %d does not match body size %d", got, len(bodyBytes))
+	}
+}
