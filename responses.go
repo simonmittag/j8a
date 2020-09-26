@@ -2,6 +2,7 @@ package j8a
 
 import (
 	"encoding/json"
+	"fmt"
 	"math/rand"
 	"net/http"
 	"strings"
@@ -102,8 +103,8 @@ type AboutResponse struct {
 //StatusCodeResponse defines a JSON structure for a canned HTTP response
 type StatusCodeResponse struct {
 	AboutResponse
-	Code       int
-	Message    string
+	Code    int
+	Message string
 }
 
 //AsJSON renders the status Code response into a JSON string as []byte
@@ -164,13 +165,17 @@ func aboutHandler(w http.ResponseWriter, r *http.Request) {
 		s := strings.Join(ae, " ")
 		if strings.Contains(s, "gzip") {
 			w.Header().Set("Content-Encoding", "gzip")
-			w.Write(Gzip(res))
+			res = Gzip(res)
+			w.Header().Set("Content-Length", fmt.Sprintf("%d", len(res)))
+			w.Write(res)
 		} else {
 			w.Header().Set("Content-Encoding", "identity")
+			w.Header().Set("Content-Length", fmt.Sprintf("%d", len(res)))
 			w.Write(res)
 		}
 	} else {
 		w.Header().Set("Content-Encoding", "identity")
+		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(res)))
 		w.Write(res)
 	}
 
