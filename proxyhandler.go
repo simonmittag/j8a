@@ -231,8 +231,10 @@ func processUpstreamResponse(proxy *Proxy, upstreamResponse *http.Response, upst
 				sendStatusCodeAsJSON(proxy)
 			} else {
 				proxy.prepareDownstreamResponseHeaders()
+				proxy.encodeUpstreamResponseBody()
+				proxy.setContentLengthHeader()
 				proxy.sendDownstreamStatusCodeHeader()
-				proxy.copyUpstreamResponseBody()
+				proxy.pipeDownstreamResponse()
 				logHandledDownstreamRoundtrip(proxy)
 			}
 			return true

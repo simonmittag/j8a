@@ -97,7 +97,7 @@ func TestUpstreamGzipEncodingPassThrough(t *testing.T) {
 			Header: map[string][]string{
 				"Content-Encoding": []string{"gzip"},
 			},
-			Body: ioutil.NopCloser(bytes.NewReader(Gzip([]byte(json)))),
+			Body: ioutil.NopCloser(bytes.NewReader(*Gzip([]byte(json)))),
 		}, nil
 	}
 
@@ -319,7 +319,7 @@ func TestUpstreamGzipReDecoding(t *testing.T) {
 			Header: map[string][]string{
 				"Content-Encoding": []string{"gzip"},
 			},
-			Body: ioutil.NopCloser(bytes.NewReader(Gzip([]byte(json)))),
+			Body: ioutil.NopCloser(bytes.NewReader(*Gzip([]byte(json)))),
 		}, nil
 	}
 

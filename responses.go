@@ -165,7 +165,7 @@ func aboutHandler(w http.ResponseWriter, r *http.Request) {
 		s := strings.Join(ae, " ")
 		if strings.Contains(s, "gzip") {
 			w.Header().Set("Content-Encoding", "gzip")
-			res = Gzip(res)
+			res = *Gzip(res)
 			w.Header().Set("Content-Length", fmt.Sprintf("%d", len(res)))
 			w.Write(res)
 		} else {

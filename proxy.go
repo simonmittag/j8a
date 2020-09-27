@@ -59,10 +59,12 @@ func (atmpt Atmpt) print() string {
 
 // Resp wraps downstream http response writer and data
 type Resp struct {
-	Writer     http.ResponseWriter
-	StatusCode int
-	Message    string
-	SendGzip   bool
+	Writer        http.ResponseWriter
+	StatusCode    int
+	Message       string
+	SendGzip      bool
+	Body          *[]byte
+	ContentLength int
 }
 
 //Up wraps upstream
@@ -328,22 +330,23 @@ func (proxy *Proxy) copyUpstreamResponseHeaders() {
 	}
 }
 
-func (proxy *Proxy) copyUpstreamResponseBody() {
+func (proxy *Proxy) encodeUpstreamResponseBody() {
 	if proxy.shouldGzipEncodeResponseBody() {
-		proxy.Dwn.Resp.Writer.Write(Gzip(*proxy.Up.Atmpt.respBody))
+		proxy.Dwn.Resp.Body = Gzip(*proxy.Up.Atmpt.respBody)
 		scaffoldUpAttemptLog(proxy).
 			Msg("copying upstream body with gzip re-encoding")
 	} else {
 		if proxy.shouldGzipDecodeResponseBody() {
-			proxy.Dwn.Resp.Writer.Write(Gunzip([]byte(*proxy.Up.Atmpt.respBody)))
+			proxy.Dwn.Resp.Body = Gunzip(*proxy.Up.Atmpt.respBody)
 			scaffoldUpAttemptLog(proxy).
 				Msg("copying upstream body with gzip re-decoding")
 		} else {
-			proxy.Dwn.Resp.Writer.Write([]byte(*proxy.Up.Atmpt.respBody))
+			proxy.Dwn.Resp.Body = proxy.Up.Atmpt.respBody
 			scaffoldUpAttemptLog(proxy).
 				Msgf("copying upstream body as is")
 		}
 	}
+	proxy.Dwn.Resp.ContentLength = len(*proxy.Dwn.Resp.Body)
 }
 
 func (proxy *Proxy) contentEncoding() string {
@@ -363,15 +366,33 @@ func (proxy *Proxy) contentEncoding() string {
 func (proxy *Proxy) prepareDownstreamResponseHeaders() {
 	proxy.writeStandardResponseHeaders()
 	proxy.copyUpstreamResponseHeaders()
-	proxy.resetContentLengthHeader()
+	proxy.setContentLengthHeader()
 	proxy.writeContentEncodingHeader()
 	proxy.copyUpstreamStatusCodeHeader()
 }
 
-func (proxy *Proxy) resetContentLengthHeader() {
-	if proxy.Dwn.Method == "HEAD" || len(*proxy.Up.Atmpt.respBody) == 0 {
-		proxy.Dwn.Resp.Writer.Header().Set(contentLength, "0")
+//RFC7230, section 3.3.2
+func (proxy *Proxy) setContentLengthHeader() {
+	if te := proxy.Dwn.Resp.Writer.Header().Get(transferEncoding); len(te) != 0 {
+		return
 	}
+	if proxy.Dwn.Resp.StatusCode == 204 ||
+		(proxy.Dwn.Resp.StatusCode >= 100 && proxy.Dwn.Resp.StatusCode < 200) {
+		return
+	}
+	if proxy.Dwn.Method == "HEAD" ||
+		proxy.Dwn.Method == "CONNECT" {
+		return
+	}
+	if len(*proxy.Up.Atmpt.respBody) == 0 {
+		return
+	} else {
+		proxy.Dwn.Resp.Writer.Header().Set(contentLength, fmt.Sprintf("%d", proxy.Dwn.Resp.ContentLength))
+	}
+}
+
+func (proxy *Proxy) pipeDownstreamResponse() {
+	proxy.Dwn.Resp.Writer.Write(*proxy.Dwn.Resp.Body)
 }
 
 //status Code must be last, no headers may be written after this one.
