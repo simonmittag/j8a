@@ -16,7 +16,7 @@ func TestServerContentLengthResponses(t *testing.T) {
 	ServerGETInsertsContentLength(t, "http://localhost:8080/mse6/get", "identity")
 
 	ServerOPTIONSNoInsertContentLength(t, "http://localhost:8080/mse6/options", "identity")
-	//ServerOPTIONSNoInsertContentLength(t, "http://localhost:8080/mse6/options", "gzip")
+	ServerOPTIONSNoInsertContentLength(t, "http://localhost:8080/mse6/options", "gzip")
 }
 
 func ServerGETInsertsContentLength(t *testing.T, url string, acceptEncoding string) {

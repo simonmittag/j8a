@@ -230,9 +230,12 @@ func processUpstreamResponse(proxy *Proxy, upstreamResponse *http.Response, upst
 				proxy.copyUpstreamStatusCodeHeader()
 				sendStatusCodeAsJSON(proxy)
 			} else {
-				proxy.prepareDownstreamResponseHeaders()
+				proxy.writeStandardResponseHeaders()
+				proxy.copyUpstreamResponseHeaders()
+				proxy.copyUpstreamStatusCodeHeader()
 				proxy.encodeUpstreamResponseBody()
 				proxy.setContentLengthHeader()
+				proxy.writeContentEncodingHeader()
 				proxy.sendDownstreamStatusCodeHeader()
 				proxy.pipeDownstreamResponse()
 				logHandledDownstreamRoundtrip(proxy)

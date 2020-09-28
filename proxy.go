@@ -317,7 +317,9 @@ func (proxy *Proxy) nextAttempt() *Proxy {
 }
 
 func (proxy *Proxy) writeContentEncodingHeader() {
-	proxy.Dwn.Resp.Writer.Header().Set(contentEncoding, proxy.contentEncoding())
+	if proxy.Dwn.Resp.ContentLength > 0 {
+		proxy.Dwn.Resp.Writer.Header().Set(contentEncoding, proxy.contentEncoding())
+	}
 }
 
 func (proxy *Proxy) copyUpstreamResponseHeaders() {
@@ -331,22 +333,29 @@ func (proxy *Proxy) copyUpstreamResponseHeaders() {
 }
 
 func (proxy *Proxy) encodeUpstreamResponseBody() {
-	if proxy.shouldGzipEncodeResponseBody() {
-		proxy.Dwn.Resp.Body = Gzip(*proxy.Up.Atmpt.respBody)
-		scaffoldUpAttemptLog(proxy).
-			Msg("copying upstream body with gzip re-encoding")
-	} else {
-		if proxy.shouldGzipDecodeResponseBody() {
-			proxy.Dwn.Resp.Body = Gunzip(*proxy.Up.Atmpt.respBody)
+	if *proxy.Up.Atmpt.respBody != nil && len(*proxy.Up.Atmpt.respBody) > 0 {
+		if proxy.shouldGzipEncodeResponseBody() {
+			proxy.Dwn.Resp.Body = Gzip(*proxy.Up.Atmpt.respBody)
 			scaffoldUpAttemptLog(proxy).
-				Msg("copying upstream body with gzip re-decoding")
+				Msg("copying upstream body with gzip re-encoding")
 		} else {
-			proxy.Dwn.Resp.Body = proxy.Up.Atmpt.respBody
-			scaffoldUpAttemptLog(proxy).
-				Msgf("copying upstream body as is")
+			if proxy.shouldGzipDecodeResponseBody() {
+				proxy.Dwn.Resp.Body = Gunzip(*proxy.Up.Atmpt.respBody)
+				scaffoldUpAttemptLog(proxy).
+					Msg("copying upstream body with gzip re-decoding")
+			} else {
+				proxy.Dwn.Resp.Body = proxy.Up.Atmpt.respBody
+				scaffoldUpAttemptLog(proxy).
+					Msgf("copying upstream body as is")
+			}
 		}
+	} else {
+		//just in case golang tries to use this value downstream.
+		nobody := make([]byte, 0)
+		proxy.Dwn.Resp.Body = &nobody
+		scaffoldUpAttemptLog(proxy).
+			Msgf("skipping empty upstream body")
 	}
-	proxy.Dwn.Resp.ContentLength = len(*proxy.Dwn.Resp.Body)
 }
 
 func (proxy *Proxy) contentEncoding() string {
@@ -363,16 +372,10 @@ func (proxy *Proxy) contentEncoding() string {
 	return ce
 }
 
-func (proxy *Proxy) prepareDownstreamResponseHeaders() {
-	proxy.writeStandardResponseHeaders()
-	proxy.copyUpstreamResponseHeaders()
-	proxy.setContentLengthHeader()
-	proxy.writeContentEncodingHeader()
-	proxy.copyUpstreamStatusCodeHeader()
-}
-
 //RFC7230, section 3.3.2
 func (proxy *Proxy) setContentLengthHeader() {
+	proxy.Dwn.Resp.ContentLength = len(*proxy.Dwn.Resp.Body)
+
 	if te := proxy.Dwn.Resp.Writer.Header().Get(transferEncoding); len(te) != 0 ||
 		proxy.Dwn.Resp.StatusCode == 204 ||
 		(proxy.Dwn.Resp.StatusCode >= 100 && proxy.Dwn.Resp.StatusCode < 200) ||
