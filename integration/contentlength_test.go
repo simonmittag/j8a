@@ -16,6 +16,7 @@ func TestServerContentLengthResponses(t *testing.T) {
 
 	MethodHasZeroContentLengthAndNoBody(t, "OPTIONS", "http://localhost:8080/mse6/options", "identity")
 	MethodHasZeroContentLengthAndNoBody(t, "OPTIONS", "http://localhost:8080/mse6/options", "gzip")
+	//golang removes content-length from http 204 response.
 	MethodHasNoContentLengthHeaderAndNoBody(t, "OPTIONS", "http://localhost:8080/mse6/options?code=204", "identity")
 	MethodHasNoContentLengthHeaderAndNoBody(t, "OPTIONS", "http://localhost:8080/mse6/options?code=204", "gzip")
 }
