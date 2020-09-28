@@ -373,19 +373,11 @@ func (proxy *Proxy) prepareDownstreamResponseHeaders() {
 
 //RFC7230, section 3.3.2
 func (proxy *Proxy) setContentLengthHeader() {
-	if te := proxy.Dwn.Resp.Writer.Header().Get(transferEncoding); len(te) != 0 {
-		return
-	}
-	if proxy.Dwn.Resp.StatusCode == 204 ||
-		(proxy.Dwn.Resp.StatusCode >= 100 && proxy.Dwn.Resp.StatusCode < 200) {
-		return
-	}
-	if proxy.Dwn.Method == "HEAD" ||
+	if te := proxy.Dwn.Resp.Writer.Header().Get(transferEncoding); len(te) != 0 ||
+		proxy.Dwn.Resp.StatusCode == 204 ||
+		(proxy.Dwn.Resp.StatusCode >= 100 && proxy.Dwn.Resp.StatusCode < 200) ||
 		proxy.Dwn.Method == "CONNECT" {
-		return
-	}
-	if len(*proxy.Up.Atmpt.respBody) == 0 {
-		return
+		proxy.Dwn.Resp.Writer.Header().Set(contentLength, "0")
 	} else {
 		proxy.Dwn.Resp.Writer.Header().Set(contentLength, fmt.Sprintf("%d", proxy.Dwn.Resp.ContentLength))
 	}

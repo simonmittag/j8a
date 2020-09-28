@@ -14,7 +14,7 @@ import (
 )
 
 //Version is the server version
-var Version string = "v0.6.5"
+var Version string = "v0.6.6"
 
 //ID is a unique server ID
 var ID string = "unknown"
@@ -187,8 +187,8 @@ func sendStatusCodeAsJSON(proxy *Proxy) {
 	proxy.Dwn.Resp.Writer.WriteHeader(proxy.Dwn.Resp.StatusCode)
 
 	statusCodeResponse := StatusCodeResponse{
-		Code:       proxy.Dwn.Resp.StatusCode,
-		Message:    proxy.Dwn.Resp.Message,
+		Code:    proxy.Dwn.Resp.StatusCode,
+		Message: proxy.Dwn.Resp.Message,
 	}
 
 	if len(proxy.Dwn.Resp.Message) == 0 || proxy.Dwn.Resp.Message == "none" {
