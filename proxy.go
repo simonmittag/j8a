@@ -377,6 +377,11 @@ func (proxy *Proxy) setContentLengthHeader() {
 	proxy.Dwn.Resp.ContentLength = len(*proxy.Dwn.Resp.Body)
 
 	if te := proxy.Dwn.Resp.Writer.Header().Get(transferEncoding); len(te) != 0 ||
+		//we set 0 for status code 204 because of RFC7230, 4.3.7, see: https://tools.ietf.org/html/rfc7231#page-31
+		//however golang removes this in it's own implementation.
+		//Spec ambiguous, see Errata: https://www.rfc-editor.org/errata/eid5806
+		//overall there is little harm done by absent header. J8a tests distinguish between
+		//Content-Length==0 and no header present to detect when/if future golang version changes behavior.
 		proxy.Dwn.Resp.StatusCode == 204 ||
 		(proxy.Dwn.Resp.StatusCode >= 100 && proxy.Dwn.Resp.StatusCode < 200) ||
 		proxy.Dwn.Method == "CONNECT" {
