@@ -30,8 +30,8 @@ func TestHEADContentLengthResponses(t *testing.T) {
 	MethodHasZeroContentLengthAndNoBody(t, "HEAD", "http://localhost:8080/mse6/getorhead", "gzip")
 
 	//upstream server does send content-length of would-be resource as per RFC7231: https://tools.ietf.org/html/rfc7231#page-25
-	//MethodHasContentLengthAndNoBody(t, "HEAD", "http://localhost:8080/mse6/getorhead?cl=y", "identity")
-	//MethodHasContentLengthAndNoBody(t, "HEAD", "http://localhost:8080/mse6/getorhead?cl=y", "gzip")
+	MethodHasContentLengthAndNoBody(t, "HEAD", "http://localhost:8080/mse6/getorhead?cl=y", "identity")
+	MethodHasContentLengthAndNoBody(t, "HEAD", "http://localhost:8080/mse6/getorhead?cl=y", "gzip")
 
 	//upstream server serves actual resource with content-length and full body
 	MethodHasContentLengthAndBody(t, "GET", "http://localhost:8080/mse6/getorhead", "identity")

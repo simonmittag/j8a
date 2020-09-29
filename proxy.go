@@ -9,6 +9,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -386,6 +387,16 @@ func (proxy *Proxy) setContentLengthHeader() {
 		(proxy.Dwn.Resp.StatusCode >= 100 && proxy.Dwn.Resp.StatusCode < 200) ||
 		proxy.Dwn.Method == "CONNECT" {
 		proxy.Dwn.Resp.Writer.Header().Set(contentLength, "0")
+	} else if proxy.Dwn.Method == "HEAD" {
+		//special case for upstream HEAD response with intact content-length we do copy
+		//see RFC7231 4.3.2: https://tools.ietf.org/html/rfc7231#page-25
+		cl := proxy.Up.Atmpt.resp.Header.Get(contentLength)
+		_, err := strconv.ParseInt(cl, 10, 32)
+		if len(cl) > 0 && err == nil {
+			proxy.Dwn.Resp.Writer.Header().Set(contentLength, cl)
+		} else {
+			proxy.Dwn.Resp.Writer.Header().Set(contentLength, "0")
+		}
 	} else {
 		proxy.Dwn.Resp.Writer.Header().Set(contentLength, fmt.Sprintf("%d", proxy.Dwn.Resp.ContentLength))
 	}
