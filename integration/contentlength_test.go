@@ -3,22 +3,39 @@ package integration
 import (
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"testing"
 )
 
-func TestServerContentLengthResponses(t *testing.T) {
+func TestGETContentLengthResponses(t *testing.T) {
 	MethodHasContentLengthAndBody(t, "GET", "http://localhost:8080/about", "Identity")
 	MethodHasContentLengthAndBody(t, "GET", "http://localhost:8080/about", "identity")
 	MethodHasContentLengthAndBody(t, "GET", "http://localhost:8080/about", "gzip")
 	MethodHasContentLengthAndBody(t, "GET", "http://localhost:8080/about", "Gzip")
 	MethodHasContentLengthAndBody(t, "GET", "http://localhost:8080/mse6/get", "gzip")
 	MethodHasContentLengthAndBody(t, "GET", "http://localhost:8080/mse6/get", "identity")
+}
 
+func TestOPTIONSContentLengthResponses(t *testing.T) {
 	MethodHasZeroContentLengthAndNoBody(t, "OPTIONS", "http://localhost:8080/mse6/options", "identity")
 	MethodHasZeroContentLengthAndNoBody(t, "OPTIONS", "http://localhost:8080/mse6/options", "gzip")
 	//golang removes content-length from http 204 response.
 	MethodHasNoContentLengthHeaderAndNoBody(t, "OPTIONS", "http://localhost:8080/mse6/options?code=204", "identity")
 	MethodHasNoContentLengthHeaderAndNoBody(t, "OPTIONS", "http://localhost:8080/mse6/options?code=204", "gzip")
+}
+
+func TestHEADContentLengthResponses(t *testing.T) {
+	//upstream server does not send content-length during HEAD
+	MethodHasZeroContentLengthAndNoBody(t, "HEAD", "http://localhost:8080/mse6/getorhead", "identity")
+	MethodHasZeroContentLengthAndNoBody(t, "HEAD", "http://localhost:8080/mse6/getorhead", "gzip")
+
+	//upstream server does send content-length of would-be resource as per RFC7231: https://tools.ietf.org/html/rfc7231#page-25
+	//MethodHasContentLengthAndNoBody(t, "HEAD", "http://localhost:8080/mse6/getorhead?cl=y", "identity")
+	//MethodHasContentLengthAndNoBody(t, "HEAD", "http://localhost:8080/mse6/getorhead?cl=y", "gzip")
+
+	//upstream server serves actual resource with content-length and full body
+	MethodHasContentLengthAndBody(t, "GET", "http://localhost:8080/mse6/getorhead", "identity")
+	MethodHasContentLengthAndBody(t, "GET", "http://localhost:8080/mse6/getorhead", "gzip")
 }
 
 func MethodHasContentLengthAndBody(t *testing.T, method string, url string, acceptEncoding string) {
@@ -45,6 +62,29 @@ func MethodHasContentLengthAndBody(t *testing.T, method string, url string, acce
 	}
 }
 
+func MethodHasContentLengthAndNoBody(t *testing.T, method string, url string, acceptEncoding string) {
+	client := &http.Client{}
+	req, _ := http.NewRequest(method, url, nil)
+	req.Header.Add("Accept-Encoding", acceptEncoding)
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Errorf("error connecting to server for method %s, url %s, cause: %s", method, url, err)
+	}
+	if resp != nil && resp.Body != nil {
+		defer resp.Body.Close()
+	}
+
+	got2, _ := strconv.Atoi(resp.Header.Get("Content-Length"))
+	if got2 < 1 {
+		t.Errorf("illegal response for method %s url %s want Content-Length >0 but got %d", method, url, got2)
+	}
+
+	bodyBytes, _ := ioutil.ReadAll(resp.Body)
+	if len(bodyBytes) > 0 {
+		t.Errorf("illegal response for method %s, url %s should not have body, got %d bytes", method, url, len(bodyBytes))
+	}
+}
+
 func MethodHasZeroContentLengthAndNoBody(t *testing.T, method, url string, acceptEncoding string) {
 	client := &http.Client{}
 	req, _ := http.NewRequest(method, url, nil)
@@ -57,12 +97,11 @@ func MethodHasZeroContentLengthAndNoBody(t *testing.T, method, url string, accep
 	if resp != nil && resp.Body != nil {
 		bod, _ := ioutil.ReadAll(resp.Body)
 		if len(bod) > 0 {
-			t.Errorf("illegal response contains body for method %s, got: %v", method, bod)
+			t.Errorf("illegal response contains body for url %s, method %s, got: %v", url, method, bod)
 		}
 		defer resp.Body.Close()
 	}
 
-	//not that we don't trust you golang, but test the actual http header sent
 	got2 := resp.Header.Get("Content-Length")
 	want2 := "0"
 	if got2 != want2 {
