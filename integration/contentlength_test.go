@@ -1,6 +1,8 @@
 package integration
 
 import (
+	"bytes"
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -38,9 +40,41 @@ func TestHEADContentLengthResponses(t *testing.T) {
 	MethodHasContentLengthAndBody(t, "GET", "http://localhost:8080/mse6/getorhead", "gzip")
 }
 
+func TestPUTContentLengthResponses(t *testing.T) {
+	//upstream server serves actual resource with content-length and full body
+	MethodHasContentLengthAndBody(t, "PUT", "http://localhost:8080/mse6/put", "identity")
+	MethodHasContentLengthAndBody(t, "PUT", "http://localhost:8080/mse6/put", "gzip")
+}
+
+func TestPATCHContentLengthResponses(t *testing.T) {
+	//upstream server serves actual resource with content-length and full body
+	MethodHasContentLengthAndBody(t, "PATCH", "http://localhost:8080/mse6/patch", "identity")
+	MethodHasContentLengthAndBody(t, "PATCH", "http://localhost:8080/mse6/patch", "gzip")
+}
+
+func TestDELETEContentLengthResponses(t *testing.T) {
+	//upstream server serves actual resource with content-length and full body
+	MethodHasContentLengthAndBody(t, "DELETE", "http://localhost:8080/mse6/delete", "identity")
+	MethodHasContentLengthAndBody(t, "DELETE", "http://localhost:8080/mse6/delete", "gzip")
+}
+
+func TestTRACEContentLengthResponses(t *testing.T) {
+	//upstream server serves actual resource with content-length and full body
+	MethodHasZeroContentLengthAndNoBody(t, "TRACE", "http://localhost:8080/mse6/trace", "identity")
+	MethodHasZeroContentLengthAndNoBody(t, "TRACE", "http://localhost:8080/mse6/trace", "gzip")
+}
+
 func MethodHasContentLengthAndBody(t *testing.T, method string, url string, acceptEncoding string) {
 	client := &http.Client{}
-	req, _ := http.NewRequest(method, url, nil)
+
+	var buf *bytes.Buffer
+	if method == "PUT" || method == "POST" || method == "PATCH" || method == "DELETE" {
+		jsonData := map[string]string{"scandi": "grind", "convex": "grind", "concave": "grind"}
+		jsonValue, _ := json.Marshal(jsonData)
+		buf = bytes.NewBuffer(jsonValue)
+	}
+
+	req, _ := http.NewRequest(method, url, buf)
 	req.Header.Add("Accept-Encoding", acceptEncoding)
 	resp, err := client.Do(req)
 	if err != nil {
