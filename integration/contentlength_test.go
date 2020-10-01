@@ -68,13 +68,16 @@ func MethodHasContentLengthAndBody(t *testing.T, method string, url string, acce
 	client := &http.Client{}
 
 	var buf *bytes.Buffer
+	var req *http.Request
 	if method == "PUT" || method == "POST" || method == "PATCH" || method == "DELETE" {
 		jsonData := map[string]string{"scandi": "grind", "convex": "grind", "concave": "grind"}
 		jsonValue, _ := json.Marshal(jsonData)
 		buf = bytes.NewBuffer(jsonValue)
+		req, _ = http.NewRequest(method, url, buf)
+	} else {
+		req, _ = http.NewRequest(method, url, nil)
 	}
 
-	req, _ := http.NewRequest(method, url, buf)
 	req.Header.Add("Accept-Encoding", acceptEncoding)
 	resp, err := client.Do(req)
 	if err != nil {
