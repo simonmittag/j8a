@@ -54,8 +54,8 @@ func TestPATCHContentLengthResponses(t *testing.T) {
 
 func TestDELETEContentLengthResponses(t *testing.T) {
 	//upstream server serves actual resource with content-length and full body
-	MethodHasContentLengthAndBody(t, "DELETE", "http://localhost:8080/mse6/delete", "identity")
-	MethodHasContentLengthAndBody(t, "DELETE", "http://localhost:8080/mse6/delete", "gzip")
+	MethodHasNoContentLengthHeaderAndNoBody(t, "DELETE", "http://localhost:8080/mse6/delete", "identity")
+	MethodHasNoContentLengthHeaderAndNoBody(t, "DELETE", "http://localhost:8080/mse6/delete", "gzip")
 }
 
 func TestTRACEContentLengthResponses(t *testing.T) {
