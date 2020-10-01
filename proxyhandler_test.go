@@ -97,7 +97,7 @@ func TestUpstreamGzipEncodingPassThrough(t *testing.T) {
 			Header: map[string][]string{
 				"Content-Encoding": []string{"gzip"},
 			},
-			Body: ioutil.NopCloser(bytes.NewReader(Gzip([]byte(json)))),
+			Body: ioutil.NopCloser(bytes.NewReader(*Gzip([]byte(json)))),
 		}, nil
 	}
 
@@ -319,7 +319,7 @@ func TestUpstreamGzipReDecoding(t *testing.T) {
 			Header: map[string][]string{
 				"Content-Encoding": []string{"gzip"},
 			},
-			Body: ioutil.NopCloser(bytes.NewReader(Gzip([]byte(json)))),
+			Body: ioutil.NopCloser(bytes.NewReader(*Gzip([]byte(json)))),
 		}, nil
 	}
 
@@ -429,6 +429,13 @@ func TestUpstreamGETRetry(t *testing.T) {
 	want := 502
 	if resp.StatusCode != want {
 		t.Fatalf("uh oh, received incorrect status Code from retrying failing proxyhandler, want %v, got %v", want, resp.StatusCode)
+	}
+}
+
+func TestProxyHeaderRewrite(t *testing.T) {
+	cl := "conTenT-LEngtH"
+	if shouldProxyHeader(cl) {
+		t.Errorf("should not proxy %s", cl)
 	}
 }
 

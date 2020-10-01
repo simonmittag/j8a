@@ -27,10 +27,8 @@ j8a has released alpha version 0.6.5 in September 2020. See project milestones
 go install github.com/simonmittag/j8a/cmd/j8a && j8a
 ```
 
-## Supported headers
-
+## Headers
 Specify these headers to control server behaviour
-
 
 ### X-REQUEST-DEBUG
 Set this to true to include a full trace of the request in the server log
@@ -39,10 +37,8 @@ Set this to true to include a full trace of the request in the server log
 X-REQUEST-DEBUG: true
 ```
 
-## Supported environment variables
-
+## Environment Variables
 Specify these env vars to control server behaviour
-
 
 ### LOGLEVEL
 Loglevel for stdout, one of TRACE, DEBUG, INFO or WARN

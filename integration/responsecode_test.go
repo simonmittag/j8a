@@ -114,10 +114,10 @@ func TestFinalStatusCode200SentFromProxyWithPutIfExpected100Continue(t *testing.
 	}
 }
 
-func TestFinalStatusCode200SentFromProxyWithPostIfExpected100Continue(t *testing.T) {
+func TestFinalStatusCode201SentFromProxyWithPostIfExpected100Continue(t *testing.T) {
 	client := &http.Client{}
 	serverPort := 8080
-	wantDownstreamStatusCode := 200
+	wantDownstreamStatusCode := 201
 
 	jsonData := map[string]string{"firstname": "Simon", "lastname": "Mittag", "rank": "Corporal"}
 	jsonValue, _ := json.Marshal(jsonData)

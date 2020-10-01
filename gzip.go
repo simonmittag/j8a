@@ -28,7 +28,7 @@ var unzipPool = sync.Pool{
 }
 
 // Gzip a []byte
-func Gzip(input []byte) []byte {
+func Gzip(input []byte) *[]byte {
 	wrt, _ := zipPool.Get().(*gzip.Writer)
 	buf := &bytes.Buffer{}
 	wrt.Reset(buf)
@@ -39,11 +39,11 @@ func Gzip(input []byte) []byte {
 
 	enc := buf.Bytes()
 	log.Trace().Msgf("zipped byte buffer size %d", len(enc))
-	return enc
+	return &enc
 }
 
 // Gunzip a []byte
-func Gunzip(input []byte) []byte {
+func Gunzip(input []byte) *[]byte {
 	rd, _ := unzipPool.Get().(*gzip.Reader)
 	buf := bytes.NewBuffer(input)
 	_ = rd.Reset(buf)
@@ -53,5 +53,5 @@ func Gunzip(input []byte) []byte {
 	defer unzipPool.Put(rd)
 
 	log.Trace().Msgf("unzipped byte buffer size %d", len(dec))
-	return dec
+	return &dec
 }

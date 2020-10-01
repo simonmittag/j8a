@@ -9,6 +9,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -59,10 +60,12 @@ func (atmpt Atmpt) print() string {
 
 // Resp wraps downstream http response writer and data
 type Resp struct {
-	Writer     http.ResponseWriter
-	StatusCode int
-	Message    string
-	SendGzip   bool
+	Writer        http.ResponseWriter
+	StatusCode    int
+	Message       string
+	SendGzip      bool
+	Body          *[]byte
+	ContentLength int
 }
 
 //Up wraps upstream
@@ -315,7 +318,9 @@ func (proxy *Proxy) nextAttempt() *Proxy {
 }
 
 func (proxy *Proxy) writeContentEncodingHeader() {
-	proxy.Dwn.Resp.Writer.Header().Set(contentEncoding, proxy.contentEncoding())
+	if proxy.Dwn.Resp.ContentLength > 0 {
+		proxy.Dwn.Resp.Writer.Header().Set(contentEncoding, proxy.contentEncoding())
+	}
 }
 
 func (proxy *Proxy) copyUpstreamResponseHeaders() {
@@ -328,21 +333,29 @@ func (proxy *Proxy) copyUpstreamResponseHeaders() {
 	}
 }
 
-func (proxy *Proxy) copyUpstreamResponseBody() {
-	if proxy.shouldGzipEncodeResponseBody() {
-		proxy.Dwn.Resp.Writer.Write(Gzip(*proxy.Up.Atmpt.respBody))
-		scaffoldUpAttemptLog(proxy).
-			Msg("copying upstream body with gzip re-encoding")
-	} else {
-		if proxy.shouldGzipDecodeResponseBody() {
-			proxy.Dwn.Resp.Writer.Write(Gunzip([]byte(*proxy.Up.Atmpt.respBody)))
+func (proxy *Proxy) encodeUpstreamResponseBody() {
+	if *proxy.Up.Atmpt.respBody != nil && len(*proxy.Up.Atmpt.respBody) > 0 {
+		if proxy.shouldGzipEncodeResponseBody() {
+			proxy.Dwn.Resp.Body = Gzip(*proxy.Up.Atmpt.respBody)
 			scaffoldUpAttemptLog(proxy).
-				Msg("copying upstream body with gzip re-decoding")
+				Msg("copying upstream body with gzip re-encoding")
 		} else {
-			proxy.Dwn.Resp.Writer.Write([]byte(*proxy.Up.Atmpt.respBody))
-			scaffoldUpAttemptLog(proxy).
-				Msgf("copying upstream body as is")
+			if proxy.shouldGzipDecodeResponseBody() {
+				proxy.Dwn.Resp.Body = Gunzip(*proxy.Up.Atmpt.respBody)
+				scaffoldUpAttemptLog(proxy).
+					Msg("copying upstream body with gzip re-decoding")
+			} else {
+				proxy.Dwn.Resp.Body = proxy.Up.Atmpt.respBody
+				scaffoldUpAttemptLog(proxy).
+					Msgf("copying upstream body as is")
+			}
 		}
+	} else {
+		//just in case golang tries to use this value downstream.
+		nobody := make([]byte, 0)
+		proxy.Dwn.Resp.Body = &nobody
+		scaffoldUpAttemptLog(proxy).
+			Msgf("skipping empty upstream body")
 	}
 }
 
@@ -360,18 +373,37 @@ func (proxy *Proxy) contentEncoding() string {
 	return ce
 }
 
-func (proxy *Proxy) prepareDownstreamResponseHeaders() {
-	proxy.writeStandardResponseHeaders()
-	proxy.copyUpstreamResponseHeaders()
-	proxy.resetContentLengthHeader()
-	proxy.writeContentEncodingHeader()
-	proxy.copyUpstreamStatusCodeHeader()
+//RFC7230, section 3.3.2
+func (proxy *Proxy) setContentLengthHeader() {
+	proxy.Dwn.Resp.ContentLength = len(*proxy.Dwn.Resp.Body)
+
+	if te := proxy.Dwn.Resp.Writer.Header().Get(transferEncoding); len(te) != 0 ||
+		//we set 0 for status code 204 because of RFC7230, 4.3.7, see: https://tools.ietf.org/html/rfc7231#page-31
+		//however golang removes this in it's own implementation.
+		//Spec ambiguous, see Errata: https://www.rfc-editor.org/errata/eid5806
+		//overall there is little harm done by absent header. J8a tests distinguish between
+		//Content-Length==0 and no header present to detect when/if future golang version changes behavior.
+		proxy.Dwn.Resp.StatusCode == 204 ||
+		(proxy.Dwn.Resp.StatusCode >= 100 && proxy.Dwn.Resp.StatusCode < 200) ||
+		proxy.Dwn.Method == "CONNECT" {
+		proxy.Dwn.Resp.Writer.Header().Set(contentLength, "0")
+	} else if proxy.Dwn.Method == "HEAD" {
+		//special case for upstream HEAD response with intact content-length we do copy
+		//see RFC7231 4.3.2: https://tools.ietf.org/html/rfc7231#page-25
+		cl := proxy.Up.Atmpt.resp.Header.Get(contentLength)
+		_, err := strconv.ParseInt(cl, 10, 32)
+		if len(cl) > 0 && err == nil {
+			proxy.Dwn.Resp.Writer.Header().Set(contentLength, cl)
+		} else {
+			proxy.Dwn.Resp.Writer.Header().Set(contentLength, "0")
+		}
+	} else {
+		proxy.Dwn.Resp.Writer.Header().Set(contentLength, fmt.Sprintf("%d", proxy.Dwn.Resp.ContentLength))
+	}
 }
 
-func (proxy *Proxy) resetContentLengthHeader() {
-	if proxy.Dwn.Method == "HEAD" || len(*proxy.Up.Atmpt.respBody) == 0 {
-		proxy.Dwn.Resp.Writer.Header().Set(contentLength, "0")
-	}
+func (proxy *Proxy) pipeDownstreamResponse() {
+	proxy.Dwn.Resp.Writer.Write(*proxy.Dwn.Resp.Body)
 }
 
 //status Code must be last, no headers may be written after this one.
