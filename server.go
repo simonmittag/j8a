@@ -97,20 +97,7 @@ func (runtime Runtime) startListening() {
 }
 
 func (runtime Runtime) mapPathsToHandler() http.Handler {
-	//TODO: do we need this handler with two handlerfuncs or can we map all requests to one handlerfunc to speed up?
-	//if one handlerfunc in the system, it would need to distinguish between /about and other routes.
-
-	handler := http.NewServeMux()
-	for _, route := range runtime.Routes {
-		if route.Resource == about {
-			handler.Handle(route.Path, http.HandlerFunc(aboutHandler))
-			log.Debug().Msgf("assigned about handler to path %s", route.Path)
-		}
-	}
-	handler.Handle("/", http.HandlerFunc(proxyHandler))
-	log.Debug().Msgf("assigned proxy handler to path %s", "/")
-
-	return handler
+	return RootHandler{}
 }
 
 func (runtime Runtime) initUserAgent() Runtime {
