@@ -4,13 +4,13 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"github.com/rs/zerolog/log"
+	golog "log"
 	"net/http"
 	"os"
 	"strconv"
 	"sync"
 	"time"
-
-	"github.com/rs/zerolog/log"
 )
 
 //Version is the server version
@@ -28,6 +28,13 @@ type Runtime struct {
 var Runner *Runtime
 
 var Boot sync.WaitGroup = sync.WaitGroup{}
+
+type zerologAdapter struct{}
+
+func (zla *zerologAdapter) Write(p []byte) (n int, err error) {
+	log.Trace().Str("tcpTlsMsg", string(p)).Msg("remote TLS handshake or TCP connection error")
+	return len(p), nil
+}
 
 //BootStrap starts up the server from a ServerConfig
 func BootStrap() {
@@ -68,6 +75,7 @@ func (runtime Runtime) startListening() {
 		WriteTimeout:      roundTripTimeoutDurationWithGrace,
 		IdleTimeout:       idleTimeoutDuration,
 		Handler:           runtime.mapPathsToHandler(),
+		ErrorLog:          golog.New(&zerologAdapter{}, "", 0),
 	}
 
 	//signal the WaitGroup that boot is over.
