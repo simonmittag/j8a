@@ -4,8 +4,8 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	zlog "github.com/rs/zerolog/log"
-	"log"
+	"github.com/rs/zerolog/log"
+	golog "log"
 	"net/http"
 	"os"
 	"strconv"
@@ -32,7 +32,7 @@ var Boot sync.WaitGroup = sync.WaitGroup{}
 type zerologAdapter struct{}
 
 func (zla *zerologAdapter) Write(p []byte) (n int, err error) {
-	zlog.Trace().Str("gotrc", string(p)).Msg("go internal trace")
+	log.Trace().Str("tcpTlsMsg", string(p)).Msg("remote TLS handshake or TCP connection error")
 	return len(p), nil
 }
 
@@ -62,7 +62,7 @@ func (runtime Runtime) startListening() {
 	roundTripTimeoutDurationWithGrace := roundTripTimeoutDuration + (time.Second * 1)
 	idleTimeoutDuration := time.Second * time.Duration(runtime.Connection.Downstream.IdleTimeoutSeconds)
 
-	zlog.Debug().
+	log.Debug().
 		Float64("dwnReadTimeoutSeconds", readTimeoutDuration.Seconds()).
 		Float64("dwnRoundTripTimeoutSeconds", roundTripTimeoutDuration.Seconds()).
 		Float64("dwnIdleConnTimeoutSeconds", idleTimeoutDuration.Seconds()).
@@ -75,7 +75,7 @@ func (runtime Runtime) startListening() {
 		WriteTimeout:      roundTripTimeoutDurationWithGrace,
 		IdleTimeout:       idleTimeoutDuration,
 		Handler:           runtime.mapPathsToHandler(),
-		ErrorLog:          log.New(&zerologAdapter{}, "", 0),
+		ErrorLog:          golog.New(&zerologAdapter{}, "", 0),
 	}
 
 	//signal the WaitGroup that boot is over.
@@ -88,18 +88,18 @@ func (runtime Runtime) startListening() {
 		_, tlsErr := checkCertChain(server.TLSConfig.Certificates[0])
 		if tlsErr == nil {
 			go tlsHealthCheck(server.TLSConfig, true)
-			zlog.Info().Msgf("j8a %s listening in TLS mode on port %d...", Version, runtime.Connection.Downstream.Port)
+			log.Info().Msgf("j8a %s listening in TLS mode on port %d...", Version, runtime.Connection.Downstream.Port)
 			err = server.ListenAndServeTLS("", "")
 		} else {
 			err = tlsErr
 		}
 	} else {
-		zlog.Info().Msgf("j8a %s listening in HTTP mode on port %d...", Version, runtime.Connection.Downstream.Port)
+		log.Info().Msgf("j8a %s listening in HTTP mode on port %d...", Version, runtime.Connection.Downstream.Port)
 		err = server.ListenAndServe()
 	}
 
 	if err != nil {
-		zlog.Fatal().Err(err).Msgf("unable to start j8a on port %d, exiting...", runtime.Connection.Downstream.Port)
+		log.Fatal().Err(err).Msgf("unable to start j8a on port %d, exiting...", runtime.Connection.Downstream.Port)
 		panic(err.Error())
 	}
 }
@@ -112,11 +112,11 @@ func (runtime Runtime) mapPathsToHandler() http.Handler {
 	for _, route := range runtime.Routes {
 		if route.Resource == about {
 			handler.Handle(route.Path, http.HandlerFunc(aboutHandler))
-			zlog.Debug().Msgf("assigned about handler to path %s", route.Path)
+			log.Debug().Msgf("assigned about handler to path %s", route.Path)
 		}
 	}
 	handler.Handle("/", http.HandlerFunc(proxyHandler))
-	zlog.Debug().Msgf("assigned proxy handler to path %s", "/")
+	log.Debug().Msgf("assigned proxy handler to path %s", "/")
 
 	return handler
 }
@@ -148,7 +148,7 @@ func (proxy *Proxy) writeStandardResponseHeaders() {
 func (runtime Runtime) tlsConfig() *tls.Config {
 	defer func() {
 		if err := recover(); err != nil {
-			zlog.Fatal().Msg("unable to parse TLS configuration, check your certificate and/or private key. j8a is exiting ...")
+			log.Fatal().Msg("unable to parse TLS configuration, check your certificate and/or private key. j8a is exiting ...")
 			os.Exit(-1)
 		}
 	}()
