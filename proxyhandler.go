@@ -27,6 +27,9 @@ var httpClient HTTPClient
 //server or are ignored.
 var httpHeadersNoRewrite []string = []string{date, contentLength, transferEncoding, contentEncoding, server}
 
+//extract IPs for stdout. thread safe.
+var ipr iprex = iprex{}
+
 func proxyHandler(response http.ResponseWriter, request *http.Request) {
 	matched := false
 
@@ -295,6 +298,7 @@ func logHandledDownstreamRoundtrip(proxy *Proxy) {
 	}
 
 	ev = ev.Str("dwnReqPath", proxy.Dwn.Path).
+		Str("dwnReqRemoteAddr", ipr.extractAddr(proxy.Dwn.Req.RemoteAddr)).
 		Str("dwnReqMethod", proxy.Dwn.Method).
 		Str("dwnReqUserAgent", proxy.Dwn.UserAgent).
 		Str("dwnHttpVer", proxy.Dwn.HttpVer).

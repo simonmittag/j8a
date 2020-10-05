@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -29,10 +30,24 @@ var Runner *Runtime
 
 var Boot sync.WaitGroup = sync.WaitGroup{}
 
-type zerologAdapter struct{}
+const tlsHandshakeError = "TLS handshake error"
+type zerologAdapter struct{
+	ipr iprex
+}
 
 func (zla *zerologAdapter) Write(p []byte) (n int, err error) {
-	log.Trace().Str("tcpTlsMsg", string(p)).Msg("remote TLS handshake or TCP connection error")
+	msg := string(p)
+	if strings.Contains(msg, tlsHandshakeError) {
+		log.Warn().
+			Str("netEvt", msg).
+			Str("dwnReqRemoteAddr", zla.ipr.extractAddr(msg)).
+			Msg("TLS handshake error")
+	} else {
+		log.Trace().
+			Str("netEvt", msg).
+			Str("dwnReqRemoteAddr", zla.ipr.extractAddr(msg)).
+			Msg("undetermined network event")
+	}
 	return len(p), nil
 }
 
