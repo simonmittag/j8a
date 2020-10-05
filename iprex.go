@@ -2,6 +2,7 @@ package j8a
 
 import "regexp"
 
+//TODO: rather not use multiple regexes in a chain and replace this with a tested thirdparty framework.
 type iprex struct{
 	//v6 hex with embedded v4 dec address
 	ipv64e *regexp.Regexp
