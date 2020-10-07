@@ -52,6 +52,7 @@ func TestAbortAllUpstreamAttempts(t *testing.T) {
 			URI:         "",
 			UserAgent:   "",
 			Body:        nil,
+			ReqTooLarge: false,
 			Aborted:     nil,
 			AbortedFlag: false,
 			startDate:   time.Now(),

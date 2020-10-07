@@ -21,6 +21,9 @@ type Downstream struct {
 	// before the server hangs up on the downstream user agent.
 	IdleTimeoutSeconds int
 
+	// MaxBodyBytes is the maximum size of the incoming HTTP request body before it is rejected
+	MaxBodyBytes int64
+
 	// Serving Mode, can be "TLS"
 	Mode string
 

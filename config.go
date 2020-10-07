@@ -126,6 +126,11 @@ func (config Config) setDefaultDownstreamParams() *Config {
 		config.Connection.Downstream.IdleTimeoutSeconds = 120
 	}
 
+	if config.Connection.Downstream.MaxBodyBytes == 0 {
+		//set to 2MB default value
+		config.Connection.Downstream.MaxBodyBytes = 2 << 20
+	}
+
 	if len(config.Connection.Downstream.Mode) == 0 {
 		config.Connection.Downstream.Mode = HTTP
 	} else {

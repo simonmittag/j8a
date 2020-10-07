@@ -86,6 +86,7 @@ type Down struct {
 	Body        []byte
 	Aborted     <-chan struct{}
 	AbortedFlag bool
+	ReqTooLarge bool
 	startDate   time.Time
 	HttpVer     string
 	TlsVer      string
@@ -176,8 +177,6 @@ func (proxy *Proxy) hasMadeUpstreamAttempt() bool {
 func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 	proxy.Dwn.startDate = time.Now()
 
-	//TODO: we are not processing downstream body reading errors, i.e. illegal content length
-	body, _ := ioutil.ReadAll(request.Body)
 	proxy.XRequestID = createXRequestID(request)
 	proxy.XRequestDebug = parseXRequestDebug(request)
 
@@ -187,7 +186,9 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 	proxy.Dwn.TlsVer = parseTlsVersion(request)
 	proxy.Dwn.UserAgent = parseUserAgent(request)
 	proxy.Dwn.Method = parseMethod(request)
-	proxy.Dwn.Body = body
+
+	proxy.parseRequestBody(request)
+
 	proxy.Dwn.Req = request
 
 	//set request context and initialise timeout func
@@ -198,9 +199,7 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 	})
 
 	proxy.Dwn.AbortedFlag = false
-	proxy.Dwn.Resp = Resp{
-		SendGzip: strings.Contains(request.Header.Get("Accept-Encoding"), "gzip"),
-	}
+	proxy.Dwn.Resp.SendGzip = strings.Contains(request.Header.Get("Accept-Encoding"), "gzip")
 
 	log.Trace().
 		Str("path", proxy.Dwn.Path).
@@ -210,6 +209,18 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 		Str(XRequestID, proxy.XRequestID).
 		Msg("parsed downstream request")
 	return proxy
+}
+
+func (proxy *Proxy) parseRequestBody(request *http.Request) {
+	request.Body = http.MaxBytesReader(proxy.Dwn.Resp.Writer,
+		request.Body,
+		Runner.Connection.Downstream.MaxBodyBytes)
+
+	bod, err := ioutil.ReadAll(request.Body)
+	if err != nil {
+		proxy.Dwn.ReqTooLarge = true
+	}
+	proxy.Dwn.Body = bod
 }
 
 func parseMethod(request *http.Request) string {
@@ -258,7 +269,9 @@ func createXRequestID(request *http.Request) string {
 }
 
 func (proxy *Proxy) setOutgoing(out http.ResponseWriter) *Proxy {
-	proxy.Dwn.Resp.Writer = out
+	proxy.Dwn.Resp = Resp{
+		Writer: out,
+	}
 	return proxy
 }
 
