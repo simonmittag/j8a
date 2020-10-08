@@ -146,6 +146,72 @@ func TestFinalStatusCode201SentFromProxyWithPostIfExpected100Continue(t *testing
 	}
 }
 
+func TestUploadGreaterMaxBodyAllowed(t *testing.T) {
+	client := &http.Client{}
+	serverPort := 8080
+	wantDownstreamStatusCode := 413
+
+	jsonData := map[string]string{"firstname": "firstname", "lastname": "lastname", "rank": "general", "color": "green"}
+	for i := 0; i < 1024; i++ {
+		jsonData[fmt.Sprintf("%d", i)] = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"
+	}
+	jsonValue, _ := json.Marshal(jsonData)
+	buf := bytes.NewBuffer(jsonValue)
+
+	url := fmt.Sprintf("http://localhost:%d/mse6/put", serverPort)
+	req, _ := http.NewRequest("PUT", url, buf)
+	req.Header.Add("Content-Type", "application/json")
+	resp, err := client.Do(req)
+	if resp != nil && resp.Body != nil {
+		defer resp.Body.Close()
+	}
+
+	gotDownstreamStatusCode := 0
+	if err != nil {
+		t.Errorf("error connecting to upstream for port %d, /send, cause: %v", serverPort, err)
+		return
+	} else {
+		gotDownstreamStatusCode = resp.StatusCode
+	}
+
+	if gotDownstreamStatusCode != wantDownstreamStatusCode {
+		t.Errorf("PUT with large body should result in server rejecting request as too large want %d, got %d", wantDownstreamStatusCode, gotDownstreamStatusCode)
+	}
+}
+
+func TestUploadSmallerMaxBodyAllowed(t *testing.T) {
+	client := &http.Client{}
+	serverPort := 8080
+	wantDownstreamStatusCode := 200
+
+	jsonData := map[string]string{"firstname": "firstname", "lastname": "lastname", "rank": "general", "color": "green"}
+	for i := 0; i < 10; i++ {
+		jsonData[fmt.Sprintf("%d", i)] = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"
+	}
+	jsonValue, _ := json.Marshal(jsonData)
+	buf := bytes.NewBuffer(jsonValue)
+
+	url := fmt.Sprintf("http://localhost:%d/mse6/put", serverPort)
+	req, _ := http.NewRequest("PUT", url, buf)
+	req.Header.Add("Content-Type", "application/json")
+	resp, err := client.Do(req)
+	if resp != nil && resp.Body != nil {
+		defer resp.Body.Close()
+	}
+
+	gotDownstreamStatusCode := 0
+	if err != nil {
+		t.Errorf("error connecting to upstream for port %d, /send, cause: %v", serverPort, err)
+		return
+	} else {
+		gotDownstreamStatusCode = resp.StatusCode
+	}
+
+	if gotDownstreamStatusCode != wantDownstreamStatusCode {
+		t.Errorf("PUT with large body should result in server rejecting request as too large want %d, got %d", wantDownstreamStatusCode, gotDownstreamStatusCode)
+	}
+}
+
 //Test normal responses
 func TestStatusCodeOfProxiedResponses200To226(t *testing.T) {
 	var wg1 sync.WaitGroup

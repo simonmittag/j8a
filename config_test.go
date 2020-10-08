@@ -72,6 +72,15 @@ func TestDefaultDownstreamHttpPort(t *testing.T) {
 	}
 }
 
+func TestDefaultDownstreamMaxBodyBytes(t *testing.T) {
+	config := new(Config).setDefaultDownstreamParams()
+	got := config.Connection.Downstream.MaxBodyBytes
+	want := int64(2097152)
+	if got != want {
+		t.Errorf("default dwn max body bytes got %d, want %d", got, want)
+	}
+}
+
 func TestDefaultDownstreamMode(t *testing.T) {
 	config := new(Config).setDefaultDownstreamParams()
 	got := config.Connection.Downstream.Mode

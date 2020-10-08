@@ -6,6 +6,7 @@ connection:
     idleTimeoutSeconds: 30
     port: 8080
     mode: HTTP
+    maxBodyBytes: 65535
   upstream:
     socketTimeoutSeconds: 3
     readTimeoutSeconds: 3
