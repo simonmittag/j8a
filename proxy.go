@@ -187,6 +187,7 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 	proxy.Dwn.UserAgent = parseUserAgent(request)
 	proxy.Dwn.Method = parseMethod(request)
 
+	proxy.parseContentLength(request)
 	proxy.parseRequestBody(request)
 
 	proxy.Dwn.Req = request
@@ -209,6 +210,13 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 		Str(XRequestID, proxy.XRequestID).
 		Msg("parsed downstream request")
 	return proxy
+}
+
+func (proxy *Proxy) parseContentLength(request *http.Request) {
+	cl := request.ContentLength
+	if cl > Runner.Connection.Downstream.MaxBodyBytes {
+		proxy.Dwn.ReqTooLarge = true
+	}
 }
 
 func (proxy *Proxy) parseRequestBody(request *http.Request) {

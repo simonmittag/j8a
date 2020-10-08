@@ -160,6 +160,7 @@ func TestUploadGreaterMaxBodyAllowed(t *testing.T) {
 
 	url := fmt.Sprintf("http://localhost:%d/mse6/put", serverPort)
 	req, _ := http.NewRequest("PUT", url, buf)
+	req.Header.Set("Accept-Encoding", "identity")
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if resp != nil && resp.Body != nil {
@@ -176,6 +177,84 @@ func TestUploadGreaterMaxBodyAllowed(t *testing.T) {
 
 	if gotDownstreamStatusCode != wantDownstreamStatusCode {
 		t.Errorf("PUT with large body should result in server rejecting request as too large want %d, got %d", wantDownstreamStatusCode, gotDownstreamStatusCode)
+	}
+}
+
+func TestUploadGreaterMaxBodyAllowedIncorrectContentLength(t *testing.T) {
+	client := &http.Client{}
+	serverPort := 8080
+	wantDownstreamStatusCode := 413
+
+	jsonData := map[string]string{"firstname": "firstname", "lastname": "lastname", "rank": "general", "color": "green"}
+	for i := 0; i < 1024; i++ {
+		jsonData[fmt.Sprintf("%d", i)] = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"
+	}
+	jsonValue, _ := json.Marshal(jsonData)
+	buf := bytes.NewBuffer(jsonValue)
+
+	url := fmt.Sprintf("http://localhost:%d/mse6/put", serverPort)
+	req, _ := http.NewRequest("PUT", url, buf)
+	req.Header.Set("Accept-Encoding", "identity")
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Content-Length", "4194304")
+	resp, err := client.Do(req)
+	if resp != nil && resp.Body != nil {
+		defer resp.Body.Close()
+	}
+
+	gotDownstreamStatusCode := 0
+	if err != nil {
+		t.Errorf("error connecting to upstream for port %d, /send, cause: %v", serverPort, err)
+		return
+	} else {
+		gotDownstreamStatusCode = resp.StatusCode
+	}
+
+	if gotDownstreamStatusCode != wantDownstreamStatusCode {
+		t.Errorf("PUT with large body should result in server rejecting request as too large want %d, got %d", wantDownstreamStatusCode, gotDownstreamStatusCode)
+	}
+}
+
+func TestUploadSmallerMaxBodyAllowedIncorrectContentLength(t *testing.T) {
+	//step 1 we connect to j8a with net.dial because we need to manufacture our request
+	//so go http client does not overwrite our content length header
+	c, err := net.Dial("tcp", ":8080")
+	if err != nil {
+		t.Errorf("test failure. unable to connect to j8a server for integration test, cause: %v", err)
+		return
+	}
+	defer c.Close()
+
+	//step 2 we send headers and terminate HTTP message.
+	checkWrite(t, c, "PUT /mse6/put HTTP/1.1\r\n")
+	checkWrite(t, c, "Host: localhost:8080\r\n")
+	checkWrite(t, c, "User-Agent: integration\r\n")
+	checkWrite(t, c, "Accept-Encoding: identity\r\n")
+	checkWrite(t, c, "Content-Type: application/json\r\n")
+	//incorrectly set to 4mb which is greater 64k server limit
+	checkWrite(t, c, "Content-Length: 4194304\r\n")
+	checkWrite(t, c, "Accept: */*\r\n")
+	checkWrite(t, c, "\r\n")
+
+	jsonData := map[string]string{"firstname": "firstname", "lastname": "lastname", "rank": "general", "color": "green"}
+	for i := 0; i < 2; i++ {
+		jsonData[fmt.Sprintf("%d", i)] = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"
+	}
+	jsonValue, _ := json.Marshal(jsonData)
+	checkWrite(t, c, string(jsonValue))
+
+	//step 3 we try to read the server response. Warning this isn't a proper http client
+	//i.e. doesn't include parsing content length, nor reading response properly.
+	buf := make([]byte, 1024)
+	l, err := c.Read(buf)
+	t.Logf("normal. j8a responded with %v bytes and error code %v", l, err)
+	t.Logf("normal. j8a partial response: %v", string(buf))
+	if l == 0 {
+		t.Error("test failure. j8a did not respond, 0 bytes read")
+	}
+	response := string(buf)
+	if !strings.Contains(response, "HTTP/1.1 413 Request Entity Too Large") {
+		t.Error("test failure. j8a should send a 413 response to incorrectly large content-length")
 	}
 }
 
