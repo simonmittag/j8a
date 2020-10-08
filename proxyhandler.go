@@ -38,11 +38,10 @@ func proxyHandler(response http.ResponseWriter, request *http.Request) {
 		setOutgoing(response).
 		parseIncoming(request)
 
-
 	//all malformed requests are rejected here and we return a 400
 	if !validate(proxy) {
 		if proxy.Dwn.ReqTooLarge {
-			sendStatusCodeAsJSON(proxy.respondWith(413, "http request entity too large"))
+			sendStatusCodeAsJSON(proxy.respondWith(413, fmt.Sprintf("http request entity too large, limit is %d bytes", Runner.Connection.Downstream.MaxBodyBytes)))
 		} else {
 			sendStatusCodeAsJSON(proxy.respondWith(400, "bad or malformed request"))
 		}
