@@ -180,42 +180,7 @@ func TestUploadGreaterMaxBodyAllowed(t *testing.T) {
 	}
 }
 
-func TestUploadGreaterMaxBodyAllowedIncorrectContentLength(t *testing.T) {
-	client := &http.Client{}
-	serverPort := 8080
-	wantDownstreamStatusCode := 413
-
-	jsonData := map[string]string{"firstname": "firstname", "lastname": "lastname", "rank": "general", "color": "green"}
-	for i := 0; i < 1024; i++ {
-		jsonData[fmt.Sprintf("%d", i)] = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"
-	}
-	jsonValue, _ := json.Marshal(jsonData)
-	buf := bytes.NewBuffer(jsonValue)
-
-	url := fmt.Sprintf("http://localhost:%d/mse6/put", serverPort)
-	req, _ := http.NewRequest("PUT", url, buf)
-	req.Header.Set("Accept-Encoding", "identity")
-	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Content-Length", "4194304")
-	resp, err := client.Do(req)
-	if resp != nil && resp.Body != nil {
-		defer resp.Body.Close()
-	}
-
-	gotDownstreamStatusCode := 0
-	if err != nil {
-		t.Errorf("error connecting to upstream for port %d, /send, cause: %v", serverPort, err)
-		return
-	} else {
-		gotDownstreamStatusCode = resp.StatusCode
-	}
-
-	if gotDownstreamStatusCode != wantDownstreamStatusCode {
-		t.Errorf("PUT with large body should result in server rejecting request as too large want %d, got %d", wantDownstreamStatusCode, gotDownstreamStatusCode)
-	}
-}
-
-func TestUploadSmallerMaxBodyAllowedIncorrectContentLength(t *testing.T) {
+func TestUploadSmallerMaxBodyAllowedButIncorrectContentLengthGreaterMaxBodySize(t *testing.T) {
 	//step 1 we connect to j8a with net.dial because we need to manufacture our request
 	//so go http client does not overwrite our content length header
 	c, err := net.Dial("tcp", ":8080")
