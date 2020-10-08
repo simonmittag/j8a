@@ -31,7 +31,8 @@ var Runner *Runtime
 var Boot sync.WaitGroup = sync.WaitGroup{}
 
 const tlsHandshakeError = "TLS handshake error"
-type zerologAdapter struct{
+
+type zerologAdapter struct {
 	ipr iprex
 }
 
@@ -78,6 +79,7 @@ func (runtime Runtime) startListening() {
 	idleTimeoutDuration := time.Second * time.Duration(runtime.Connection.Downstream.IdleTimeoutSeconds)
 
 	log.Debug().
+		Int64("dwnMaxBodyBytes", runtime.Connection.Downstream.MaxBodyBytes).
 		Float64("dwnReadTimeoutSeconds", readTimeoutDuration.Seconds()).
 		Float64("dwnRoundTripTimeoutSeconds", roundTripTimeoutDuration.Seconds()).
 		Float64("dwnIdleConnTimeoutSeconds", idleTimeoutDuration.Seconds()).
