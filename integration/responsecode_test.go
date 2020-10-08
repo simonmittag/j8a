@@ -245,7 +245,7 @@ func TestUploadSmallerMaxBodyAllowedIncorrectContentLength(t *testing.T) {
 
 	//step 3 we try to read the server response. Warning this isn't a proper http client
 	//i.e. doesn't include parsing content length, nor reading response properly.
-	buf := make([]byte, 1024)
+	buf := make([]byte, 4096)
 	l, err := c.Read(buf)
 	t.Logf("normal. j8a responded with %v bytes and error code %v", l, err)
 	t.Logf("normal. j8a partial response: %v", string(buf))
