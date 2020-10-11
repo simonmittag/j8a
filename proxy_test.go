@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"crypto/tls"
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 )
@@ -87,9 +89,9 @@ func TestParseTlsVersionV13(t *testing.T) {
 	}
 }
 
-func TestParseRequestBody(t *testing.T){
+func TestParseRequestBody(t *testing.T) {
 	Runner = mockRuntime()
-	Runner.Connection.Downstream.MaxBodyBytes=65535
+	Runner.Connection.Downstream.MaxBodyBytes = 65535
 
 	body := []byte(`{"key":"value"}`)
 
@@ -107,9 +109,9 @@ func TestParseRequestBody(t *testing.T){
 	}
 }
 
-func TestParseRequestBodyTooLarge(t *testing.T){
+func TestParseRequestBodyTooLarge(t *testing.T) {
 	Runner = mockRuntime()
-	Runner.Connection.Downstream.MaxBodyBytes=65535
+	Runner.Connection.Downstream.MaxBodyBytes = 65535
 	req, _ := http.NewRequest("PUT", "/hello", nil)
 	req.ContentLength = 65536
 
@@ -122,4 +124,39 @@ func TestParseRequestBodyTooLarge(t *testing.T){
 	if got != want {
 		t.Errorf("request entity should be too large, sent %d, max %d", req.ContentLength, Runner.Connection.Downstream.MaxBodyBytes)
 	}
+}
+
+func TestParseContentLength(t *testing.T) {
+	upBody := []byte("body")
+	proxy := mockProxy(upBody)
+	proxy.setContentLengthHeader()
+
+	got := proxy.Dwn.Resp.ContentLength
+	want := len(upBody)
+	if got != want {
+		t.Errorf("content-length was not properly set from upstream, got %d, want %d", got, want)
+	}
+}
+
+func mockProxy(upBody []byte) Proxy {
+	proxy := Proxy{
+		XRequestID: "12345",
+		Up: Up{
+			Atmpt: &Atmpt{
+				resp: &http.Response{
+					Body:          ioutil.NopCloser(bytes.NewReader(upBody)),
+					ContentLength: int64(len(upBody)),
+				},
+			},
+		},
+		Dwn: Down{
+			Resp: Resp{
+				Writer:        httptest.NewRecorder(),
+				Body:          &upBody,
+				ContentLength: 0,
+			},
+			startDate: time.Time{},
+		},
+	}
+	return proxy
 }
