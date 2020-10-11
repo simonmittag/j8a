@@ -1,13 +1,13 @@
 package j8a
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"crypto/tls"
 	"fmt"
 	"github.com/google/uuid"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
@@ -36,6 +36,9 @@ var httpRepeatableMethods = append(httpSafeMethods, httpIdempotentMethods...)
 
 //RFC7231 4.3
 var httpLegalMethods []string = append(httpRepeatableMethods, []string{"POST", "CONNECT"}...)
+
+//read buffer overflow bytes
+const bufOvrflw int64 = 32
 
 // Atmpt wraps connection attempts to specific upstreams that are already mapped by label
 type Atmpt struct {
@@ -77,19 +80,19 @@ type Up struct {
 
 //Down wraps downstream exchange
 type Down struct {
-	Req         *http.Request
-	Resp        Resp
-	Method      string
-	Path        string
-	URI         string
-	UserAgent   string
-	Body        []byte
-	Aborted     <-chan struct{}
-	AbortedFlag bool
-	ReqTooLarge bool
-	startDate   time.Time
-	HttpVer     string
-	TlsVer      string
+	Req              *http.Request
+	Resp             Resp
+	Method           string
+	Path             string
+	URI              string
+	UserAgent        string
+	Body             []byte
+	Aborted          <-chan struct{}
+	AbortedFlag      bool
+	ReqTooLarge      bool
+	startDate        time.Time
+	HttpVer          string
+	TlsVer           string
 }
 
 // Proxy wraps data for a single downstream request/response with multiple upstream HTTP request/response cycles.
@@ -176,21 +179,7 @@ func (proxy *Proxy) hasMadeUpstreamAttempt() bool {
 // ParseIncoming is a factory method for a new ProxyRequest, embeds the incoming request.
 func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 	proxy.Dwn.startDate = time.Now()
-
 	proxy.XRequestID = createXRequestID(request)
-	proxy.XRequestDebug = parseXRequestDebug(request)
-
-	proxy.Dwn.Path = request.URL.EscapedPath()
-	proxy.Dwn.URI = request.URL.RequestURI()
-	proxy.Dwn.HttpVer = parseHTTPVer(request)
-	proxy.Dwn.TlsVer = parseTlsVersion(request)
-	proxy.Dwn.UserAgent = parseUserAgent(request)
-	proxy.Dwn.Method = parseMethod(request)
-
-	proxy.parseContentLength(request)
-	proxy.parseRequestBody(request)
-
-	proxy.Dwn.Req = request
 
 	//set request context and initialise timeout func
 	ctx, cancel := context.WithCancel(context.TODO())
@@ -198,6 +187,17 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 	time.AfterFunc(Runner.getDownstreamRoundTripTimeoutDuration(), func() {
 		cancel()
 	})
+
+	proxy.XRequestDebug = parseXRequestDebug(request)
+	proxy.Dwn.Path = request.URL.EscapedPath()
+	proxy.Dwn.URI = request.URL.RequestURI()
+	proxy.Dwn.HttpVer = parseHTTPVer(request)
+	proxy.Dwn.TlsVer = parseTlsVersion(request)
+	proxy.Dwn.UserAgent = parseUserAgent(request)
+	proxy.Dwn.Method = parseMethod(request)
+
+	proxy.parseRequestBody(request)
+	proxy.Dwn.Req = request
 
 	proxy.Dwn.AbortedFlag = false
 	proxy.Dwn.Resp.SendGzip = strings.Contains(request.Header.Get("Accept-Encoding"), "gzip")
@@ -212,23 +212,59 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 	return proxy
 }
 
-func (proxy *Proxy) parseContentLength(request *http.Request) {
-	cl := request.ContentLength
-	if cl > Runner.Connection.Downstream.MaxBodyBytes {
-		proxy.Dwn.ReqTooLarge = true
-	}
-}
-
 func (proxy *Proxy) parseRequestBody(request *http.Request) {
-	request.Body = http.MaxBytesReader(proxy.Dwn.Resp.Writer,
-		request.Body,
-		Runner.Connection.Downstream.MaxBodyBytes)
-
-	bod, err := ioutil.ReadAll(request.Body)
-	if err != nil {
-		proxy.Dwn.ReqTooLarge = true
+	//content length 0, do not read just go back
+	if request.ContentLength == 0 {
+		log.Trace().Str(XRequestID, proxy.XRequestID).Msg("Content-Length 0, not reading body")
+		return
 	}
-	proxy.Dwn.Body = bod
+
+	//only try to parse the request if supplied content-length is within limits
+	if request.ContentLength >= Runner.Connection.Downstream.MaxBodyBytes {
+		proxy.Dwn.ReqTooLarge = true
+		log.Trace().
+			Str(XRequestID, proxy.XRequestID).
+			Msgf("not reading downstream body, content-length %d exceeds max allowed bytes %d", request.ContentLength, Runner.Connection.Downstream.MaxBodyBytes)
+		return
+	}
+
+	//create buffered reader so we can fetch chunks of request as they come.
+	//No need to close request.Body of type io.ReadCloser, see: https://golang.org/pkg/net/http/#Request
+	bodyReader := bufio.NewReader(http.MaxBytesReader(proxy.Dwn.Resp.Writer,
+		request.Body,
+		Runner.Connection.Downstream.MaxBodyBytes))
+
+	//now allocate memory for body content + small buffer overflow
+	buf := make([]byte, request.ContentLength+bufOvrflw)
+	n := int64(0)
+	var err error
+
+	//read body
+	for {
+		var n1 int
+		n1, err = bodyReader.Read(buf)
+		n += int64(n1)
+		if n > Runner.Connection.Downstream.MaxBodyBytes {
+			proxy.Dwn.ReqTooLarge = true
+			log.Trace().
+				Str(XRequestID, proxy.XRequestID).
+				Msgf("request too large. reading %d downstream body bytes > server max body bytes %d", n, Runner.Connection.Downstream.MaxBodyBytes)
+			break
+		}
+		if err != nil && err != io.EOF {
+			log.Trace().
+				Str(XRequestID, proxy.XRequestID).
+				Msgf("error reading downstream body, cause: %v", err)
+			break
+		}
+		if err == io.EOF {
+			proxy.Dwn.Body = buf
+			log.Trace().
+				Str(XRequestID, proxy.XRequestID).
+				Msgf("read (%d/%d) body bytes/content-length from downstream", len(buf), request.ContentLength)
+			break
+		}
+	}
 }
 
 func parseMethod(request *http.Request) string {

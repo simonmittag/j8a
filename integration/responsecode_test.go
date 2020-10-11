@@ -223,6 +223,49 @@ func TestUploadSmallerMaxBodyAllowedButIncorrectContentLengthGreaterMaxBodySize(
 	}
 }
 
+func TestUploadLarggerMaxBodyAllowedButIncorrectContentLengthSmallerMaxBodySize(t *testing.T) {
+	//step 1 we connect to j8a with net.dial because we need to manufacture our request
+	//so go http client does not overwrite our content length header
+	c, err := net.Dial("tcp", ":8080")
+	if err != nil {
+		t.Errorf("test failure. unable to connect to j8a server for integration test, cause: %v", err)
+		return
+	}
+	defer c.Close()
+
+	//step 2 we send headers and terminate HTTP message.
+	checkWrite(t, c, "PUT /mse6/put HTTP/1.1\r\n")
+	checkWrite(t, c, "Host: localhost:8080\r\n")
+	checkWrite(t, c, "User-Agent: integration\r\n")
+	checkWrite(t, c, "Accept-Encoding: identity\r\n")
+	checkWrite(t, c, "Content-Type: application/json\r\n")
+	//incorrectly set to only 32k but the request is actually much larger
+	checkWrite(t, c, "Content-Length: 32768\r\n")
+	checkWrite(t, c, "Accept: */*\r\n")
+	checkWrite(t, c, "\r\n")
+
+	jsonData := map[string]string{"firstname": "firstname", "lastname": "lastname", "rank": "general", "color": "green"}
+	for i := 0; i < 1000; i++ {
+		jsonData[fmt.Sprintf("%d", i)] = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"
+	}
+	jsonValue, _ := json.Marshal(jsonData)
+	checkWrite(t, c, string(jsonValue))
+
+	//step 3 we try to read the server response. Warning this isn't a proper http client
+	//i.e. doesn't include parsing content length, nor reading response properly.
+	buf := make([]byte, 4096)
+	l, err := c.Read(buf)
+	t.Logf("normal. j8a responded with %v bytes and error code %v", l, err)
+	t.Logf("normal. j8a partial response: %v", string(buf))
+	if l == 0 {
+		t.Error("test failure. j8a did not respond, 0 bytes read")
+	}
+	response := string(buf)
+	if !strings.Contains(response, "HTTP/1.1 413 Request Entity Too Large") {
+		t.Error("test failure. j8a should send a 413 response to incorrectly large content-length")
+	}
+}
+
 func TestUploadSmallerMaxBodyAllowed(t *testing.T) {
 	client := &http.Client{}
 	serverPort := 8080
