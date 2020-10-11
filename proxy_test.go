@@ -126,30 +126,45 @@ func TestParseRequestBodyTooLarge(t *testing.T) {
 	}
 }
 
-func TestParseContentLength(t *testing.T) {
+func TestSuccessParseUpstreamContentLength(t *testing.T) {
 	upBody := []byte("body")
-	proxy := mockProxy(upBody)
+	proxy := mockProxy(upBody, fmt.Sprint(len(upBody)))
 	proxy.setContentLengthHeader()
 
-	got := proxy.Dwn.Resp.ContentLength
-	want := len(upBody)
+	got := proxy.Dwn.Resp.Writer.Header().Get("Content-Length")
+	want := fmt.Sprint(len(upBody))
 	if got != want {
-		t.Errorf("content-length was not properly set from upstream, got %d, want %d", got, want)
+		t.Errorf("content-length was not properly set from upstream, got %s, want %s", got, want)
 	}
 }
 
-func mockProxy(upBody []byte) Proxy {
+func TestFailParseUpstreamContentLength(t *testing.T) {
+	upBody := []byte("body")
+	proxy := mockProxy(upBody, "NAN")
+	proxy.setContentLengthHeader()
+
+	got := proxy.Dwn.Resp.Writer.Header().Get("Content-Length")
+	want := "0"
+	if got != want {
+		t.Errorf("content-length was not properly set from upstream, got %s, want %s", got, want)
+	}
+}
+
+func mockProxy(upBody []byte, cl string) Proxy {
 	proxy := Proxy{
 		XRequestID: "12345",
 		Up: Up{
 			Atmpt: &Atmpt{
 				resp: &http.Response{
-					Body:          ioutil.NopCloser(bytes.NewReader(upBody)),
-					ContentLength: int64(len(upBody)),
+					Body: ioutil.NopCloser(bytes.NewReader(upBody)),
+					Header: map[string][]string{
+						"Content-Length": []string{cl},
+					},
 				},
 			},
 		},
 		Dwn: Down{
+			Method: "HEAD",
 			Resp: Resp{
 				Writer:        httptest.NewRecorder(),
 				Body:          &upBody,

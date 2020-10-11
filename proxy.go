@@ -65,7 +65,7 @@ type Resp struct {
 	Message       string
 	SendGzip      bool
 	Body          *[]byte
-	ContentLength int
+	ContentLength int64
 }
 
 //Up wraps upstream
@@ -435,7 +435,7 @@ func (proxy *Proxy) contentEncoding() string {
 
 //RFC7230, section 3.3.2
 func (proxy *Proxy) setContentLengthHeader() {
-	proxy.Dwn.Resp.ContentLength = len(*proxy.Dwn.Resp.Body)
+	proxy.Dwn.Resp.ContentLength = int64(len(*proxy.Dwn.Resp.Body))
 
 	if te := proxy.Dwn.Resp.Writer.Header().Get(transferEncoding); len(te) != 0 ||
 		//we set 0 for status code 204 because of RFC7230, 4.3.7, see: https://tools.ietf.org/html/rfc7231#page-31
@@ -451,7 +451,7 @@ func (proxy *Proxy) setContentLengthHeader() {
 		//special case for upstream HEAD response with intact content-length we do copy
 		//see RFC7231 4.3.2: https://tools.ietf.org/html/rfc7231#page-25
 		cl := proxy.Up.Atmpt.resp.Header.Get(contentLength)
-		_, err := strconv.ParseInt(cl, 10, 32)
+		_, err := strconv.ParseInt(cl, 10, 64)
 		if len(cl) > 0 && err == nil {
 			proxy.Dwn.Resp.Writer.Header().Set(contentLength, cl)
 		} else {
