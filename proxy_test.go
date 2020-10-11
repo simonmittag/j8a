@@ -1,6 +1,7 @@
 package j8a
 
 import (
+	"bytes"
 	"crypto/tls"
 	"fmt"
 	"net/http"
@@ -83,5 +84,42 @@ func TestParseTlsVersionV13(t *testing.T) {
 	}
 	if "TLS1.3" != parseTlsVersion(req) {
 		t.Errorf("wrong TLS version")
+	}
+}
+
+func TestParseRequestBody(t *testing.T){
+	Runner = mockRuntime()
+	Runner.Connection.Downstream.MaxBodyBytes=65535
+
+	body := []byte(`{"key":"value"}`)
+
+	req, _ := http.NewRequest("PUT", "/hello", bytes.NewReader(body))
+	req.ContentLength = int64(len(body))
+
+	proxy := Proxy{}
+	proxy.Dwn.startDate = time.Now()
+	proxy.parseRequestBody(req)
+
+	got := proxy.Dwn.ReqTooLarge
+	want := false
+	if got != want {
+		t.Errorf("request entity should not be too large, sent %d, max %d", req.ContentLength, Runner.Connection.Downstream.MaxBodyBytes)
+	}
+}
+
+func TestParseRequestBodyTooLarge(t *testing.T){
+	Runner = mockRuntime()
+	Runner.Connection.Downstream.MaxBodyBytes=65535
+	req, _ := http.NewRequest("PUT", "/hello", nil)
+	req.ContentLength = 65536
+
+	proxy := Proxy{}
+	proxy.Dwn.startDate = time.Now()
+	proxy.parseRequestBody(req)
+
+	got := proxy.Dwn.ReqTooLarge
+	want := true
+	if got != want {
+		t.Errorf("request entity should be too large, sent %d, max %d", req.ContentLength, Runner.Connection.Downstream.MaxBodyBytes)
 	}
 }
