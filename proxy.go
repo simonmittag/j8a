@@ -77,19 +77,19 @@ type Up struct {
 
 //Down wraps downstream exchange
 type Down struct {
-	Req              *http.Request
-	Resp             Resp
-	Method           string
-	Path             string
-	URI              string
-	UserAgent        string
-	Body             []byte
-	Aborted          <-chan struct{}
-	AbortedFlag      bool
-	ReqTooLarge      bool
-	startDate        time.Time
-	HttpVer          string
-	TlsVer           string
+	Req         *http.Request
+	Resp        Resp
+	Method      string
+	Path        string
+	URI         string
+	UserAgent   string
+	Body        []byte
+	Aborted     <-chan struct{}
+	AbortedFlag bool
+	ReqTooLarge bool
+	startDate   time.Time
+	HttpVer     string
+	TlsVer      string
 }
 
 // Proxy wraps data for a single downstream request/response with multiple upstream HTTP request/response cycles.
@@ -234,7 +234,7 @@ func (proxy *Proxy) parseRequestBody(request *http.Request) {
 		request.Body,
 		Runner.Connection.Downstream.MaxBodyBytes))
 
-	//now allocate memory for body content + small buffer overflow
+	//now allocate memory for body content
 	buf := make([]byte, request.ContentLength)
 	n := int64(0)
 	var err error
