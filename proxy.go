@@ -208,14 +208,16 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 		Int("bodyBytes", len(proxy.Dwn.Body)).
 		Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
 		Str(XRequestID, proxy.XRequestID).
-		Msg("parsed downstream request")
+		Msg("parsed downstream request header and body")
 	return proxy
 }
 
 func (proxy *Proxy) parseRequestBody(request *http.Request) {
 	//content length 0, do not read just go back
 	if request.ContentLength == 0 {
-		log.Trace().Str(XRequestID, proxy.XRequestID).Msg("Content-Length 0, not reading body")
+		log.Trace().
+			Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+			Str(XRequestID, proxy.XRequestID).Msg("Content-Length 0, not reading body")
 		return
 	}
 
@@ -224,6 +226,7 @@ func (proxy *Proxy) parseRequestBody(request *http.Request) {
 		proxy.Dwn.ReqTooLarge = true
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
+			Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
 			Msgf("not reading downstream body, content-length %d exceeds max allowed bytes %d", request.ContentLength, Runner.Connection.Downstream.MaxBodyBytes)
 		return
 	}
@@ -248,12 +251,14 @@ func (proxy *Proxy) parseRequestBody(request *http.Request) {
 			proxy.Dwn.ReqTooLarge = true
 			log.Trace().
 				Str(XRequestID, proxy.XRequestID).
+				Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
 				Msgf("request too large. reading %d downstream body bytes > server max body bytes %d", n, Runner.Connection.Downstream.MaxBodyBytes)
 			break
 		}
 		if err != nil && err != io.EOF {
 			log.Trace().
 				Str(XRequestID, proxy.XRequestID).
+				Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
 				Msgf("error reading downstream body, cause: %v", err)
 			break
 		}
@@ -261,6 +266,7 @@ func (proxy *Proxy) parseRequestBody(request *http.Request) {
 			proxy.Dwn.Body = buf
 			log.Trace().
 				Str(XRequestID, proxy.XRequestID).
+				Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
 				Msgf("read (%d/%d) body bytes/content-length from downstream", len(buf), request.ContentLength)
 			break
 		}

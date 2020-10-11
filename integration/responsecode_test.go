@@ -223,7 +223,7 @@ func TestUploadSmallerMaxBodyAllowedButIncorrectContentLengthGreaterMaxBodySize(
 	}
 }
 
-func TestUploadLarggerMaxBodyAllowedButIncorrectContentLengthSmallerMaxBodySize(t *testing.T) {
+func TestUploadLargerMaxBodyAllowedButIncorrectContentLengthSmallerMaxBodySize(t *testing.T) {
 	//step 1 we connect to j8a with net.dial because we need to manufacture our request
 	//so go http client does not overwrite our content length header
 	c, err := net.Dial("tcp", ":8080")
@@ -261,8 +261,8 @@ func TestUploadLarggerMaxBodyAllowedButIncorrectContentLengthSmallerMaxBodySize(
 		t.Error("test failure. j8a did not respond, 0 bytes read")
 	}
 	response := string(buf)
-	if !strings.Contains(response, "HTTP/1.1 413 Request Entity Too Large") {
-		t.Error("test failure. j8a should send a 413 response to incorrectly large content-length")
+	if !strings.Contains(response, "HTTP/1.1 200 ") {
+		t.Error("test failure. j8a should have read partial request and send 200 response")
 	}
 }
 
