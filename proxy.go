@@ -37,9 +37,6 @@ var httpRepeatableMethods = append(httpSafeMethods, httpIdempotentMethods...)
 //RFC7231 4.3
 var httpLegalMethods []string = append(httpRepeatableMethods, []string{"POST", "CONNECT"}...)
 
-//read buffer overflow bytes
-const bufOvrflw int64 = 32
-
 // Atmpt wraps connection attempts to specific upstreams that are already mapped by label
 type Atmpt struct {
 	URL            *URL
@@ -217,7 +214,7 @@ func (proxy *Proxy) parseRequestBody(request *http.Request) {
 	if request.ContentLength == 0 {
 		log.Trace().
 			Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
-			Str(XRequestID, proxy.XRequestID).Msg("Content-Length 0, not reading body")
+			Str(XRequestID, proxy.XRequestID).Msg("downstream request header content-length 0, not reading body")
 		return
 	}
 
@@ -227,7 +224,7 @@ func (proxy *Proxy) parseRequestBody(request *http.Request) {
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
 			Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
-			Msgf("not reading downstream body, content-length %d exceeds max allowed bytes %d", request.ContentLength, Runner.Connection.Downstream.MaxBodyBytes)
+			Msgf("downstream request body content-length %d exceeds max allowed bytes %d, not reading", request.ContentLength, Runner.Connection.Downstream.MaxBodyBytes)
 		return
 	}
 
@@ -238,7 +235,7 @@ func (proxy *Proxy) parseRequestBody(request *http.Request) {
 		Runner.Connection.Downstream.MaxBodyBytes))
 
 	//now allocate memory for body content + small buffer overflow
-	buf := make([]byte, request.ContentLength+bufOvrflw)
+	buf := make([]byte, request.ContentLength)
 	n := int64(0)
 	var err error
 
@@ -252,14 +249,14 @@ func (proxy *Proxy) parseRequestBody(request *http.Request) {
 			log.Trace().
 				Str(XRequestID, proxy.XRequestID).
 				Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
-				Msgf("request too large. reading %d downstream body bytes > server max body bytes %d", n, Runner.Connection.Downstream.MaxBodyBytes)
+				Msgf("downstream request body too large. %d body bytes > server max %d", n, Runner.Connection.Downstream.MaxBodyBytes)
 			break
 		}
 		if err != nil && err != io.EOF {
 			log.Trace().
 				Str(XRequestID, proxy.XRequestID).
 				Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
-				Msgf("error reading downstream body, cause: %v", err)
+				Msgf("downstream request body aborting read, cause: %v", err)
 			break
 		}
 		if err == io.EOF {
@@ -267,7 +264,7 @@ func (proxy *Proxy) parseRequestBody(request *http.Request) {
 			log.Trace().
 				Str(XRequestID, proxy.XRequestID).
 				Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
-				Msgf("read (%d/%d) body bytes/content-length from downstream", len(buf), request.ContentLength)
+				Msgf("downstream request body read (%d/%d) bytes/content-length", len(buf), request.ContentLength)
 			break
 		}
 	}
