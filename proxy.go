@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
@@ -214,7 +215,7 @@ func (proxy *Proxy) parseRequestBody(request *http.Request) {
 	if request.ContentLength == 0 {
 		log.Trace().
 			Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
-			Str(XRequestID, proxy.XRequestID).Msg("downstream request header content-length 0, not reading body")
+			Str(XRequestID, proxy.XRequestID).Msg("downstream request header content-length 0, don't attempt reading body")
 		return
 	}
 
@@ -224,7 +225,7 @@ func (proxy *Proxy) parseRequestBody(request *http.Request) {
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
 			Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
-			Msgf("downstream request body content-length %d exceeds max allowed bytes %d, not reading", request.ContentLength, Runner.Connection.Downstream.MaxBodyBytes)
+			Msgf("downstream request body content-length %d exceeds max allowed bytes %d, refuse reading body", request.ContentLength, Runner.Connection.Downstream.MaxBodyBytes)
 		return
 	}
 
@@ -234,40 +235,32 @@ func (proxy *Proxy) parseRequestBody(request *http.Request) {
 		request.Body,
 		Runner.Connection.Downstream.MaxBodyBytes))
 
-	//now allocate memory for body content
-	buf := make([]byte, request.ContentLength)
-	n := int64(0)
 	var err error
+	var buf []byte
 
-	//read body
-	for {
-		var n1 int
-		n1, err = bodyReader.Read(buf)
-		n += int64(n1)
-		if n > Runner.Connection.Downstream.MaxBodyBytes {
-			proxy.Dwn.ReqTooLarge = true
-			log.Trace().
-				Str(XRequestID, proxy.XRequestID).
-				Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
-				Msgf("downstream request body too large. %d body bytes > server max %d", n, Runner.Connection.Downstream.MaxBodyBytes)
-			break
-		}
-		if err != nil && err != io.EOF {
-			log.Trace().
-				Str(XRequestID, proxy.XRequestID).
-				Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
-				Msgf("downstream request body aborting read, cause: %v", err)
-			break
-		}
-		if err == io.EOF {
-			proxy.Dwn.Body = buf
-			log.Trace().
-				Str(XRequestID, proxy.XRequestID).
-				Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
-				Msgf("downstream request body read (%d/%d) bytes/content-length", len(buf), request.ContentLength)
-			break
-		}
+	//read body. knows how to deal with transfer encoding: chunked, identity
+
+	buf, err = ioutil.ReadAll(bodyReader)
+	n := len(buf)
+	if int64(n) > Runner.Connection.Downstream.MaxBodyBytes {
+		proxy.Dwn.ReqTooLarge = true
+		log.Trace().
+			Str(XRequestID, proxy.XRequestID).
+			Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+			Msgf("downstream request body too large. %d body bytes > server max %d", n, Runner.Connection.Downstream.MaxBodyBytes)
+	} else if err != nil && err != io.EOF {
+		log.Trace().
+			Str(XRequestID, proxy.XRequestID).
+			Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+			Msgf("downstream request body aborting read, cause: %v", err)
+	} else {
+		proxy.Dwn.Body = buf
+		log.Trace().
+			Str(XRequestID, proxy.XRequestID).
+			Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+			Msgf("downstream request body read (%d/%d) bytes/content-length", n, request.ContentLength)
 	}
+
 }
 
 func parseMethod(request *http.Request) string {
