@@ -45,7 +45,8 @@ func getSample(pid int, proc *process.Process) sample {
 }
 
 func logSample(s sample) {
-	log.Debug().Int("pid", s.pid).Str("cpuPct", fmt.Sprintf("%.2f", s.cpuPc)).Str("memPct", fmt.Sprintf("%.2f", s.mPc)).
+	log.Debug().Int("pid", s.pid).Str("pidCpuCore"+
+		"Pct", fmt.Sprintf("%.2f", s.cpuPc)).Str("pidMemPct", fmt.Sprintf("%.2f", s.mPc)).
 		Uint64("rssBytes", s.rssBytes).Uint64("vmsBytes", s.vmsBytes).Uint64("swapBytes", s.swapBytes).
 		Msg("server performance stats sample")
 }
