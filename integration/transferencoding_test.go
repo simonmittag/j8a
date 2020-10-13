@@ -4,9 +4,47 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
+	"strings"
 	"testing"
 )
+
+func TestDownstreamIllegalTransferEncoding(t *testing.T) {
+	IllegalDownstreamTransferEncoding("fugazi", t)
+	//golang isn't spec compliant and can't handle supplied "identity", it returns 501. t
+	IllegalDownstreamTransferEncoding("identity", t)
+	IllegalDownstreamTransferEncoding("deflate", t)
+	IllegalDownstreamTransferEncoding("compress", t)
+	IllegalDownstreamTransferEncoding("gzip", t)
+}
+
+func IllegalDownstreamTransferEncoding(enc string, t *testing.T) {
+	//if this test fails, check the j8a configuration for connection.downstream.ReadTimeoutSeconds
+
+	//step 1 make a connection
+	c, err := net.Dial("tcp", ":8080")
+	if err != nil {
+		t.Errorf("test failure. unable to connect to j8a server for integration test, cause: %v", err)
+	}
+
+	//step 2 we send headers and terminate http message so j8a sends request upstream.
+	checkWrite(t, c, "GET /mse6/get HTTP/1.1\r\n")
+	checkWrite(t, c, "Host: localhost:8087\r\n")
+	checkWrite(t, c, "Accept-Encoding: identity\r\n")
+	checkWrite(t, c, fmt.Sprintf("Transfer-Encoding: %s\r\n", enc))
+	checkWrite(t, c, "\r\n")
+
+	//step 3 we read a response into buffer which returns 501
+	buf := make([]byte, 16)
+	b, err2 := c.Read(buf)
+	t.Logf("normal. j8a responded with %v bytes", b)
+	if err2 != nil || !strings.Contains(string(buf), "501") {
+		t.Errorf("test failure. after timeout we should first experience a 501")
+	} else {
+		t.Logf("normal. received 501 not implemented")
+	}
+}
 
 func TestDownstreamChunkedRequestisProxiedUpstream(t *testing.T) {
 	client := &http.Client{}
