@@ -10,16 +10,20 @@ import (
 	"testing"
 )
 
-func TestDownstreamIllegalTransferEncoding(t *testing.T) {
-	IllegalDownstreamTransferEncoding("fugazi", t)
-	//golang isn't spec compliant and can't handle supplied "identity", it returns 501. t
-	IllegalDownstreamTransferEncoding("identity", t)
-	IllegalDownstreamTransferEncoding("deflate", t)
-	IllegalDownstreamTransferEncoding("compress", t)
-	IllegalDownstreamTransferEncoding("gzip", t)
+func TestDownstreamTransferEncoding(t *testing.T) {
+	//legal
+	//DownstreamTransferEncoding("identity", "200", t)
+	DownstreamTransferEncoding("chunked", "200", t)
+	DownstreamTransferEncoding("identity", "200", t)
+
+	//illegal
+	DownstreamTransferEncoding("fugazi", "501", t)
+	DownstreamTransferEncoding("deflate", "501", t)
+	DownstreamTransferEncoding("compress", "501", t)
+	DownstreamTransferEncoding("gzip", "501", t)
 }
 
-func IllegalDownstreamTransferEncoding(enc string, t *testing.T) {
+func DownstreamTransferEncoding(enc string, rCode string, t *testing.T) {
 	//if this test fails, check the j8a configuration for connection.downstream.ReadTimeoutSeconds
 
 	//step 1 make a connection
@@ -39,10 +43,10 @@ func IllegalDownstreamTransferEncoding(enc string, t *testing.T) {
 	buf := make([]byte, 16)
 	b, err2 := c.Read(buf)
 	t.Logf("normal. j8a responded with %v bytes", b)
-	if err2 != nil || !strings.Contains(string(buf), "501") {
-		t.Errorf("test failure. after timeout we should first experience a 501")
+	if err2 != nil || !strings.Contains(string(buf), rCode) {
+		t.Errorf("test failure. want response code %s but got %s", rCode, string(buf))
 	} else {
-		t.Logf("normal. received 501 not implemented")
+		t.Logf("normal. received response code %s", rCode)
 	}
 }
 
