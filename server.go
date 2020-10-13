@@ -23,6 +23,7 @@ var ID string = "unknown"
 //Runtime struct defines runtime environment wrapper for a config.
 type Runtime struct {
 	Config
+	Start time.Time
 }
 
 //Runner is the Live environment of the server
@@ -66,7 +67,10 @@ func BootStrap() {
 		setDefaultUpstreamParams().
 		setDefaultDownstreamParams()
 
-	Runner = &Runtime{Config: *config}
+	Runner = &Runtime{
+		Config: *config,
+		Start: time.Now(),
+	}
 	Runner.initStats().
 		initUserAgent().
 		startListening()
@@ -147,6 +151,7 @@ func (runtime Runtime) initUserAgent() Runtime {
 
 func (runtime Runtime) initStats() Runtime {
 	go stats(os.Getpid())
+	go uptime()
 	return runtime
 }
 
