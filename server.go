@@ -15,7 +15,7 @@ import (
 )
 
 //Version is the server version
-var Version string = "v0.6.11"
+var Version string = "v0.6.12"
 
 //ID is a unique server ID
 var ID string = "unknown"
@@ -69,7 +69,7 @@ func BootStrap() {
 
 	Runner = &Runtime{
 		Config: *config,
-		Start: time.Now(),
+		Start:  time.Now(),
 	}
 	Runner.initStats().
 		initUserAgent().
