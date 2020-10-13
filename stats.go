@@ -1,6 +1,7 @@
 package j8a
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -44,7 +45,8 @@ func getSample(pid int, proc *process.Process) sample {
 }
 
 func logSample(s sample) {
-	log.Debug().Int("pid", s.pid).Float64("cpuPct", s.cpuPc).Float32("memPct", s.mPc).
+	log.Debug().Int("pid", s.pid).Str("cpuCore"+
+		"Pct", fmt.Sprintf("%.2f", s.cpuPc)).Str("memPct", fmt.Sprintf("%.2f", s.mPc)).
 		Uint64("rssBytes", s.rssBytes).Uint64("vmsBytes", s.vmsBytes).Uint64("swapBytes", s.swapBytes).
 		Msg("server performance stats sample")
 }
