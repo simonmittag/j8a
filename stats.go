@@ -2,6 +2,7 @@ package j8a
 
 import (
 	"fmt"
+	"github.com/hako/durafmt"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -26,6 +27,17 @@ func stats(pid int) {
 	for {
 		logSample(getSample(pid, proc))
 		time.Sleep(time.Second * samplerSleepSeconds)
+	}
+}
+
+func uptime() {
+	for {
+		upNanos := time.Since(Runner.Start)
+		uptime := durafmt.Parse(upNanos).LimitFirstN(2).String()
+		log.Debug().
+			Int64("uptimeMicros", int64(upNanos/1000)).
+			Msgf(fmt.Sprintf("server uptime %s", uptime))
+		time.Sleep(time.Hour * 24)
 	}
 }
 

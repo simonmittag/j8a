@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"reflect"
 	"testing"
+	"time"
 )
 
 var (
@@ -504,5 +505,6 @@ func mockRuntime() *Runtime {
 				},
 			},
 		},
+		Start: time.Now(),
 	}
 }
