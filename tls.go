@@ -53,7 +53,7 @@ func (t TlsLink) printRemainingValidity() string {
 func tlsHealthCheck(conf *tls.Config, daemon bool) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Trace().Msgf("TLS cert stats not analysed, root cause: %s", r)
+			log.Trace().Msgf("TLS cert logProcStats not analysed, root cause: %s", r)
 		}
 	}()
 

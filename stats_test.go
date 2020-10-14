@@ -11,8 +11,8 @@ func TestStats(t *testing.T) {
 	pid := os.Getpid()
 	proc, _ := process.NewProcess(int32(pid))
 
-	s := getSample(pid, proc)
-	if s.pid != os.Getpid() {
+	s := getSample(proc)
+	if s.pid != int32(os.Getpid()) {
 		t.Error("pid not correctly set")
 	}
 	if s.rssBytes == 0 {
@@ -23,31 +23,31 @@ func TestStats(t *testing.T) {
 		t.Error("memory percent cannot be zero")
 	}
 	//we run this just to look for runtime errors
-	logSample(s)
+	s.log()
 }
 
 func TestSamplesAppend(t *testing.T) {
 	pid := os.Getpid()
 	proc, _ := process.NewProcess(int32(pid))
-	var history samples = make(samples, maxSamples)
+	var history samples = make(samples, historyMaxSamples)
 
 	for i:=0;i<50;i++ {
-		sample := getSample(pid, proc)
+		sample := getSample(proc)
 		time.Sleep(time.Millisecond*50)
 		t.Logf("appending %d sample", i)
 		history.append(sample)
 	}
 
 	got := cap(history)
-	want := maxSamples*2
+	want := historyMaxSamples*2
 	if got > want {
 		t.Errorf("samples should be limited capacity want %d got %d", want, got)
 	} else {
 		t.Logf("normal. samples capacity %d", got)
 	}
 
-	if len(history) != maxSamples {
-		t.Errorf("samples should be length want %d got %d", maxSamples, len(history))
+	if len(history) != historyMaxSamples {
+		t.Errorf("samples should be length want %d got %d", historyMaxSamples, len(history))
 	}
 
 }

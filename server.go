@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"fmt"
 	"github.com/rs/zerolog/log"
+	"github.com/shirou/gopsutil/process"
 	golog "log"
 	"net/http"
 	"os"
@@ -151,8 +152,9 @@ func (runtime Runtime) initUserAgent() Runtime {
 }
 
 func (runtime Runtime) initStats() Runtime {
-	go stats(os.Getpid())
-	go uptime()
+	proc, _ := process.NewProcess(int32(os.Getpid()))
+	go logProcStats(proc)
+	go logUptime()
 	return runtime
 }
 
