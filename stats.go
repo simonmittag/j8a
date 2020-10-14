@@ -19,6 +19,20 @@ type sample struct {
 	rssBytes  uint64
 	vmsBytes  uint64
 	swapBytes uint64
+	time      time.Time
+}
+
+type samples []sample
+
+const maxSamples int = 7
+
+func (samples *samples) append(s sample) {
+	l := len(*samples)
+	if l >= maxSamples {
+		(*samples)[0] = *new(sample)
+		*samples = (*samples)[1:]
+	}
+	*samples = append(*samples, s)
 }
 
 //infinite loop. run this in a goroutine to hold on to the process object
@@ -53,6 +67,7 @@ func getSample(pid int, proc *process.Process) sample {
 		rssBytes:  mInfo.RSS,
 		vmsBytes:  mInfo.VMS,
 		swapBytes: mInfo.Swap,
+		time:      time.Now(),
 	}
 }
 

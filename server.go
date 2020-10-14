@@ -23,7 +23,8 @@ var ID string = "unknown"
 //Runtime struct defines runtime environment wrapper for a config.
 type Runtime struct {
 	Config
-	Start time.Time
+	Start  time.Time
+	Memory []sample
 }
 
 //Runner is the Live environment of the server
