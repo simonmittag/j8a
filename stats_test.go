@@ -161,3 +161,10 @@ func TestRSSGrowthRatesInsufficientData(t *testing.T) {
 		}
 	}
 }
+
+func TestLogProcStats(t *testing.T) {
+	//runtime panic test only, no assertions
+	proc, _ := process.NewProcess(int32(os.Getpid()))
+	logProcStats(proc)
+	time.Sleep(time.Duration(time.Second*3))
+}
