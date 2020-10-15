@@ -26,7 +26,7 @@ func TestStats(t *testing.T) {
 	s.log()
 }
 
-func TestSamplesAppend(t *testing.T) {
+func TestSamplesAppendDoNotExceedCapacity(t *testing.T) {
 	pid := os.Getpid()
 	proc, _ := process.NewProcess(int32(pid))
 	var history samples = make(samples, historyMaxSamples)
@@ -49,7 +49,20 @@ func TestSamplesAppend(t *testing.T) {
 	if len(history) != historyMaxSamples {
 		t.Errorf("samples should be length want %d got %d", historyMaxSamples, len(history))
 	}
+}
 
+func TestProcStatsAppendInOrder(t *testing.T) {
+	pid := int32(os.Getpid())
+	proc, _ := process.NewProcess(pid)
+	var history samples = make(samples, historyMaxSamples)
+	sample := getSample(proc)
+
+	for i:=0;i<historyMaxSamples;i++ {
+		history.append(sample)
+		if history[historyMaxSamples-1-i].pid != pid {
+			t.Errorf("sample not inserted")
+		}
+	}
 }
 
 func TestRSSGrowthRatesHigh(t *testing.T) {
