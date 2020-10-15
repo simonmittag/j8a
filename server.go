@@ -153,8 +153,8 @@ func (runtime Runtime) initUserAgent() Runtime {
 
 func (runtime Runtime) initStats() Runtime {
 	proc, _ := process.NewProcess(int32(os.Getpid()))
-	go logProcStats(proc)
-	go logUptime()
+	logProcStats(proc)
+	logUptime()
 	return runtime
 }
 

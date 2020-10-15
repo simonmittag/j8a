@@ -20,12 +20,18 @@ type sample struct {
 	time      time.Time
 }
 
+type growthRate struct {
+	v    float64
+	high bool
+}
+
 type samples []sample
 
 const cpuSampleMilliSeconds = 2000
 const logSamplerSleepSeconds = 60
-const historySamplerSleepHours = 24
-const historyMaxSamples int = 7
+const historySamplerSleepSeconds = 3600
+const historyMaxSamples int = 24
+const growthRateThreshold float64 = 2.0
 
 var procStatsLock sync.Mutex
 var procHistory samples
@@ -44,6 +50,37 @@ func (samples *samples) append(s sample) {
 		*samples = (*samples)[1:]
 	}
 	*samples = append(*samples, s)
+}
+
+func (samples *samples) log() []growthRate {
+	var growthRates = make([]growthRate, len(*samples))
+
+	for l := len(*samples) - 1; l >= 0; l-- {
+		if (*samples)[l].pid == 0 {
+			log.Debug().Msg("stay tuned, not enough data to analyze long-term memory trends")
+			return growthRates
+		}
+	}
+
+	for l := len(*samples) - 1; l >= 0; l-- {
+		growthRates[l].v = float64((*samples)[l].rssBytes) / float64((*samples)[0].rssBytes)
+		if growthRates[l].v >= growthRateThreshold {
+			growthRates[l].high = true
+		}
+	}
+
+High:
+	for m := len(*samples) - 1; m >= 0; m-- {
+		if growthRates[m].high {
+			log.Debug().
+				Msgf("RSS memory increase for previous %s with high factor >%s, monitor actively.",
+					durafmt.Parse(time.Duration(historyMaxSamples*historySamplerSleepSeconds)).LimitFirstN(1).String(),
+					fmt.Sprintf("%.1f", growthRateThreshold))
+			break High
+		}
+	}
+
+	return growthRates
 }
 
 func getSample(proc *process.Process) sample {
@@ -78,18 +115,27 @@ func logProcStats(proc *process.Process) {
 		procHistory = make(samples, historyMaxSamples)
 		for {
 			procHistory.append(getSample(proc))
-			time.Sleep(time.Hour * historySamplerSleepHours)
+			time.Sleep(time.Second * historySamplerSleepSeconds)
+		}
+	}()
+
+	go func() {
+		for {
+			time.Sleep(time.Second * historySamplerSleepSeconds)
+			procHistory.log()
 		}
 	}()
 }
 
 func logUptime() {
-	for {
-		upNanos := time.Since(Runner.Start)
-		uptime := durafmt.Parse(upNanos).LimitFirstN(2).String()
-		log.Debug().
-			Int64("uptimeMicros", int64(upNanos/1000)).
-			Msgf(fmt.Sprintf("server uptime is %s", uptime))
-		time.Sleep(time.Hour * 24)
-	}
+	go func() {
+		for {
+			upNanos := time.Since(Runner.Start)
+			uptime := durafmt.Parse(upNanos).LimitFirstN(2).String()
+			log.Debug().
+				Int64("uptimeMicros", int64(upNanos/1000)).
+				Msgf(fmt.Sprintf("server uptime is %s", uptime))
+			time.Sleep(time.Hour * 24)
+		}
+	}()
 }

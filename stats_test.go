@@ -31,15 +31,15 @@ func TestSamplesAppend(t *testing.T) {
 	proc, _ := process.NewProcess(int32(pid))
 	var history samples = make(samples, historyMaxSamples)
 
-	for i:=0;i<50;i++ {
+	for i := 0; i < 50; i++ {
 		sample := getSample(proc)
-		time.Sleep(time.Millisecond*50)
+		time.Sleep(time.Millisecond * 50)
 		t.Logf("appending %d sample", i)
 		history.append(sample)
 	}
 
 	got := cap(history)
-	want := historyMaxSamples*2
+	want := historyMaxSamples * 2
 	if got > want {
 		t.Errorf("samples should be limited capacity want %d got %d", want, got)
 	} else {
@@ -50,4 +50,30 @@ func TestSamplesAppend(t *testing.T) {
 		t.Errorf("samples should be length want %d got %d", historyMaxSamples, len(history))
 	}
 
+}
+
+func TestRSSGrowthRates(t *testing.T) {
+	memory := samples{
+		sample{
+			pid:      1,
+			rssBytes: 16,
+			time:     time.Time{},
+		},
+		sample{
+			pid:      1,
+			rssBytes: 32,
+			time:     time.Time{},
+		},
+	}
+
+	growth := memory.log()
+
+	var want float64 = 2
+	for _, got := range growth {
+		if got.v > want {
+			t.Errorf("growth too large, want <= %f got %f", want, got.v)
+		} else {
+			t.Logf("normal. got growth %f", got.v)
+		}
+	}
 }
