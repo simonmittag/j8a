@@ -30,7 +30,7 @@ type samples []sample
 const cpuSampleMilliSeconds = 2000
 const logSamplerSleepSeconds = 60
 const historySamplerSleepSeconds = 3600
-const historyMaxSamples int = 24
+const historyMaxSamples = 24
 const growthRateThreshold float64 = 2.0
 
 var procStatsLock sync.Mutex
@@ -57,7 +57,7 @@ func (samples *samples) log() []growthRate {
 
 	for l := len(*samples) - 1; l >= 0; l-- {
 		if (*samples)[l].pid == 0 {
-			log.Debug().Msg("stay tuned, not enough data to analyze long-term memory trends")
+			//effectively does nothing to log here because of insufficient data.
 			return growthRates
 		}
 	}
@@ -73,8 +73,8 @@ High:
 	for m := len(*samples) - 1; m >= 0; m-- {
 		if growthRates[m].high {
 			log.Debug().
-				Msgf("RSS memory increase for previous %s with high factor >%s, monitor actively.",
-					durafmt.Parse(time.Duration(historyMaxSamples*historySamplerSleepSeconds)).LimitFirstN(1).String(),
+				Msgf("RSS memory increase for previous %s with high factor >=%s, monitor actively.",
+					durafmt.Parse(time.Duration(time.Second*historySamplerSleepSeconds*historyMaxSamples)).LimitFirstN(1).String(),
 					fmt.Sprintf("%.1f", growthRateThreshold))
 			break High
 		}

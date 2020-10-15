@@ -52,7 +52,7 @@ func TestSamplesAppend(t *testing.T) {
 
 }
 
-func TestRSSGrowthRates(t *testing.T) {
+func TestRSSGrowthRatesHigh(t *testing.T) {
 	memory := samples{
 		sample{
 			pid:      1,
@@ -72,8 +72,92 @@ func TestRSSGrowthRates(t *testing.T) {
 	for _, got := range growth {
 		if got.v > want {
 			t.Errorf("growth too large, want <= %f got %f", want, got.v)
+		}
+	}
+
+	got2 := growth[0].v
+	want2 := float64(1)
+	if got2 != want2 {
+		t.Errorf("illegal grow rate at index 0, want %f, got %f", want2, got2)
+	}
+
+	got21 := growth[0].high
+	want21 := false
+	if got21 != want21 {
+		t.Errorf("illegal high mark at index 0, want %t, got %t", want21, got21)
+	}
+
+	got3 := growth[1].v
+	want3 := float64(2)
+	if got3 != want3 {
+		t.Errorf("illegal grow rate at index 1, want %f, got %f", want3, got3)
+	}
+
+	got31 := growth[1].high
+	want31 := true
+	if got31 != want31 {
+		t.Errorf("illegal high mark at index 1, want %t, got %t", want31, got31)
+	}
+}
+
+func TestRSSGrowthRatesLow(t *testing.T) {
+	memory := samples{
+		sample{
+			pid:      1,
+			rssBytes: 16,
+			time:     time.Time{},
+		},
+		sample{
+			pid:      1,
+			rssBytes: 17,
+			time:     time.Time{},
+		},
+		sample{
+			pid:      1,
+			rssBytes: 27,
+			time:     time.Time{},
+		},
+		sample{
+			pid:      1,
+			rssBytes: 29,
+			time:     time.Time{},
+		},
+	}
+
+	growth := memory.log()
+
+	var want float64 = 2
+	for i, got := range growth {
+		if got.high {
+			t.Errorf("growth illegally marked as high at index %d", i)
+		}
+		if got.v > want {
+			t.Errorf("growth too large, want <= %f got %f", want, got.v)
 		} else {
 			t.Logf("normal. got growth %f", got.v)
+		}
+	}
+}
+
+func TestRSSGrowthRatesInsufficientData(t *testing.T) {
+	memory := samples{
+		sample{
+			pid:      0,
+		},
+		sample{
+			pid:      0,
+		},
+	}
+
+	growth := memory.log()
+
+	var want float64 = 1
+	for i, got := range growth {
+		if got.high {
+			t.Errorf("no data, growth illegally marked as high at index %d", i)
+		}
+		if got.v > want {
+			t.Errorf("no data, want growth %f got %f", want, got.v)
 		}
 	}
 }
