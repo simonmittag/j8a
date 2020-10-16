@@ -113,6 +113,10 @@ func logProcStats(proc *process.Process) {
 
 	go func() {
 		procHistory = make(samples, historyMaxSamples)
+		lazy := getSample(proc)
+		for k := 0; k < historyMaxSamples; k++ {
+			procHistory[k] = lazy
+		}
 		for {
 			procHistory.append(getSample(proc))
 			time.Sleep(time.Second * historySamplerSleepSeconds)
