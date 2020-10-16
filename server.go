@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"fmt"
 	"github.com/rs/zerolog/log"
+	"github.com/shirou/gopsutil/process"
 	golog "log"
 	"net/http"
 	"os"
@@ -23,7 +24,8 @@ var ID string = "unknown"
 //Runtime struct defines runtime environment wrapper for a config.
 type Runtime struct {
 	Config
-	Start time.Time
+	Start  time.Time
+	Memory []sample
 }
 
 //Runner is the Live environment of the server
@@ -150,8 +152,9 @@ func (runtime Runtime) initUserAgent() Runtime {
 }
 
 func (runtime Runtime) initStats() Runtime {
-	go stats(os.Getpid())
-	go uptime()
+	proc, _ := process.NewProcess(int32(os.Getpid()))
+	logProcStats(proc)
+	logUptime()
 	return runtime
 }
 
