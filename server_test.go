@@ -46,7 +46,7 @@ func mockTlsConfig() *tls.Config {
 }
 
 func setupJ8a() {
-	ConfigFile = "./j8a.yml"
+	ConfigFile = "./j8acfg.yml"
 	Boot.Add(1)
 	go BootStrap()
 	Boot.Wait()
