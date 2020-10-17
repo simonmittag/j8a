@@ -60,7 +60,7 @@ func BootStrap() {
 	initLogger()
 
 	config := new(Config).
-		read(ConfigFile).
+		load().
 		reApplyResourceSchemes().
 		reApplyResourceNames().
 		compileRoutePaths().
