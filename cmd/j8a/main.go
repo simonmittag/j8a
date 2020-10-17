@@ -7,15 +7,27 @@ import (
 )
 
 func main() {
-	cfg := flag.String("c", "./j8a.yml", "config file location")
+	cfgFile := flag.String("c", "j8acfg.yml", "config file location")
 	flag.Usage = func() {
-		fmt.Printf(`j8a[%s] "TLS reverse proxy server for JSON APIs."`, j8a.Version)
+		fmt.Printf(`j8a[%s] "Achuta! j8a [ dʒʌbbʌ ] is a TLS reverse proxy server for JSON APIs written in golang."`, j8a.Version)
 		fmt.Print("\n")
 		flag.PrintDefaults()
 	}
 	flag.Parse()
-	j8a.ConfigFile = *cfg
+	if isFlagPassed("c") {
+		j8a.ConfigFile = *cfgFile
+	}
 
 	j8a.Boot.Add(1)
 	j8a.BootStrap()
+}
+
+func isFlagPassed(name string) bool {
+	found := false
+	flag.Visit(func(f *flag.Flag) {
+		if f.Name == name {
+			found = true
+		}
+	})
+	return found
 }
