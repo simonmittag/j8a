@@ -135,10 +135,12 @@ func logUptime() {
 	go func() {
 		for {
 			upNanos := time.Since(Runner.Start)
-			uptime := durafmt.Parse(upNanos).LimitFirstN(2).String()
-			log.Debug().
-				Int64("uptimeMicros", int64(upNanos/1000)).
-				Msgf(fmt.Sprintf("server uptime is %s", uptime))
+			if upNanos > time.Second*10 {
+				uptime := durafmt.Parse(upNanos).LimitFirstN(1).String()
+				log.Debug().
+					Int64("uptimeMicros", int64(upNanos/1000)).
+					Msgf(fmt.Sprintf("server uptime is %s", uptime))
+			}
 			time.Sleep(time.Hour * 24)
 		}
 	}()
