@@ -356,7 +356,7 @@ func TestTlsInsecureSkipVerify_Optional(t *testing.T) {
 
 //TestReadConfigFile
 func TestReadConfigFile(t *testing.T) {
-	config := new(Config).read("./j8a.yml")
+	config := new(Config).readYmlFile("./j8acfg.yml")
 	if config.Routes == nil {
 		t.Error("incorrectly parsed routes in config file")
 	}
@@ -373,7 +373,7 @@ func TestReadConfigFile(t *testing.T) {
 
 func TestReApplyScheme(t *testing.T) {
 	want := map[string]string{"http": "", "https": ""}
-	config := new(Config).read("./j8a.yml").reApplyResourceSchemes()
+	config := new(Config).readYmlFile("./j8acfg.yml").reApplyResourceSchemes()
 
 	for name := range config.Resources {
 		resourceMappings := config.Resources[name]
