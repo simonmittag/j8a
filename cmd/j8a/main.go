@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	cfgFile := flag.String("c", "j8acfg.yml", "config file location")
+	cfgFile := flag.String("c", j8a.DefaultConfigFile, "config file location")
 	flag.Usage = func() {
 		fmt.Printf(`j8a[%s] "Achuta! j8a [ dʒʌbbʌ ] is a TLS reverse proxy server for JSON APIs written in golang."`, j8a.Version)
 		fmt.Print("\n")
