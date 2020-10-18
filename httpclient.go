@@ -26,10 +26,10 @@ func scaffoldHTTPClient(runtime Runtime) HTTPClient {
 
 	httpClient = &http.Client{
 		Transport: &http.Transport{
-			Dial: (&net.Dialer{
+			DialContext: (&net.Dialer{
 				Timeout:   socketTimeoutDuration,
 				KeepAlive: getKeepAliveIntervalDuration(),
-			}).Dial,
+			}).DialContext,
 			//TLS handshake timeout is the same as connection timeout
 			TLSHandshakeTimeout: tLSHandshakeTimeoutDuration,
 			TLSClientConfig: &tls.Config{
