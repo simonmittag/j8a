@@ -46,6 +46,37 @@ X-REQUEST-DEBUG: true
 ## Environment Variables
 Specify these env vars to control server behaviour
 
+### J8ACFG_YML
+Supply the server configuration to the running process in .yml format
+
+```bash
+J8ACFG_YML="---
+            connection:
+              downstream:
+                readTimeoutSeconds: 3
+                roundTripTimeoutSeconds: 20
+                idleTimeoutSeconds: 30
+                port: 80
+                mode: HTTP
+                maxBodyBytes: 65535
+              upstream:
+                socketTimeoutSeconds: 3
+                readTimeoutSeconds: 30
+                idleTimeoutSeconds: 10
+                maxAttempts: 4
+                poolSize: 8
+                tlsInsecureSkipVerify: true
+            routes:
+              - path: "/todos"
+                resource: jsonplaceholder
+            resources:
+              jsonplaceholder:
+                - url:
+                    scheme: https
+                    host: jsonplaceholder.typicode.com
+                    port: 443"
+```
+
 ### LOGLEVEL
 Loglevel for stdout, one of TRACE, DEBUG, INFO or WARN
 
