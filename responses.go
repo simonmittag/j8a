@@ -157,6 +157,7 @@ func aboutHandler(w http.ResponseWriter, r *http.Request) {
 		setOutgoing(w)
 
 	proxy.writeStandardResponseHeaders()
+	proxy.respondWith(200, "ok")
 
 	ae := r.Header["Accept-Encoding"]
 	res := AboutResponse{}.AsJSON()

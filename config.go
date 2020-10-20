@@ -2,6 +2,7 @@ package j8a
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/ghodss/yaml"
 	"io/ioutil"
 	"os"
@@ -23,14 +24,60 @@ type Config struct {
 
 const HTTP = "HTTP"
 const TLS = "TLS"
+const J8ACFG_YML = "J8ACFG_YML"
 
-var ConfigFile = "not specified"
+var ConfigFile = ""
 
-func (config Config) read(file string) *Config {
+const DefaultConfigFile = "j8acfg.yml"
+
+func (config Config) load() *Config {
+	if len(ConfigFile) > 0 {
+		log.Debug().Msgf("attempting config from file '%s'", ConfigFile)
+		if cfg := *config.readYmlFile(ConfigFile); cfg.ok() {
+			config = cfg
+		} else {
+			configPanic()
+		}
+	} else if len(os.Getenv(J8ACFG_YML)) > 0 {
+		log.Debug().Msgf("attempting config from env %s", J8ACFG_YML)
+		if cfg := *config.readYmlEnv(); cfg.ok() {
+			config = cfg
+		} else {
+			configPanic()
+		}
+	} else {
+		log.Debug().Msgf("attempting config from default file '%s'", DefaultConfigFile)
+		if cfg := config.readYmlFile(DefaultConfigFile); cfg.ok() {
+			config = *cfg
+		} else {
+			configPanic()
+		}
+	}
+	log.Debug().Msgf("parsed config with %d live routes", config.Routes.Len())
+	return &config
+}
+
+func configPanic() {
+	msg := "error loading config, exiting..."
+	log.Fatal().Msg(msg)
+	panic(msg)
+}
+
+func (config Config) readYmlEnv() *Config {
+	conf := []byte(os.Getenv(J8ACFG_YML))
+	return config.parse(conf)
+}
+
+func (config Config) ok() bool {
+	//lightweight test if config was loaded, not necessarily valid
+	return config.Routes.Len() > 0
+}
+
+func (config Config) readYmlFile(file string) *Config {
 	f, err := os.Open(file)
 	defer f.Close()
 	if err != nil {
-		msg := "cannot find config file or unable to read server configuration, exiting..."
+		msg := fmt.Sprintf("unable to load config from %s, exiting...", file)
 		log.Fatal().Msg(msg)
 		panic(msg)
 	}
@@ -39,9 +86,8 @@ func (config Config) read(file string) *Config {
 }
 
 func (config Config) parse(yml []byte) *Config {
-	yml, _ = yaml.YAMLToJSON(yml)
-	json.Unmarshal(yml, &config)
-	log.Debug().Msgf("parsed server configuration with %d live routes", len(config.Routes))
+	jsn, _ := yaml.YAMLToJSON(yml)
+	json.Unmarshal(jsn, &config)
 	return &config
 }
 

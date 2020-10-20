@@ -17,7 +17,7 @@ func initServerID() {
 	hasher := md5.New()
 	hasher.Write([]byte(getHost() + getVersion()))
 	ID = hex.EncodeToString(hasher.Sum(nil))[0:8]
-	log.Debug().Str("srvID", ID).Msg("determined srvID")
+	log.Debug().Str("srvID", ID).Msg("srvID determined")
 	log.Logger = log.With().Str("srvId", ID).Logger()
 }
 
@@ -26,7 +26,7 @@ func getHost() string {
 	if len(host) == 0 {
 		host, _ = os.Hostname()
 	}
-	log.Debug().Str("hostName", host).Msg("determined hostName")
+	log.Debug().Str("hostName", host).Msg("hostName determined")
 	return host
 }
 
@@ -36,7 +36,7 @@ func getVersion() string {
 		Version = osv
 	}
 
-	log.Debug().Str("version", Version).Msg("determined version")
+	log.Debug().Str("version", Version).Msg("version determined")
 	return Version
 }
 

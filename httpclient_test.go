@@ -11,7 +11,7 @@ func TestHttpClientSocketTimeout(t *testing.T) {
 		Config: Config{
 			Connection: Connection{
 				Upstream: Upstream{
-					SocketTimeoutSeconds: 1,
+					SocketTimeoutSeconds: 3,
 				},
 			},
 		},
@@ -20,7 +20,7 @@ func TestHttpClientSocketTimeout(t *testing.T) {
 
 	client := scaffoldHTTPClient(*Runner)
 	start := time.Now()
-	_, err := client.Get("http://10.73.124.255:2/uri")
+	_, err := client.Get("http://10.73.124.255:8089/uri")
 	elapsed := time.Since(start)
 	want := time.Duration(1 * time.Second)
 	if elapsed < want {
