@@ -10,7 +10,7 @@ Achuta! j8a [ dʒʌbbʌ ] is a TLS reverse proxy server for JSON APIs written in
 [![Codeclimate Test Coverage](https://api.codeclimate.com/v1/badges/326d3c304e32645811c8/test_coverage)](https://codeclimate.com/github/simonmittag/jabba/code)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/simonmittag/j8a)](https://img.shields.io/github/go-mod/go-version/simonmittag/j8a)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-
+[![Docker Pulls](https://img.shields.io/docker/pulls/simonmittag/j8a)](https://img.shields.io/docker/pulls/simonmittag/j8a)
 ## Features
 * HTTP/1.1, HTTP/2 compatible, buffering reverse proxy.
 * Supports TLS1.2, 1.3 with [A+ SSLLabs rating](https://www.ssllabs.com/ssltest/analyze.html?d=j8a.io).
@@ -18,11 +18,17 @@ Achuta! j8a [ dʒʌbbʌ ] is a TLS reverse proxy server for JSON APIs written in
 * highly concurrent with multiprocessor support, tested to 10k req/s
 
 ## What's new
-j8a has released beta version 0.6.11 in October 2020. See project milestones
+j8a has released beta version 0.6.14 in October 2020. See project milestones
  for details on general availability.
 
 ## Up and running
+### Docker
+```
+docker pull simonmittag/j8a &&
+docker run -e J8ACFG_YML -p443:443 simonmittag/j8a
+```
 
+### Linux / Darwin
 ```bash
 go install github.com/simonmittag/j8a/cmd/j8a && j8a
 ```
