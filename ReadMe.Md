@@ -20,7 +20,7 @@ Achuta! j8a [ dʒʌbbʌ ] is a TLS reverse proxy server for JSON APIs written in
 * HTTP/1.1 and HTTP/2.0 support w/ upstream <> downstream protocol translation.
 * [Docker](https://hub.docker.com/repository/docker/simonmittag/j8a) native. Built-in CPU, memory stats, TLS health check w/ full JSON logs, no APM required.
 * JSON error wrapper w/ auto-recovery of failed repeatable requests.
-* API request tracing w/ individual X-Request-ID for micro-service architecture.
+* API request tracing w/ individual X-Request-ID for upstream micro-services.
 
 ## Up and running
 ### Docker
