@@ -34,20 +34,10 @@ docker run -e J8ACFG_YML -p443:443 simonmittag/j8a
 go install github.com/simonmittag/j8a/cmd/j8a && j8a
 ```
 
-## Headers
-Specify these headers to control server behaviour
+## Configuration
+### Environment Variables
 
-### X-REQUEST-DEBUG
-Set this to true to include a full trace of the request in the server log
-
-```bash
-X-REQUEST-DEBUG: true
-```
-
-## Environment Variables
-Specify these env vars to control server behaviour
-
-### J8ACFG_YML
+#### J8ACFG_YML
 Supply the server configuration to the running process in .yml format
 
 ```bash
@@ -78,14 +68,14 @@ J8ACFG_YML="---
                     port: 443"
 ```
 
-### LOGLEVEL
+#### LOGLEVEL
 Loglevel for stdout, one of TRACE, DEBUG, INFO or WARN
 
 ```bash
 LOGLEVEL="DEBUG"
 ```
 
-### TZ
+#### TZ
 TimeZone
 
 ```bash
