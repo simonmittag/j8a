@@ -24,16 +24,18 @@ func (s Routes) Less(i, j int) bool {
 
 //Route maps a Path to an upstream resource
 type Route struct {
-	Path     string
-	Regex    *regexp.Regexp
-	Resource string
-	Policy   string
+	Path           string
+	PathRegex      *regexp.Regexp
+	Transform      string
+	TransformRegex *regexp.Regexp
+	Resource       string
+	Policy         string
 }
 
 func (route Route) matchURI(request *http.Request) bool {
 	matched := false
-	if route.Regex != nil {
-		matched = route.Regex.MatchString(request.RequestURI)
+	if route.PathRegex != nil {
+		matched = route.PathRegex.MatchString(request.RequestURI)
 	} else {
 		matched, _ = regexp.MatchString("^"+route.Path, request.RequestURI)
 	}

@@ -65,8 +65,8 @@ func requestFactory(path string) *http.Request {
 func routeFactory(route string) Route {
 	pR, _ := regexp.Compile("^" + route)
 	r := Route{
-		Path:  route,
-		Regex: pR,
+		Path:      route,
+		PathRegex: pR,
 	}
 	return r
 }

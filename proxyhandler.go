@@ -54,6 +54,7 @@ func proxyHandler(response http.ResponseWriter, request *http.Request) {
 			url, label, mapped := route.mapURL(proxy)
 			if mapped {
 				//mapped requests are sent to httpclient
+				proxy.setRoute(&route)
 				handle(proxy.firstAttempt(url, label))
 			} else {
 				//unmapped request means an internal configuration error in server
