@@ -120,7 +120,11 @@ func (proxy *Proxy) hasDownstreamAborted() bool {
 func (proxy *Proxy) resolveUpstreamURI() string {
 	uri := proxy.Up.Atmpt.URL.String() + proxy.Dwn.URI
 	if len(proxy.Route.Transform) > 0 {
-		uri = proxy.Up.Atmpt.URL.String() + string(proxy.Route.PathRegex.ReplaceAll([]byte(proxy.Dwn.URI), []byte(proxy.Route.Transform)))
+		t := proxy.Route.Transform
+		if t == "/" {
+			t = ""
+		}
+		uri = proxy.Up.Atmpt.URL.String() + string(proxy.Route.PathRegex.ReplaceAll([]byte(proxy.Dwn.URI), []byte(t)))
 	}
 	return uri
 }
