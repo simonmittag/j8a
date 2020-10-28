@@ -154,7 +154,12 @@ func TestFailParseUpstreamContentLength(t *testing.T) {
 func TestPathTransformation(t *testing.T) {
 	pathTransformation(t, "/mse6", "/mse7/v2/api", "/mse6/get/me/treats", "/mse7/v2/api/get/me/treats")
 	pathTransformation(t, "/mse6", "/mse7", "/mse6/get/me/treats", "/mse7/get/me/treats")
+	pathTransformation(t, "/mse6", "/mse7", "/mse6/", "/mse7/")
+	pathTransformation(t, "/mse6", "/mse6long", "/mse6?p=v", "/mse6long?p=v")
 	pathTransformation(t, "/mse6", "/", "/mse6/get/me/treats", "/get/me/treats")
+	pathTransformation(t, "/mse6", "/", "/mse6/", "/")
+	pathTransformation(t, "/mse6", "", "/mse6/get/me/treats", "/mse6/get/me/treats")
+	pathTransformation(t, "/mse6", "", "/mse6/", "/mse6/")
 }
 
 func pathTransformation(t *testing.T, routePath string, transform string, requestUri string, want string) {
