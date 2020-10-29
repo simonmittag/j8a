@@ -62,13 +62,13 @@ func (route Route) mapURL(proxy *Proxy) (*URL, string, bool) {
 			for _, resourceLabel := range resourceMapping.Labels {
 				if policyLabel == resourceLabel {
 					log.Trace().
-						Str("routePath", route.Path).
-						Str("upstream", resourceMapping.URL.String()).
+						Str("route", route.Path).
+						Str("upRes", resourceMapping.URL.String()).
 						Str("label", resourceLabel).
 						Str("policy", route.Policy).
 						Str(XRequestID, proxy.XRequestID).
 						Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
-						Msg("upstream route mapped")
+						Msg("upstream resource mapped")
 					return &resourceMapping.URL, policyLabel, true
 				}
 			}

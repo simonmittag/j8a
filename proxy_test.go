@@ -152,6 +152,7 @@ func TestFailParseUpstreamContentLength(t *testing.T) {
 }
 
 func TestPathTransformation(t *testing.T) {
+	pathTransformation(t, "/mse6", "/mse7/v2/api", "/mse6/mse6/get/me/treats", "/mse7/v2/api/mse6/get/me/treats")
 	pathTransformation(t, "/mse6", "/mse7/v2/api", "/mse6/get/me/treats", "/mse7/v2/api/get/me/treats")
 	pathTransformation(t, "/mse6", "/mse7", "/mse6/get/me/treats", "/mse7/get/me/treats")
 	pathTransformation(t, "/mse6", "/mse7", "/mse6/", "/mse7/")

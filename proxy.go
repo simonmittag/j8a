@@ -124,7 +124,7 @@ func (proxy *Proxy) resolveUpstreamURI() string {
 		if t == "/" {
 			t = ""
 		}
-		uri = proxy.Up.Atmpt.URL.String() + string(proxy.Route.PathRegex.ReplaceAll([]byte(proxy.Dwn.URI), []byte(t)))
+		uri = proxy.Up.Atmpt.URL.String() + strings.Replace(proxy.Dwn.URI, proxy.Route.Path, t, 1)
 	}
 	return uri
 }
@@ -349,7 +349,7 @@ func (proxy *Proxy) firstAttempt(URL *URL, label string) *Proxy {
 	proxy.Up.Count = 1
 
 	scaffoldUpAttemptLog(proxy).
-		Msg("first upstream attempt initialized")
+		Msg("upstream attempt initialized")
 
 	return proxy
 }
@@ -375,7 +375,7 @@ func (proxy *Proxy) nextAttempt() *Proxy {
 	proxy.Up.Atmpt = &proxy.Up.Atmpts[len(proxy.Up.Atmpts)-1]
 
 	scaffoldUpAttemptLog(proxy).
-		Msg("next upstream attempt initialized")
+		Msg("upstream attempt initialized")
 	return proxy
 }
 

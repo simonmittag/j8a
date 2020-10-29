@@ -110,10 +110,19 @@ func scaffoldUpstreamRequest(proxy *Proxy) *http.Request {
 		cancel()
 	})
 
+	upReqURI := proxy.resolveUpstreamURI()
+
 	upstreamRequest, _ := http.NewRequestWithContext(ctx,
 		proxy.Dwn.Method,
-		proxy.resolveUpstreamURI(),
+		upReqURI,
 		proxy.bodyReader())
+
+	log.Trace().
+		Str("dwnReqPath", proxy.Dwn.Path).
+		Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+		Str(XRequestID, proxy.XRequestID).
+		Str("upReqURI", upReqURI).
+		Msg("upstream URI resolved")
 
 	proxy.Up.Atmpt.Aborted = upstreamRequest.Context().Done()
 
@@ -318,7 +327,7 @@ func logHandledDownstreamRoundtrip(proxy *Proxy) {
 	}
 
 	if proxy.hasMadeUpstreamAttempt() {
-		ev = ev.Str("upURI", proxy.resolveUpstreamURI()).
+		ev = ev.Str("upReqURI", proxy.resolveUpstreamURI()).
 			Str("upLabel", proxy.Up.Atmpt.Label).
 			Int("upAtmptResCode", proxy.Up.Atmpt.StatusCode).
 			Int64("upAtmptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
