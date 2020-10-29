@@ -15,7 +15,7 @@ connection:
     poolSize: 8
     tlsInsecureSkipVerify: true
 policies:
-  ab:
+  ab:   
     - label: green
       weight: 0.8
     - label: blue
@@ -28,6 +28,13 @@ routes:
   - path: "/mse6/some"
     resource: mse61
   - path: "/mse6/"
+    resource: mse6
+    policy: ab
+  - path: /mse6crazy
+    transform: /mse6
+    resource: mse6
+  - path: /mse7
+    transform: /mse6
     resource: mse6
     policy: ab
   - path: "/s01"

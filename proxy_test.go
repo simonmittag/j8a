@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"testing"
 	"time"
 )
@@ -128,7 +129,7 @@ func TestParseRequestBodyTooLarge(t *testing.T) {
 
 func TestSuccessParseUpstreamContentLength(t *testing.T) {
 	upBody := []byte("body")
-	proxy := mockProxy(upBody, fmt.Sprint(len(upBody)))
+	proxy := mockProxy(upBody, fmt.Sprint(len(upBody)), "", "", "")
 	proxy.setContentLengthHeader()
 
 	got := proxy.Dwn.Resp.Writer.Header().Get("Content-Length")
@@ -140,7 +141,7 @@ func TestSuccessParseUpstreamContentLength(t *testing.T) {
 
 func TestFailParseUpstreamContentLength(t *testing.T) {
 	upBody := []byte("body")
-	proxy := mockProxy(upBody, "NAN")
+	proxy := mockProxy(upBody, "NAN", "", "", "")
 	proxy.setContentLengthHeader()
 
 	got := proxy.Dwn.Resp.Writer.Header().Get("Content-Length")
@@ -150,11 +151,38 @@ func TestFailParseUpstreamContentLength(t *testing.T) {
 	}
 }
 
-func mockProxy(upBody []byte, cl string) Proxy {
+func TestPathTransformation(t *testing.T) {
+	pathTransformation(t, "/mse6", "/mse7/v2/api", "/mse6/mse6/get/me/treats", "/mse7/v2/api/mse6/get/me/treats")
+	pathTransformation(t, "/mse6", "/mse7/v2/api", "/mse6/get/me/treats", "/mse7/v2/api/get/me/treats")
+	pathTransformation(t, "/mse6", "/mse7", "/mse6/get/me/treats", "/mse7/get/me/treats")
+	pathTransformation(t, "/mse6", "/mse7", "/mse6/", "/mse7/")
+	pathTransformation(t, "/mse6", "/mse6long", "/mse6?p=v", "/mse6long?p=v")
+	pathTransformation(t, "/mse6", "/", "/mse6/get/me/treats", "/get/me/treats")
+	pathTransformation(t, "/mse6", "/", "/mse6/", "/")
+	pathTransformation(t, "/mse6", "", "/mse6/get/me/treats", "/mse6/get/me/treats")
+	pathTransformation(t, "/mse6", "", "/mse6/", "/mse6/")
+}
+
+func pathTransformation(t *testing.T, routePath string, transform string, requestUri string, want string) {
+	p := mockProxy(make([]byte, 1), "", routePath, transform, requestUri)
+	got := p.resolveUpstreamURI()
+	want = "http://upstreamhost:8080" + want
+	if got != want {
+		t.Errorf("path transformation error, got %s, want %s", got, want)
+	}
+}
+
+func mockProxy(upBody []byte, cl string, path string, transform string, requestUri string) Proxy {
+	pr, _ := regexp.Compile(path)
 	proxy := Proxy{
 		XRequestID: "12345",
 		Up: Up{
 			Atmpt: &Atmpt{
+				URL: &URL{
+					Scheme: "http",
+					Host:   "upstreamhost",
+					Port:   8080,
+				},
 				resp: &http.Response{
 					Body: ioutil.NopCloser(bytes.NewReader(upBody)),
 					Header: map[string][]string{
@@ -164,6 +192,7 @@ func mockProxy(upBody []byte, cl string) Proxy {
 			},
 		},
 		Dwn: Down{
+			URI:    requestUri,
 			Method: "HEAD",
 			Resp: Resp{
 				Writer:        httptest.NewRecorder(),
@@ -171,6 +200,13 @@ func mockProxy(upBody []byte, cl string) Proxy {
 				ContentLength: 0,
 			},
 			startDate: time.Time{},
+		},
+		Route: &Route{
+			Path:           path,
+			PathRegex:      pr,
+			Transform:      transform,
+			Resource:       "mse7",
+			Policy:         "",
 		},
 	}
 	return proxy

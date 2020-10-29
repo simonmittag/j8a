@@ -99,6 +99,7 @@ type Proxy struct {
 	XRequestDebug bool
 	Up            Up
 	Dwn           Down
+	Route         *Route
 }
 
 // TODO downstream aborted needs to cover both timeouts and user aborted requests.
@@ -117,7 +118,15 @@ func (proxy *Proxy) hasDownstreamAborted() bool {
 }
 
 func (proxy *Proxy) resolveUpstreamURI() string {
-	return proxy.Up.Atmpt.URL.String() + proxy.Dwn.URI
+	uri := proxy.Up.Atmpt.URL.String() + proxy.Dwn.URI
+	if len(proxy.Route.Transform) > 0 {
+		t := proxy.Route.Transform
+		if t == "/" {
+			t = ""
+		}
+		uri = proxy.Up.Atmpt.URL.String() + strings.Replace(proxy.Dwn.URI, proxy.Route.Path, t, 1)
+	}
+	return uri
 }
 
 func (proxy *Proxy) abortAllUpstreamAttempts() {
@@ -340,7 +349,7 @@ func (proxy *Proxy) firstAttempt(URL *URL, label string) *Proxy {
 	proxy.Up.Count = 1
 
 	scaffoldUpAttemptLog(proxy).
-		Msg("first upstream attempt initialized")
+		Msg("upstream attempt initialized")
 
 	return proxy
 }
@@ -366,7 +375,7 @@ func (proxy *Proxy) nextAttempt() *Proxy {
 	proxy.Up.Atmpt = &proxy.Up.Atmpts[len(proxy.Up.Atmpts)-1]
 
 	scaffoldUpAttemptLog(proxy).
-		Msg("next upstream attempt initialized")
+		Msg("upstream attempt initialized")
 	return proxy
 }
 
@@ -424,6 +433,10 @@ func (proxy *Proxy) contentEncoding() string {
 	}
 
 	return ce
+}
+
+func (proxy *Proxy) setRoute(route *Route) {
+	proxy.Route = route
 }
 
 //RFC7230, section 3.3.2

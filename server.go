@@ -64,6 +64,7 @@ func BootStrap() {
 		reApplyResourceSchemes().
 		reApplyResourceNames().
 		compileRoutePaths().
+		compileRouteTransforms().
 		sortRoutes().
 		addDefaultPolicy().
 		setDefaultUpstreamParams().

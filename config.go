@@ -36,29 +36,32 @@ func (config Config) load() *Config {
 		if cfg := *config.readYmlFile(ConfigFile); cfg.ok() {
 			config = cfg
 		} else {
-			configPanic()
+			config.panic(fmt.Sprintf("error loading config from file '%s'", ConfigFile))
 		}
 	} else if len(os.Getenv(J8ACFG_YML)) > 0 {
 		log.Debug().Msgf("attempting config from env %s", J8ACFG_YML)
 		if cfg := *config.readYmlEnv(); cfg.ok() {
 			config = cfg
 		} else {
-			configPanic()
+			config.panic(fmt.Sprintf("error loading config from env '%s'", J8ACFG_YML))
 		}
 	} else {
 		log.Debug().Msgf("attempting config from default file '%s'", DefaultConfigFile)
 		if cfg := config.readYmlFile(DefaultConfigFile); cfg.ok() {
 			config = *cfg
 		} else {
-			configPanic()
+			config.panic(fmt.Sprintf("error loading config from default file '%s'", DefaultConfigFile))
 		}
 	}
 	log.Debug().Msgf("parsed config with %d live routes", config.Routes.Len())
 	return &config
 }
 
-func configPanic() {
-	msg := "error loading config, exiting..."
+func (config Config) panic(msg string) {
+	if len(msg) == 0 {
+		msg = "error loading config."
+	}
+	msg = msg + " exiting..."
 	log.Fatal().Msg(msg)
 	panic(msg)
 }
@@ -114,8 +117,21 @@ func (config Config) sortRoutes() *Config {
 }
 
 func (config Config) compileRoutePaths() *Config {
+	var err error
 	for i, route := range config.Routes {
-		config.Routes[i].Regex, _ = regexp.Compile("^" + route.Path)
+		config.Routes[i].PathRegex, err = regexp.Compile("^" + route.Path)
+		if err != nil {
+			config.panic(fmt.Sprintf("config error, illegal route path %s", route.Path))
+		}
+	}
+	return &config
+}
+
+func (config Config) compileRouteTransforms() *Config {
+	for i, route := range config.Routes {
+		if len(config.Routes[i].Transform)>0 && config.Routes[i].Transform[:1] != "/" {
+			config.panic(fmt.Sprintf("config error, illegal route transform %s", route.Transform))
+		}
 	}
 	return &config
 }

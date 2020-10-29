@@ -24,16 +24,17 @@ func (s Routes) Less(i, j int) bool {
 
 //Route maps a Path to an upstream resource
 type Route struct {
-	Path     string
-	Regex    *regexp.Regexp
-	Resource string
-	Policy   string
+	Path           string
+	PathRegex      *regexp.Regexp
+	Transform      string
+	Resource       string
+	Policy         string
 }
 
 func (route Route) matchURI(request *http.Request) bool {
 	matched := false
-	if route.Regex != nil {
-		matched = route.Regex.MatchString(request.RequestURI)
+	if route.PathRegex != nil {
+		matched = route.PathRegex.MatchString(request.RequestURI)
 	} else {
 		matched, _ = regexp.MatchString("^"+route.Path, request.RequestURI)
 	}
@@ -60,13 +61,13 @@ func (route Route) mapURL(proxy *Proxy) (*URL, string, bool) {
 			for _, resourceLabel := range resourceMapping.Labels {
 				if policyLabel == resourceLabel {
 					log.Trace().
-						Str("routePath", route.Path).
-						Str("upstream", resourceMapping.URL.String()).
+						Str("route", route.Path).
+						Str("upRes", resourceMapping.URL.String()).
 						Str("label", resourceLabel).
 						Str("policy", route.Policy).
 						Str(XRequestID, proxy.XRequestID).
 						Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
-						Msg("upstream route mapped")
+						Msg("upstream resource mapped")
 					return &resourceMapping.URL, policyLabel, true
 				}
 			}
