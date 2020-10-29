@@ -25,6 +25,9 @@ routes:
     resource: about
   - path: "/mse6/some"
     resource: mse61
+  - path: /mse7
+    transform: /mse6
+    resource: mse6
   - path: "/mse6/"
     resource: mse6
     policy: ab
