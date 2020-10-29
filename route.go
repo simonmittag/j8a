@@ -27,7 +27,6 @@ type Route struct {
 	Path           string
 	PathRegex      *regexp.Regexp
 	Transform      string
-	TransformRegex *regexp.Regexp
 	Resource       string
 	Policy         string
 }

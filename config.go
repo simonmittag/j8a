@@ -128,10 +128,8 @@ func (config Config) compileRoutePaths() *Config {
 }
 
 func (config Config) compileRouteTransforms() *Config {
-	var err error
 	for i, route := range config.Routes {
-		config.Routes[i].TransformRegex, err = regexp.Compile(route.Transform)
-		if err != nil {
+		if len(config.Routes[i].Transform)>0 && config.Routes[i].Transform[:1] != "/" {
 			config.panic(fmt.Sprintf("config error, illegal route transform %s", route.Transform))
 		}
 	}

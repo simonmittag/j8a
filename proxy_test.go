@@ -174,7 +174,6 @@ func pathTransformation(t *testing.T, routePath string, transform string, reques
 
 func mockProxy(upBody []byte, cl string, path string, transform string, requestUri string) Proxy {
 	pr, _ := regexp.Compile(path)
-	tr, _ := regexp.Compile(transform)
 	proxy := Proxy{
 		XRequestID: "12345",
 		Up: Up{
@@ -206,7 +205,6 @@ func mockProxy(upBody []byte, cl string, path string, transform string, requestU
 			Path:           path,
 			PathRegex:      pr,
 			Transform:      transform,
-			TransformRegex: tr,
 			Resource:       "mse7",
 			Policy:         "",
 		},
