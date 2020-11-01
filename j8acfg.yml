@@ -15,7 +15,7 @@ connection:
     poolSize: 8
     tlsInsecureSkipVerify: true
 policies:
-  ab:   
+  ab:
     - label: green
       weight: 0.8
     - label: blue

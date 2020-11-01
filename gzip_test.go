@@ -9,7 +9,7 @@ import (
 //test pool allocation of zipper
 func TestGzipper(t *testing.T) {
 	//run small loop to ensure pool allocation works
-	for i:=0;i<=10;i++ {
+	for i := 0; i <= 10; i++ {
 		json := []byte("{\"routes\": [{\n\t\t\t\"path\": \"/about\",\n\t\t\t\"resource\": \"aboutj8a\"\n\t\t},\n\t\t{\n\t\t\t\"path\": \"/customer\",\n\t\t\t\"resource\": \"customer\",\n\t\t\t\"policy\": \"ab\"\n\t\t}\n\t]}")
 		zipped := *Gzip(json)
 
@@ -25,7 +25,7 @@ func TestGzipper(t *testing.T) {
 }
 
 func TestGzipThenUnzip(t *testing.T) {
-	for i:=0;i<=100;i++ {
+	for i := 0; i <= 100; i++ {
 		json := []byte(fmt.Sprintf(`{ "key":"value%d" }`, i))
 		if c := bytes.Compare(json, *Gunzip(*Gzip(json))); c != 0 {
 			t.Error("unzipped data is not equal to original")

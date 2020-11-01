@@ -3,7 +3,7 @@ package j8a
 import "regexp"
 
 //TODO: rather not use multiple regexes in a chain and replace this with a tested thirdparty framework.
-type iprex struct{
+type iprex struct {
 	//v6 hex with embedded v4 dec address
 	ipv64e *regexp.Regexp
 
@@ -36,20 +36,20 @@ func (ipr *iprex) extractAddr(msg string) string {
 		ipr.ipv4 = r
 	}
 	match := ipr.ipv64e.FindStringSubmatch(msg)
-	if len(match)>0 {
-		addr=match[0]
+	if len(match) > 0 {
+		addr = match[0]
 	} else {
 		match2 := ipr.ipv6s.FindStringSubmatch(msg)
-		if len(match2)>0 {
-			addr=match2[0]
+		if len(match2) > 0 {
+			addr = match2[0]
 		} else {
 			match3 := ipr.ipv6.FindStringSubmatch(msg)
-			if len(match3)>0 {
-				addr=match3[0]
+			if len(match3) > 0 {
+				addr = match3[0]
 			} else {
 				match4 := ipr.ipv4.FindStringSubmatch(msg)
-				if len(match4)>0 {
-					addr=match4[0]
+				if len(match4) > 0 {
+					addr = match4[0]
 				}
 			}
 		}

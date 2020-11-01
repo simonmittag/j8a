@@ -24,11 +24,11 @@ func (s Routes) Less(i, j int) bool {
 
 //Route maps a Path to an upstream resource
 type Route struct {
-	Path           string
-	PathRegex      *regexp.Regexp
-	Transform      string
-	Resource       string
-	Policy         string
+	Path      string
+	PathRegex *regexp.Regexp
+	Transform string
+	Resource  string
+	Policy    string
 }
 
 func (route Route) matchURI(request *http.Request) bool {

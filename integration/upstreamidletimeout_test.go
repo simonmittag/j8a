@@ -43,8 +43,8 @@ func TestServerDoesNotExceedConnectionPoolSize(t *testing.T) {
 
 	//we also want to know if the pool empties after timeout passes.
 	waitPeriodSeconds := 10
-	grace :=1
-	time.Sleep(time.Second*time.Duration(waitPeriodSeconds+grace))
+	grace := 1
+	time.Sleep(time.Second * time.Duration(waitPeriodSeconds+grace))
 	gotConns = osConnsWithLsof(pid)
 	log.Info().Msgf("j8a pid %s after timeout want pool 0, found %d using lsof", pid, gotConns)
 	if gotConns > 0 {

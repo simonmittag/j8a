@@ -113,8 +113,8 @@ func TestStatusCodeResponse_AsString(t *testing.T) {
 		AboutResponse: AboutResponse{
 			Version: "1",
 		},
-		Code:       0,
-		Message:    "msg",
+		Code:    0,
+		Message: "msg",
 	}
 
 	str := res.AsString()

@@ -57,7 +57,7 @@ func TestProcStatsAppendInOrder(t *testing.T) {
 	var history samples = make(samples, historyMaxSamples)
 	sample := getSample(proc)
 
-	for i:=0;i<historyMaxSamples;i++ {
+	for i := 0; i < historyMaxSamples; i++ {
 		history.append(sample)
 		if history[historyMaxSamples-1-i].pid != pid {
 			t.Errorf("sample not inserted")
@@ -155,10 +155,10 @@ func TestRSSGrowthRatesLow(t *testing.T) {
 func TestRSSGrowthRatesInsufficientData(t *testing.T) {
 	memory := samples{
 		sample{
-			pid:      0,
+			pid: 0,
 		},
 		sample{
-			pid:      0,
+			pid: 0,
 		},
 	}
 
@@ -179,5 +179,5 @@ func TestLogProcStats(t *testing.T) {
 	//runtime panic test only, no assertions
 	proc, _ := process.NewProcess(int32(os.Getpid()))
 	logProcStats(proc)
-	time.Sleep(time.Duration(time.Second*3))
+	time.Sleep(time.Duration(time.Second * 3))
 }

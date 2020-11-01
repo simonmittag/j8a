@@ -129,7 +129,7 @@ func (config Config) compileRoutePaths() *Config {
 
 func (config Config) compileRouteTransforms() *Config {
 	for i, route := range config.Routes {
-		if len(config.Routes[i].Transform)>0 && config.Routes[i].Transform[:1] != "/" {
+		if len(config.Routes[i].Transform) > 0 && config.Routes[i].Transform[:1] != "/" {
 			config.panic(fmt.Sprintf("config error, illegal route transform %s", route.Transform))
 		}
 	}

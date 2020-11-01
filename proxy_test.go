@@ -202,11 +202,11 @@ func mockProxy(upBody []byte, cl string, path string, transform string, requestU
 			startDate: time.Time{},
 		},
 		Route: &Route{
-			Path:           path,
-			PathRegex:      pr,
-			Transform:      transform,
-			Resource:       "mse7",
-			Policy:         "",
+			Path:      path,
+			PathRegex: pr,
+			Transform: transform,
+			Resource:  "mse7",
+			Policy:    "",
 		},
 	}
 	return proxy

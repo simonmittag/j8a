@@ -13,20 +13,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-    - name: Set up Go 1.15
-      uses: actions/setup-go@v1
-      with:
-        go-version: 1.15
-      id: go
+      - name: Set up Go 1.15
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.15
+        id: go
 
-    - name: Check out code into the Go module directory
-      uses: actions/checkout@v2
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
 
-    - name: Build
-      run: go build 
-    
-    - name: Test
-      run: go test -v -bench -cover
-      
-    - name: Install
-      run: go install github.com/simonmittag/j8a/cmd/j8a
+      - name: Build
+        run: go build
+
+      - name: Test
+        run: go test -v -bench -cover
+
+      - name: Install
+        run: go install github.com/simonmittag/j8a/cmd/j8a
