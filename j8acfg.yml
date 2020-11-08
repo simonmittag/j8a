@@ -14,25 +14,47 @@ connection:
     maxAttempts: 4
     poolSize: 8
     tlsInsecureSkipVerify: true
+
+jwt:
+  all:
+    alg: RS256
+    key: |
+      -----BEGIN PUBLIC KEY-----
+      MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAtXhyIjACJ9I/1RLe6ewu
+      BIzZ1275BUssbeUdE87qSNpkJHsn6lNKPUQVix/Hk8MDME6Et1zmyK7a2XoTovME
+      LgaHFSpH3i+Eqdl1jG9c0/vkHlwC6Ba+MLxvSCn6HVrcSMMGpOdVHUU4cuqDRpVO
+      4owby8e1ZSS1hdhaqs5t464BID7e907oe7hE8deqD9MXmGEimcXXEJTF84wH2xcB
+      qUO35dcc5SBJfPAibZ6U2AaNIEZJouUYMJOqwVttTBvKYwhuEwcxsPrYfkufbmGb
+      9dnTfKMJamujAwFf+YUwifYfpY763cQ4Ex7eHWVp4LlBB9zYYBBGp2ueLuhJSMWh
+      k0yP4KBk8ZDcIgLZKsTzYDdnvbecii7qAxRYMaSEkdjSj2JTmV/GtDBLmkejVNqo
+      9s/BvgEIDiPipTWesPKsaNigyhs6p6POJvOHkAAc3+88cfShLuDpobWmNEO6eOAG
+      GvACbWs+EOepMrvWuL53QWgJzJaKsxgGejQ1jVCIRZeaVsWiPrJFSUk87lWwxGpR
+      cSdvOATlGgjz28jL/CqtuAySGTb4S0LsBFgdpykrGChjbajxeMMjnV3khI4c/KXl
+      SmOsxHfJ5vzfbicw1Inn/4RoVxw72p4t1NN3va1W6jZt/FZ5R8xgV5T5zgeAEkSm
+      HJa/PXCQoBYwK7cuMJhjRaMCAwEAAQ==
+      -----END PUBLIC KEY-----
+
 policies:
   ab:
     - label: green
       weight: 0.8
     - label: blue
       weight: 0.2
+
 routes:
-  - path: "/todos"
+  - path: /todos
     resource: jsonplaceholder
-  - path: "/about"
+  - path: /about
     resource: about
-  - path: "/mse6/some"
+  - path: /mse6/some
     resource: mse61
-  - path: "/mse6/"
+  - path: /mse6/
     resource: mse6
     policy: ab
   - path: /mse6crazy
     transform: /mse6
     resource: mse6
+    jwt: all
   - path: /mse7
     transform: /mse6
     resource: mse6
@@ -79,6 +101,7 @@ routes:
     resource: badlocal
   - path: /badssl
     resource: badssl
+
 resources:
   jsonplaceholder:
     - url:

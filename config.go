@@ -18,6 +18,7 @@ import (
 type Config struct {
 	Policies   map[string]Policy
 	Routes     Routes
+	Jwt        map[string]Jwt
 	Resources  map[string][]ResourceMapping
 	Connection Connection
 }
@@ -230,6 +231,21 @@ func (config Config) setDefaultUpstreamParams() *Config {
 	}
 	if config.Connection.Upstream.MaxAttempts == 0 {
 		config.Connection.Upstream.MaxAttempts = 1
+	}
+	return &config
+}
+
+func (config Config) validateJwt() *Config {
+	if len(config.Jwt) > 0 {
+		for name, jwt := range config.Jwt {
+			jwt.Name = name
+			config.Jwt[name] = jwt
+			err := jwt.validate()
+			if err != nil {
+				config.panic(err.Error())
+			}
+		}
+		log.Debug().Msgf("parsed %d jwt configurations", len(config.Jwt))
 	}
 	return &config
 }

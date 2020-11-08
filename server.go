@@ -68,7 +68,8 @@ func BootStrap() {
 		sortRoutes().
 		addDefaultPolicy().
 		setDefaultUpstreamParams().
-		setDefaultDownstreamParams()
+		setDefaultDownstreamParams().
+		validateJwt()
 
 	Runner = &Runtime{
 		Config: *config,
