@@ -238,6 +238,7 @@ func (config Config) setDefaultUpstreamParams() *Config {
 func (config Config) validateJwt() *Config {
 	if len(config.Jwt) > 0 {
 		for name, jwt := range config.Jwt {
+			//update name on resource
 			jwt.Name = name
 			config.Jwt[name] = jwt
 			err := jwt.validate()

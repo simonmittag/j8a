@@ -31,9 +31,11 @@ func (jwt Jwt) validate() error {
 		p, p1 = pem.Decode([]byte(jwt.Key))
 		if len(p1) > 0 {
 			err = errors.New(fmt.Sprintf("jwt key [%s] only type PUBLIC KEY allowed but found more data, check your PEM block", jwt.Name))
+			return err
 		}
 		if p.Type != "PUBLIC KEY" && p.Type != "RSA PUBLIC KEY" {
 			err = errors.New(fmt.Sprintf("jwt key [%s] is not of type PUBLIC KEY || RSA PUBLIC KEY, check your PEM Block preamble", jwt.Name))
+			return err
 		}
 		var pub interface{}
 		pub, err = x509.ParsePKIXPublicKey(p.Bytes)
