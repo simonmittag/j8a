@@ -18,6 +18,40 @@ func jwtValErr(t *testing.T, jwt Jwt, want error) {
 	}
 }
 
+func jwtPass(t *testing.T, alg string, key string) {
+	jwtValErr(t, Jwt{
+		Alg: alg,
+		Key: key,
+	}, nil)
+}
+
+func jwtBadAlg(t *testing.T, alg string, key string) {
+	jwt := Jwt{
+		Alg: alg,
+		Key: key,
+	}
+	var want = errors.New("unable to determine key type, not one of: [RS256, RS384, RS512, PS256, PS384, PS512, HS256, HS384, HS512, ES256, ES384, ES512, none]")
+	jwtValErr(t, jwt, want)
+}
+
+func jwtBadKeyPreamble(t *testing.T, alg string, key string) {
+	jwt := Jwt{
+		Alg: alg,
+		Key: key,
+	}
+	var want = errors.New("jwt key [] only type PUBLIC KEY allowed but found more data, check your PEM block")
+	jwtValErr(t, jwt, want)
+}
+
+func jwtBadKeyAsn1(t *testing.T, alg string, key string) {
+	jwt := Jwt{
+		Alg: alg,
+		Key: key,
+	}
+	var want = errors.New("jwt key [] is not of type RSA PUBLIC KEY, check your PEM Block")
+	jwtValErr(t, jwt, want)
+}
+
 func TestJwtNonePass(t *testing.T) {
 	jwtPass(t, "none", "")
 }
@@ -126,36 +160,52 @@ func TestJwtPS512BadAsn1(t *testing.T) {
 	jwtBadKeyAsn1(t, "PS512", "-----BEGIN PUBLIC KEY-----\nCCCCCCQEFAAOCAg81111111111111111111AMIICCgKCAgEAtXhyIjACJ9I/1RLe6ewu\nBIzZ1275BUssbeUdE87qSNpkJHsn6lNKPUQVix/Hk8MDME6Et1zmyK7a2XoTovME\nLgaHFSpH3i+Eqdl1jG9c0/vkHlwC6Ba+MLxvSCn6HVrcSMMGpOdVHUU4cuqDRpVO\n4owby8e1ZSS1hdhaqs5t464BID7e907oe7hE8deqD9MXmGEimcXXEJTF84wH2xcB\nqUO35dcc5SBJfPAibZ6U2AaNIEZJouUYMJOqwVttTBvKYwhuEwcxsPrYfkufbmGb\n9dnTfKMJamujAwFf+YUwifYfpY763cQ4Ex7eHWVp4LlBB9zYYBBGp2ueLuhJSMWh\nk0yP4KBk8ZDcIgLZKsTzYDdnvbecii7qAxRYMaSEkdjSj2JTmV/GtDBLmkejVNqo\n9s/BvgEIDiPipTWesPKsaNigyhs6p6POJvOHkAAc3+88cfShLuDpobWmNEO6eOAG\nGvACbWs+EOepMrvWuL53QWgJzJaKsxgGejQ1jVCIRZeaVsWiPrJFSUk87lWwxGpR\ncSdvOATlGgjz28jL/CqtuAySGTb4S0LsBFgdpykrGChjbajxeMMjnV3khI4c/KXl\nSmOsxHfJ5vzfbicw1Inn/4RoVxw72p4t1NN3va1W6jZt/FZ5R8xgV5T5zgeAEkSm\nHJa/PXCQoBYwK7cuMJhjRaMCAwEAAQ==\n-----END PUBLIC KEY-----\n")
 }
 
-func jwtPass(t *testing.T, alg string, key string) {
-	jwtValErr(t, Jwt{
-		Alg: alg,
-		Key: key,
-	}, nil)
+func TestJwtHS256Pass(t *testing.T) {
+	jwtPass(t, "HS256", "key")
 }
 
-func jwtBadAlg(t *testing.T, alg string, key string) {
-	jwt := Jwt{
-		Alg: alg,
-		Key: key,
-	}
-	var want = errors.New("unable to determine key type, not one of: [RS256, RS384, RS512, PS256, PS384, PS512, HS256, HS384, HS512, ES256, ES384, ES512, none]")
-	jwtValErr(t, jwt, want)
+func TestJwtHS256BadAlg(t *testing.T) {
+	jwtBadAlg(t, "HS257", "key")
 }
 
-func jwtBadKeyPreamble(t *testing.T, alg string, key string) {
+func TestJwtHS256NoKey(t *testing.T) {
 	jwt := Jwt{
-		Alg: alg,
-		Key: key,
+		Alg:         "HS256",
+		Key:         "",
 	}
-	var want = errors.New("jwt key [] only type PUBLIC KEY allowed but found more data, check your PEM block")
-	jwtValErr(t, jwt, want)
+	jwtValErr(t, jwt, errors.New("jwt secret not found, check your configuration"))
 }
 
-func jwtBadKeyAsn1(t *testing.T, alg string, key string) {
-	jwt := Jwt{
-		Alg: alg,
-		Key: key,
-	}
-	var want = errors.New("jwt key [] is not of type RSA PUBLIC KEY, check your PEM Block")
-	jwtValErr(t, jwt, want)
+func TestJwtHS384Pass(t *testing.T) {
+	jwtPass(t, "HS384", "key")
 }
+
+func TestJwtHS384BadAlg(t *testing.T) {
+	jwtBadAlg(t, "HS385", "key")
+}
+
+func TestJwtHS384NoKey(t *testing.T) {
+	jwt := Jwt{
+		Alg:         "HS384",
+		Key:         "",
+	}
+	jwtValErr(t, jwt, errors.New("jwt secret not found, check your configuration"))
+}
+
+func TestJwtHS512Pass(t *testing.T) {
+	jwtPass(t, "HS512", "key")
+}
+
+func TestJwtHS512BadAlg(t *testing.T) {
+	jwtBadAlg(t, "HS513", "key")
+}
+
+func TestJwtHS512NoKey(t *testing.T) {
+	jwt := Jwt{
+		Alg:         "HS512",
+		Key:         "",
+	}
+	jwtValErr(t, jwt, errors.New("jwt secret not found, check your configuration"))
+}
+
+
