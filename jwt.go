@@ -23,6 +23,7 @@ const pemOverflow = "jwt key [%s] only type PUBLIC KEY allowed but found additio
 const pemTypeBad = "jwt key [%s] is not of type PUBLIC KEY, check your PEM Block preamble"
 const pemAsn1Bad = "jwt key [%s] is not of type RSA PUBLIC KEY, check your PEM Block"
 const keyTypeInvalid = "unable to determine key type, not one of: [RS256, RS384, RS512, PS256, PS384, PS512, HS256, HS384, HS512, ES256, ES384, ES512, none]"
+const ecdsaKeySizeBad = "jwt [%s] invalid key size for alg %s, parsed bitsize %d, check your configuration"
 
 func (jwt Jwt) validate() error {
 	var err error
@@ -72,7 +73,17 @@ func (jwt Jwt) validate() error {
 		pub, err = x509.ParsePKIXPublicKey(p.Bytes)
 		switch pub.(type) {
 		case *ecdsa.PublicKey:
-			jwt.ECDSAPublic = pub.(*ecdsa.PublicKey)
+			parsed := pub.(*ecdsa.PublicKey)
+			bitsize := parsed.Curve.Params().BitSize
+			if alg == jwa.ES256 && (bitsize != 256) {
+				err = errors.New(fmt.Sprintf(ecdsaKeySizeBad, jwt.Name, alg, bitsize))
+			} else if alg == jwa.ES384 && (bitsize != 384) {
+				err = errors.New(fmt.Sprintf(ecdsaKeySizeBad, jwt.Name, alg, bitsize))
+			} else if alg == jwa.ES512 && (bitsize != 521) {
+				err = errors.New(fmt.Sprintf(ecdsaKeySizeBad, jwt.Name, alg, bitsize))
+			} else {
+				jwt.ECDSAPublic = parsed
+			}
 		default:
 			err = errors.New(fmt.Sprintf(pemAsn1Bad, jwt.Name))
 		}

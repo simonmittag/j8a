@@ -178,7 +178,7 @@ func TestJwtES256BadAsn1(t *testing.T) {
 }
 
 func TestJwtES384Pass(t *testing.T) {
-	jwtPass(t, "ES384", "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEQQwrEUWQle75mz/T+wt4fXoAn39M\ngmCdZ3ZY3fXIkqQDOOq2JJ3x6Rayy1GTp7nlN88JqxX8UC71LdmbIyKi6g==\n-----END PUBLIC KEY-----\n")
+	jwtPass(t, "ES384", "-----BEGIN PUBLIC KEY-----\nMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEbzpBvrm4YDC8/AWuFNylOeApmVi0NpiR\nI4tQOE0y5bm7zjwjr/nvwKreCF0mT0NivYOzQfu6D5Wy1Jpgm0ebMDljSKEGkZwC\nP2/jogu9YzmaAnV/Re16ffln/n+tsATG\n-----END PUBLIC KEY-----")
 }
 
 func TestJwtES384BadAlg(t *testing.T) {
@@ -194,7 +194,7 @@ func TestJwtES384BadAsn1(t *testing.T) {
 }
 
 func TestJwtES512Pass(t *testing.T) {
-	jwtPass(t, "ES512", "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEQQwrEUWQle75mz/T+wt4fXoAn39M\ngmCdZ3ZY3fXIkqQDOOq2JJ3x6Rayy1GTp7nlN88JqxX8UC71LdmbIyKi6g==\n-----END PUBLIC KEY-----\n")
+	jwtPass(t, "ES512", "-----BEGIN PUBLIC KEY-----\nMIGbMBAGByqGSM49AgEGBSuBBAAjA4GGAAQAuObw6RyorEJfB+UUgkJcmfdIlLuK\nwO6KFjHF8u5+OPpHNZuq203djMAp07caPZsuEg2M0WIjdm10LefJhnepq/8B1AZT\nI/Kr/XahLw9Wn9/TDWXgLwaPnPk6jnzlkVFpts4mcvS2/ec/yBoPViHZ98sMwOoS\njTrSpJkw0BIo5qQSuGk=\n-----END PUBLIC KEY-----\n")
 }
 
 func TestJwtES512BadAlg(t *testing.T) {
