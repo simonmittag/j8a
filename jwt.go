@@ -19,6 +19,10 @@ type Jwt struct {
 	Secret      string
 }
 
+const pemOverflow = "jwt key [%s] only type PUBLIC KEY allowed but found more data, check your PEM block"
+const pemTypeBad = "jwt key [%s] is not of type PUBLIC KEY, check your PEM Block preamble"
+const pemAsn1Bad = "jwt key [%s] is not of type RSA PUBLIC KEY, check your PEM Block"
+
 func (jwt Jwt) validate() error {
 	var err error
 	var p *pem.Block
@@ -30,11 +34,11 @@ func (jwt Jwt) validate() error {
 	case jwa.RS256, jwa.RS384, jwa.RS512, jwa.PS256, jwa.PS384, jwa.PS512:
 		p, p1 = pem.Decode([]byte(jwt.Key))
 		if len(p1) > 0 {
-			err = errors.New(fmt.Sprintf("jwt key [%s] only type PUBLIC KEY allowed but found more data, check your PEM block", jwt.Name))
+			err = errors.New(fmt.Sprintf(pemOverflow, jwt.Name))
 			return err
 		}
 		if p.Type != "PUBLIC KEY" && p.Type != "RSA PUBLIC KEY" {
-			err = errors.New(fmt.Sprintf("jwt key [%s] is not of type PUBLIC KEY || RSA PUBLIC KEY, check your PEM Block preamble", jwt.Name))
+			err = errors.New(fmt.Sprintf(pemTypeBad, jwt.Name))
 			return err
 		}
 		var pub interface{}
@@ -43,15 +47,40 @@ func (jwt Jwt) validate() error {
 		case *rsa.PublicKey:
 			jwt.RSAPublic = pub.(*rsa.PublicKey)
 		default:
-			err = errors.New(fmt.Sprintf("jwt key [%s] is not of type RSA PUBLIC KEY, check your PEM Block", jwt.Name))
+			err = errors.New(fmt.Sprintf(pemAsn1Bad, jwt.Name))
 		}
 
 	case jwa.HS256, jwa.HS384, jwa.HS512:
-	case jwa.ES256, jwa.ES384, jwa.ES512:
-	case jwa.NoSignature:
 		if len(jwt.Key) > 0 {
 			jwt.Secret = jwt.Key
+		} else {
+			err = errors.New("jwt secret not found, check your configuration")
 		}
+
+	case jwa.ES256, jwa.ES384, jwa.ES512:
+		p, p1 = pem.Decode([]byte(jwt.Key))
+		if len(p1) > 0 {
+			err = errors.New(fmt.Sprintf(pemOverflow, jwt.Name))
+			return err
+		}
+		if p.Type != "PUBLIC KEY" {
+			err = errors.New(fmt.Sprintf(pemTypeBad, jwt.Name))
+			return err
+		}
+		var pub interface{}
+		pub, err = x509.ParsePKIXPublicKey(p.Bytes)
+		switch pub.(type) {
+		case *ecdsa.PublicKey:
+			jwt.ECDSAPublic = pub.(*ecdsa.PublicKey)
+		default:
+			err = errors.New(fmt.Sprintf(pemAsn1Bad, jwt.Name))
+		}
+
+	case jwa.NoSignature:
+		if len(jwt.Key) > 0 {
+			err = errors.New("none type signature does not allow key data, check your configuration")
+		}
+
 	default:
 		err = errors.New("unable to determine key type, not one of: [RS256, RS384, RS512, PS256, PS384, PS512, HS256, HS384, HS512, ES256, ES384, ES512, none]")
 	}
