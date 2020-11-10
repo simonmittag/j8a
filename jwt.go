@@ -19,9 +19,10 @@ type Jwt struct {
 	Secret      string
 }
 
-const pemOverflow = "jwt key [%s] only type PUBLIC KEY allowed but found more data, check your PEM block"
+const pemOverflow = "jwt key [%s] only type PUBLIC KEY allowed but found additional or invalid data, check your PEM block"
 const pemTypeBad = "jwt key [%s] is not of type PUBLIC KEY, check your PEM Block preamble"
 const pemAsn1Bad = "jwt key [%s] is not of type RSA PUBLIC KEY, check your PEM Block"
+const keyTypeInvalid = "unable to determine key type, not one of: [RS256, RS384, RS512, PS256, PS384, PS512, HS256, HS384, HS512, ES256, ES384, ES512, none]"
 
 func (jwt Jwt) validate() error {
 	var err error
@@ -82,7 +83,7 @@ func (jwt Jwt) validate() error {
 		}
 
 	default:
-		err = errors.New("unable to determine key type, not one of: [RS256, RS384, RS512, PS256, PS384, PS512, HS256, HS384, HS512, ES256, ES384, ES512, none]")
+		err = errors.New(keyTypeInvalid)
 	}
 
 	return err
