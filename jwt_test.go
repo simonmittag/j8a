@@ -53,6 +53,15 @@ func jwtBadKeyAsn1(t *testing.T, alg string, key string) {
 	jwtValErr(t, jwt, want)
 }
 
+func jwtBadKeySize(t *testing.T, alg string, key string, badKeySize int) {
+	jwt := Jwt{
+		Alg: alg,
+		Key: key,
+	}
+	var want = errors.New(fmt.Sprintf(ecdsaKeySizeBad, jwt.Name, jwt.Alg, badKeySize))
+	jwtValErr(t, jwt, want)
+}
+
 func TestJwtNonePass(t *testing.T) {
 	jwtPass(t, "none", "")
 }
@@ -177,6 +186,10 @@ func TestJwtES256BadAsn1(t *testing.T) {
 	jwtBadKeyAsn1(t, "ES256", "-----BEGIN PUBLIC KEY-----\nCCCCCCQEFAAOCAg81111111111111111111AMIICCgKCAgEAtXhyIjACJ9I/1RLe6ewu\nBIzZ1275BUssbeUdE87qSNpkJHsn6lNKPUQVix/Hk8MDME6Et1zmyK7a2XoTovME\nLgaHFSpH3i+Eqdl1jG9c0/vkHlwC6Ba+MLxvSCn6HVrcSMMGpOdVHUU4cuqDRpVO\n4owby8e1ZSS1hdhaqs5t464BID7e907oe7hE8deqD9MXmGEimcXXEJTF84wH2xcB\nqUO35dcc5SBJfPAibZ6U2AaNIEZJouUYMJOqwVttTBvKYwhuEwcxsPrYfkufbmGb\n9dnTfKMJamujAwFf+YUwifYfpY763cQ4Ex7eHWVp4LlBB9zYYBBGp2ueLuhJSMWh\nk0yP4KBk8ZDcIgLZKsTzYDdnvbecii7qAxRYMaSEkdjSj2JTmV/GtDBLmkejVNqo\n9s/BvgEIDiPipTWesPKsaNigyhs6p6POJvOHkAAc3+88cfShLuDpobWmNEO6eOAG\nGvACbWs+EOepMrvWuL53QWgJzJaKsxgGejQ1jVCIRZeaVsWiPrJFSUk87lWwxGpR\ncSdvOATlGgjz28jL/CqtuAySGTb4S0LsBFgdpykrGChjbajxeMMjnV3khI4c/KXl\nSmOsxHfJ5vzfbicw1Inn/4RoVxw72p4t1NN3va1W6jZt/FZ5R8xgV5T5zgeAEkSm\nHJa/PXCQoBYwK7cuMJhjRaMCAwEAAQ==\n-----END PUBLIC KEY-----\n")
 }
 
+func TestJwtES256BadKeySize(t *testing.T) {
+	jwtBadKeySize(t, "ES256", "-----BEGIN PUBLIC KEY-----\nMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEbzpBvrm4YDC8/AWuFNylOeApmVi0NpiR\nI4tQOE0y5bm7zjwjr/nvwKreCF0mT0NivYOzQfu6D5Wy1Jpgm0ebMDljSKEGkZwC\nP2/jogu9YzmaAnV/Re16ffln/n+tsATG\n-----END PUBLIC KEY-----\n", 384)
+}
+
 func TestJwtES384Pass(t *testing.T) {
 	jwtPass(t, "ES384", "-----BEGIN PUBLIC KEY-----\nMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEbzpBvrm4YDC8/AWuFNylOeApmVi0NpiR\nI4tQOE0y5bm7zjwjr/nvwKreCF0mT0NivYOzQfu6D5Wy1Jpgm0ebMDljSKEGkZwC\nP2/jogu9YzmaAnV/Re16ffln/n+tsATG\n-----END PUBLIC KEY-----")
 }
@@ -193,6 +206,10 @@ func TestJwtES384BadAsn1(t *testing.T) {
 	jwtBadKeyAsn1(t, "ES384", "-----BEGIN PUBLIC KEY-----\nCCCCCCQEFAAOCAg81111111111111111111AMIICCgKCAgEAtXhyIjACJ9I/1RLe6ewu\nBIzZ1275BUssbeUdE87qSNpkJHsn6lNKPUQVix/Hk8MDME6Et1zmyK7a2XoTovME\nLgaHFSpH3i+Eqdl1jG9c0/vkHlwC6Ba+MLxvSCn6HVrcSMMGpOdVHUU4cuqDRpVO\n4owby8e1ZSS1hdhaqs5t464BID7e907oe7hE8deqD9MXmGEimcXXEJTF84wH2xcB\nqUO35dcc5SBJfPAibZ6U2AaNIEZJouUYMJOqwVttTBvKYwhuEwcxsPrYfkufbmGb\n9dnTfKMJamujAwFf+YUwifYfpY763cQ4Ex7eHWVp4LlBB9zYYBBGp2ueLuhJSMWh\nk0yP4KBk8ZDcIgLZKsTzYDdnvbecii7qAxRYMaSEkdjSj2JTmV/GtDBLmkejVNqo\n9s/BvgEIDiPipTWesPKsaNigyhs6p6POJvOHkAAc3+88cfShLuDpobWmNEO6eOAG\nGvACbWs+EOepMrvWuL53QWgJzJaKsxgGejQ1jVCIRZeaVsWiPrJFSUk87lWwxGpR\ncSdvOATlGgjz28jL/CqtuAySGTb4S0LsBFgdpykrGChjbajxeMMjnV3khI4c/KXl\nSmOsxHfJ5vzfbicw1Inn/4RoVxw72p4t1NN3va1W6jZt/FZ5R8xgV5T5zgeAEkSm\nHJa/PXCQoBYwK7cuMJhjRaMCAwEAAQ==\n-----END PUBLIC KEY-----\n")
 }
 
+func TestJwtES384BadKeySize(t *testing.T) {
+	jwtBadKeySize(t, "ES384", "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEQQwrEUWQle75mz/T+wt4fXoAn39M\ngmCdZ3ZY3fXIkqQDOOq2JJ3x6Rayy1GTp7nlN88JqxX8UC71LdmbIyKi6g==\n-----END PUBLIC KEY-----\n", 256)
+}
+
 func TestJwtES512Pass(t *testing.T) {
 	jwtPass(t, "ES512", "-----BEGIN PUBLIC KEY-----\nMIGbMBAGByqGSM49AgEGBSuBBAAjA4GGAAQAuObw6RyorEJfB+UUgkJcmfdIlLuK\nwO6KFjHF8u5+OPpHNZuq203djMAp07caPZsuEg2M0WIjdm10LefJhnepq/8B1AZT\nI/Kr/XahLw9Wn9/TDWXgLwaPnPk6jnzlkVFpts4mcvS2/ec/yBoPViHZ98sMwOoS\njTrSpJkw0BIo5qQSuGk=\n-----END PUBLIC KEY-----\n")
 }
@@ -207,6 +224,10 @@ func TestJwtES512BadKeyPreamble(t *testing.T) {
 
 func TestJwtES512BadAsn1(t *testing.T) {
 	jwtBadKeyAsn1(t, "ES512", "-----BEGIN PUBLIC KEY-----\nCCCCCCQEFAAOCAg81111111111111111111AMIICCgKCAgEAtXhyIjACJ9I/1RLe6ewu\nBIzZ1275BUssbeUdE87qSNpkJHsn6lNKPUQVix/Hk8MDME6Et1zmyK7a2XoTovME\nLgaHFSpH3i+Eqdl1jG9c0/vkHlwC6Ba+MLxvSCn6HVrcSMMGpOdVHUU4cuqDRpVO\n4owby8e1ZSS1hdhaqs5t464BID7e907oe7hE8deqD9MXmGEimcXXEJTF84wH2xcB\nqUO35dcc5SBJfPAibZ6U2AaNIEZJouUYMJOqwVttTBvKYwhuEwcxsPrYfkufbmGb\n9dnTfKMJamujAwFf+YUwifYfpY763cQ4Ex7eHWVp4LlBB9zYYBBGp2ueLuhJSMWh\nk0yP4KBk8ZDcIgLZKsTzYDdnvbecii7qAxRYMaSEkdjSj2JTmV/GtDBLmkejVNqo\n9s/BvgEIDiPipTWesPKsaNigyhs6p6POJvOHkAAc3+88cfShLuDpobWmNEO6eOAG\nGvACbWs+EOepMrvWuL53QWgJzJaKsxgGejQ1jVCIRZeaVsWiPrJFSUk87lWwxGpR\ncSdvOATlGgjz28jL/CqtuAySGTb4S0LsBFgdpykrGChjbajxeMMjnV3khI4c/KXl\nSmOsxHfJ5vzfbicw1Inn/4RoVxw72p4t1NN3va1W6jZt/FZ5R8xgV5T5zgeAEkSm\nHJa/PXCQoBYwK7cuMJhjRaMCAwEAAQ==\n-----END PUBLIC KEY-----\n")
+}
+
+func TestJwtES512BadKeySize(t *testing.T) {
+	jwtBadKeySize(t, "ES512", "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEQQwrEUWQle75mz/T+wt4fXoAn39M\ngmCdZ3ZY3fXIkqQDOOq2JJ3x6Rayy1GTp7nlN88JqxX8UC71LdmbIyKi6g==\n-----END PUBLIC KEY-----\n", 256)
 }
 
 func TestJwtHS256Pass(t *testing.T) {
