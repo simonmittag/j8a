@@ -63,13 +63,13 @@ func BootStrap() {
 		load().
 		reApplyResourceSchemes().
 		reApplyResourceNames().
+		validateJwt().
 		compileRoutePaths().
 		compileRouteTransforms().
-		sortRoutes().
+		validateRoutes().
 		addDefaultPolicy().
 		setDefaultUpstreamParams().
-		setDefaultDownstreamParams().
-		validateJwt()
+		setDefaultDownstreamParams()
 
 	Runner = &Runtime{
 		Config: *config,

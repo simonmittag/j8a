@@ -29,6 +29,7 @@ type Route struct {
 	Transform string
 	Resource  string
 	Policy    string
+	Jwt       string
 }
 
 func (route Route) matchURI(request *http.Request) bool {
@@ -88,4 +89,8 @@ func (route Route) mapURL(proxy *Proxy) (*URL, string, bool) {
 		Msg("route not mapped")
 
 	return nil, "", false
+}
+
+func (route Route) hasJwt() bool {
+	return len(route.Jwt) > 0
 }

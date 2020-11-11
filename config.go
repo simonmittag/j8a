@@ -106,11 +106,16 @@ func (config Config) reApplyResourceNames() *Config {
 	return &config
 }
 
-func (config Config) sortRoutes() *Config {
+func (config Config) validateRoutes() *Config {
 	//prep routes with leading slash
 	for i, _ := range config.Routes {
 		if strings.Index(config.Routes[i].Path, "/") != 0 {
 			config.Routes[i].Path = "/" + config.Routes[i].Path
+		}
+		if config.Routes[i].hasJwt() {
+			if _, ok := config.Jwt[config.Routes[i].Jwt]; !ok {
+				config.panic(fmt.Sprintf("route [%s] jwt [%s] not found, check your configuration", config.Routes[i].Path, config.Routes[i].Jwt))
+			}
 		}
 	}
 	sort.Sort(Routes(config.Routes))
