@@ -503,3 +503,20 @@ func (proxy *Proxy) shouldGzipEncodeResponseBody() bool {
 func (proxy *Proxy) shouldGzipDecodeResponseBody() bool {
 	return !proxy.Dwn.Resp.SendGzip && proxy.Up.Atmpt.isGzip
 }
+
+func (proxy *Proxy) validateJwt() bool {
+	//get bearer token from request. feed into lib. check signature. check expiry. return true || false.
+	jwtpass := false
+	ev := log.Trace().
+		Str("dwnReqPath", proxy.Dwn.Path).
+		Str(XRequestID, proxy.XRequestID)
+
+	if jwtpass {
+		ev.Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+			Msg("jwt token successfully validated")
+	} else {
+		ev.Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+			Msg("jwt token rejected")
+	}
+	return jwtpass
+}
