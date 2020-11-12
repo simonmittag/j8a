@@ -25,7 +25,7 @@ const pemAsn1Bad = "jwt key [%s] is not of type RSA PUBLIC KEY, check your PEM B
 const keyTypeInvalid = "unable to determine key type, not one of: [RS256, RS384, RS512, PS256, PS384, PS512, HS256, HS384, HS512, ES256, ES384, ES512, none]"
 const ecdsaKeySizeBad = "jwt [%s] invalid key size for alg %s, parsed bitsize %d, check your configuration"
 
-func (jwt Jwt) validate() error {
+func (jwt *Jwt) validate() error {
 	var err error
 	var p *pem.Block
 	var p1 []byte

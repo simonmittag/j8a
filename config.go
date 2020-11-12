@@ -18,7 +18,7 @@ import (
 type Config struct {
 	Policies   map[string]Policy
 	Routes     Routes
-	Jwt        map[string]Jwt
+	Jwt        map[string]*Jwt
 	Resources  map[string][]ResourceMapping
 	Connection Connection
 }
@@ -245,11 +245,11 @@ func (config Config) validateJwt() *Config {
 		for name, jwt := range config.Jwt {
 			//update name on resource
 			jwt.Name = name
-			config.Jwt[name] = jwt
 			err := jwt.validate()
 			if err != nil {
 				config.panic(err.Error())
 			}
+			config.Jwt[name] = jwt
 		}
 		log.Debug().Msgf("parsed %d jwt configurations", len(config.Jwt))
 	}

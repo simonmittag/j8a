@@ -5,8 +5,11 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/lestrrat-go/jwx/jwa"
+	"github.com/lestrrat-go/jwx/jwt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -22,10 +25,12 @@ var httpUpstreamMaxAttempts int
 type TLSType string
 
 const (
-	TLS12       TLSType = "TLS1.2"
-	TLS13       TLSType = "TLS1.3"
-	TLS_UNKNOWN TLSType = "unknown"
-	TLS_NONE    TLSType = "none"
+	TLS12         TLSType = "TLS1.2"
+	TLS13         TLSType = "TLS1.3"
+	TLS_UNKNOWN   TLSType = "unknown"
+	TLS_NONE      TLSType = "none"
+	Authorization         = "Authorization"
+	Sep                   = " "
 )
 
 //RFC7231 4.2.1
@@ -504,19 +509,46 @@ func (proxy *Proxy) shouldGzipDecodeResponseBody() bool {
 	return !proxy.Dwn.Resp.SendGzip && proxy.Up.Atmpt.isGzip
 }
 
+//get bearer token from request. feed into lib. check signature. check expiry. return true || false.
 func (proxy *Proxy) validateJwt() bool {
-	//get bearer token from request. feed into lib. check signature. check expiry. return true || false.
-	jwtpass := false
+	var token string = ""
+	var err error
+	ok := false
+
 	ev := log.Trace().
 		Str("dwnReqPath", proxy.Dwn.Path).
 		Str(XRequestID, proxy.XRequestID)
 
-	if jwtpass {
+	auth := proxy.Dwn.Req.Header.Get(Authorization)
+	bearer := strings.Split(auth, Sep)
+
+	if len(bearer) > 1 {
+		token = bearer[1]
+		routeSec := Runner.Jwt[proxy.Route.Jwt]
+		alg := *new(jwa.SignatureAlgorithm)
+		alg.Accept(routeSec.Alg)
+
+		switch alg {
+		case jwa.RS256, jwa.RS384, jwa.RS512, jwa.PS256, jwa.PS384, jwa.PS512:
+			_, err = jwt.ParseVerify(bytes.NewReader([]byte(token)), alg, routeSec.RSAPublic)
+			ok = err == nil
+		case jwa.ES256, jwa.ES384, jwa.ES512:
+			_, err = jwt.ParseVerify(bytes.NewReader([]byte(token)), alg, routeSec.ECDSAPublic)
+			ok = err == nil
+		case jwa.HS256, jwa.HS384, jwa.HS512:
+			_, err = jwt.ParseVerify(bytes.NewReader([]byte(token)), alg, routeSec.Secret)
+			ok = err == nil
+		}
+	} else {
+		err = errors.New("bearer token not present or invalid")
+	}
+
+	if ok {
 		ev.Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
-			Msg("jwt token successfully validated")
+			Msg("jwt token validated")
 	} else {
 		ev.Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
-			Msg("jwt token rejected")
+			Msgf("jwt token rejected, cause: %v", err)
 	}
-	return jwtpass
+	return ok
 }
