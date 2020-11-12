@@ -308,7 +308,7 @@ func TestParseRoute(t *testing.T) {
 
 func TestSortRoutes(t *testing.T) {
 	configJson := []byte("{\"routes\": [{\n\t\t\t\"path\": \"/about\",\n\t\t\t\"resource\": \"aboutj8a\"\n\t\t},\n\t\t{\n\t\t\t\"path\": \"/customer\",\n\t\t\t\"resource\": \"customer\",\n\t\t\t\"policy\": \"ab\"\n\t\t}\n\t]}")
-	config := new(Config).parse(configJson).sortRoutes()
+	config := new(Config).parse(configJson).validateRoutes()
 
 	customer := config.Routes[0]
 	if customer.Path != "/customer" {

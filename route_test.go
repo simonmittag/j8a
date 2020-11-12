@@ -131,7 +131,7 @@ func BenchmarkRouteMatchingRegex(b *testing.B) {
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 
 	config := new(Config).readYmlFile("./j8acfg.yml")
-	config = config.compileRoutePaths().sortRoutes()
+	config = config.compileRoutePaths().validateRoutes()
 
 	for i := 0; i < b.N; i++ {
 		for _, route := range config.Routes {
@@ -147,7 +147,7 @@ func BenchmarkRouteMatchingString(b *testing.B) {
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 
 	config := new(Config).readYmlFile("./j8acfg.yml")
-	config = config.sortRoutes()
+	config = config.validateRoutes()
 
 	for i := 0; i < b.N; i++ {
 		for _, route := range config.Routes {
