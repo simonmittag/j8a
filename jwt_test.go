@@ -331,6 +331,18 @@ func BenchmarkJwtPS384(b *testing.B) {
 //	DoBenchForAlgBearerAndKey(b, alg, bearer, pemb)
 //}
 
+func BenchmarkJwtHS256(b *testing.B) {
+	DoBenchForAlgBearerAndSecret(b, jwa.HS256, "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.sHm-91nvgMEqZelFK6sQhWBGtshLy-A1FYFkZQ62sE4", "your-real-secret")
+}
+
+func BenchmarkJwtHS384(b *testing.B) {
+	DoBenchForAlgBearerAndSecret(b, jwa.HS384, "eyJhbGciOiJIUzM4NCIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.YZ3u3q6lqhr2aZJb0sHIiv86Sc-osMy4_IxMVMh8VOJtWPxr37nw9x4mL7RMn1FE\n", "your-real-secret")
+}
+
+func BenchmarkJwtHS512(b *testing.B) {
+	DoBenchForAlgBearerAndSecret(b, jwa.HS512, "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.S14tgmkZES1f6l8G3qXOPnn9DEA60o45tZyw6l3QHCdwvc5PnSx3iOnJWZb3pXqyS3WOJK55BgPm43KVreqhAg\n", "your-real-secret")
+}
+
 func BenchmarkJwtES256(b *testing.B) {
 	bearer := "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.PVhXCdrAglq2TuRBuF6QFjTV2Lo33F44NQS0kwFLr0d9IjlGIknEiRSZ0UCQxktVX_bUcEA3f5vhWxAUmAAZcg\n"
 	pemb := "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEQQwrEUWQle75mz/T+wt4fXoAn39M\ngmCdZ3ZY3fXIkqQDOOq2JJ3x6Rayy1GTp7nlN88JqxX8UC71LdmbIyKi6g==\n-----END PUBLIC KEY-----\n"
@@ -361,6 +373,15 @@ func DoBenchForAlgBearerAndKey(b *testing.B, alg jwa.SignatureAlgorithm, bearer 
 
 	for i := 0; i < b.N; i++ {
 		_, err :=jwt.ParseVerify(bytes.NewReader([]byte(bearer)), alg, pub)
+		if err!=nil {
+			b.Errorf("key verification failed, cause: %v", err)
+		}
+	}
+}
+
+func DoBenchForAlgBearerAndSecret(b *testing.B, alg jwa.SignatureAlgorithm, bearer string, secret string) {
+	for i := 0; i < b.N; i++ {
+		_, err :=jwt.ParseVerify(bytes.NewReader([]byte(bearer)), alg, []byte(secret))
 		if err!=nil {
 			b.Errorf("key verification failed, cause: %v", err)
 		}
