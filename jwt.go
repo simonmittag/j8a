@@ -8,15 +8,17 @@ import (
 	"errors"
 	"fmt"
 	"github.com/lestrrat-go/jwx/jwa"
+	"strconv"
 )
 
 type Jwt struct {
-	Name        string
-	Alg         string
-	Key         string
-	RSAPublic   *rsa.PublicKey
-	ECDSAPublic *ecdsa.PublicKey
-	Secret      string
+	Name                  string
+	Alg                   string
+	Key                   string
+	AcceptableSkewSeconds string
+	RSAPublic             *rsa.PublicKey
+	ECDSAPublic           *ecdsa.PublicKey
+	Secret                string
 }
 
 const pemOverflow = "jwt key [%s] only type PUBLIC KEY allowed but found additional or invalid data, check your PEM block"
@@ -31,6 +33,17 @@ func (jwt *Jwt) validate() error {
 	var p1 []byte
 	alg := *new(jwa.SignatureAlgorithm)
 	err = alg.Accept(jwt.Alg)
+
+	if len(jwt.AcceptableSkewSeconds) > 0 {
+		secs, nonnumeric := strconv.Atoi(jwt.AcceptableSkewSeconds)
+		if nonnumeric != nil || secs < 0 {
+			err = errors.New(fmt.Sprintf("invalid jwt acceptable skew seconds, must be 0 or greater, was %s", jwt.AcceptableSkewSeconds))
+			return err
+		}
+
+	} else {
+		jwt.AcceptableSkewSeconds = "120"
+	}
 
 	switch alg {
 	case jwa.RS256, jwa.RS384, jwa.RS512, jwa.PS256, jwa.PS384, jwa.PS512:
