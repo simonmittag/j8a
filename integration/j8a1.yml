@@ -20,11 +20,59 @@ policies:
       weight: 0.8
     - label: blue
       weight: 0.2
+jwt:
+  jwtrs256:
+    acceptableSkewSeconds: 121
+    alg: RS256
+    key: |
+      -----BEGIN PUBLIC KEY-----
+      MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAtXhyIjACJ9I/1RLe6ewu
+      BIzZ1275BUssbeUdE87qSNpkJHsn6lNKPUQVix/Hk8MDME6Et1zmyK7a2XoTovME
+      LgaHFSpH3i+Eqdl1jG9c0/vkHlwC6Ba+MLxvSCn6HVrcSMMGpOdVHUU4cuqDRpVO
+      4owby8e1ZSS1hdhaqs5t464BID7e907oe7hE8deqD9MXmGEimcXXEJTF84wH2xcB
+      qUO35dcc5SBJfPAibZ6U2AaNIEZJouUYMJOqwVttTBvKYwhuEwcxsPrYfkufbmGb
+      9dnTfKMJamujAwFf+YUwifYfpY763cQ4Ex7eHWVp4LlBB9zYYBBGp2ueLuhJSMWh
+      k0yP4KBk8ZDcIgLZKsTzYDdnvbecii7qAxRYMaSEkdjSj2JTmV/GtDBLmkejVNqo
+      9s/BvgEIDiPipTWesPKsaNigyhs6p6POJvOHkAAc3+88cfShLuDpobWmNEO6eOAG
+      GvACbWs+EOepMrvWuL53QWgJzJaKsxgGejQ1jVCIRZeaVsWiPrJFSUk87lWwxGpR
+      cSdvOATlGgjz28jL/CqtuAySGTb4S0LsBFgdpykrGChjbajxeMMjnV3khI4c/KXl
+      SmOsxHfJ5vzfbicw1Inn/4RoVxw72p4t1NN3va1W6jZt/FZ5R8xgV5T5zgeAEkSm
+      HJa/PXCQoBYwK7cuMJhjRaMCAwEAAQ==
+      -----END PUBLIC KEY-----
+  jwths256:
+    alg: HS256
+    key: i'mthekey
+  jwtes256:
+    alg: ES256
+    key: |
+      -----BEGIN PUBLIC KEY-----
+      MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEQQwrEUWQle75mz/T+wt4fXoAn39M
+      gmCdZ3ZY3fXIkqQDOOq2JJ3x6Rayy1GTp7nlN88JqxX8UC71LdmbIyKi6g==
+      -----END PUBLIC KEY-----
+  jwtnone:
+    alg: none
+
 routes:
   - path: "/about"
     resource: about
   - path: "/mse6/some"
     resource: mse61
+  - path: /jwths256
+    transform: /mse6
+    resource: mse6
+    jwt: jwths256
+  - path: /jwtes256
+    transform: /mse6
+    resource: mse6
+    jwt: jwtes256
+  - path: /jwtrs256
+    transform: /mse6
+    resource: mse6
+    jwt: jwtrs256
+  - path: /jwtnone
+    transform: /mse6
+    resource: mse6
+    jwt: jwtnone
   - path: /mse7
     transform: /mse6
     resource: mse6
