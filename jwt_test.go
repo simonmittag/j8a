@@ -239,6 +239,26 @@ func TestJwtHS256Pass(t *testing.T) {
 	jwtPass(t, "HS256", "key")
 }
 
+func BenchmarkJwtHS256_256(b *testing.B) {
+	DoBenchForAlgBearerAndSecret(b, jwa.HS256, "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.OzPJr1hU0ffvHP6OH646IHbLw277gkswa2U-3McxAOM",
+		"0123456789abcdef0123456789abcdef")
+}
+
+func BenchmarkJwtHS256_512(b *testing.B) {
+	DoBenchForAlgBearerAndSecret(b, jwa.HS256, "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.wC3uGUE3p1WdS9Yw_NfjZn8F0B-NmB5DT4h8duOE5Gg",
+		"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
+}
+
+func BenchmarkJwtHS256_1024(b *testing.B) {
+	DoBenchForAlgBearerAndSecret(b, jwa.HS256, "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.o2XgUCY5i9BshAWQ4PNjaqYuGMbdvoJ6YD3Vt4fA0ZQ",
+		"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
+}
+
+func BenchmarkJwtHS256_2048(b *testing.B) {
+	DoBenchForAlgBearerAndSecret(b, jwa.HS256, "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.7t8Bbbo520dN4LdsUvL3gEtHrWLSPYPVzS8cAll8S7E",
+		"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
+}
+
 func TestJwtHS256BadAlg(t *testing.T) {
 	jwtBadAlg(t, "HS257", "key")
 }
