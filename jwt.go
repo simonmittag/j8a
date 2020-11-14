@@ -18,7 +18,7 @@ type Jwt struct {
 	AcceptableSkewSeconds string
 	RSAPublic             *rsa.PublicKey
 	ECDSAPublic           *ecdsa.PublicKey
-	Secret                string
+	Secret                []byte
 }
 
 const pemOverflow = "jwt key [%s] only type PUBLIC KEY allowed but found additional or invalid data, check your PEM block"
@@ -67,7 +67,7 @@ func (jwt *Jwt) validate() error {
 
 	case jwa.HS256, jwa.HS384, jwa.HS512:
 		if len(jwt.Key) > 0 {
-			jwt.Secret = jwt.Key
+			jwt.Secret = []byte(jwt.Key)
 		} else {
 			err = errors.New("jwt secret not found, check your configuration")
 		}

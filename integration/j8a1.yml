@@ -41,7 +41,7 @@ jwt:
       -----END PUBLIC KEY-----
   jwths256:
     alg: HS256
-    key: i'mthekey
+    key: your-real-secret
   jwtes256:
     alg: ES256
     key: |
