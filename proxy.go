@@ -546,9 +546,10 @@ func (proxy *Proxy) validateJwt() bool {
 				jwt.WithVerify(alg, routeSec.Secret))
 		case jwa.NoSignature:
 			parsed, err = jwt.Parse(bytes.NewReader([]byte(token)))
-			if parsed != nil {
-				err = jwt.Verify(parsed)
-			}
+		}
+
+		if parsed != nil && err == nil {
+			err = jwt.Verify(parsed)
 		}
 
 		if parsed != nil {
