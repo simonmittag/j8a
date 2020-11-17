@@ -53,7 +53,7 @@ func proxyHandler(response http.ResponseWriter, request *http.Request) {
 		if matched = route.matchURI(request); matched {
 			proxy.setRoute(&route)
 			if route.hasJwt() && !proxy.validateJwt() {
-				sendStatusCodeAsJSON(proxy.respondWith(401, "jwt bearer token missing, invalid or unauthorized"))
+				sendStatusCodeAsJSON(proxy.respondWith(401, "jwt bearer token missing, invalid, expired or unauthorized"))
 				return
 			}
 			url, label, mapped := route.mapURL(proxy)

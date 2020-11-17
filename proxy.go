@@ -529,30 +529,37 @@ func (proxy *Proxy) validateJwt() bool {
 		alg.Accept(routeSec.Alg)
 
 		//this is safe because of the config loader validating it earlier.
-		s, _ := strconv.Atoi(routeSec.AcceptableSkewSeconds)
-		skew := time.Second * time.Duration(s)
+		//s, _ := strconv.Atoi(routeSec.AcceptableSkewSeconds)
+		//skew := time.Second * time.Duration(s)
+
+		var parsed jwt.Token
 
 		switch alg {
 		case jwa.RS256, jwa.RS384, jwa.RS512, jwa.PS256, jwa.PS384, jwa.PS512:
-			_, err = jwt.Parse(bytes.NewReader([]byte(token)),
-				jwt.WithVerify(alg, routeSec.RSAPublic),
-				jwt.WithAcceptableSkew(skew))
+			parsed, err = jwt.Parse(bytes.NewReader([]byte(token)),
+				jwt.WithVerify(alg, routeSec.RSAPublic))
 		case jwa.ES256, jwa.ES384, jwa.ES512:
-			_, err = jwt.Parse(bytes.NewReader([]byte(token)),
-				jwt.WithVerify(alg, routeSec.ECDSAPublic),
-				jwt.WithAcceptableSkew(skew))
+			parsed, err = jwt.Parse(bytes.NewReader([]byte(token)),
+				jwt.WithVerify(alg, routeSec.ECDSAPublic))
 		case jwa.HS256, jwa.HS384, jwa.HS512:
-			_, err = jwt.Parse(bytes.NewReader([]byte(token)),
-				jwt.WithVerify(alg, routeSec.Secret),
-				jwt.WithAcceptableSkew(skew))
+			parsed, err = jwt.Parse(bytes.NewReader([]byte(token)),
+				jwt.WithVerify(alg, routeSec.Secret))
 		case jwa.NoSignature:
-			_, err = jwt.Parse(bytes.NewReader([]byte(token)),
-				jwt.WithAcceptableSkew(skew))
+			parsed, err = jwt.Parse(bytes.NewReader([]byte(token)))
+			if parsed != nil {
+				err = jwt.Verify(parsed)
+			}
+		}
+
+		if parsed != nil {
+			ev.Str("jwtExpUtcIso", parsed.Expiration().Format(time.RFC3339))
+			ev.Str("jwtExpLclIso", parsed.Expiration().Local().Format(time.RFC3339))
+			ev.Int64("jwtExpUnix", parsed.Expiration().Unix())
 		}
 
 		ok = err == nil
 	} else {
-		err = errors.New("bearer token not present or invalid")
+		err = errors.New("bearer token not present")
 	}
 
 	if ok {
