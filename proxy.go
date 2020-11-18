@@ -553,14 +553,28 @@ func (proxy *Proxy) validateJwt() bool {
 		}
 
 		if parsed != nil {
-			ev.Str("jwtExpUtcIso", parsed.Expiration().Format(time.RFC3339))
-			ev.Str("jwtExpLclIso", parsed.Expiration().Local().Format(time.RFC3339))
-			ev.Int64("jwtExpUnix", parsed.Expiration().Unix())
+			if parsed.NotBefore().Unix() > 1 {
+				ev.Bool("jwtClaimsNbf", true)
+				ev.Str("jwtNbfUtcIso", parsed.NotBefore().Format(time.RFC3339))
+				ev.Str("jwtNbfLclIso", parsed.NotBefore().Local().Format(time.RFC3339))
+				ev.Int64("jwtNbfUnix", parsed.NotBefore().Unix())
+			} else {
+				ev.Bool("jwtClaimsNbf", false)
+			}
+
+			if parsed.Expiration().Unix() > 1 {
+				ev.Bool("jwtClaimsExp", true)
+				ev.Str("jwtExpUtcIso", parsed.Expiration().Format(time.RFC3339))
+				ev.Str("jwtExpLclIso", parsed.Expiration().Local().Format(time.RFC3339))
+				ev.Int64("jwtExpUnix", parsed.Expiration().Unix())
+			} else {
+				ev.Bool("jwtClaimsExp", false)
+			}
 		}
 
 		ok = err == nil
 	} else {
-		err = errors.New("bearer token not present")
+		err = errors.New("jwt bearer token not present")
 	}
 
 	if ok {
