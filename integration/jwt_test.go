@@ -11,7 +11,7 @@ func TestJwtNoneNotExpired(t *testing.T) {
 }
 
 func TestJwtNoneNoExpiry(t *testing.T) {
-	DoJwtTest(t, "/jwtnone", 200, "eyJ0eXAiOiJKV1QiLCJhbGciOiJub25lIn0.eyJpc3MiOiJqb2UiLCJodHRwOi8vZXhhbXBsZS5jb20vaXNfcm9vdCI6dHJ1ZSwianRpIjoiYTg4ZjU3MmItNDE2ZS00OTVlLTk0NWMtNGMwMmRjOWRhYjI5IiwiaWF0IjoxNjA1NjQ2MTk3LCJleHAiOjE2MDU2NDk3OTd9.")
+	DoJwtTest(t, "/jwtnone", 200, "eyJ0eXAiOiJKV1QiLCJhbGciOiJub25lIn0.eyJpc3MiOiJqb2UiLCJodHRwOi8vZXhhbXBsZS5jb20vaXNfcm9vdCI6dHJ1ZSwianRpIjoiZTI4ZGY3MTItMGNmNy00ZTVlLWE3NjUtYjE0MGQwM2IwNDRjIiwiaWF0IjoxNjA1NjY3NDEzLCJleHAiOjE2MDU2NzEwMTN9.")
 }
 
 func TestJwtNoneExpired(t *testing.T) {
