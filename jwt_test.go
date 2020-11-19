@@ -27,14 +27,14 @@ func jwtValErr(t *testing.T, jwt Jwt, want error) {
 func jwtPass(t *testing.T, alg string, key string) {
 	jwtValErr(t, Jwt{
 		Alg: alg,
-		Key: key,
+		Pem: key,
 	}, nil)
 }
 
 func jwtBadAlg(t *testing.T, alg string, key string) {
 	jwt := Jwt{
 		Alg: alg,
-		Key: key,
+		Pem: key,
 	}
 	var want = errors.New(keyTypeInvalid)
 	jwtValErr(t, jwt, want)
@@ -43,7 +43,7 @@ func jwtBadAlg(t *testing.T, alg string, key string) {
 func jwtBadKeyPreamble(t *testing.T, alg string, key string) {
 	jwt := Jwt{
 		Alg: alg,
-		Key: key,
+		Pem: key,
 	}
 	var want = errors.New(fmt.Sprintf(pemOverflow, jwt.Name))
 	jwtValErr(t, jwt, want)
@@ -52,7 +52,7 @@ func jwtBadKeyPreamble(t *testing.T, alg string, key string) {
 func jwtBadKeyAsn1(t *testing.T, alg string, key string) {
 	jwt := Jwt{
 		Alg: alg,
-		Key: key,
+		Pem: key,
 	}
 	var want = errors.New(fmt.Sprintf(pemAsn1Bad, jwt.Name))
 	jwtValErr(t, jwt, want)
@@ -61,7 +61,7 @@ func jwtBadKeyAsn1(t *testing.T, alg string, key string) {
 func jwtBadKeySize(t *testing.T, alg string, key string, badKeySize int) {
 	jwt := Jwt{
 		Alg: alg,
-		Key: key,
+		Pem: key,
 	}
 	var want = errors.New(fmt.Sprintf(ecdsaKeySizeBad, jwt.Name, jwt.Alg, badKeySize))
 	jwtValErr(t, jwt, want)
@@ -74,7 +74,7 @@ func TestJwtNonePass(t *testing.T) {
 func TestJwtNoneFailWithKeyProvided(t *testing.T) {
 	jwt := Jwt{
 		Alg: "none",
-		Key: "keydata",
+		Pem: "keydata",
 	}
 	jwtValErr(t, jwt, errors.New("none type signature does not allow key data, check your configuration"))
 }
@@ -265,8 +265,8 @@ func TestJwtHS256BadAlg(t *testing.T) {
 
 func TestJwtHS256NoKey(t *testing.T) {
 	jwt := Jwt{
-		Alg:         "HS256",
-		Key:         "",
+		Alg: "HS256",
+		Pem: "",
 	}
 	jwtValErr(t, jwt, errors.New("jwt secret not found, check your configuration"))
 }
@@ -281,8 +281,8 @@ func TestJwtHS384BadAlg(t *testing.T) {
 
 func TestJwtHS384NoKey(t *testing.T) {
 	jwt := Jwt{
-		Alg:         "HS384",
-		Key:         "",
+		Alg: "HS384",
+		Pem: "",
 	}
 	jwtValErr(t, jwt, errors.New("jwt secret not found, check your configuration"))
 }
@@ -297,8 +297,8 @@ func TestJwtHS512BadAlg(t *testing.T) {
 
 func TestJwtHS512NoKey(t *testing.T) {
 	jwt := Jwt{
-		Alg:         "HS512",
-		Key:         "",
+		Alg: "HS512",
+		Pem: "",
 	}
 	jwtValErr(t, jwt, errors.New("jwt secret not found, check your configuration"))
 }
@@ -432,8 +432,8 @@ func DoBenchForAlgBearerAndKey(b *testing.B, alg jwa.SignatureAlgorithm, bearer 
 	pub, _ := x509.ParsePKIXPublicKey(pem.Bytes)
 
 	for i := 0; i < b.N; i++ {
-		_, err :=jwt.ParseVerify(bytes.NewReader([]byte(bearer)), alg, pub)
-		if err!=nil {
+		_, err := jwt.ParseVerify(bytes.NewReader([]byte(bearer)), alg, pub)
+		if err != nil {
 			b.Errorf("key verification failed, cause: %v", err)
 		}
 	}
@@ -441,11 +441,9 @@ func DoBenchForAlgBearerAndKey(b *testing.B, alg jwa.SignatureAlgorithm, bearer 
 
 func DoBenchForAlgBearerAndSecret(b *testing.B, alg jwa.SignatureAlgorithm, bearer string, secret string) {
 	for i := 0; i < b.N; i++ {
-		_, err :=jwt.ParseVerify(bytes.NewReader([]byte(bearer)), alg, []byte(secret))
-		if err!=nil {
+		_, err := jwt.ParseVerify(bytes.NewReader([]byte(bearer)), alg, []byte(secret))
+		if err != nil {
 			b.Errorf("key verification failed, cause: %v", err)
 		}
 	}
 }
-
-

@@ -12,9 +12,12 @@ import (
 )
 
 type Jwt struct {
-	Name                  string
-	Alg                   string
-	Key                   string
+	Name string
+	Alg  string
+	// Jwt key supports pem encoding for public keys, unencoded secrets for hmac.
+	Key string
+	// JwksUrl loads remotely.
+	JwksUrl               string
 	AcceptableSkewSeconds string
 	RSAPublic             *rsa.PublicKey
 	ECDSAPublic           *ecdsa.PublicKey
@@ -29,32 +32,57 @@ const ecdsaKeySizeBad = "jwt [%s] invalid key size for alg %s, parsed bitsize %d
 
 func (jwt *Jwt) validate() error {
 	var err error
-	var p *pem.Block
-	var p1 []byte
 	alg := *new(jwa.SignatureAlgorithm)
 	err = alg.Accept(jwt.Alg)
+
+	if len(jwt.Name) == 0 {
+		err = errors.New("invalid jwt name not specified")
+	}
+
+	if len(jwt.Alg) > 0 && len(jwt.JwksUrl) > 0 {
+		err = errors.New(fmt.Sprintf("invalid jwt [%s] do not specify alg with jwksUrl which has built-in algorithm.", jwt.Name))
+	}
 
 	if len(jwt.AcceptableSkewSeconds) > 0 {
 		secs, nonnumeric := strconv.Atoi(jwt.AcceptableSkewSeconds)
 		if nonnumeric != nil || secs < 0 {
-			err = errors.New(fmt.Sprintf("invalid jwt acceptable skew seconds, must be 0 or greater, was %s", jwt.AcceptableSkewSeconds))
+			err = errors.New(fmt.Sprintf("invalid jwt [%s] acceptable skew seconds, must be 0 or greater, was %s", jwt.Name, jwt.AcceptableSkewSeconds))
 			return err
 		}
-
 	} else {
 		jwt.AcceptableSkewSeconds = "120"
 	}
+
+	if alg != jwa.NoSignature {
+		if len(jwt.Key) > 0 {
+			err = jwt.parseKey(alg)
+		} else if len(jwt.JwksUrl) > 0 {
+			err = jwt.loadJwks()
+		} else {
+			err = errors.New(fmt.Sprintf("unable to validate jwt [%s] must specify one of key or jwksUrl", jwt.Name))
+		}
+	}
+
+	return err
+}
+
+func (jwt *Jwt) loadJwks() error {
+	return nil
+}
+
+func (jwt *Jwt) parseKey(alg jwa.SignatureAlgorithm) error {
+	var p *pem.Block
+	var p1 []byte
+	var err error
 
 	switch alg {
 	case jwa.RS256, jwa.RS384, jwa.RS512, jwa.PS256, jwa.PS384, jwa.PS512:
 		p, p1 = pem.Decode([]byte(jwt.Key))
 		if len(p1) > 0 {
-			err = errors.New(fmt.Sprintf(pemOverflow, jwt.Name))
-			return err
+			return errors.New(fmt.Sprintf(pemOverflow, jwt.Name))
 		}
 		if p.Type != "PUBLIC KEY" && p.Type != "RSA PUBLIC KEY" {
-			err = errors.New(fmt.Sprintf(pemTypeBad, jwt.Name))
-			return err
+			return errors.New(fmt.Sprintf(pemTypeBad, jwt.Name))
 		}
 		var pub interface{}
 		pub, err = x509.ParsePKIXPublicKey(p.Bytes)
@@ -62,7 +90,7 @@ func (jwt *Jwt) validate() error {
 		case *rsa.PublicKey:
 			jwt.RSAPublic = pub.(*rsa.PublicKey)
 		default:
-			err = errors.New(fmt.Sprintf(pemAsn1Bad, jwt.Name))
+			return errors.New(fmt.Sprintf(pemAsn1Bad, jwt.Name))
 		}
 
 	case jwa.HS256, jwa.HS384, jwa.HS512:
@@ -75,12 +103,10 @@ func (jwt *Jwt) validate() error {
 	case jwa.ES256, jwa.ES384, jwa.ES512:
 		p, p1 = pem.Decode([]byte(jwt.Key))
 		if len(p1) > 0 {
-			err = errors.New(fmt.Sprintf(pemOverflow, jwt.Name))
-			return err
+			return errors.New(fmt.Sprintf(pemOverflow, jwt.Name))
 		}
 		if p.Type != "PUBLIC KEY" {
-			err = errors.New(fmt.Sprintf(pemTypeBad, jwt.Name))
-			return err
+			return errors.New(fmt.Sprintf(pemTypeBad, jwt.Name))
 		}
 		var pub interface{}
 		pub, err = x509.ParsePKIXPublicKey(p.Bytes)
@@ -98,17 +124,16 @@ func (jwt *Jwt) validate() error {
 				jwt.ECDSAPublic = parsed
 			}
 		default:
-			err = errors.New(fmt.Sprintf(pemAsn1Bad, jwt.Name))
+			return errors.New(fmt.Sprintf(pemAsn1Bad, jwt.Name))
 		}
 
 	case jwa.NoSignature:
 		if len(jwt.Key) > 0 {
-			err = errors.New("none type signature does not allow key data, check your configuration")
+			return errors.New("none type signature does not allow key data, check your configuration")
 		}
 
 	default:
-		err = errors.New(keyTypeInvalid)
+		return errors.New(keyTypeInvalid)
 	}
-
 	return err
 }
