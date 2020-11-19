@@ -41,7 +41,7 @@ jwt:
       -----END PUBLIC KEY-----
   jwtps256:
     acceptableSkewSeconds: 121
-    alg: RS256
+    alg: PS256
     key: |
       -----BEGIN PUBLIC KEY-----
       MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAtXhyIjACJ9I/1RLe6ewu
