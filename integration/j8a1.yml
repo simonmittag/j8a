@@ -21,6 +21,39 @@ policies:
     - label: blue
       weight: 0.2
 jwt:
+  auth0x509:
+    alg: RS256
+    key: |
+      -----BEGIN CERTIFICATE-----
+      MIIC+zCCAeOgAwIBAgIJN+PiWa9CW3QnMA0GCSqGSIb3DQEBCwUAMBsxGTAXBgNV
+      BAMTEGo4YS5hdS5hdXRoMC5jb20wHhcNMjAxMTIwMjIxMTQ1WhcNMzQwNzMwMjIx
+      MTQ1WjAbMRkwFwYDVQQDExBqOGEuYXUuYXV0aDAuY29tMIIBIjANBgkqhkiG9w0B
+      AQEFAAOCAQ8AMIIBCgKCAQEA2gYzaXHqNtIPjtxwZBN9MOBI44M0MnHOUoVh9rIs
+      arVFjhxjib/yPqfYsXuQadtgT+j++X3pOirdEagPWzNRtC4cuCxi0xxhdv2b3twc
+      JtcBtQvF5kVZISGbsXRhhI0IZ3NU9NJbh74UfCFYwMOjSLZqF0Yp1muIZbjLts97
+      jbyat1K1grI2ympf/2ICXisKqG/f2a5ux8oKuV01NFuYmEeBwSE54brziGpkFL5Z
+      +ONUxlhSM4LQIIJY+cNxvyC1NXu+geayfxVfiff8Y/dpabsp6ml5OWH3RSiVHUet
+      J90NeuotfZBI21OXLAC+xXYPXAuZaYz1JyhEDLj2LrDGMwIDAQABo0IwQDAPBgNV
+      HRMBAf8EBTADAQH/MB0GA1UdDgQWBBQm1TfTY3pRQGoZkxvXPR8qLJzOTjAOBgNV
+      HQ8BAf8EBAMCAoQwDQYJKoZIhvcNAQELBQADggEBAJfcTQovpXMaYHVxFw8xyeLs
+      lpzMbCGDlnLmN+z15Mim7EaHUOyrjiJTRpqrhawg/s6zVcwfhdGdZdvuIGhD24cB
+      LUfpaIILo9eunGkqvjBrvfIbhcJ2EdDO7Yv/uAwJ/hqZByNKyPRqu0yXmnIzgdCt
+      0NCsfgjbW3qCDhAQJVs6AwigLY0vUx5zn+s7l0Plu7iT3gxCTwvZBFTO9s9FuxA3
+      nVRXDcClZShFqDUhQheGAqKQdhTn33+DVO3qn0yQtFJTAME6PZNJNkoKaqJKxeNC
+      d+BnYrb6rCrcbH/S6f2Immm3PzfFUmXgfyHHuCaVypuu698ThbjU8iK1hOy00gI=
+      -----END CERTIFICATE-----
+  auth0pub:
+    alg: RS256
+    key: |
+      -----BEGIN PUBLIC KEY-----
+      MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2gYzaXHqNtIPjtxwZBN9
+      MOBI44M0MnHOUoVh9rIsarVFjhxjib/yPqfYsXuQadtgT+j++X3pOirdEagPWzNR
+      tC4cuCxi0xxhdv2b3twcJtcBtQvF5kVZISGbsXRhhI0IZ3NU9NJbh74UfCFYwMOj
+      SLZqF0Yp1muIZbjLts97jbyat1K1grI2ympf/2ICXisKqG/f2a5ux8oKuV01NFuY
+      mEeBwSE54brziGpkFL5Z+ONUxlhSM4LQIIJY+cNxvyC1NXu+geayfxVfiff8Y/dp
+      absp6ml5OWH3RSiVHUetJ90NeuotfZBI21OXLAC+xXYPXAuZaYz1JyhEDLj2LrDG
+      MwIDAQAB
+      -----END PUBLIC KEY-----
   jwtrs256:
     acceptableSkewSeconds: 121
     alg: RS256
@@ -75,6 +108,14 @@ routes:
     resource: about
   - path: "/mse6/some"
     resource: mse61
+  - path: /auth0x509
+    transform: /mse6
+    resource: mse6
+    jwt: auth0x509
+  - path: /auth0pub
+    transform: /mse6
+    resource: mse6
+    jwt: auth0pub
   - path: /jwths256
     transform: /mse6
     resource: mse6
