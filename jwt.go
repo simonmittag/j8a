@@ -38,7 +38,7 @@ func (jwt *Jwt) validate() error {
 	err = alg.Accept(jwt.Alg)
 
 	if len(jwt.Name) == 0 {
-		err = errors.New("invalid jwt name not specified")
+		return errors.New("invalid jwt name not specified")
 	}
 
 	if len(jwt.Alg) > 0 && len(jwt.JwksUrl) > 0 {
@@ -63,6 +63,8 @@ func (jwt *Jwt) validate() error {
 		} else {
 			err = errors.New(fmt.Sprintf("unable to validate jwt [%s] must specify one of key or jwksUrl", jwt.Name))
 		}
+	} else if len(jwt.Key)>0{
+		err = errors.New(fmt.Sprintf("jwt [%s] none type signature does not allow key data, check your configuration", jwt.Name))
 	}
 
 	return err

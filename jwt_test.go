@@ -26,6 +26,7 @@ func jwtValErr(t *testing.T, jwt Jwt, want error) {
 
 func jwtPass(t *testing.T, alg string, key string) {
 	jwtValErr(t, Jwt{
+		Name:"namer",
 		Alg: alg,
 		Key: key,
 	}, nil)
@@ -33,6 +34,7 @@ func jwtPass(t *testing.T, alg string, key string) {
 
 func jwtBadAlg(t *testing.T, alg string, key string) {
 	jwt := Jwt{
+		Name:"namer",
 		Alg: alg,
 		Key: key,
 	}
@@ -42,6 +44,7 @@ func jwtBadAlg(t *testing.T, alg string, key string) {
 
 func jwtBadKeyPreamble(t *testing.T, alg string, key string) {
 	jwt := Jwt{
+		Name:"namer",
 		Alg: alg,
 		Key: key,
 	}
@@ -51,6 +54,7 @@ func jwtBadKeyPreamble(t *testing.T, alg string, key string) {
 
 func jwtBadKeyAsn1(t *testing.T, alg string, key string) {
 	jwt := Jwt{
+		Name:"namer",
 		Alg: alg,
 		Key: key,
 	}
@@ -60,6 +64,7 @@ func jwtBadKeyAsn1(t *testing.T, alg string, key string) {
 
 func jwtBadKeySize(t *testing.T, alg string, key string, badKeySize int) {
 	jwt := Jwt{
+		Name:"namer",
 		Alg: alg,
 		Key: key,
 	}
@@ -73,10 +78,19 @@ func TestJwtNonePass(t *testing.T) {
 
 func TestJwtNoneFailWithKeyProvided(t *testing.T) {
 	jwt := Jwt{
+		Name: "noner",
 		Alg: "none",
 		Key: "keydata",
 	}
-	jwtValErr(t, jwt, errors.New("none type signature does not allow key data, check your configuration"))
+	jwtValErr(t, jwt, errors.New("jwt [noner] none type signature does not allow key data, check your configuration"))
+}
+
+func TestJwtFailWithoutNameProvided(t *testing.T) {
+	jwt := Jwt{
+		Alg: "HS256",
+		Key: "keydata",
+	}
+	jwtValErr(t, jwt, errors.New("invalid jwt name not specified"))
 }
 
 func TestJwtRS256Pass(t *testing.T) {
@@ -265,10 +279,11 @@ func TestJwtHS256BadAlg(t *testing.T) {
 
 func TestJwtHS256NoKey(t *testing.T) {
 	jwt := Jwt{
+		Name: "namer",
 		Alg: "HS256",
 		Key: "",
 	}
-	jwtValErr(t, jwt, errors.New("jwt secret not found, check your configuration"))
+	jwtValErr(t, jwt, errors.New("unable to validate jwt [namer] must specify one of key or jwksUrl"))
 }
 
 func TestJwtHS384Pass(t *testing.T) {
@@ -281,10 +296,11 @@ func TestJwtHS384BadAlg(t *testing.T) {
 
 func TestJwtHS384NoKey(t *testing.T) {
 	jwt := Jwt{
+		Name: "namer",
 		Alg: "HS384",
 		Key: "",
 	}
-	jwtValErr(t, jwt, errors.New("jwt secret not found, check your configuration"))
+	jwtValErr(t, jwt, errors.New("unable to validate jwt [namer] must specify one of key or jwksUrl"))
 }
 
 func TestJwtHS512Pass(t *testing.T) {
@@ -297,10 +313,11 @@ func TestJwtHS512BadAlg(t *testing.T) {
 
 func TestJwtHS512NoKey(t *testing.T) {
 	jwt := Jwt{
+		Name: "namer",
 		Alg: "HS512",
 		Key: "",
 	}
-	jwtValErr(t, jwt, errors.New("jwt secret not found, check your configuration"))
+	jwtValErr(t, jwt, errors.New("unable to validate jwt [namer] must specify one of key or jwksUrl"))
 }
 
 func BenchmarkJwtRS256(b *testing.B) {
