@@ -24,8 +24,8 @@ type Jwt struct {
 	Secret                []byte
 }
 
-const pemOverflow = "jwt key [%s] only type PUBLIC KEY allowed but found additional or invalid data, check your PEM block"
-const pemTypeBad = "jwt key [%s] is not of type PUBLIC KEY, check your PEM Block preamble"
+const pemOverflow = "jwt key [%s] only type PUBLIC KEY or CERTIFICATE allowed but found additional or invalid data, check your PEM block"
+const pemTypeBad = "jwt key [%s] is not of type PUBLIC KEY or CERTIFICATE, check your PEM Block preamble"
 const pemAsn1Bad = "jwt key [%s] asn data not valid, check your PEM Block"
 const pemRsaNotFound = "jwt key [%s] RSA public key not found in your certificate, check your PEM Block"
 const pemEcdsaNotFound = "jwt key [%s] ECDSA public key not found in your certificate, check your PEM Block"
