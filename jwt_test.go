@@ -27,14 +27,14 @@ func jwtValErr(t *testing.T, jwt Jwt, want error) {
 func jwtPass(t *testing.T, alg string, key string) {
 	jwtValErr(t, Jwt{
 		Alg: alg,
-		Pem: key,
+		Key: key,
 	}, nil)
 }
 
 func jwtBadAlg(t *testing.T, alg string, key string) {
 	jwt := Jwt{
 		Alg: alg,
-		Pem: key,
+		Key: key,
 	}
 	var want = errors.New(keyTypeInvalid)
 	jwtValErr(t, jwt, want)
@@ -43,7 +43,7 @@ func jwtBadAlg(t *testing.T, alg string, key string) {
 func jwtBadKeyPreamble(t *testing.T, alg string, key string) {
 	jwt := Jwt{
 		Alg: alg,
-		Pem: key,
+		Key: key,
 	}
 	var want = errors.New(fmt.Sprintf(pemOverflow, jwt.Name))
 	jwtValErr(t, jwt, want)
@@ -52,7 +52,7 @@ func jwtBadKeyPreamble(t *testing.T, alg string, key string) {
 func jwtBadKeyAsn1(t *testing.T, alg string, key string) {
 	jwt := Jwt{
 		Alg: alg,
-		Pem: key,
+		Key: key,
 	}
 	var want = errors.New(fmt.Sprintf(pemAsn1Bad, jwt.Name))
 	jwtValErr(t, jwt, want)
@@ -61,7 +61,7 @@ func jwtBadKeyAsn1(t *testing.T, alg string, key string) {
 func jwtBadKeySize(t *testing.T, alg string, key string, badKeySize int) {
 	jwt := Jwt{
 		Alg: alg,
-		Pem: key,
+		Key: key,
 	}
 	var want = errors.New(fmt.Sprintf(ecdsaKeySizeBad, jwt.Name, jwt.Alg, badKeySize))
 	jwtValErr(t, jwt, want)
@@ -74,7 +74,7 @@ func TestJwtNonePass(t *testing.T) {
 func TestJwtNoneFailWithKeyProvided(t *testing.T) {
 	jwt := Jwt{
 		Alg: "none",
-		Pem: "keydata",
+		Key: "keydata",
 	}
 	jwtValErr(t, jwt, errors.New("none type signature does not allow key data, check your configuration"))
 }
@@ -266,7 +266,7 @@ func TestJwtHS256BadAlg(t *testing.T) {
 func TestJwtHS256NoKey(t *testing.T) {
 	jwt := Jwt{
 		Alg: "HS256",
-		Pem: "",
+		Key: "",
 	}
 	jwtValErr(t, jwt, errors.New("jwt secret not found, check your configuration"))
 }
@@ -282,7 +282,7 @@ func TestJwtHS384BadAlg(t *testing.T) {
 func TestJwtHS384NoKey(t *testing.T) {
 	jwt := Jwt{
 		Alg: "HS384",
-		Pem: "",
+		Key: "",
 	}
 	jwtValErr(t, jwt, errors.New("jwt secret not found, check your configuration"))
 }
@@ -298,7 +298,7 @@ func TestJwtHS512BadAlg(t *testing.T) {
 func TestJwtHS512NoKey(t *testing.T) {
 	jwt := Jwt{
 		Alg: "HS512",
-		Pem: "",
+		Key: "",
 	}
 	jwtValErr(t, jwt, errors.New("jwt secret not found, check your configuration"))
 }
