@@ -8,6 +8,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/lestrrat-go/jwx/jwa"
+	"github.com/lestrrat-go/jwx/jwk"
+	"github.com/rs/zerolog/log"
 	"strconv"
 )
 
@@ -21,6 +23,7 @@ type Jwt struct {
 	AcceptableSkewSeconds string
 	RSAPublic             *rsa.PublicKey
 	ECDSAPublic           *ecdsa.PublicKey
+	Jwk                   *jwk.Set
 	Secret                []byte
 }
 
@@ -42,7 +45,11 @@ func (jwt *Jwt) validate() error {
 	}
 
 	if len(jwt.Alg) > 0 && len(jwt.JwksUrl) > 0 {
-		err = errors.New(fmt.Sprintf("invalid jwt [%s] do not specify alg with jwksUrl which has built-in algorithm.", jwt.Name))
+		return errors.New(fmt.Sprintf("invalid jwt [%s] do not specify alg with jwksUrl which contains algorithm(s).", jwt.Name))
+	}
+
+	if alg == jwa.NoSignature && len(jwt.Key) > 0 {
+		return errors.New(fmt.Sprintf("jwt [%s] none type signature does not allow key data, check your configuration", jwt.Name))
 	}
 
 	if len(jwt.AcceptableSkewSeconds) > 0 {
@@ -55,23 +62,24 @@ func (jwt *Jwt) validate() error {
 		jwt.AcceptableSkewSeconds = "120"
 	}
 
-	if alg != jwa.NoSignature {
-		if len(jwt.Key) > 0 {
-			err = jwt.parseKey(alg)
-		} else if len(jwt.JwksUrl) > 0 {
-			err = jwt.loadJwks()
-		} else {
-			err = errors.New(fmt.Sprintf("unable to validate jwt [%s] must specify one of key or jwksUrl", jwt.Name))
-		}
-	} else if len(jwt.Key)>0{
-		err = errors.New(fmt.Sprintf("jwt [%s] none type signature does not allow key data, check your configuration", jwt.Name))
+	if len(jwt.Key) > 0 {
+		err = jwt.parseKey(alg)
+	} else if len(jwt.JwksUrl) > 0 {
+		err = jwt.loadJwks()
+	} else {
+		err = errors.New(fmt.Sprintf("unable to validate jwt [%s] must specify one of key or jwksUrl", jwt.Name))
 	}
 
 	return err
 }
 
 func (jwt *Jwt) loadJwks() error {
-	return nil
+	keys, err := jwk.Fetch(jwt.JwksUrl)
+	if err == nil {
+		jwt.Jwk = keys
+		log.Debug().Msgf("fetched %d jwk keys from %s", keys.Len(), jwt.JwksUrl)
+	}
+	return err
 }
 
 func (jwt *Jwt) parseKey(alg jwa.SignatureAlgorithm) error {

@@ -33,6 +33,8 @@ jwt:
       SmOsxHfJ5vzfbicw1Inn/4RoVxw72p4t1NN3va1W6jZt/FZ5R8xgV5T5zgeAEkSm
       HJa/PXCQoBYwK7cuMJhjRaMCAwEAAQ==
       -----END PUBLIC KEY-----
+  jwks:
+    jwksUrl: https://j8a.au.auth0.com/.well-known/jwks.json
 
 policies:
   ab:
@@ -51,10 +53,10 @@ routes:
   - path: /mse6/
     resource: mse6
     policy: ab
-  - path: /mse6crazy
+  - path: /mse6jwt
     transform: /mse6
     resource: mse6
-    jwt: all
+    jwt: jwks
   - path: /mse7
     transform: /mse6
     resource: mse6
