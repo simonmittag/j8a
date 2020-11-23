@@ -20,11 +20,11 @@ type Jwt struct {
 	Key string
 	// JwksUrl loads remotely.
 	JwksUrl               string
-	AcceptableSkewSeconds string
+	Jwks                  map[string]jwk.Key
 	RSAPublic             *rsa.PublicKey
 	ECDSAPublic           *ecdsa.PublicKey
-	Jwk                   *jwk.Set
 	Secret                []byte
+	AcceptableSkewSeconds string
 }
 
 const pemOverflow = "jwt key [%s] only type PUBLIC KEY or CERTIFICATE allowed but found additional or invalid data, check your PEM block"
@@ -76,7 +76,10 @@ func (jwt *Jwt) validate() error {
 func (jwt *Jwt) loadJwks() error {
 	keys, err := jwk.Fetch(jwt.JwksUrl)
 	if err == nil {
-		jwt.Jwk = keys
+		jwt.Jwks = make(map[string]jwk.Key)
+		for _, key := range keys.Keys {
+			jwt.Jwks[key.KeyID()] = key
+		}
 		log.Debug().Msgf("fetched %d jwk keys from %s", keys.Len(), jwt.JwksUrl)
 	}
 	return err
