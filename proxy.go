@@ -528,26 +528,40 @@ func (proxy *Proxy) validateJwt() bool {
 		alg := *new(jwa.SignatureAlgorithm)
 		alg.Accept(routeSec.Alg)
 
-		//this is safe because of the config loader validating it earlier.
-		//s, _ := strconv.Atoi(routeSec.AcceptableSkewSeconds)
-		//skew := time.Second * time.Duration(s)
-
 		var parsed jwt.Token
 
 		switch alg {
 		case jwa.RS256, jwa.RS384, jwa.RS512, jwa.PS256, jwa.PS384, jwa.PS512:
-			parsed, err = jwt.Parse(bytes.NewReader([]byte(token)),
-				jwt.WithVerify(alg, routeSec.RSAPublic))
+			for _, rsa := range routeSec.RSAPublic {
+				parsed, err = jwt.Parse(bytes.NewReader([]byte(token)),
+					jwt.WithVerify(alg, rsa.Key))
+				if err == nil {
+					break
+				}
+			}
 		case jwa.ES256, jwa.ES384, jwa.ES512:
-			parsed, err = jwt.Parse(bytes.NewReader([]byte(token)),
-				jwt.WithVerify(alg, routeSec.ECDSAPublic))
+			for _, ecdsa := range routeSec.ECDSAPublic {
+				parsed, err = jwt.Parse(bytes.NewReader([]byte(token)),
+					jwt.WithVerify(alg, ecdsa.Key))
+				if err == nil {
+					break
+				}
+			}
 		case jwa.HS256, jwa.HS384, jwa.HS512:
-			parsed, err = jwt.Parse(bytes.NewReader([]byte(token)),
-				jwt.WithVerify(alg, routeSec.Secret))
+			for _, secret := range routeSec.Secret {
+				parsed, err = jwt.Parse(bytes.NewReader([]byte(token)),
+					jwt.WithVerify(alg, secret.Key))
+				if err == nil {
+					break
+				}
+			}
 		case jwa.NoSignature:
+			parsed, err = jwt.Parse(bytes.NewReader([]byte(token)))
+		default:
 			parsed, err = jwt.Parse(bytes.NewReader([]byte(token)))
 		}
 
+		//this is necessary even after using jwt.WithVerify above to check exp and nbf claims
 		if parsed != nil && err == nil {
 			err = jwt.Verify(parsed)
 		}

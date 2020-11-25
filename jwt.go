@@ -7,11 +7,28 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/rs/zerolog/log"
 	"strconv"
 )
+
+type RSAKidPair struct {
+	Kid string
+	Key *rsa.PublicKey
+}
+
+type ECDSAKidPair struct {
+	Kid string
+	Key *ecdsa.PublicKey
+}
+
+//uh oh
+type SecretKidPair struct {
+	Kid string
+	Key []byte
+}
 
 type Jwt struct {
 	Name string
@@ -20,10 +37,9 @@ type Jwt struct {
 	Key string
 	// JwksUrl loads remotely.
 	JwksUrl               string
-	Jwks                  map[string]jwk.Key
-	RSAPublic             *rsa.PublicKey
-	ECDSAPublic           *ecdsa.PublicKey
-	Secret                []byte
+	RSAPublic             []RSAKidPair
+	ECDSAPublic           []ECDSAKidPair
+	Secret                []SecretKidPair
 	AcceptableSkewSeconds string
 }
 
@@ -52,6 +68,10 @@ func (jwt *Jwt) validate() error {
 		return errors.New(fmt.Sprintf("jwt [%s] none type signature does not allow key data, check your configuration", jwt.Name))
 	}
 
+	if alg != jwa.NoSignature && len(jwt.Key) == 0 && len(jwt.JwksUrl) == 0 {
+		err = errors.New(fmt.Sprintf("unable to validate jwt [%s] must specify one of key or jwksUrl", jwt.Name))
+	}
+
 	if len(jwt.AcceptableSkewSeconds) > 0 {
 		secs, nonnumeric := strconv.Atoi(jwt.AcceptableSkewSeconds)
 		if nonnumeric != nil || secs < 0 {
@@ -66,21 +86,15 @@ func (jwt *Jwt) validate() error {
 		err = jwt.parseKey(alg)
 	} else if len(jwt.JwksUrl) > 0 {
 		err = jwt.loadJwks()
-	} else {
-		err = errors.New(fmt.Sprintf("unable to validate jwt [%s] must specify one of key or jwksUrl", jwt.Name))
 	}
 
 	return err
 }
 
 func (jwt *Jwt) loadJwks() error {
-	keys, err := jwk.Fetch(jwt.JwksUrl)
+	keyset, err := jwk.Fetch(jwt.JwksUrl)
 	if err == nil {
-		jwt.Jwks = make(map[string]jwk.Key)
-		for _, key := range keys.Keys {
-			jwt.Jwks[key.KeyID()] = key
-		}
-		log.Debug().Msgf("fetched %d jwk keys from %s", keys.Len(), jwt.JwksUrl)
+		log.Debug().Msgf("fetched %d jwk keys from %s", keyset.Len(), jwt.JwksUrl)
 	}
 	return err
 }
@@ -106,7 +120,12 @@ func (jwt *Jwt) parseKey(alg jwa.SignatureAlgorithm) error {
 			pub, err = x509.ParsePKIXPublicKey(p.Bytes)
 			switch pub.(type) {
 			case *rsa.PublicKey:
-				jwt.RSAPublic = pub.(*rsa.PublicKey)
+				jwt.RSAPublic = []RSAKidPair{
+					{
+						Kid: fmt.Sprintf("%s-%s", alg, uuid.New()),
+						Key: pub.(*rsa.PublicKey),
+					},
+				}
 			default:
 				return errors.New(fmt.Sprintf(pemAsn1Bad, jwt.Name))
 			}
@@ -118,7 +137,12 @@ func (jwt *Jwt) parseKey(alg jwa.SignatureAlgorithm) error {
 				key := cert.(*x509.Certificate).PublicKey
 				switch key.(type) {
 				case *rsa.PublicKey:
-					jwt.RSAPublic = key.(*rsa.PublicKey)
+					jwt.RSAPublic = []RSAKidPair{
+						{
+							Kid: fmt.Sprintf("%s-%s", alg, uuid.New()),
+							Key: key.(*rsa.PublicKey),
+						},
+					}
 				default:
 					return errors.New(fmt.Sprintf(pemRsaNotFound, jwt.Name))
 				}
@@ -129,7 +153,12 @@ func (jwt *Jwt) parseKey(alg jwa.SignatureAlgorithm) error {
 
 	case jwa.HS256, jwa.HS384, jwa.HS512:
 		if len(jwt.Key) > 0 {
-			jwt.Secret = []byte(jwt.Key)
+			jwt.Secret = []SecretKidPair{
+				{
+					Kid: fmt.Sprintf("%s-%s", alg, uuid.New()),
+					Key: []byte(jwt.Key),
+				},
+			}
 		} else {
 			err = errors.New("jwt secret not found, check your configuration")
 		}
@@ -152,7 +181,12 @@ func (jwt *Jwt) parseKey(alg jwa.SignatureAlgorithm) error {
 				parsed := pub.(*ecdsa.PublicKey)
 				err = jwt.checkECDSABitSize(alg, parsed)
 				if err == nil {
-					jwt.ECDSAPublic = parsed
+					jwt.ECDSAPublic = []ECDSAKidPair{
+						{
+							Kid: fmt.Sprintf("%s-%s", alg, uuid.New()),
+							Key: parsed,
+						},
+					}
 				}
 			default:
 				return errors.New(fmt.Sprintf(pemAsn1Bad, jwt.Name))
@@ -168,7 +202,12 @@ func (jwt *Jwt) parseKey(alg jwa.SignatureAlgorithm) error {
 					parsed := key.(*ecdsa.PublicKey)
 					err = jwt.checkECDSABitSize(alg, parsed)
 					if err == nil {
-						jwt.ECDSAPublic = parsed
+						jwt.ECDSAPublic = []ECDSAKidPair{
+							{
+								Kid: fmt.Sprintf("%s-%s", alg, uuid.New()),
+								Key: parsed,
+							},
+						}
 					}
 				default:
 					return errors.New(fmt.Sprintf(pemEcdsaNotFound, jwt.Name))
