@@ -14,20 +14,24 @@ import (
 	"strconv"
 )
 
-type RSAKidPair struct {
-	Kid string
-	Key *rsa.PublicKey
+type KeySet []KidPair
+
+func (ks *KeySet) upsert(kp KidPair) {
+	updated := false
+	for _, k := range *ks {
+		if k.Kid == kp.Kid {
+			k.Key = kp.Key
+			updated = true
+		}
+	}
+	if !updated {
+		*ks = append(*ks, kp)
+	}
 }
 
-type ECDSAKidPair struct {
+type KidPair struct {
 	Kid string
-	Key *ecdsa.PublicKey
-}
-
-//uh oh
-type SecretKidPair struct {
-	Kid string
-	Key []byte
+	Key interface{}
 }
 
 type Jwt struct {
@@ -37,9 +41,9 @@ type Jwt struct {
 	Key string
 	// JwksUrl loads remotely.
 	JwksUrl               string
-	RSAPublic             []RSAKidPair
-	ECDSAPublic           []ECDSAKidPair
-	Secret                []SecretKidPair
+	RSAPublic             KeySet
+	ECDSAPublic           KeySet
+	Secret                KeySet
 	AcceptableSkewSeconds string
 }
 
@@ -52,6 +56,16 @@ const keyTypeInvalid = "unable to determine key type, not one of: [RS256, RS384,
 const ecdsaKeySizeBad = "jwt [%s] invalid key size for alg %s, parsed bitsize %d, check your configuration"
 
 func (jwt *Jwt) validate() error {
+	if jwt.RSAPublic == nil {
+		jwt.RSAPublic = make([]KidPair, 0)
+	}
+	if jwt.ECDSAPublic == nil {
+		jwt.ECDSAPublic = make([]KidPair, 0)
+	}
+	if jwt.Secret == nil {
+		jwt.Secret = make([]KidPair, 0)
+	}
+
 	var err error
 	alg := *new(jwa.SignatureAlgorithm)
 	err = alg.Accept(jwt.Alg)
@@ -96,6 +110,46 @@ func (jwt *Jwt) loadJwks() error {
 	if err == nil {
 		log.Debug().Msgf("fetched %d jwk keys from %s", keyset.Len(), jwt.JwksUrl)
 	}
+	for _, key := range keyset.Keys {
+		//here, use the key's signature algorithm, not what's supplied in the config.
+		alg := *new(jwa.SignatureAlgorithm)
+		err = alg.Accept(key.Algorithm())
+		switch alg {
+		case jwa.RS256, jwa.RS384, jwa.RS512, jwa.PS256, jwa.PS384, jwa.PS512:
+			k := KidPair{
+				Kid: key.KeyID(),
+				Key: &rsa.PublicKey{
+					N: nil,
+					E: 0,
+				},
+			}
+			err = key.Raw(k.Key)
+			if err == nil {
+				jwt.RSAPublic.upsert(k)
+			}
+		case jwa.HS256, jwa.HS384, jwa.HS512:
+			k := KidPair{
+				Kid: key.KeyID(),
+				Key: nil,
+			}
+			err = key.Raw(k)
+			if err == nil {
+				jwt.Secret.upsert(k)
+			}
+		case jwa.ES256, jwa.ES384, jwa.ES512:
+			k := KidPair{
+				Kid: key.KeyID(),
+				Key: nil,
+			}
+			err = key.Raw(k)
+			err = jwt.checkECDSABitSize(alg, k.Key.(*ecdsa.PublicKey))
+			if err == nil {
+				jwt.ECDSAPublic.upsert(k)
+			}
+		default:
+			err = errors.New(fmt.Sprintf("unknown key type in Jwks %v", alg.String()))
+		}
+	}
 	return err
 }
 
@@ -120,12 +174,11 @@ func (jwt *Jwt) parseKey(alg jwa.SignatureAlgorithm) error {
 			pub, err = x509.ParsePKIXPublicKey(p.Bytes)
 			switch pub.(type) {
 			case *rsa.PublicKey:
-				jwt.RSAPublic = []RSAKidPair{
-					{
+				jwt.RSAPublic.upsert(
+					KidPair{
 						Kid: fmt.Sprintf("%s-%s", alg, uuid.New()),
 						Key: pub.(*rsa.PublicKey),
-					},
-				}
+					})
 			default:
 				return errors.New(fmt.Sprintf(pemAsn1Bad, jwt.Name))
 			}
@@ -137,12 +190,11 @@ func (jwt *Jwt) parseKey(alg jwa.SignatureAlgorithm) error {
 				key := cert.(*x509.Certificate).PublicKey
 				switch key.(type) {
 				case *rsa.PublicKey:
-					jwt.RSAPublic = []RSAKidPair{
-						{
+					jwt.RSAPublic.upsert(
+						KidPair{
 							Kid: fmt.Sprintf("%s-%s", alg, uuid.New()),
 							Key: key.(*rsa.PublicKey),
-						},
-					}
+						})
 				default:
 					return errors.New(fmt.Sprintf(pemRsaNotFound, jwt.Name))
 				}
@@ -153,12 +205,11 @@ func (jwt *Jwt) parseKey(alg jwa.SignatureAlgorithm) error {
 
 	case jwa.HS256, jwa.HS384, jwa.HS512:
 		if len(jwt.Key) > 0 {
-			jwt.Secret = []SecretKidPair{
-				{
+			jwt.Secret.upsert(
+				KidPair{
 					Kid: fmt.Sprintf("%s-%s", alg, uuid.New()),
 					Key: []byte(jwt.Key),
-				},
-			}
+				})
 		} else {
 			err = errors.New("jwt secret not found, check your configuration")
 		}
@@ -181,12 +232,11 @@ func (jwt *Jwt) parseKey(alg jwa.SignatureAlgorithm) error {
 				parsed := pub.(*ecdsa.PublicKey)
 				err = jwt.checkECDSABitSize(alg, parsed)
 				if err == nil {
-					jwt.ECDSAPublic = []ECDSAKidPair{
-						{
+					jwt.ECDSAPublic.upsert(
+						KidPair{
 							Kid: fmt.Sprintf("%s-%s", alg, uuid.New()),
 							Key: parsed,
-						},
-					}
+						})
 				}
 			default:
 				return errors.New(fmt.Sprintf(pemAsn1Bad, jwt.Name))
@@ -202,12 +252,11 @@ func (jwt *Jwt) parseKey(alg jwa.SignatureAlgorithm) error {
 					parsed := key.(*ecdsa.PublicKey)
 					err = jwt.checkECDSABitSize(alg, parsed)
 					if err == nil {
-						jwt.ECDSAPublic = []ECDSAKidPair{
-							{
+						jwt.ECDSAPublic.upsert(
+							KidPair{
 								Kid: fmt.Sprintf("%s-%s", alg, uuid.New()),
 								Key: parsed,
-							},
-						}
+							})
 					}
 				default:
 					return errors.New(fmt.Sprintf(pemEcdsaNotFound, jwt.Name))
