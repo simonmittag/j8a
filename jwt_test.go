@@ -11,6 +11,34 @@ import (
 	"testing"
 )
 
+func TestFindJwtInKeySet(t *testing.T) {
+	cfg := Jwt{
+		Name:                  "",
+		Alg:                   "",
+		Key:                   "",
+		JwksUrl:               "https://j8a.au.auth0.com/.well-known/jwks.json",
+		RSAPublic:             nil,
+		ECDSAPublic:           nil,
+		Secret:                nil,
+		AcceptableSkewSeconds: "",
+	}
+	cfg.loadJwks()
+
+	if cfg.RSAPublic == nil {
+		t.Errorf("RSA key not loaded")
+	}
+
+	key := cfg.RSAPublic.find("mFtH_0S8dpkKl-rr1T6VS")
+	if key == nil {
+		t.Errorf("RSA key not loaded for key id mFtH_0S8dpkKl-rr1T6VS")
+	}
+
+	key2 := cfg.RSAPublic.find("ZJKp915ThUboHOq79JJsG")
+	if key2 == nil {
+		t.Errorf("RSA key 2 not loaded for key id ZJKp915ThUboHOq79JJsG")
+	}
+}
+
 func jwtValErr(t *testing.T, jwt Jwt, want error) {
 	got := jwt.validate()
 	if want != nil {
@@ -26,17 +54,17 @@ func jwtValErr(t *testing.T, jwt Jwt, want error) {
 
 func jwtPass(t *testing.T, alg string, key string) {
 	jwtValErr(t, Jwt{
-		Name:"namer",
-		Alg: alg,
-		Key: key,
+		Name: "namer",
+		Alg:  alg,
+		Key:  key,
 	}, nil)
 }
 
 func jwtBadAlg(t *testing.T, alg string, key string) {
 	jwt := Jwt{
-		Name:"namer",
-		Alg: alg,
-		Key: key,
+		Name: "namer",
+		Alg:  alg,
+		Key:  key,
 	}
 	var want = errors.New(keyTypeInvalid)
 	jwtValErr(t, jwt, want)
@@ -44,9 +72,9 @@ func jwtBadAlg(t *testing.T, alg string, key string) {
 
 func jwtBadKeyPreamble(t *testing.T, alg string, key string) {
 	jwt := Jwt{
-		Name:"namer",
-		Alg: alg,
-		Key: key,
+		Name: "namer",
+		Alg:  alg,
+		Key:  key,
 	}
 	var want = errors.New(fmt.Sprintf(pemOverflow, jwt.Name))
 	jwtValErr(t, jwt, want)
@@ -54,9 +82,9 @@ func jwtBadKeyPreamble(t *testing.T, alg string, key string) {
 
 func jwtBadKeyAsn1(t *testing.T, alg string, key string) {
 	jwt := Jwt{
-		Name:"namer",
-		Alg: alg,
-		Key: key,
+		Name: "namer",
+		Alg:  alg,
+		Key:  key,
 	}
 	var want = errors.New(fmt.Sprintf(pemAsn1Bad, jwt.Name))
 	jwtValErr(t, jwt, want)
@@ -64,9 +92,9 @@ func jwtBadKeyAsn1(t *testing.T, alg string, key string) {
 
 func jwtBadKeySize(t *testing.T, alg string, key string, badKeySize int) {
 	jwt := Jwt{
-		Name:"namer",
-		Alg: alg,
-		Key: key,
+		Name: "namer",
+		Alg:  alg,
+		Key:  key,
 	}
 	var want = errors.New(fmt.Sprintf(ecdsaKeySizeBad, jwt.Name, jwt.Alg, badKeySize))
 	jwtValErr(t, jwt, want)
@@ -79,8 +107,8 @@ func TestJwtNonePass(t *testing.T) {
 func TestJwtNoneFailWithKeyProvided(t *testing.T) {
 	jwt := Jwt{
 		Name: "noner",
-		Alg: "none",
-		Key: "keydata",
+		Alg:  "none",
+		Key:  "keydata",
 	}
 	jwtValErr(t, jwt, errors.New("jwt [noner] none type signature does not allow key data, check your configuration"))
 }
@@ -296,8 +324,8 @@ func TestJwtHS256BadAlg(t *testing.T) {
 func TestJwtHS256NoKey(t *testing.T) {
 	jwt := Jwt{
 		Name: "namer",
-		Alg: "HS256",
-		Key: "",
+		Alg:  "HS256",
+		Key:  "",
 	}
 	jwtValErr(t, jwt, errors.New("unable to validate jwt [namer] must specify one of key or jwksUrl"))
 }
@@ -313,8 +341,8 @@ func TestJwtHS384BadAlg(t *testing.T) {
 func TestJwtHS384NoKey(t *testing.T) {
 	jwt := Jwt{
 		Name: "namer",
-		Alg: "HS384",
-		Key: "",
+		Alg:  "HS384",
+		Key:  "",
 	}
 	jwtValErr(t, jwt, errors.New("unable to validate jwt [namer] must specify one of key or jwksUrl"))
 }
@@ -330,8 +358,8 @@ func TestJwtHS512BadAlg(t *testing.T) {
 func TestJwtHS512NoKey(t *testing.T) {
 	jwt := Jwt{
 		Name: "namer",
-		Alg: "HS512",
-		Key: "",
+		Alg:  "HS512",
+		Key:  "",
 	}
 	jwtValErr(t, jwt, errors.New("unable to validate jwt [namer] must specify one of key or jwksUrl"))
 }

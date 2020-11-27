@@ -29,6 +29,15 @@ func (ks *KeySet) upsert(kp KidPair) {
 	}
 }
 
+func (ks *KeySet) find(kid string) interface{} {
+	for _, k := range *ks {
+		if k.Kid == kid {
+			return k.Key
+		}
+	}
+	return nil
+}
+
 type KidPair struct {
 	Kid string
 	Key interface{}

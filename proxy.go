@@ -5,10 +5,13 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/lestrrat-go/jwx/jwa"
+	"github.com/lestrrat-go/jwx/jws"
 	"github.com/lestrrat-go/jwx/jwt"
 	"io"
 	"io/ioutil"
@@ -532,12 +535,36 @@ func (proxy *Proxy) validateJwt() bool {
 
 		switch alg {
 		case jwa.RS256, jwa.RS384, jwa.RS512, jwa.PS256, jwa.PS384, jwa.PS512:
-			for _, rsa := range routeSec.RSAPublic {
-				parsed, err = jwt.Parse(bytes.NewReader([]byte(token)),
-					jwt.WithVerify(alg, rsa.Key))
-				if err == nil {
-					break
+			var msg *jws.Message
+			msg, err = jws.Parse(bytes.NewReader([]byte(token)))
+
+			if len(msg.Signatures()) > 0 {
+				//first we try to validate by a key with the kid parameter to match.
+				kid := extractKid(token)
+				var rsaKey interface{}
+				if len(kid) > 0 {
+					rsaKey = routeSec.RSAPublic.find(kid)
+					if rsaKey != nil {
+						parsed, err = jwt.Parse(bytes.NewReader([]byte(token)),
+							jwt.WithVerify(alg, rsaKey))
+					}
 				}
+
+				//if it didn't validate above, we try other keys, provided there are any
+				if len(kid) == 0 ||
+					rsaKey == nil ||
+					(err != nil && len(routeSec.RSAPublic) > 1) {
+
+					for _, rsa := range routeSec.RSAPublic {
+						parsed, err = jwt.Parse(bytes.NewReader([]byte(token)),
+							jwt.WithVerify(alg, rsa.Key))
+						if err == nil {
+							break
+						}
+					}
+				}
+			} else {
+				err = errors.New("no signature found on jwt token")
 			}
 		case jwa.ES256, jwa.ES384, jwa.ES512:
 			for _, ecdsa := range routeSec.ECDSAPublic {
@@ -599,4 +626,28 @@ func (proxy *Proxy) validateJwt() bool {
 			Msgf("jwt token rejected, cause: %v", err)
 	}
 	return ok
+}
+
+func extractKid(token string) string {
+	header := strings.Split(token, ".")[0]
+	var decoded []byte
+	decoded, err := base64.RawURLEncoding.DecodeString(header)
+	if err != nil {
+		return ""
+	}
+
+	var jsonToken map[string]interface{} = make(map[string]interface{})
+	err = json.Unmarshal(decoded, &jsonToken)
+	if err != nil {
+		return ""
+	}
+
+	kid := jsonToken["kid"]
+
+	switch kid.(type) {
+	case string:
+		return kid.(string)
+	default:
+		return ""
+	}
 }
