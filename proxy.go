@@ -535,53 +535,11 @@ func (proxy *Proxy) validateJwt() bool {
 
 		switch alg {
 		case jwa.RS256, jwa.RS384, jwa.RS512, jwa.PS256, jwa.PS384, jwa.PS512:
-			var msg *jws.Message
-			msg, err = jws.Parse(bytes.NewReader([]byte(token)))
-
-			if len(msg.Signatures()) > 0 {
-				//first we try to validate by a key with the kid parameter to match.
-				kid := extractKid(token)
-				var rsaKey interface{}
-				if len(kid) > 0 {
-					rsaKey = routeSec.RSAPublic.find(kid)
-					if rsaKey != nil {
-						parsed, err = jwt.Parse(bytes.NewReader([]byte(token)),
-							jwt.WithVerify(alg, rsaKey))
-					}
-				}
-
-				//if it didn't validate above, we try other keys, provided there are any
-				if len(kid) == 0 ||
-					rsaKey == nil ||
-					(err != nil && len(routeSec.RSAPublic) > 1) {
-
-					for _, rsa := range routeSec.RSAPublic {
-						parsed, err = jwt.Parse(bytes.NewReader([]byte(token)),
-							jwt.WithVerify(alg, rsa.Key))
-						if err == nil {
-							break
-						}
-					}
-				}
-			} else {
-				err = errors.New("no signature found on jwt token")
-			}
+			parsed, err = verifySignature(token, routeSec.RSAPublic, alg)
 		case jwa.ES256, jwa.ES384, jwa.ES512:
-			for _, ecdsa := range routeSec.ECDSAPublic {
-				parsed, err = jwt.Parse(bytes.NewReader([]byte(token)),
-					jwt.WithVerify(alg, ecdsa.Key))
-				if err == nil {
-					break
-				}
-			}
+			parsed, err = verifySignature(token, routeSec.ECDSAPublic, alg)
 		case jwa.HS256, jwa.HS384, jwa.HS512:
-			for _, secret := range routeSec.Secret {
-				parsed, err = jwt.Parse(bytes.NewReader([]byte(token)),
-					jwt.WithVerify(alg, secret.Key))
-				if err == nil {
-					break
-				}
-			}
+			parsed, err = verifySignature(token, routeSec.Secret, alg)
 		case jwa.NoSignature:
 			parsed, err = jwt.Parse(bytes.NewReader([]byte(token)))
 		default:
@@ -626,6 +584,43 @@ func (proxy *Proxy) validateJwt() bool {
 			Msgf("jwt token rejected, cause: %v", err)
 	}
 	return ok
+}
+
+func verifySignature(token string, keySet KeySet, alg jwa.SignatureAlgorithm) (jwt.Token, error) {
+	var msg *jws.Message
+	var err error
+	var parsed jwt.Token
+
+	msg, err = jws.Parse(bytes.NewReader([]byte(token)))
+	if len(msg.Signatures()) > 0 {
+		//first we try to validate by a key with the kid parameter to match.
+		kid := extractKid(token)
+		var key interface{}
+		if len(kid) > 0 {
+			key = keySet.find(kid)
+			if key != nil {
+				parsed, err = jwt.Parse(bytes.NewReader([]byte(token)),
+					jwt.WithVerify(alg, key))
+			}
+		}
+
+		//if it didn't validate above, we try other keys, provided there are any
+		if len(kid) == 0 ||
+			key == nil ||
+			(err != nil && len(keySet) > 1) {
+
+			for _, kp := range keySet {
+				parsed, err = jwt.Parse(bytes.NewReader([]byte(token)),
+					jwt.WithVerify(alg, kp.Key))
+				if err == nil {
+					break
+				}
+			}
+		}
+	} else {
+		err = errors.New("no signature found on jwt token")
+	}
+	return parsed, err
 }
 
 func extractKid(token string) string {
