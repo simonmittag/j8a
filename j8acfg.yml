@@ -29,6 +29,7 @@ jwt:
       rwIDAQAB
       -----END PUBLIC KEY-----
   jwks:
+    alg: RS256
     jwksUrl: http://localhost:60083/mse6/jwks
 
 policies:

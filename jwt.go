@@ -56,12 +56,17 @@ type Jwt struct {
 	AcceptableSkewSeconds string
 }
 
+var validAlgNoNone = []string{"RS256", "RS384", "RS512", "PS256", "PS384", "PS512", "HS256", "HS384", "HS512", "ES256", "ES384", "ES512"}
+var validAlg = append(validAlgNoNone, "none")
+
 const pemOverflow = "jwt key [%s] only type PUBLIC KEY or CERTIFICATE allowed but found additional or invalid data, check your PEM block"
 const pemTypeBad = "jwt key [%s] is not of type PUBLIC KEY or CERTIFICATE, check your PEM Block preamble"
 const pemAsn1Bad = "jwt key [%s] asn data not valid, check your PEM Block"
 const pemRsaNotFound = "jwt key [%s] RSA public key not found in your certificate, check your PEM Block"
 const pemEcdsaNotFound = "jwt key [%s] ECDSA public key not found in your certificate, check your PEM Block"
-const keyTypeInvalid = "unable to determine key type, not one of: [RS256, RS384, RS512, PS256, PS384, PS512, HS256, HS384, HS512, ES256, ES384, ES512, none]"
+
+var keyTypeInvalid = fmt.Sprintf("unable to determine key type, not one of: %s", validAlg)
+
 const ecdsaKeySizeBad = "jwt [%s] invalid key size for alg %s, parsed bitsize %d, check your configuration"
 
 func (jwt *Jwt) validate() error {
@@ -83,8 +88,24 @@ func (jwt *Jwt) validate() error {
 		return errors.New("invalid jwt name not specified")
 	}
 
-	if len(jwt.Alg) > 0 && len(jwt.JwksUrl) > 0 {
-		return errors.New(fmt.Sprintf("invalid jwt [%s] do not specify alg with jwksUrl which contains algorithm(s).", jwt.Name))
+	if len(jwt.Alg) > 0 {
+		matched := false
+		for _, alg := range validAlg {
+			if alg == jwt.Alg {
+				matched = true
+			}
+		}
+		if !matched {
+			return errors.New(fmt.Sprintf("invalid jwt [%s] unknown alg %s. Must be one of %s", jwt.Name, jwt.Alg, validAlg))
+		}
+	}
+
+	if len(jwt.Alg) == 0 && len(jwt.JwksUrl) > 0 {
+		return errors.New(fmt.Sprintf("invalid jwt [%s] missing mandatory alg parameter next to jwksUrl. Must be one of %s", jwt.Name, validAlgNoNone))
+	}
+
+	if len(jwt.Alg) == 0 && len(jwt.Key) > 0 {
+		return errors.New(fmt.Sprintf("invalid jwt [%s] missing mandatory alg parameter next to key. Must be one of %s", jwt.Name, validAlgNoNone))
 	}
 
 	if alg == jwa.NoSignature && len(jwt.Key) > 0 {
@@ -92,7 +113,7 @@ func (jwt *Jwt) validate() error {
 	}
 
 	if alg != jwa.NoSignature && len(jwt.Key) == 0 && len(jwt.JwksUrl) == 0 {
-		err = errors.New(fmt.Sprintf("unable to validate jwt [%s] must specify one of key or jwksUrl", jwt.Name))
+		err = errors.New(fmt.Sprintf("unable to validate jwt [%s] alg [%s] must specify one of key or jwksUrl", jwt.Name, alg))
 	}
 
 	if len(jwt.AcceptableSkewSeconds) > 0 {
