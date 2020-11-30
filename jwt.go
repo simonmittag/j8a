@@ -117,8 +117,17 @@ func (jwt *Jwt) validate() error {
 func (jwt *Jwt) loadJwks() error {
 	keyset, err := jwk.Fetch(jwt.JwksUrl)
 	if err == nil {
-		log.Debug().Msgf("fetched %d jwk keys from %s", keyset.Len(), jwt.JwksUrl)
+		log.Debug().Msgf("jwt [%s] fetched %d jwk from jwks URL %s", jwt.Name, keyset.Len(), jwt.JwksUrl)
+	} else {
+		return err
 	}
+
+	if keyset.Keys == nil || len(keyset.Keys) == 0 {
+		return errors.New(fmt.Sprintf("jwt [%s] unable to parse keys in keyset", jwt.Name))
+	} else {
+		jwt.Alg = keyset.Keys[0].Algorithm()
+	}
+
 	for _, key := range keyset.Keys {
 		//here, use the key's signature algorithm, not what's supplied in the config.
 		alg := *new(jwa.SignatureAlgorithm)
@@ -158,6 +167,7 @@ func (jwt *Jwt) loadJwks() error {
 		default:
 			err = errors.New(fmt.Sprintf("unknown key type in Jwks %v", alg.String()))
 		}
+		log.Debug().Msgf("jwt [%s] successfully parsed %s key from remote jwk", jwt.Name, alg)
 	}
 	return err
 }
@@ -283,6 +293,9 @@ func (jwt *Jwt) parseKey(alg jwa.SignatureAlgorithm) error {
 	default:
 		return errors.New(keyTypeInvalid)
 	}
+
+	log.Debug().Msgf("jwt [%s] successfully parsed %s key", jwt.Name, alg)
+
 	return err
 }
 

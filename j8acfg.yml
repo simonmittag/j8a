@@ -29,7 +29,7 @@ jwt:
       rwIDAQAB
       -----END PUBLIC KEY-----
   jwks:
-    jwksUrl: https://j8a.au.auth0.com/.well-known/jwks.json
+    jwksUrl: http://localhost:60083/mse6/jwks
 
 policies:
   ab:
@@ -51,7 +51,7 @@ routes:
   - path: /mse6jwt
     transform: /mse6
     resource: mse6
-    jwt: all
+    jwt: jwks
   - path: /mse7
     transform: /mse6
     resource: mse6
