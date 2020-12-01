@@ -129,13 +129,13 @@ func (jwt *Jwt) validate() error {
 	if len(jwt.Key) > 0 {
 		err = jwt.parseKey(alg)
 	} else if len(jwt.JwksUrl) > 0 {
-		err = jwt.loadJwks()
+		err = jwt.LoadJwks()
 	}
 
 	return err
 }
 
-func (jwt *Jwt) loadJwks() error {
+func (jwt *Jwt) LoadJwks() error {
 	keyset, err := jwk.Fetch(jwt.JwksUrl)
 	if err == nil {
 		log.Debug().Msgf("jwt [%s] fetched %d jwk from jwks URL %s", jwt.Name, keyset.Len(), jwt.JwksUrl)
@@ -145,8 +145,6 @@ func (jwt *Jwt) loadJwks() error {
 
 	if keyset.Keys == nil || len(keyset.Keys) == 0 {
 		return errors.New(fmt.Sprintf("jwt [%s] unable to parse keys in keyset", jwt.Name))
-	} else {
-		jwt.Alg = keyset.Keys[0].Algorithm()
 	}
 
 	for _, key := range keyset.Keys {
