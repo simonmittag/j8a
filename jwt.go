@@ -153,6 +153,11 @@ func (jwt *Jwt) loadJwks() error {
 		//here, use the key's signature algorithm, not what's supplied in the config.
 		alg := *new(jwa.SignatureAlgorithm)
 		err = alg.Accept(key.Algorithm())
+
+		if jwt.Alg != key.Algorithm() {
+			return errors.New(fmt.Sprintf("jwt [%s] key algorithm %s in jwks keyset does not match configured alg %s", jwt.Name, key.Algorithm(), jwt.Alg))
+		}
+
 		switch alg {
 		case jwa.RS256, jwa.RS384, jwa.RS512, jwa.PS256, jwa.PS384, jwa.PS512:
 			k := KidPair{
