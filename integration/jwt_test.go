@@ -2,6 +2,7 @@ package integration
 
 import (
 	"fmt"
+	"github.com/simonmittag/j8a"
 	"net/http"
 	"testing"
 )
@@ -74,6 +75,79 @@ func TestJwtRS256LoadedFromX509(t *testing.T) {
 	DoJwtTest(t, "/x509rs256", 200, "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJqb2UiLCJodHRwOi8vZXhhbXBsZS5jb20vaXNfcm9vdCI6dHJ1ZSwianRpIjoiNmExMTUyNGUtZGNjYS00YmY4LTkyZTgtMTFhOTEzOTZkNTRjIiwiaWF0IjoxNjA2MDAwNTE1fQ.jngGY_yVkrtTuLaFhoHgDQI7Htqseeg7UWxmICsrkBZVN7NNjZEnLs4MLs32b_PsRRS5V6DQzMRQWpBiGnJrfKeQeKPOkNiO9Eq5rNYbYUWpzldk0uIxNPyM6aJViuKFON7ixiEU_GEy9hU5Q1JbVfMOPRXpMkX37-weY4sINCjCOvqNf8NUe9daKfv63qOjn6UOjvaS7hXbiH1f6B39cYzFx1uKcyOIR8k4ACHwA05suCSRV4kBIV3zmhrvFdB2h3lN8TWM3QNVRiNHrqc7gKP1HtX_XOSlyTTLNhGQMRX8v9rAhLIaqXnlLqakvCHNi71HdQebUhSa64fLYId0lQ")
 }
 
+func TestJwtLoadJWKS(t *testing.T) {
+	jwt := j8a.Jwt{
+		Name:                  "Testy",
+		Alg:                   "RS256",
+		Key:                   "",
+		JwksUrl:               "http://localhost:60083/mse6/jwks",
+		RSAPublic:             nil,
+		ECDSAPublic:           nil,
+		Secret:                nil,
+		AcceptableSkewSeconds: "",
+	}
+	err := jwt.LoadJwks()
+	if err != nil {
+		t.Errorf("error loading RS256 JWKS config, cause %v", err)
+	}
+}
+
+func TestJwtLoadJWKSFailBadAlg(t *testing.T) {
+	jwt := j8a.Jwt{
+		Name:                  "Testy",
+		Alg:                   "RS257",
+		Key:                   "",
+		JwksUrl:               "http://localhost:60083/mse6/jwks",
+		RSAPublic:             nil,
+		ECDSAPublic:           nil,
+		Secret:                nil,
+		AcceptableSkewSeconds: "",
+	}
+	err := jwt.LoadJwks()
+	if err == nil {
+		t.Error("should have failed loading JWKS config with alg")
+	} else {
+		t.Logf("normal. alg verification failed with %s", err)
+	}
+}
+
+func TestJwtLoadJWKSFailIllegalJwks(t *testing.T) {
+	jwt := j8a.Jwt{
+		Name:                  "Testy",
+		Alg:                   "RS256",
+		Key:                   "",
+		JwksUrl:               "http://localhost:60083/mse6/jwksbad",
+		RSAPublic:             nil,
+		ECDSAPublic:           nil,
+		Secret:                nil,
+		AcceptableSkewSeconds: "",
+	}
+	err := jwt.LoadJwks()
+	if err == nil {
+		t.Error("should have failed loading JWKS config with alg")
+	} else {
+		t.Logf("normal. alg verification failed with %s", err)
+	}
+}
+
+func TestJwtLoadJWKSFailBadUrl(t *testing.T) {
+	jwt := j8a.Jwt{
+		Name:                  "Testy",
+		Alg:                   "RS256",
+		Key:                   "",
+		JwksUrl:               "http://localhost:60083/mse6/get",
+		RSAPublic:             nil,
+		ECDSAPublic:           nil,
+		Secret:                nil,
+		AcceptableSkewSeconds: "",
+	}
+	err := jwt.LoadJwks()
+	if err == nil {
+		t.Error("should have failed loading JWKS config with alg")
+	} else {
+		t.Logf("normal. alg verification failed with %s", err)
+	}
+}
 
 func DoJwtTest(t *testing.T, slug string, want int, forjwt string) {
 	client := &http.Client{}
