@@ -28,9 +28,6 @@ jwt:
       T7B5GHWe7MtxqQNhf1m2Nvo1m/LvaLap/EM3684xOa6RexB1XdB8oegpMRygPx7o
       rwIDAQAB
       -----END PUBLIC KEY-----
-  jwks:
-    alg: RS256
-    jwksUrl: http://localhost:60083/mse6/jwks
 
 policies:
   ab:
@@ -49,10 +46,6 @@ routes:
   - path: /mse6/
     resource: mse6
     policy: ab
-  - path: /mse6jwt
-    transform: /mse6
-    resource: mse6
-    jwt: jwks
   - path: /mse7
     transform: /mse6
     resource: mse6

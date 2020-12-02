@@ -135,12 +135,19 @@ jwt:
       -----END PUBLIC KEY-----
   jwtnone:
     alg: none
+  jwtjwks:
+    alg: RS256
+    jwksUrl: http://localhost:60083/mse6/jwks
 
 routes:
   - path: "/about"
     resource: about
   - path: "/mse6/some"
     resource: mse61
+  - path: /mse6jwt
+    transform: /mse6
+    resource: mse6
+    jwt: jwtjwks
   - path: /x509rs256
     transform: /mse6
     resource: mse6
