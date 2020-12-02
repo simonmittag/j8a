@@ -92,6 +92,24 @@ func TestJwtLoadJWKS(t *testing.T) {
 	}
 }
 
+func TestJwtLoadJWKSFailNoAlg(t *testing.T) {
+	jwt := j8a.Jwt{
+		Name:                  "Testy",
+		Key:                   "",
+		JwksUrl:               "http://localhost:60083/mse6/jwks",
+		RSAPublic:             nil,
+		ECDSAPublic:           nil,
+		Secret:                nil,
+		AcceptableSkewSeconds: "",
+	}
+	err := jwt.LoadJwks()
+	if err == nil {
+		t.Error("should have failed loading JWKS config with alg")
+	} else {
+		t.Logf("normal. alg verification failed with %s", err)
+	}
+}
+
 func TestJwtLoadJWKSFailBadAlg(t *testing.T) {
 	jwt := j8a.Jwt{
 		Name:                  "Testy",
