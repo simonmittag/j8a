@@ -7,6 +7,12 @@ import (
 	"testing"
 )
 
+func TestJwtInvalidKidStillPassesSecondLayerValidationWithKeyMatching(t *testing.T) {
+	//this jwt token has a kid of k42 which isn't in the keyset it should still
+	//pass by matching the signature once the kid wasn't found.
+	DoJwtTest(t, "/mse6jwt", 200, "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6Ims0MiJ9.eyJpc3MiOiJqb2UiLCJodHRwOi8vZXhhbXBsZS5jb20vaXNfcm9vdCI6dHJ1ZSwianRpIjoiMmQ1NWVhMmItMGE0NS00OTIyLTgzZTUtNDExYzgxYmM1MzkwIiwiaWF0IjoxNjA2OTQ2MTE0fQ.LqIDVbxE-k4X6EbH5g5WVzUMpBh4WS-wjGUrPpDZ75d0mTWncCVwDfgjcf9IgqAnaKmPaTa2f_DrqLLtIaZTQAfz0OZ2cakeKc7lxyju9l-1QCgcpLun1G63QLXfBxei9y1p5iRJ0WlUjgwa7jaVpBu6HkUpFBHIdSdZgnavwaj7LVHhiGiJefZlVB__z0sgIshHTellqGEAJlD6ANiB0IeR_BHT3LMfHgkL3xBzr7XXKTDw67hT0jU1JJpHox5Q2CTHVRVDsEzUH1ZBTmsjSQuoqnzql8XCqL1QD0sw0BWBxZrB4doXLjpKSPTRv1Pa2lRDOfl4Xt0asD0He5wcLg")
+}
+
 func TestJwtNoneNotExpired(t *testing.T) {
 	DoJwtTest(t, "/jwtnone", 200, "eyJ0eXAiOiJKV1QiLCJhbGciOiJub25lIn0.eyJpc3MiOiJqb2UiLCJodHRwOi8vZXhhbXBsZS5jb20vaXNfcm9vdCI6dHJ1ZSwianRpIjoiNDNkODEzOTYtOWZlMi00ZTRkLTgxMDYtOWQyOTFlY2FmMjVkIiwiaWF0IjoxNjA1NTY2MDU0LCJleHAiOjk0NzU4NzgzNTd9.")
 }
