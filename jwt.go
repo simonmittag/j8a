@@ -65,9 +65,16 @@ const pemAsn1Bad = "jwt key [%s] asn data not valid, check your PEM Block"
 const pemRsaNotFound = "jwt key [%s] RSA public key not found in your certificate, check your PEM Block"
 const pemEcdsaNotFound = "jwt key [%s] ECDSA public key not found in your certificate, check your PEM Block"
 
-var keyTypeInvalid = fmt.Sprintf("unable to determine key type, not one of: %s", validAlg)
+const keyTypeInvalid = "jwt [%s] unable to determine key type. Must be one of %s"
+const unknownAlg = "jwt [%s] unknown alg [%s]. Must be one of %s"
+const missingAlg = "jwt [%s] missing mandatory alg parameter next to jwksUrl. Must be one of %s"
+const noneWithKeyData = "jwt [%s] none type signature does not allow key data, check your configuration"
+const missingKeyOrJwks = "jwt [%s] alg [%s] must specify one of key or jwksUrl"
+const skewInvalid = "jwt [%s] acceptable skew seconds, must be 0 or greater, was %s"
 
-const ecdsaKeySizeBad = "jwt [%s] invalid key size for alg %s, parsed bitsize %d, check your configuration"
+const ecdsaKeySizeBad = "jwt [%s] invalid key size for alg [%s], parsed bitsize %d, check your configuration"
+
+const defaultSkew = "120"
 
 func (jwt *Jwt) validate() error {
 	if jwt.RSAPublic == nil {
@@ -96,34 +103,34 @@ func (jwt *Jwt) validate() error {
 			}
 		}
 		if !matched {
-			return errors.New(fmt.Sprintf("invalid jwt [%s] unknown alg %s. Must be one of %s", jwt.Name, jwt.Alg, validAlg))
+			return errors.New(fmt.Sprintf(unknownAlg, jwt.Name, jwt.Alg, validAlg))
 		}
 	}
 
 	if len(jwt.Alg) == 0 && len(jwt.JwksUrl) > 0 {
-		return errors.New(fmt.Sprintf("invalid jwt [%s] missing mandatory alg parameter next to jwksUrl. Must be one of %s", jwt.Name, validAlgNoNone))
+		return errors.New(fmt.Sprintf(missingAlg, jwt.Name, validAlgNoNone))
 	}
 
 	if len(jwt.Alg) == 0 && len(jwt.Key) > 0 {
-		return errors.New(fmt.Sprintf("invalid jwt [%s] missing mandatory alg parameter next to key. Must be one of %s", jwt.Name, validAlgNoNone))
+		return errors.New(fmt.Sprintf(missingAlg, jwt.Name, validAlgNoNone))
 	}
 
 	if alg == jwa.NoSignature && len(jwt.Key) > 0 {
-		return errors.New(fmt.Sprintf("jwt [%s] none type signature does not allow key data, check your configuration", jwt.Name))
+		return errors.New(fmt.Sprintf(noneWithKeyData, jwt.Name))
 	}
 
 	if alg != jwa.NoSignature && len(jwt.Key) == 0 && len(jwt.JwksUrl) == 0 {
-		err = errors.New(fmt.Sprintf("unable to validate jwt [%s] alg [%s] must specify one of key or jwksUrl", jwt.Name, alg))
+		err = errors.New(fmt.Sprintf(missingKeyOrJwks, jwt.Name, alg))
 	}
 
 	if len(jwt.AcceptableSkewSeconds) > 0 {
 		secs, nonnumeric := strconv.Atoi(jwt.AcceptableSkewSeconds)
 		if nonnumeric != nil || secs < 0 {
-			err = errors.New(fmt.Sprintf("invalid jwt [%s] acceptable skew seconds, must be 0 or greater, was %s", jwt.Name, jwt.AcceptableSkewSeconds))
+			err = errors.New(fmt.Sprintf(skewInvalid, jwt.Name, jwt.AcceptableSkewSeconds))
 			return err
 		}
 	} else {
-		jwt.AcceptableSkewSeconds = "120"
+		jwt.AcceptableSkewSeconds = defaultSkew
 	}
 
 	if len(jwt.Key) > 0 {
@@ -311,11 +318,11 @@ func (jwt *Jwt) parseKey(alg jwa.SignatureAlgorithm) error {
 
 	case jwa.NoSignature:
 		if len(jwt.Key) > 0 {
-			return errors.New("none type signature does not allow key data, check your configuration")
+			return errors.New(fmt.Sprintf("jwt [%s] none type signature does not allow key data, check your configuration", jwt.Name))
 		}
 
 	default:
-		return errors.New(keyTypeInvalid)
+		return errors.New(fmt.Sprintf(keyTypeInvalid, jwt.Name, validAlg))
 	}
 
 	log.Debug().Msgf("jwt [%s] successfully parsed %s key", jwt.Name, alg)

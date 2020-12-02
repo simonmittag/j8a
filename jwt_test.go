@@ -13,8 +13,8 @@ import (
 
 func TestFindJwtInKeySet(t *testing.T) {
 	cfg := Jwt{
-		Name:                  "",
-		Alg:                   "",
+		Name:                  "MyJwks",
+		Alg:                   "RS256",
 		Key:                   "",
 		JwksUrl:               "https://j8a.au.auth0.com/.well-known/jwks.json",
 		RSAPublic:             nil,
@@ -22,7 +22,7 @@ func TestFindJwtInKeySet(t *testing.T) {
 		Secret:                nil,
 		AcceptableSkewSeconds: "",
 	}
-	cfg.loadJwks()
+	cfg.LoadJwks()
 
 	if cfg.RSAPublic == nil {
 		t.Errorf("RSA key not loaded")
@@ -43,11 +43,11 @@ func jwtValErr(t *testing.T, jwt Jwt, want error) {
 	got := jwt.validate()
 	if want != nil {
 		if got == nil || got.Error() != want.Error() {
-			t.Errorf("%s key validation error, want %v, got %v", jwt.Alg, want, got)
+			t.Errorf("%s key validation error, want [%v], got [%v]", jwt.Alg, want, got)
 		}
 	} else {
 		if got != want {
-			t.Errorf("%s key validation error, want %v, got %v", jwt.Alg, want, got)
+			t.Errorf("%s key validation error, want [%v], got [%v]", jwt.Alg, want, got)
 		}
 	}
 }
@@ -66,7 +66,7 @@ func jwtBadAlg(t *testing.T, alg string, key string) {
 		Alg:  alg,
 		Key:  key,
 	}
-	var want = errors.New(keyTypeInvalid)
+	var want = errors.New(fmt.Sprintf(unknownAlg, jwt.Name, alg, validAlg))
 	jwtValErr(t, jwt, want)
 }
 
@@ -327,7 +327,7 @@ func TestJwtHS256NoKey(t *testing.T) {
 		Alg:  "HS256",
 		Key:  "",
 	}
-	jwtValErr(t, jwt, errors.New("unable to validate jwt [namer] must specify one of key or jwksUrl"))
+	jwtValErr(t, jwt, errors.New(fmt.Sprintf(missingKeyOrJwks, "namer", "HS256")))
 }
 
 func TestJwtHS384Pass(t *testing.T) {
@@ -344,7 +344,7 @@ func TestJwtHS384NoKey(t *testing.T) {
 		Alg:  "HS384",
 		Key:  "",
 	}
-	jwtValErr(t, jwt, errors.New("unable to validate jwt [namer] must specify one of key or jwksUrl"))
+	jwtValErr(t, jwt, errors.New(fmt.Sprintf(missingKeyOrJwks, "namer", "HS384")))
 }
 
 func TestJwtHS512Pass(t *testing.T) {
@@ -361,7 +361,7 @@ func TestJwtHS512NoKey(t *testing.T) {
 		Alg:  "HS512",
 		Key:  "",
 	}
-	jwtValErr(t, jwt, errors.New("unable to validate jwt [namer] must specify one of key or jwksUrl"))
+	jwtValErr(t, jwt, errors.New(fmt.Sprintf(missingKeyOrJwks, "namer", "HS512")))
 }
 
 func BenchmarkJwtRS256(b *testing.B) {
