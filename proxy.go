@@ -546,9 +546,16 @@ func (proxy *Proxy) validateJwt() bool {
 			parsed, err = jwt.Parse(bytes.NewReader([]byte(token)))
 		}
 
-		//this is necessary even after using jwt.WithVerify above to check exp and nbf claims
+		//this is necessary even after using jwt.WithVerify for signature verification above to check exp and nbf claims
+		skew, _ := strconv.Atoi(routeSec.AcceptableSkewSeconds)
+		clockOpt := jwt.WithClock(
+			jwt.ClockFunc(
+				func() time.Time { //pretend it's in the past here to give validation more time
+					return time.Now().Add(-time.Second * time.Duration(skew))
+				}),
+		)
 		if parsed != nil && err == nil {
-			err = jwt.Verify(parsed)
+			err = jwt.Verify(parsed, clockOpt)
 		}
 
 		if parsed != nil {
@@ -603,6 +610,9 @@ func verifySignature(token string, keySet KeySet, alg jwa.SignatureAlgorithm) (j
 					jwt.WithVerify(alg, key))
 			}
 		}
+
+		//TODO: try this with x5t SHA1 thumbprint on previously loaded keys to augment kid. If you're reading this
+		//TODO: comment feel free to get in touch with a github issue.
 
 		//if it didn't validate above, we try other keys, provided there are any
 		if len(kid) == 0 ||
