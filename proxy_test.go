@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"crypto/tls"
 	"fmt"
+	"github.com/lestrrat-go/jwx/jwa"
+	"github.com/lestrrat-go/jwx/jwt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -206,6 +208,63 @@ func TestExtractBadKidNoString(t *testing.T) {
 	if got != want {
 		t.Errorf("want empty kid header from token, got %v, want %v", got, want)
 	}
+}
+
+func TestJwt_IatFail(t *testing.T) {
+	now := time.Now()
+	iat := now.Add(time.Second * 180)
+	skew := 120
+	payload := dummyHs256TokenFactory(t, jwt.IssuedAtKey, iat)
+
+	err2 := verifyDateClaims(string(payload), skew)
+	if err2 == nil {
+		t.Error("got nil err but token should not have satisfied iat")
+	} else {
+		t.Logf("normal. token not validated, iat %d, skewSecs %d, now %d, delta %d, cause: %v", iat.Unix(), skew, now.Unix(), now.Unix()-iat.Unix(), err2)
+	}
+}
+
+func TestJwt_IatFailSkew(t *testing.T) {
+	now := time.Now()
+	iat := now.Add(time.Second * 60)
+	skew := 30
+	payload := dummyHs256TokenFactory(t, jwt.IssuedAtKey, iat)
+
+	err2 := verifyDateClaims(string(payload), skew)
+	if err2 == nil {
+		t.Error("got nil err but token should not have satisfied iat")
+	} else {
+		t.Logf("normal. token not validated, iat %d, skewSecs %d, now %d, delta %d, cause: %v", iat.Unix(), skew, now.Unix(), now.Unix()-iat.Unix(), err2)
+	}
+}
+
+func TestJwt_IatPassWithinSkew(t *testing.T) {
+	now := time.Now()
+	iat := now.Add(time.Second * 60)
+	skew := 120
+	payload := dummyHs256TokenFactory(t, jwt.IssuedAtKey, iat)
+
+	err2 := verifyDateClaims(string(payload), skew)
+	if err2 != nil {
+		t.Error("iat should have satisfied")
+	} else {
+		t.Logf("normal. iat satisfied time %d, skewSecs %d, now %d, delta %d", iat.Unix(), skew, now.Unix(), now.Unix()-iat.Unix())
+	}
+}
+
+func dummyHs256TokenFactory(t *testing.T, key string, value time.Time) []byte {
+	var err error
+	var payload []byte
+
+	tok := jwt.New()
+	tok.Set(key, value)
+	tok.Set("foo", "bar")
+	payload, err = jwt.Sign(tok, jwa.HS256, []byte("secret"))
+	t.Logf("token %s", payload)
+	if err != nil {
+		t.Errorf("cannot sign token, cause: %v", err)
+	}
+	return payload
 }
 
 func pathTransformation(t *testing.T, routePath string, transform string, requestUri string, want string) {

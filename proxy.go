@@ -13,6 +13,7 @@ import (
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jws"
 	"github.com/lestrrat-go/jwx/jwt"
+	"github.com/rs/zerolog"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -553,32 +554,7 @@ func (proxy *Proxy) validateJwt() bool {
 		}
 
 		if parsed != nil {
-			if parsed.IssuedAt().Unix() > 1 {
-				ev.Bool("jwtClaimsIat", true)
-				ev.Str("jwtIatUtcIso", parsed.IssuedAt().Format(time.RFC3339))
-				ev.Str("jwtIatLclIso", parsed.IssuedAt().Local().Format(time.RFC3339))
-				ev.Int64("jwtIatUnix", parsed.IssuedAt().Unix())
-			} else {
-				ev.Bool("jwtClaimsIat", false)
-			}
-
-			if parsed.NotBefore().Unix() > 1 {
-				ev.Bool("jwtClaimsNbf", true)
-				ev.Str("jwtNbfUtcIso", parsed.NotBefore().Format(time.RFC3339))
-				ev.Str("jwtNbfLclIso", parsed.NotBefore().Local().Format(time.RFC3339))
-				ev.Int64("jwtNbfUnix", parsed.NotBefore().Unix())
-			} else {
-				ev.Bool("jwtClaimsNbf", false)
-			}
-
-			if parsed.Expiration().Unix() > 1 {
-				ev.Bool("jwtClaimsExp", true)
-				ev.Str("jwtExpUtcIso", parsed.Expiration().Format(time.RFC3339))
-				ev.Str("jwtExpLclIso", parsed.Expiration().Local().Format(time.RFC3339))
-				ev.Int64("jwtExpUnix", parsed.Expiration().Unix())
-			} else {
-				ev.Bool("jwtClaimsExp", false)
-			}
+			logDateClaims(parsed, ev)
 		}
 
 		ok = err == nil
@@ -596,9 +572,38 @@ func (proxy *Proxy) validateJwt() bool {
 	return ok
 }
 
+func logDateClaims(parsed jwt.Token, ev *zerolog.Event) {
+	if parsed.IssuedAt().Unix() > 1 {
+		ev.Bool("jwtClaimsIat", true)
+		ev.Str("jwtIatUtcIso", parsed.IssuedAt().Format(time.RFC3339))
+		ev.Str("jwtIatLclIso", parsed.IssuedAt().Local().Format(time.RFC3339))
+		ev.Int64("jwtIatUnix", parsed.IssuedAt().Unix())
+	} else {
+		ev.Bool("jwtClaimsIat", false)
+	}
+
+	if parsed.NotBefore().Unix() > 1 {
+		ev.Bool("jwtClaimsNbf", true)
+		ev.Str("jwtNbfUtcIso", parsed.NotBefore().Format(time.RFC3339))
+		ev.Str("jwtNbfLclIso", parsed.NotBefore().Local().Format(time.RFC3339))
+		ev.Int64("jwtNbfUnix", parsed.NotBefore().Unix())
+	} else {
+		ev.Bool("jwtClaimsNbf", false)
+	}
+
+	if parsed.Expiration().Unix() > 1 {
+		ev.Bool("jwtClaimsExp", true)
+		ev.Str("jwtExpUtcIso", parsed.Expiration().Format(time.RFC3339))
+		ev.Str("jwtExpLclIso", parsed.Expiration().Local().Format(time.RFC3339))
+		ev.Int64("jwtExpUnix", parsed.Expiration().Unix())
+	} else {
+		ev.Bool("jwtClaimsExp", false)
+	}
+}
+
 func verifyDateClaims(token string, skew int) error {
-	//arghh i need a deep copy of this token so i can mod it, but it's an interface wrapping a package private jwt.stdToken
-	//i need to parse it again.
+	//arghh i need a deep copy of this token so i can modify it, but it's an interface wrapping a package private jwt.stdToken
+	//so i need to parse it again.
 	skewed, _ := jwt.Parse(bytes.NewReader([]byte(token)))
 
 	if skewed.IssuedAt().Unix() > int64(skew*1000) {
