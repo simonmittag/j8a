@@ -546,16 +546,10 @@ func (proxy *Proxy) validateJwt() bool {
 			parsed, err = jwt.Parse(bytes.NewReader([]byte(token)))
 		}
 
-		//this is necessary even after using jwt.WithVerify for signature verification above to check exp and nbf claims
+		//date claims are verified separately to signature including skew
 		skew, _ := strconv.Atoi(routeSec.AcceptableSkewSeconds)
-		clockOpt := jwt.WithClock(
-			jwt.ClockFunc(
-				func() time.Time { //pretend it's in the past here to give validation more time
-					return time.Now().Add(-time.Second * time.Duration(skew))
-				}),
-		)
 		if parsed != nil && err == nil {
-			err = jwt.Verify(parsed, clockOpt)
+			err = verifyDateClaims(token, skew)
 		}
 
 		if parsed != nil {
@@ -600,6 +594,23 @@ func (proxy *Proxy) validateJwt() bool {
 			Msgf("jwt token rejected, cause: %v", err)
 	}
 	return ok
+}
+
+func verifyDateClaims(token string, skew int) error {
+	//arghh i need a deep copy of this token so i can mod it, but it's an interface wrapping a package private jwt.stdToken
+	//i need to parse it again.
+	skewed, _ := jwt.Parse(bytes.NewReader([]byte(token)))
+
+	if skewed.IssuedAt().Unix() > int64(skew*1000) {
+		skewed.Set("iat", skewed.IssuedAt().Add(-time.Second*time.Duration(skew)))
+	}
+	if skewed.NotBefore().Unix() > int64(skew*1000) {
+		skewed.Set("nbf", skewed.NotBefore().Add(-time.Second*time.Duration(skew)))
+	}
+	if skewed.Expiration().Unix() > 1 {
+		skewed.Set("exp", skewed.Expiration().Add(time.Second*time.Duration(skew)))
+	}
+	return jwt.Verify(skewed)
 }
 
 func verifySignature(token string, keySet KeySet, alg jwa.SignatureAlgorithm) (jwt.Token, error) {
