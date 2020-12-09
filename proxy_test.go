@@ -252,6 +252,48 @@ func TestJwt_IatPassWithinSkew(t *testing.T) {
 	}
 }
 
+func TestJwt_ExpFail(t *testing.T) {
+	now := time.Now()
+	exp := now.Add(-time.Second * 180)
+	skew := 120
+	payload := dummyHs256TokenFactory(t, jwt.ExpirationKey, exp)
+
+	err2 := verifyDateClaims(string(payload), skew)
+	if err2 == nil {
+		t.Error("got nil err but token should not have satisfied exp")
+	} else {
+		t.Logf("normal. token not validated, exp %d, skewSecs %d, now %d, delta %d, cause: %v", exp.Unix(), skew, now.Unix(), now.Unix()-exp.Unix(), err2)
+	}
+}
+
+func TestJwt_ExpFailSkew(t *testing.T) {
+	now := time.Now()
+	exp := now.Add(-time.Second * 60)
+	skew := 30
+	payload := dummyHs256TokenFactory(t, jwt.ExpirationKey, exp)
+
+	err2 := verifyDateClaims(string(payload), skew)
+	if err2 == nil {
+		t.Error("got nil err but token should not have satisfied exp")
+	} else {
+		t.Logf("normal. token not validated, exp %d, skewSecs %d, now %d, delta %d, cause: %v", exp.Unix(), skew, now.Unix(), now.Unix()-exp.Unix(), err2)
+	}
+}
+
+func TestJwt_ExpPassWithinSkew(t *testing.T) {
+	now := time.Now()
+	exp := now.Add(-time.Second * 60)
+	skew := 120
+	payload := dummyHs256TokenFactory(t, jwt.ExpirationKey, exp)
+
+	err2 := verifyDateClaims(string(payload), skew)
+	if err2 != nil {
+		t.Error("exp should have satisfied")
+	} else {
+		t.Logf("normal. exp satisfied time %d, skewSecs %d, now %d, delta %d", exp.Unix(), skew, now.Unix(), now.Unix()-exp.Unix())
+	}
+}
+
 func dummyHs256TokenFactory(t *testing.T, key string, value time.Time) []byte {
 	var err error
 	var payload []byte
