@@ -559,6 +559,15 @@ func (proxy *Proxy) validateJwt() bool {
 		}
 
 		if parsed != nil {
+			if parsed.IssuedAt().Unix() > 1 {
+				ev.Bool("jwtClaimsIat", true)
+				ev.Str("jwtIatUtcIso", parsed.IssuedAt().Format(time.RFC3339))
+				ev.Str("jwtIatLclIso", parsed.IssuedAt().Local().Format(time.RFC3339))
+				ev.Int64("jwtIatUnix", parsed.IssuedAt().Unix())
+			} else {
+				ev.Bool("jwtClaimsIat", false)
+			}
+
 			if parsed.NotBefore().Unix() > 1 {
 				ev.Bool("jwtClaimsNbf", true)
 				ev.Str("jwtNbfUtcIso", parsed.NotBefore().Format(time.RFC3339))
