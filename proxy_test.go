@@ -294,6 +294,76 @@ func TestJwt_ExpPassWithinSkew(t *testing.T) {
 	}
 }
 
+func TestJwt_NbfFail(t *testing.T) {
+	now := time.Now()
+	nbf := now.Add(time.Second * 180)
+	skew := 120
+	payload := dummyHs256TokenFactory(t, jwt.NotBeforeKey, nbf)
+
+	err2 := verifyDateClaims(string(payload), skew)
+	if err2 == nil {
+		t.Error("got nil err but token should not have satisfied nbf")
+	} else {
+		t.Logf("normal. token not validated, nbf %d, skewSecs %d, now %d, delta %d, cause: %v", nbf.Unix(), skew, now.Unix(), now.Unix()-nbf.Unix(), err2)
+	}
+}
+
+func TestJwt_NbfFailSkew(t *testing.T) {
+	now := time.Now()
+	nbf := now.Add(time.Second * 60)
+	skew := 30
+	payload := dummyHs256TokenFactory(t, jwt.NotBeforeKey, nbf)
+
+	err2 := verifyDateClaims(string(payload), skew)
+	if err2 == nil {
+		t.Error("got nil err but token should not have satisfied nbf")
+	} else {
+		t.Logf("normal. token not validated, nbf %d, skewSecs %d, now %d, delta %d, cause: %v", nbf.Unix(), skew, now.Unix(), now.Unix()-nbf.Unix(), err2)
+	}
+}
+
+func TestJwt_NbfPassWithinSkew(t *testing.T) {
+	now := time.Now()
+	nbf := now.Add(time.Second * 60)
+	skew := 120
+	payload := dummyHs256TokenFactory(t, jwt.NotBeforeKey, nbf)
+
+	err2 := verifyDateClaims(string(payload), skew)
+	if err2 != nil {
+		t.Error("nbf should have satisfied")
+	} else {
+		t.Logf("normal. nbf satisfied time %d, skewSecs %d, now %d, delta %d", nbf.Unix(), skew, now.Unix(), now.Unix()-nbf.Unix())
+	}
+}
+
+func TestJwt_NbfPassNoSkew(t *testing.T) {
+	now := time.Now()
+	nbf := now.Add(time.Second * -3)
+	skew := 0
+	payload := dummyHs256TokenFactory(t, jwt.NotBeforeKey, nbf)
+
+	err2 := verifyDateClaims(string(payload), skew)
+	if err2 != nil {
+		t.Error("nbf should have satisfied")
+	} else {
+		t.Logf("normal. nbf satisfied time %d, skewSecs %d, now %d, delta %d", nbf.Unix(), skew, now.Unix(), now.Unix()-nbf.Unix())
+	}
+}
+
+func TestJwt_NbfFailNoSkew(t *testing.T) {
+	now := time.Now()
+	nbf := now.Add(time.Second * 3)
+	skew := 0
+	payload := dummyHs256TokenFactory(t, jwt.NotBeforeKey, nbf)
+
+	err2 := verifyDateClaims(string(payload), skew)
+	if err2 == nil {
+		t.Error("got nil err but token should not have satisfied nbf")
+	} else {
+		t.Logf("normal token not validated, nbf %d, skewSecs %d, now %d, delta %d", nbf.Unix(), skew, now.Unix(), now.Unix()-nbf.Unix())
+	}
+}
+
 func dummyHs256TokenFactory(t *testing.T, key string, value time.Time) []byte {
 	var err error
 	var payload []byte
