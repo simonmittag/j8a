@@ -488,6 +488,27 @@ func BenchmarkJwtES512(b *testing.B) {
 	DoBenchForAlgBearerAndKey(b, alg, bearer, pemb)
 }
 
+//12μs
+func BenchmarkSimpleParse(b *testing.B) {
+	bearer := "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6Ims0MiJ9.eyJpc3MiOiJqb2UiLCJodHRwOi8vZXhhbXBsZS5jb20vaXNfcm9vdCI6dHJ1ZSwianRpIjoiOGUzMzM4NzAtMGVmNC00NTNlLWFkYzktNjk4NTc5ODNmMDM0IiwiaWF0IjoxNjA3NTEzNjU4fQ.MPDlM3h1A9a_Yy0ENRAh-E2rTJdVnb0AVQx7eTksm0kdq1CtIW7OAQQghNWwYhc-X1f1t36EG4j6fEViAvCvB-0M89ZJAPrNqLeyVrtU-O9nmaEgSCf5eQFJcEea41L42wbL4T4-HtwUGhuEnaH0UrR5hc9BSXKQwiXVIi0mtWcJKK6tCT4CNlCYH73igPmBXIxJeRl3ZLCqxDEZ5hdC1HEgOls_HGRSUfNKlXtc3-U4kz32HlsmDwwPO2-7xuj3vfeWCv6UgIwkSaiCkcBWJ-MsWzOX_VDflrgQwWe7yV2pnvHmJxido_NwuSd6JJ55da6xY6yBAAbbVo6pRIK6og"
+	DoBenchForBearerTokenParse(b, bearer)
+}
+
+//10μs
+func BenchmarkJwtEs512Parse(b *testing.B) {
+	bearer := "eyJhbGciOiJFUzUxMiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.AYEE2U3R1D40NxA7NcRApQ6jHExwLijMOxW527gN1usYLIu_Qg-X9vqm5XrDXFEyn4VpeQ83nE_az8QqRBZPkq5gAEIeJoyO3Mfj1G9uFyAyQmy2W8YYyqUUyjZ5lFu03gMmR_vdTQfWfFyAw6NbD0k78KF4h2qfXeybN-Ljjc7e7K7y\n"
+	DoBenchForBearerTokenParse(b, bearer)
+}
+
+func DoBenchForBearerTokenParse(b *testing.B, token string) {
+	for i := 0; i < b.N; i++ {
+		_, err := jwt.Parse(bytes.NewReader([]byte(token)))
+		if err != nil {
+			b.Errorf("token parsing failed, cause: %v", err)
+		}
+	}
+}
+
 func DoBenchForAlgBearerAndKey(b *testing.B, alg jwa.SignatureAlgorithm, bearer string, pemb string) {
 	pem, _ := pem.Decode([]byte(pemb))
 	pub, _ := x509.ParsePKIXPublicKey(pem.Bytes)
