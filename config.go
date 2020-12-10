@@ -18,6 +18,7 @@ import (
 type Config struct {
 	Policies   map[string]Policy
 	Routes     Routes
+	Jwt        map[string]*Jwt
 	Resources  map[string][]ResourceMapping
 	Connection Connection
 }
@@ -105,11 +106,16 @@ func (config Config) reApplyResourceNames() *Config {
 	return &config
 }
 
-func (config Config) sortRoutes() *Config {
+func (config Config) validateRoutes() *Config {
 	//prep routes with leading slash
 	for i, _ := range config.Routes {
 		if strings.Index(config.Routes[i].Path, "/") != 0 {
 			config.Routes[i].Path = "/" + config.Routes[i].Path
+		}
+		if config.Routes[i].hasJwt() {
+			if _, ok := config.Jwt[config.Routes[i].Jwt]; !ok {
+				config.panic(fmt.Sprintf("route [%s] jwt [%s] not found, check your configuration", config.Routes[i].Path, config.Routes[i].Jwt))
+			}
 		}
 	}
 	sort.Sort(Routes(config.Routes))
@@ -230,6 +236,22 @@ func (config Config) setDefaultUpstreamParams() *Config {
 	}
 	if config.Connection.Upstream.MaxAttempts == 0 {
 		config.Connection.Upstream.MaxAttempts = 1
+	}
+	return &config
+}
+
+func (config Config) validateJwt() *Config {
+	if len(config.Jwt) > 0 {
+		for name, jwt := range config.Jwt {
+			//update name on resource
+			jwt.Name = name
+			err := jwt.validate()
+			if err != nil {
+				config.panic(err.Error())
+			}
+			config.Jwt[name] = jwt
+		}
+		log.Debug().Msgf("parsed %d jwt configurations", len(config.Jwt))
 	}
 	return &config
 }

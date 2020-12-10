@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"crypto/tls"
 	"fmt"
+	"github.com/lestrrat-go/jwx/jwa"
+	"github.com/lestrrat-go/jwx/jwt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -161,6 +163,220 @@ func TestPathTransformation(t *testing.T) {
 	pathTransformation(t, "/mse6", "/", "/mse6/", "/")
 	pathTransformation(t, "/mse6", "", "/mse6/get/me/treats", "/mse6/get/me/treats")
 	pathTransformation(t, "/mse6", "", "/mse6/", "/mse6/")
+}
+
+func TestExtractKid(t *testing.T) {
+	tok := "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6ImsxIn0.eyJpc3MiOiJqb2UiLCJodHRwOi8vZXhhbXBsZS5jb20vaXNfcm9vdCI6dHJ1ZSwianRpIjoiYjE1ZWM5YzctYjZiMi00MGE1LTg3ZGEtN2ExMDVhMWY2ZTk0IiwiaWF0IjoxNjA2MjUwNTE4fQ.RNjqTVFkFTzgnkW0rJvW1yZbYFSr48g6gOKXPF34tEtebT6P5LbCh4JLKSmtIwEJ2PF6Tu6az2VIa9KiRTqWwqwQT5qJmI6Nyy9hMNY5PdmBV8HDTofAkGnvvlSG2iF0d5bVkJ223VN-mYRoWCR9S5D4kfjM3ZFhYQgfMi_k-kiU9KfPLxeUqcSjFx9jVYJj0diT--3GRejJU8VYpox40TwYf_KmS0IKmCu62SCXLXmiqNarAJ1R6zc8iNab5r05mqv1zJZcwRebj3Er0WdFbpIhwYR9lFYHjuxizJHo19-NW30g5NS6wLuk6QS8plK6_-kCgvYCzjLg_8ZFOyJLzg"
+	want := "k1"
+	got := extractKid(tok)
+	if got != want {
+		t.Errorf("unable to extract kid header from token, got %v, want %v", got, want)
+	}
+}
+
+func TestExtractKidInvalid(t *testing.T) {
+	tok := "eyJ0eXAiOiJKV1xQiLCJhbGciOiJSUzI1NiIsImtpZCI6ImsxIn0.eyJpc3MiOiJqb2UiLCJodHRwOi8vZXhhbXBsZS5jb20vaXNfcm9vdCI6dHJ1ZSwianRpIjoiYjE1ZWM5YzctYjZiMi00MGE1LTg3ZGEtN2ExMDVhMWY2ZTk0IiwiaWF0IjoxNjA2MjUwNTE4fQ.RNjqTVFkFTzgnkW0rJvW1yZbYFSr48g6gOKXPF34tEtebT6P5LbCh4JLKSmtIwEJ2PF6Tu6az2VIa9KiRTqWwqwQT5qJmI6Nyy9hMNY5PdmBV8HDTofAkGnvvlSG2iF0d5bVkJ223VN-mYRoWCR9S5D4kfjM3ZFhYQgfMi_k-kiU9KfPLxeUqcSjFx9jVYJj0diT--3GRejJU8VYpox40TwYf_KmS0IKmCu62SCXLXmiqNarAJ1R6zc8iNab5r05mqv1zJZcwRebj3Er0WdFbpIhwYR9lFYHjuxizJHo19-NW30g5NS6wLuk6QS8plK6_-kCgvYCzjLg_8ZFOyJLzg"
+	want := ""
+	got := extractKid(tok)
+	if got != want {
+		t.Errorf("want empty kid header from token, got %v, want %v", got, want)
+	}
+}
+
+func TestExtractKidInvalidHeader(t *testing.T) {
+	tok := "PF34tEtebT6P5LbCh4JLKSmtIwEJ2PF6Tu6az2VIa9KiRTqWwqwQT5qJmI6Nyy9hMNY5PdmBV8HDTofAkGnvvlSG2iF0d5bVkJ223VN-mYRoWCR9S5D4kfjM3ZFhYQgfMi_k-kiU9KfPLxeUqcSjFx9jVYJj0diT--3GRejJU8VYpox40TwYf_KmS0IKmCu62SCXLXmiqNarAJ1R6zc8iNab5r05mqv1zJZcwRebj3Er0WdFbpIhwYR9lFYHjuxizJHo19-NW30g5NS6wLuk6QS8plK6_-kCgvYCzjLg_8ZFOyJLzg"
+	want := ""
+	got := extractKid(tok)
+	if got != want {
+		t.Errorf("want empty kid header from token, got %v, want %v", got, want)
+	}
+}
+
+func TestExtractKidNoHeader(t *testing.T) {
+	tok := ""
+	want := ""
+	got := extractKid(tok)
+	if got != want {
+		t.Errorf("want empty kid header from token, got %v, want %v", got, want)
+	}
+}
+
+func TestExtractBadKidNoString(t *testing.T) {
+	tok := "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6MX0.eyJpc3MiOiJqb2UiLCJodHRwOi8vZXhhbXBsZS5jb20vaXNfcm9vdCI6dHJ1ZSwianRpIjoiZTQ3ZTQyMDEtYTU5Zi00NTgzLTg0ZGEtODJhMmFhZjIyOTliIiwiaWF0IjoxNjA2NTExODYxfQ.Bu9qKyrctz8VToGaI8DdczBcaA_NEcDWwoRf7j-W68hoX-z8LkVwl9Ono4JziypQZJA8DJs6FinbSO54IiEszHKIh7J1TAiQxSpNL7YtjZDKConHaxREqDsXxEAW9edgaSFMth6Tclw8nOIYiCTrq678hBFHnTUYni4WCLVCZ1UYliw1sjoOKrUmk6teCna_sHBuXiht4fyZuKiT6X4ONU3HM0OBGLppKmTLmMadfOKmIy0QrJfTcH2C2UUehTJxR0l4qudIFTd5BU1YToDqNmZI9wAtXDf3iDPANn67NOqCdRhepmX4ztYkpcduOVu7X6mJBZXlujh_ld30Dpr7FQ"
+	want := ""
+	got := extractKid(tok)
+	if got != want {
+		t.Errorf("want empty kid header from token, got %v, want %v", got, want)
+	}
+}
+
+func TestJwt_IatFail(t *testing.T) {
+	now := time.Now()
+	iat := now.Add(time.Second * 180)
+	skew := 120
+	payload := dummyHs256TokenFactory(t, jwt.IssuedAtKey, iat)
+
+	err2 := verifyDateClaims(string(payload), skew)
+	if err2 == nil {
+		t.Error("got nil err but token should not have satisfied iat")
+	} else {
+		t.Logf("normal. token not validated, iat %d, skewSecs %d, now %d, delta %d, cause: %v", iat.Unix(), skew, now.Unix(), now.Unix()-iat.Unix(), err2)
+	}
+}
+
+func TestJwt_IatFailSkew(t *testing.T) {
+	now := time.Now()
+	iat := now.Add(time.Second * 60)
+	skew := 30
+	payload := dummyHs256TokenFactory(t, jwt.IssuedAtKey, iat)
+
+	err2 := verifyDateClaims(string(payload), skew)
+	if err2 == nil {
+		t.Error("got nil err but token should not have satisfied iat")
+	} else {
+		t.Logf("normal. token not validated, iat %d, skewSecs %d, now %d, delta %d, cause: %v", iat.Unix(), skew, now.Unix(), now.Unix()-iat.Unix(), err2)
+	}
+}
+
+func TestJwt_IatPassWithinSkew(t *testing.T) {
+	now := time.Now()
+	iat := now.Add(time.Second * 60)
+	skew := 120
+	payload := dummyHs256TokenFactory(t, jwt.IssuedAtKey, iat)
+
+	err2 := verifyDateClaims(string(payload), skew)
+	if err2 != nil {
+		t.Error("iat should have satisfied")
+	} else {
+		t.Logf("normal. iat satisfied time %d, skewSecs %d, now %d, delta %d", iat.Unix(), skew, now.Unix(), now.Unix()-iat.Unix())
+	}
+}
+
+func TestJwt_ExpFail(t *testing.T) {
+	now := time.Now()
+	exp := now.Add(-time.Second * 180)
+	skew := 120
+	payload := dummyHs256TokenFactory(t, jwt.ExpirationKey, exp)
+
+	err2 := verifyDateClaims(string(payload), skew)
+	if err2 == nil {
+		t.Error("got nil err but token should not have satisfied exp")
+	} else {
+		t.Logf("normal. token not validated, exp %d, skewSecs %d, now %d, delta %d, cause: %v", exp.Unix(), skew, now.Unix(), now.Unix()-exp.Unix(), err2)
+	}
+}
+
+func TestJwt_ExpFailSkew(t *testing.T) {
+	now := time.Now()
+	exp := now.Add(-time.Second * 60)
+	skew := 30
+	payload := dummyHs256TokenFactory(t, jwt.ExpirationKey, exp)
+
+	err2 := verifyDateClaims(string(payload), skew)
+	if err2 == nil {
+		t.Error("got nil err but token should not have satisfied exp")
+	} else {
+		t.Logf("normal. token not validated, exp %d, skewSecs %d, now %d, delta %d, cause: %v", exp.Unix(), skew, now.Unix(), now.Unix()-exp.Unix(), err2)
+	}
+}
+
+func TestJwt_ExpPassWithinSkew(t *testing.T) {
+	now := time.Now()
+	exp := now.Add(-time.Second * 60)
+	skew := 120
+	payload := dummyHs256TokenFactory(t, jwt.ExpirationKey, exp)
+
+	err2 := verifyDateClaims(string(payload), skew)
+	if err2 != nil {
+		t.Error("exp should have satisfied")
+	} else {
+		t.Logf("normal. exp satisfied time %d, skewSecs %d, now %d, delta %d", exp.Unix(), skew, now.Unix(), now.Unix()-exp.Unix())
+	}
+}
+
+func TestJwt_NbfFail(t *testing.T) {
+	now := time.Now()
+	nbf := now.Add(time.Second * 180)
+	skew := 120
+	payload := dummyHs256TokenFactory(t, jwt.NotBeforeKey, nbf)
+
+	err2 := verifyDateClaims(string(payload), skew)
+	if err2 == nil {
+		t.Error("got nil err but token should not have satisfied nbf")
+	} else {
+		t.Logf("normal. token not validated, nbf %d, skewSecs %d, now %d, delta %d, cause: %v", nbf.Unix(), skew, now.Unix(), now.Unix()-nbf.Unix(), err2)
+	}
+}
+
+func TestJwt_NbfFailSkew(t *testing.T) {
+	now := time.Now()
+	nbf := now.Add(time.Second * 60)
+	skew := 30
+	payload := dummyHs256TokenFactory(t, jwt.NotBeforeKey, nbf)
+
+	err2 := verifyDateClaims(string(payload), skew)
+	if err2 == nil {
+		t.Error("got nil err but token should not have satisfied nbf")
+	} else {
+		t.Logf("normal. token not validated, nbf %d, skewSecs %d, now %d, delta %d, cause: %v", nbf.Unix(), skew, now.Unix(), now.Unix()-nbf.Unix(), err2)
+	}
+}
+
+func TestJwt_NbfPassWithinSkew(t *testing.T) {
+	now := time.Now()
+	nbf := now.Add(time.Second * 60)
+	skew := 120
+	payload := dummyHs256TokenFactory(t, jwt.NotBeforeKey, nbf)
+
+	err2 := verifyDateClaims(string(payload), skew)
+	if err2 != nil {
+		t.Error("nbf should have satisfied")
+	} else {
+		t.Logf("normal. nbf satisfied time %d, skewSecs %d, now %d, delta %d", nbf.Unix(), skew, now.Unix(), now.Unix()-nbf.Unix())
+	}
+}
+
+func TestJwt_NbfPassNoSkew(t *testing.T) {
+	now := time.Now()
+	nbf := now.Add(time.Second * -3)
+	skew := 0
+	payload := dummyHs256TokenFactory(t, jwt.NotBeforeKey, nbf)
+
+	err2 := verifyDateClaims(string(payload), skew)
+	if err2 != nil {
+		t.Error("nbf should have satisfied")
+	} else {
+		t.Logf("normal. nbf satisfied time %d, skewSecs %d, now %d, delta %d", nbf.Unix(), skew, now.Unix(), now.Unix()-nbf.Unix())
+	}
+}
+
+func TestJwt_NbfFailNoSkew(t *testing.T) {
+	now := time.Now()
+	nbf := now.Add(time.Second * 3)
+	skew := 0
+	payload := dummyHs256TokenFactory(t, jwt.NotBeforeKey, nbf)
+
+	err2 := verifyDateClaims(string(payload), skew)
+	if err2 == nil {
+		t.Error("got nil err but token should not have satisfied nbf")
+	} else {
+		t.Logf("normal token not validated, nbf %d, skewSecs %d, now %d, delta %d", nbf.Unix(), skew, now.Unix(), now.Unix()-nbf.Unix())
+	}
+}
+
+func dummyHs256TokenFactory(t *testing.T, key string, value time.Time) []byte {
+	var err error
+	var payload []byte
+
+	tok := jwt.New()
+	tok.Set(key, value)
+	tok.Set("foo", "bar")
+	payload, err = jwt.Sign(tok, jwa.HS256, []byte("secret"))
+	t.Logf("token %s", payload)
+	if err != nil {
+		t.Errorf("cannot sign token, cause: %v", err)
+	}
+	return payload
 }
 
 func pathTransformation(t *testing.T, routePath string, transform string, requestUri string, want string) {

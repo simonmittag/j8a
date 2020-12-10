@@ -51,10 +51,14 @@ func proxyHandler(response http.ResponseWriter, request *http.Request) {
 	//once a route is matched, it needs to be mapped to an upstream resource via a policy
 	for _, route := range Runner.Routes {
 		if matched = route.matchURI(request); matched {
+			proxy.setRoute(&route)
+			if route.hasJwt() && !proxy.validateJwt() {
+				sendStatusCodeAsJSON(proxy.respondWith(401, "jwt bearer token missing, invalid, expired or unauthorized"))
+				return
+			}
 			url, label, mapped := route.mapURL(proxy)
 			if mapped {
 				//mapped requests are sent to httpclient
-				proxy.setRoute(&route)
 				handle(proxy.firstAttempt(url, label))
 			} else {
 				//unmapped request means an internal configuration error in server

@@ -5,8 +5,15 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"encoding/base64"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/lestrrat-go/jwx/jwa"
+	"github.com/lestrrat-go/jwx/jws"
+	"github.com/lestrrat-go/jwx/jwt"
+	"github.com/rs/zerolog"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -22,10 +29,12 @@ var httpUpstreamMaxAttempts int
 type TLSType string
 
 const (
-	TLS12       TLSType = "TLS1.2"
-	TLS13       TLSType = "TLS1.3"
-	TLS_UNKNOWN TLSType = "unknown"
-	TLS_NONE    TLSType = "none"
+	TLS12         TLSType = "TLS1.2"
+	TLS13         TLSType = "TLS1.3"
+	TLS_UNKNOWN   TLSType = "unknown"
+	TLS_NONE      TLSType = "none"
+	Authorization         = "Authorization"
+	Sep                   = " "
 )
 
 //RFC7231 4.2.1
@@ -502,4 +511,173 @@ func (proxy *Proxy) shouldGzipEncodeResponseBody() bool {
 
 func (proxy *Proxy) shouldGzipDecodeResponseBody() bool {
 	return !proxy.Dwn.Resp.SendGzip && proxy.Up.Atmpt.isGzip
+}
+
+//get bearer token from request. feed into lib. check signature. check expiry. return true || false.
+func (proxy *Proxy) validateJwt() bool {
+	var token string = ""
+	var err error
+	ok := false
+
+	ev := log.Trace().
+		Str("dwnReqPath", proxy.Dwn.Path).
+		Str(XRequestID, proxy.XRequestID)
+
+	auth := proxy.Dwn.Req.Header.Get(Authorization)
+	bearer := strings.Split(auth, Sep)
+
+	if len(bearer) > 1 {
+		token = bearer[1]
+		routeSec := Runner.Jwt[proxy.Route.Jwt]
+		alg := *new(jwa.SignatureAlgorithm)
+		alg.Accept(routeSec.Alg)
+
+		var parsed jwt.Token
+
+		switch alg {
+		case jwa.RS256, jwa.RS384, jwa.RS512, jwa.PS256, jwa.PS384, jwa.PS512:
+			parsed, err = verifySignature(token, routeSec.RSAPublic, alg)
+		case jwa.ES256, jwa.ES384, jwa.ES512:
+			parsed, err = verifySignature(token, routeSec.ECDSAPublic, alg)
+		case jwa.HS256, jwa.HS384, jwa.HS512:
+			parsed, err = verifySignature(token, routeSec.Secret, alg)
+		case jwa.NoSignature:
+			parsed, err = jwt.Parse(bytes.NewReader([]byte(token)))
+		default:
+			parsed, err = jwt.Parse(bytes.NewReader([]byte(token)))
+		}
+
+		//date claims are verified separately to signature including skew
+		skew, _ := strconv.Atoi(routeSec.AcceptableSkewSeconds)
+		if parsed != nil && err == nil {
+			err = verifyDateClaims(token, skew)
+		}
+
+		if parsed != nil {
+			logDateClaims(parsed, ev)
+		}
+
+		ok = err == nil
+	} else {
+		err = errors.New("jwt bearer token not present")
+	}
+
+	if ok {
+		ev.Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+			Msg("jwt token validated")
+	} else {
+		ev.Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+			Msgf("jwt token rejected, cause: %v", err)
+	}
+	return ok
+}
+
+func logDateClaims(parsed jwt.Token, ev *zerolog.Event) {
+	if parsed.IssuedAt().Unix() > 1 {
+		ev.Bool("jwtClaimsIat", true)
+		ev.Str("jwtIatUtcIso", parsed.IssuedAt().Format(time.RFC3339))
+		ev.Str("jwtIatLclIso", parsed.IssuedAt().Local().Format(time.RFC3339))
+		ev.Int64("jwtIatUnix", parsed.IssuedAt().Unix())
+	} else {
+		ev.Bool("jwtClaimsIat", false)
+	}
+
+	if parsed.NotBefore().Unix() > 1 {
+		ev.Bool("jwtClaimsNbf", true)
+		ev.Str("jwtNbfUtcIso", parsed.NotBefore().Format(time.RFC3339))
+		ev.Str("jwtNbfLclIso", parsed.NotBefore().Local().Format(time.RFC3339))
+		ev.Int64("jwtNbfUnix", parsed.NotBefore().Unix())
+	} else {
+		ev.Bool("jwtClaimsNbf", false)
+	}
+
+	if parsed.Expiration().Unix() > 1 {
+		ev.Bool("jwtClaimsExp", true)
+		ev.Str("jwtExpUtcIso", parsed.Expiration().Format(time.RFC3339))
+		ev.Str("jwtExpLclIso", parsed.Expiration().Local().Format(time.RFC3339))
+		ev.Int64("jwtExpUnix", parsed.Expiration().Unix())
+	} else {
+		ev.Bool("jwtClaimsExp", false)
+	}
+}
+
+func verifyDateClaims(token string, skew int) error {
+	//arghh i need a deep copy of this token so i can modify it, but it's an interface wrapping a package private jwt.stdToken
+	//so i need to parse it again.
+	skewed, _ := jwt.Parse(bytes.NewReader([]byte(token)))
+
+	if skewed.IssuedAt().Unix() > int64(skew*1000) {
+		skewed.Set("iat", skewed.IssuedAt().Add(-time.Second*time.Duration(skew)))
+	}
+	if skewed.NotBefore().Unix() > int64(skew*1000) {
+		skewed.Set("nbf", skewed.NotBefore().Add(-time.Second*time.Duration(skew)))
+	}
+	if skewed.Expiration().Unix() > 1 {
+		skewed.Set("exp", skewed.Expiration().Add(time.Second*time.Duration(skew)))
+	}
+	return jwt.Verify(skewed)
+}
+
+func verifySignature(token string, keySet KeySet, alg jwa.SignatureAlgorithm) (jwt.Token, error) {
+	var msg *jws.Message
+	var err error
+	var parsed jwt.Token
+
+	msg, err = jws.Parse(bytes.NewReader([]byte(token)))
+	if len(msg.Signatures()) > 0 {
+		//first we try to validate by a key with the kid parameter to match.
+		kid := extractKid(token)
+		var key interface{}
+		if len(kid) > 0 {
+			key = keySet.find(kid)
+			if key != nil {
+				parsed, err = jwt.Parse(bytes.NewReader([]byte(token)),
+					jwt.WithVerify(alg, key))
+			}
+		}
+
+		//TODO: try this with x5t SHA1 thumbprint on previously loaded keys to augment kid. If you're reading this
+		//TODO: comment feel free to get in touch with a github issue.
+
+		//if it didn't validate above, we try other keys, provided there are any
+		if len(kid) == 0 ||
+			key == nil ||
+			(err != nil && len(keySet) > 1) {
+
+			for _, kp := range keySet {
+				parsed, err = jwt.Parse(bytes.NewReader([]byte(token)),
+					jwt.WithVerify(alg, kp.Key))
+				if err == nil {
+					break
+				}
+			}
+		}
+	} else {
+		err = errors.New("no signature found on jwt token")
+	}
+	return parsed, err
+}
+
+func extractKid(token string) string {
+	header := strings.Split(token, ".")[0]
+	var decoded []byte
+	decoded, err := base64.RawURLEncoding.DecodeString(header)
+	if err != nil {
+		return ""
+	}
+
+	var jsonToken map[string]interface{} = make(map[string]interface{})
+	err = json.Unmarshal(decoded, &jsonToken)
+	if err != nil {
+		return ""
+	}
+
+	kid := jsonToken["kid"]
+
+	switch kid.(type) {
+	case string:
+		return kid.(string)
+	default:
+		return ""
+	}
 }

@@ -14,25 +14,38 @@ connection:
     maxAttempts: 4
     poolSize: 8
     tlsInsecureSkipVerify: true
+
+jwt:
+  all:
+    alg: RS256
+    key: |
+      -----BEGIN PUBLIC KEY-----
+      MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuFrwC7xqek3lA7TkRMBr
+      7koamTCE5DF0UxVPd0FbmloGTkkLLXW3R6fOxubi8O2PXk/tN+TfJZiOYswUE/+n
+      gR7gEXLebosLtVdmbGraTGwtoGmpSe3FRr9ZmQu74pZsAzwqZVMqz6CINc7uvxTI
+      Djd98ORUrnuxqgHE9Yz/uo2qvnaOgWIXKhkDkMqA8O0Fk/kaCfeeZQMN70OnCwIS
+      +LPFE8uYGIdbaEIkjZfMxm/iNRENOV849vwOiOuWruCyp+YMqTVtcW49Q1mcZfyG
+      T7B5GHWe7MtxqQNhf1m2Nvo1m/LvaLap/EM3684xOa6RexB1XdB8oegpMRygPx7o
+      rwIDAQAB
+      -----END PUBLIC KEY-----
+
 policies:
   ab:
     - label: green
       weight: 0.8
     - label: blue
       weight: 0.2
+
 routes:
-  - path: "/todos"
+  - path: /todos
     resource: jsonplaceholder
-  - path: "/about"
+  - path: /about
     resource: about
-  - path: "/mse6/some"
+  - path: /mse6/some
     resource: mse61
-  - path: "/mse6/"
+  - path: /mse6/
     resource: mse6
     policy: ab
-  - path: /mse6crazy
-    transform: /mse6
-    resource: mse6
   - path: /mse7
     transform: /mse6
     resource: mse6
@@ -79,6 +92,7 @@ routes:
     resource: badlocal
   - path: /badssl
     resource: badssl
+
 resources:
   jsonplaceholder:
     - url:
