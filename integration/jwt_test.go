@@ -7,57 +7,6 @@ import (
 	"testing"
 )
 
-func TestLoadEs256WithJwks(t *testing.T) {
-	cfg := j8a.Jwt{
-		Name:                  "MyJwks",
-		Alg:                   "ES256",
-		Key:                   "",
-		JwksUrl:               "http://localhost:60083/mse6/jwkses256",
-		AcceptableSkewSeconds: "",
-	}
-	err := cfg.LoadJwks()
-
-	if err != nil {
-		t.Errorf("ECDSA key loading failed via JWKS, cause: %v", err)
-	}
-
-	if cfg.ECDSAPublic == nil {
-		t.Errorf("ECDSA key not loaded")
-	}
-}
-
-func TestFailJwksKeySetAlg(t *testing.T) {
-	cfg := j8a.Jwt{
-		Name:                  "MyJwks",
-		Alg:                   "HS256",
-		Key:                   "",
-		JwksUrl:               "https://j8a.au.auth0.com/.well-known/jwks.json",
-		AcceptableSkewSeconds: "",
-	}
-	err := cfg.LoadJwks()
-	if err == nil {
-		t.Errorf("expected remote RS256 key to fail HS256 JWKS config but received nil err")
-	} else {
-		t.Logf("normal. validation failed with msg %v", err)
-	}
-}
-
-func TestFailJwksBadUrl(t *testing.T) {
-	cfg := j8a.Jwt{
-		Name:                  "MyJwks",
-		Alg:                   "HS256",
-		Key:                   "",
-		JwksUrl:               "https://asldkjflkaj394028094832sjlflalsdkfjsd.com.blah/.well-known/jwks.json",
-		AcceptableSkewSeconds: "",
-	}
-	err := cfg.LoadJwks()
-	if err == nil {
-		t.Errorf("expected remote bad Jwks URL to fail but received nil err")
-	} else {
-		t.Logf("normal. validation failed with msg %v", err)
-	}
-}
-
 func TestJwtInvalidKidStillPassesSecondLayerValidationWithKeyMatching(t *testing.T) {
 	//this jwt token has a kid of k42 which isn't in the keyset it should still
 	//pass by matching the signature once the kid wasn't found.
