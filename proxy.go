@@ -629,7 +629,7 @@ func verifySignature(token string, keySet KeySet, alg jwa.SignatureAlgorithm) (j
 		kid := extractKid(token)
 		var key interface{}
 		if len(kid) > 0 {
-			key = keySet.find(kid)
+			key = keySet.Find(kid)
 			if key != nil {
 				parsed, err = jwt.Parse(bytes.NewReader([]byte(token)),
 					jwt.WithVerify(alg, key))
