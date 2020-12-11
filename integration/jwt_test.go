@@ -7,31 +7,6 @@ import (
 	"testing"
 )
 
-func TestFindJwtInKeySet(t *testing.T) {
-	cfg := j8a.Jwt{
-		Name:                  "MyJwks",
-		Alg:                   "RS256",
-		Key:                   "",
-		JwksUrl:               "https://j8a.au.auth0.com/.well-known/jwks.json",
-		AcceptableSkewSeconds: "",
-	}
-	cfg.LoadJwks()
-
-	if cfg.RSAPublic == nil {
-		t.Errorf("RSA key not loaded")
-	}
-
-	key := cfg.RSAPublic.Find("mFtH_0S8dpkKl-rr1T6VS")
-	if key == nil {
-		t.Errorf("RSA key not loaded for key id mFtH_0S8dpkKl-rr1T6VS")
-	}
-
-	key2 := cfg.RSAPublic.Find("ZJKp915ThUboHOq79JJsG")
-	if key2 == nil {
-		t.Errorf("RSA key 2 not loaded for key id ZJKp915ThUboHOq79JJsG")
-	}
-}
-
 func TestLoadEs256WithJwks(t *testing.T) {
 	cfg := j8a.Jwt{
 		Name:                  "MyJwks",
