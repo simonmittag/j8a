@@ -13,9 +13,6 @@ func TestFindJwtInKeySet(t *testing.T) {
 		Alg:                   "RS256",
 		Key:                   "",
 		JwksUrl:               "https://j8a.au.auth0.com/.well-known/jwks.json",
-		RSAPublic:             nil,
-		ECDSAPublic:           nil,
-		Secret:                nil,
 		AcceptableSkewSeconds: "",
 	}
 	cfg.LoadJwks()
@@ -32,6 +29,38 @@ func TestFindJwtInKeySet(t *testing.T) {
 	key2 := cfg.RSAPublic.Find("ZJKp915ThUboHOq79JJsG")
 	if key2 == nil {
 		t.Errorf("RSA key 2 not loaded for key id ZJKp915ThUboHOq79JJsG")
+	}
+}
+
+func TestFailJwksKeySetAlg(t *testing.T) {
+	cfg := j8a.Jwt{
+		Name:                  "MyJwks",
+		Alg:                   "HS256",
+		Key:                   "",
+		JwksUrl:               "https://j8a.au.auth0.com/.well-known/jwks.json",
+		AcceptableSkewSeconds: "",
+	}
+	err := cfg.LoadJwks()
+	if err == nil {
+		t.Errorf("expected remote RS256 key to fail HS256 JWKS config but received nil err")
+	} else {
+		t.Logf("normal. validation failed with msg %v", err)
+	}
+}
+
+func TestFailJwksBadUrl(t *testing.T) {
+	cfg := j8a.Jwt{
+		Name:                  "MyJwks",
+		Alg:                   "HS256",
+		Key:                   "",
+		JwksUrl:               "https://asldkjflkaj394028094832sjlflalsdkfjsd.com.blah/.well-known/jwks.json",
+		AcceptableSkewSeconds: "",
+	}
+	err := cfg.LoadJwks()
+	if err == nil {
+		t.Errorf("expected remote bad Jwks URL to fail but received nil err")
+	} else {
+		t.Logf("normal. validation failed with msg %v", err)
 	}
 }
 
