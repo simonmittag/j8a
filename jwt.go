@@ -176,15 +176,7 @@ func (jwt *Jwt) LoadJwks() error {
 			if err == nil {
 				jwt.RSAPublic.Upsert(k)
 			}
-		case jwa.HS256, jwa.HS384, jwa.HS512:
-			k := KidPair{
-				Kid: key.KeyID(),
-				Key: nil,
-			}
-			err = key.Raw(k)
-			if err == nil {
-				jwt.Secret.Upsert(k)
-			}
+		//Note, removed support for HS256, secret keys make no sense for JWKS even over TLS.
 		case jwa.ES256, jwa.ES384, jwa.ES512:
 			k := KidPair{
 				Kid: key.KeyID(),
