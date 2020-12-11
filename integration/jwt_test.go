@@ -32,6 +32,25 @@ func TestFindJwtInKeySet(t *testing.T) {
 	}
 }
 
+func TestLoadEs256WithJwks(t *testing.T) {
+	cfg := j8a.Jwt{
+		Name:                  "MyJwks",
+		Alg:                   "ES256",
+		Key:                   "",
+		JwksUrl:               "http://localhost:60083/mse6/jwkses256",
+		AcceptableSkewSeconds: "",
+	}
+	err := cfg.LoadJwks()
+
+	if err != nil {
+		t.Errorf("ECDSA key loading failed via JWKS, cause: %v", err)
+	}
+
+	if cfg.ECDSAPublic == nil {
+		t.Errorf("ECDSA key not loaded")
+	}
+}
+
 func TestFailJwksKeySetAlg(t *testing.T) {
 	cfg := j8a.Jwt{
 		Name:                  "MyJwks",

@@ -180,9 +180,13 @@ func (jwt *Jwt) LoadJwks() error {
 		case jwa.ES256, jwa.ES384, jwa.ES512:
 			k := KidPair{
 				Kid: key.KeyID(),
-				Key: nil,
+				Key: &ecdsa.PublicKey{
+					Curve: nil,
+					X:     nil,
+					Y:     nil,
+				},
 			}
-			err = key.Raw(k)
+			err = key.Raw(k.Key)
 			err = jwt.checkECDSABitSize(alg, k.Key.(*ecdsa.PublicKey))
 			if err == nil {
 				jwt.ECDSAPublic.Upsert(k)
