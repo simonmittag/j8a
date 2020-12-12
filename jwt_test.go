@@ -11,6 +11,23 @@ import (
 	"testing"
 )
 
+func TestLoadRemoteJwksWithBadSkew(t *testing.T) {
+	cfg := Jwt{
+		Name:                  "MyJwks",
+		Alg:                   "ES256",
+		Key:                   "",
+		JwksUrl:               "https://j8a.au.auth0.com/.well-known/jwks.json",
+		AcceptableSkewSeconds: "notnumeric",
+	}
+	err := cfg.Validate()
+
+	if err == nil {
+		t.Error("should refuse to load non numeric skew seconds but failed to provide error")
+	} else {
+		t.Logf("normal. skew not numeric, msg: %v", err)
+	}
+}
+
 func TestFailJwksKeySetAlg(t *testing.T) {
 	cfg := Jwt{
 		Name:                  "MyJwks",

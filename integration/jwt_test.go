@@ -15,7 +15,7 @@ func TestLoadJwksWithBadSkew(t *testing.T) {
 		JwksUrl:               "http://localhost:60083/mse6/jwkses256",
 		AcceptableSkewSeconds: "notnumeric",
 	}
-	err := cfg.validate()
+	err := cfg.Validate()
 
 	if err == nil {
 		t.Error("should refuse to load non numeric skew seconds but failed to provide error")
