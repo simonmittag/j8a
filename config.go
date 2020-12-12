@@ -245,7 +245,7 @@ func (config Config) validateJwt() *Config {
 		for name, jwt := range config.Jwt {
 			//update name on resource
 			jwt.Name = name
-			err := jwt.validate()
+			err := jwt.Validate()
 			if err != nil {
 				config.panic(err.Error())
 			}

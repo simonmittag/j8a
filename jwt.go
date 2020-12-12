@@ -76,7 +76,7 @@ const ecdsaKeySizeBad = "jwt [%s] invalid key size for alg [%s], parsed bitsize 
 
 const defaultSkew = "120"
 
-func (jwt *Jwt) validate() error {
+func (jwt *Jwt) Validate() error {
 	if jwt.RSAPublic == nil {
 		jwt.RSAPublic = make([]KidPair, 0)
 	}

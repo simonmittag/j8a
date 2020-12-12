@@ -7,6 +7,42 @@ import (
 	"testing"
 )
 
+func TestLoadJwksWithBadSkew(t *testing.T) {
+	cfg := j8a.Jwt{
+		Name:                  "MyJwks",
+		Alg:                   "ES256",
+		Key:                   "",
+		JwksUrl:               "http://localhost:60083/mse6/jwkses256",
+		AcceptableSkewSeconds: "notnumeric",
+	}
+	err := cfg.validate()
+
+	if err == nil {
+		t.Error("should refuse to load non numeric skew seconds but failed to provide error")
+	} else {
+		t.Logf("normal. skew not numeric, msg: %v", err)
+	}
+}
+
+func TestLoadEs256WithJwks(t *testing.T) {
+	cfg := j8a.Jwt{
+		Name:                  "MyJwks",
+		Alg:                   "ES256",
+		Key:                   "",
+		JwksUrl:               "http://localhost:60083/mse6/jwkses256",
+		AcceptableSkewSeconds: "",
+	}
+	err := cfg.LoadJwks()
+
+	if err != nil {
+		t.Errorf("ECDSA key loading failed via JWKS, cause: %v", err)
+	}
+
+	if cfg.ECDSAPublic == nil {
+		t.Errorf("ECDSA key not loaded")
+	}
+}
+
 func TestJwtInvalidKidStillPassesSecondLayerValidationWithKeyMatching(t *testing.T) {
 	//this jwt token has a kid of k42 which isn't in the keyset it should still
 	//pass by matching the signature once the kid wasn't found.
