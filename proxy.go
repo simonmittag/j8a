@@ -405,7 +405,8 @@ func (proxy *Proxy) copyUpstreamResponseHeaders() {
 }
 
 func (proxy *Proxy) encodeUpstreamResponseBody() {
-	if *proxy.Up.Atmpt.respBody != nil && len(*proxy.Up.Atmpt.respBody) > 0 {
+	atmpt := *proxy.Up.Atmpt
+	if atmpt.respBody != nil && len(*atmpt.respBody) > 0 {
 		if proxy.shouldGzipEncodeResponseBody() {
 			proxy.Dwn.Resp.Body = Gzip(*proxy.Up.Atmpt.respBody)
 			scaffoldUpAttemptLog(proxy).

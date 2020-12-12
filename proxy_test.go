@@ -364,6 +364,25 @@ func TestJwt_NbfFailNoSkew(t *testing.T) {
 	}
 }
 
+func TestUpstreamNobody(t *testing.T) {
+	Runner = &Runtime{
+		Config: Config{
+			Connection: Connection{
+				Upstream: Upstream{
+					MaxAttempts: 4,
+				},
+			},
+		},
+	}
+
+	proxy := mockProxy([]byte(""), "0", "/path", "/path", "/get")
+	proxy.encodeUpstreamResponseBody()
+
+	if proxy.Dwn.Resp.Body == nil {
+		t.Errorf("downstream body should have been initialized")
+	}
+}
+
 func dummyHs256TokenFactory(t *testing.T, key string, value time.Time) []byte {
 	var err error
 	var payload []byte
