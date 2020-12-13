@@ -558,7 +558,7 @@ func (proxy *Proxy) validateJwt() bool {
 			logDateClaims(parsed, ev)
 		}
 
-		ok = err == nil
+		ok = parsed!=nil && err == nil
 	} else {
 		err = errors.New("jwt bearer token not present")
 	}

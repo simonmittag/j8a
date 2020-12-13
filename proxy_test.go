@@ -131,7 +131,7 @@ func TestParseRequestBodyTooLarge(t *testing.T) {
 
 func TestSuccessParseUpstreamContentLength(t *testing.T) {
 	upBody := []byte("body")
-	proxy := mockProxy(upBody, fmt.Sprint(len(upBody)), "", "", "")
+	proxy := mockProxy(upBody, fmt.Sprint(len(upBody)), "", "", "", "")
 	proxy.setContentLengthHeader()
 
 	got := proxy.Dwn.Resp.Writer.Header().Get("Content-Length")
@@ -143,7 +143,7 @@ func TestSuccessParseUpstreamContentLength(t *testing.T) {
 
 func TestFailParseUpstreamContentLength(t *testing.T) {
 	upBody := []byte("body")
-	proxy := mockProxy(upBody, "NAN", "", "", "")
+	proxy := mockProxy(upBody, "NAN", "", "", "", "")
 	proxy.setContentLengthHeader()
 
 	got := proxy.Dwn.Resp.Writer.Header().Get("Content-Length")
@@ -375,11 +375,44 @@ func TestUpstreamNobody(t *testing.T) {
 		},
 	}
 
-	proxy := mockProxy([]byte(""), "0", "/path", "/path", "/get")
+	proxy := mockProxy([]byte(""), "0", "/path", "/path", "/get", "")
 	proxy.encodeUpstreamResponseBody()
 
 	if proxy.Dwn.Resp.Body == nil {
 		t.Errorf("downstream body should have been initialized")
+	}
+}
+
+func TestValidateJwt(t *testing.T) {
+	jwtConfig := &Jwt{
+		Name:                  "jwt",
+		Alg:                   "RS256",
+		Key:                   "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuvtFgDnIcdB/jqSLICns\nz7FXU/uiFSdJGVpGc5Dy+xm8wZwgiy6lJdL9/TtYjnmJefkPVyYdazabvGvOcns7\n3rshkt0g6Ackqa72yiUEsv1kzCvBObPYNXgr1dNda8/F/ZiO3V9BtcTgQs9Y6rdO\nWJq7zNpees8pfuhEamk3sQp8AmKImFNfuZceNeglMHLLt0NcmSQp4VmhDCladFa1\nEdLirtFM9BtEIOlX20SRcN1LjeRsos8JywpQRxe6M3bnGFXcDQHqrsvwkkzu+vBt\nnPFa2e+jkBSDWkf6ZwvdJnEEUiJkHYTgJuXD1sbGeUkQL1Jb5NaQHhQ1mt3xn1z0\ntwIDAQAB\n-----END PUBLIC KEY-----\n",
+		RSAPublic:             nil,
+		ECDSAPublic:           nil,
+		Secret:                nil,
+		AcceptableSkewSeconds: "120",
+	}
+	jwtConfig.parseKey("RS256")
+
+	Runner = &Runtime{
+		Config: Config{
+			Connection: Connection{
+				Upstream: Upstream{
+					MaxAttempts: 4,
+				},
+			},
+			Jwt: map[string]*Jwt{
+				"jwt":jwtConfig,
+			},
+		},
+	}
+
+	proxy := mockProxy([]byte(""), "0", "/path", "/path", "/get", "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6Ims0MiJ9.eyJpc3MiOiJqb2UiLCJodHRwOi8vZXhhbXBsZS5jb20vaXNfcm9vdCI6dHJ1ZSwianRpIjoiNGFkOTcxMDMtZmQ4ZC00Zjc5LWIwNmEtZTRmOTE1NzkxYjUyIiwiaWF0IjoxNjA3ODU1MTU3fQ.irL3sYTzkM4yFGKBfTzoAAe5H7mGaHECXFy-lkOfVoaaPwuL29b-je_ROoeR8uqw_441QE2P-Ky5582tG2dcu7s3EC3FNuPN_CaZPmbhzV8YIKdzRY7GiTj9sij1_2uRB61b5Qns7H3AJjMuZeCcaGA9t3gSJlVZwkpy9qU46JpX13SPqdSSR9Sg2kZhNFmrRDM5ZGN2VMuzvK34dW72NUkHVaBJUmIRASAfKQnA39xGMskTjP8ZZSzGdYiu0MMhBCA9DZmiS9YBw2Sj6J6Vo7_6SyKAoQyd44JACWbM28jZpfSWDPe-nkMu5ccxNa3A4ocFibnGXaKItWER9MTfeA")
+	ok := proxy.validateJwt()
+
+	if !ok {
+		t.Errorf("jwt token did not validate")
 	}
 }
 
@@ -399,7 +432,7 @@ func dummyHs256TokenFactory(t *testing.T, key string, value time.Time) []byte {
 }
 
 func pathTransformation(t *testing.T, routePath string, transform string, requestUri string, want string) {
-	p := mockProxy(make([]byte, 1), "", routePath, transform, requestUri)
+	p := mockProxy(make([]byte, 1), "", routePath, transform, requestUri, "")
 	got := p.resolveUpstreamURI()
 	want = "http://upstreamhost:8080" + want
 	if got != want {
@@ -407,8 +440,11 @@ func pathTransformation(t *testing.T, routePath string, transform string, reques
 	}
 }
 
-func mockProxy(upBody []byte, cl string, path string, transform string, requestUri string) Proxy {
+func mockProxy(upBody []byte, cl string, path string, transform string, requestUri string, bearer string) Proxy {
 	pr, _ := regexp.Compile(path)
+	req, _ := http.NewRequest("GET", "/blah", nil)
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", bearer))
+
 	proxy := Proxy{
 		XRequestID: "12345",
 		Up: Up{
@@ -429,6 +465,7 @@ func mockProxy(upBody []byte, cl string, path string, transform string, requestU
 		Dwn: Down{
 			URI:    requestUri,
 			Method: "HEAD",
+			Req: req,
 			Resp: Resp{
 				Writer:        httptest.NewRecorder(),
 				Body:          &upBody,
@@ -442,6 +479,7 @@ func mockProxy(upBody []byte, cl string, path string, transform string, requestU
 			Transform: transform,
 			Resource:  "mse7",
 			Policy:    "",
+			Jwt: "jwt",
 		},
 	}
 	return proxy
