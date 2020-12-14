@@ -8,13 +8,7 @@ import (
 )
 
 func TestLoadJwksWithBadSkew(t *testing.T) {
-	cfg := j8a.Jwt{
-		Name:                  "MyJwks",
-		Alg:                   "ES256",
-		Key:                   "",
-		JwksUrl:               "http://localhost:60083/mse6/jwkses256",
-		AcceptableSkewSeconds: "notnumeric",
-	}
+	cfg := j8a.NewJwt("MyJwks", "ES256", "", "http://localhost:60083/mse6/jwkses256", "notnumeric")
 	err := cfg.Validate()
 
 	if err == nil {
@@ -25,13 +19,7 @@ func TestLoadJwksWithBadSkew(t *testing.T) {
 }
 
 func TestLoadEs256WithJwks(t *testing.T) {
-	cfg := j8a.Jwt{
-		Name:                  "MyJwks",
-		Alg:                   "ES256",
-		Key:                   "",
-		JwksUrl:               "http://localhost:60083/mse6/jwkses256",
-		AcceptableSkewSeconds: "",
-	}
+	cfg := j8a.NewJwt("MyJwks", "ES256", "", "http://localhost:60083/mse6/jwkses256", "")
 	err := cfg.LoadJwks()
 
 	if err != nil {
@@ -118,16 +106,7 @@ func TestJwtRS256LoadedFromX509(t *testing.T) {
 }
 
 func TestJwtLoadJWKS(t *testing.T) {
-	jwt := j8a.Jwt{
-		Name:                  "Testy",
-		Alg:                   "RS256",
-		Key:                   "",
-		JwksUrl:               "http://localhost:60083/mse6/jwks",
-		RSAPublic:             nil,
-		ECDSAPublic:           nil,
-		Secret:                nil,
-		AcceptableSkewSeconds: "",
-	}
+	jwt := j8a.NewJwt("Testy", "RS256", "", "http://localhost:60083/mse6/jwks", "120")
 	err := jwt.LoadJwks()
 	if err != nil {
 		t.Errorf("error loading RS256 JWKS config, cause %v", err)
@@ -135,15 +114,7 @@ func TestJwtLoadJWKS(t *testing.T) {
 }
 
 func TestJwtLoadJWKSFailNoAlg(t *testing.T) {
-	jwt := j8a.Jwt{
-		Name:                  "Testy",
-		Key:                   "",
-		JwksUrl:               "http://localhost:60083/mse6/jwks",
-		RSAPublic:             nil,
-		ECDSAPublic:           nil,
-		Secret:                nil,
-		AcceptableSkewSeconds: "",
-	}
+	jwt := j8a.NewJwt("Testy", "", "http://localhost:60083/mse6/jwks", "", "")
 	err := jwt.LoadJwks()
 	if err == nil {
 		t.Error("should have failed loading JWKS config with alg")
@@ -153,16 +124,7 @@ func TestJwtLoadJWKSFailNoAlg(t *testing.T) {
 }
 
 func TestJwtLoadJWKSFailBadAlg(t *testing.T) {
-	jwt := j8a.Jwt{
-		Name:                  "Testy",
-		Alg:                   "RS257",
-		Key:                   "",
-		JwksUrl:               "http://localhost:60083/mse6/jwks",
-		RSAPublic:             nil,
-		ECDSAPublic:           nil,
-		Secret:                nil,
-		AcceptableSkewSeconds: "",
-	}
+	jwt := j8a.NewJwt("Testy", "RS257", "", "http://localhost:60083/mse6/jwks", "")
 	err := jwt.LoadJwks()
 	if err == nil {
 		t.Error("should have failed loading JWKS config with alg")
@@ -172,16 +134,7 @@ func TestJwtLoadJWKSFailBadAlg(t *testing.T) {
 }
 
 func TestJwtLoadJWKSFailIllegalJwks(t *testing.T) {
-	jwt := j8a.Jwt{
-		Name:                  "Testy",
-		Alg:                   "RS256",
-		Key:                   "",
-		JwksUrl:               "http://localhost:60083/mse6/jwksbad",
-		RSAPublic:             nil,
-		ECDSAPublic:           nil,
-		Secret:                nil,
-		AcceptableSkewSeconds: "",
-	}
+	jwt := j8a.NewJwt("Testy", "RS256", "", "http://localhost:60083/mse6/jwksbad", "")
 	err := jwt.LoadJwks()
 	if err == nil {
 		t.Error("should have failed loading JWKS config with alg")
@@ -191,16 +144,7 @@ func TestJwtLoadJWKSFailIllegalJwks(t *testing.T) {
 }
 
 func TestJwtLoadJWKSFailMixedAlgorithmsInKeyset(t *testing.T) {
-	jwt := j8a.Jwt{
-		Name:                  "Testy",
-		Alg:                   "RS256",
-		Key:                   "",
-		JwksUrl:               "http://localhost:60083/mse6/jwksmix",
-		RSAPublic:             nil,
-		ECDSAPublic:           nil,
-		Secret:                nil,
-		AcceptableSkewSeconds: "",
-	}
+	jwt := j8a.NewJwt("Testy", "RS256", "", "http://localhost:60083/mse6/jwksmix", "")
 	err := jwt.LoadJwks()
 	if err == nil {
 		t.Error("should have failed loading JWKS config with alg")
@@ -210,16 +154,7 @@ func TestJwtLoadJWKSFailMixedAlgorithmsInKeyset(t *testing.T) {
 }
 
 func TestJwtLoadJWKSFailBadUrl(t *testing.T) {
-	jwt := j8a.Jwt{
-		Name:                  "Testy",
-		Alg:                   "RS256",
-		Key:                   "",
-		JwksUrl:               "http://localhost:60083/mse6/get",
-		RSAPublic:             nil,
-		ECDSAPublic:           nil,
-		Secret:                nil,
-		AcceptableSkewSeconds: "",
-	}
+	jwt := j8a.NewJwt("Testy", "RS256", "", "http://localhost:60083/mse6/get", "")
 	err := jwt.LoadJwks()
 	if err == nil {
 		t.Error("should have failed loading JWKS config with alg")

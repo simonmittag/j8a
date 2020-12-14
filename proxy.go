@@ -537,11 +537,11 @@ func (proxy *Proxy) validateJwt() bool {
 
 		switch alg {
 		case jwa.RS256, jwa.RS384, jwa.RS512, jwa.PS256, jwa.PS384, jwa.PS512:
-			parsed, err = verifySignature(token, routeSec.RSAPublic, alg)
+			parsed, err = proxy.verifySignature(token, routeSec.RSAPublic, alg)
 		case jwa.ES256, jwa.ES384, jwa.ES512:
-			parsed, err = verifySignature(token, routeSec.ECDSAPublic, alg)
+			parsed, err = proxy.verifySignature(token, routeSec.ECDSAPublic, alg)
 		case jwa.HS256, jwa.HS384, jwa.HS512:
-			parsed, err = verifySignature(token, routeSec.Secret, alg)
+			parsed, err = proxy.verifySignature(token, routeSec.Secret, alg)
 		case jwa.NoSignature:
 			parsed, err = jwt.Parse(bytes.NewReader([]byte(token)))
 		default:
@@ -558,7 +558,7 @@ func (proxy *Proxy) validateJwt() bool {
 			logDateClaims(parsed, ev)
 		}
 
-		ok = parsed!=nil && err == nil
+		ok = parsed != nil && err == nil
 	} else {
 		err = errors.New("jwt bearer token not present")
 	}
@@ -571,6 +571,60 @@ func (proxy *Proxy) validateJwt() bool {
 			Msgf("jwt token rejected, cause: %v", err)
 	}
 	return ok
+}
+
+func (proxy *Proxy) verifySignature(token string, keySet KeySet, alg jwa.SignatureAlgorithm) (jwt.Token, error) {
+	var msg *jws.Message
+	var err error
+	var parsed jwt.Token
+
+	msg, err = jws.Parse(bytes.NewReader([]byte(token)))
+	if len(msg.Signatures()) > 0 {
+		//first we try to validate by a key with the kid parameter to match.
+		kid := extractKid(token)
+		var key interface{}
+		if len(kid) > 0 {
+			key = keySet.Find(kid)
+			if key != nil {
+				parsed, err = jwt.Parse(bytes.NewReader([]byte(token)),
+					jwt.WithVerify(alg, key))
+			} else {
+				proxy.triggerKeyRotationCheck(kid)
+			}
+		}
+
+		//TODO: try this with x5t SHA1 thumbprint on previously loaded keys to augment kid. If you're reading this
+		//TODO: comment feel free to get in touch with a github issue.
+
+		//if it didn't validate above, we try other keys, provided there are any
+		if len(kid) == 0 ||
+			key == nil ||
+			(err != nil && len(keySet) > 1) {
+
+			for _, kp := range keySet {
+				parsed, err = jwt.Parse(bytes.NewReader([]byte(token)),
+					jwt.WithVerify(alg, kp.Key))
+				if err == nil {
+					break
+				}
+			}
+		}
+	} else {
+		err = errors.New("no signature found on jwt token")
+	}
+	return parsed, err
+}
+
+func (proxy *Proxy) triggerKeyRotationCheck(kid string) {
+	route := proxy.Route
+	routeSec := Runner.Jwt[route.Jwt]
+	if len(routeSec.JwksUrl) > 0 {
+		go routeSec.LoadJwks()
+		log.Debug().
+			Str("route", route.Path).
+			Str("jwt", route.Jwt).
+			Msgf("unmatched kid %v on incoming req triggered background key rotation search for route %v jwt %v", kid, route.Path, route.Jwt)
+	}
 }
 
 func logDateClaims(parsed jwt.Token, ev *zerolog.Event) {
@@ -617,46 +671,6 @@ func verifyDateClaims(token string, skew int) error {
 		skewed.Set("exp", skewed.Expiration().Add(time.Second*time.Duration(skew)))
 	}
 	return jwt.Verify(skewed)
-}
-
-func verifySignature(token string, keySet KeySet, alg jwa.SignatureAlgorithm) (jwt.Token, error) {
-	var msg *jws.Message
-	var err error
-	var parsed jwt.Token
-
-	msg, err = jws.Parse(bytes.NewReader([]byte(token)))
-	if len(msg.Signatures()) > 0 {
-		//first we try to validate by a key with the kid parameter to match.
-		kid := extractKid(token)
-		var key interface{}
-		if len(kid) > 0 {
-			key = keySet.Find(kid)
-			if key != nil {
-				parsed, err = jwt.Parse(bytes.NewReader([]byte(token)),
-					jwt.WithVerify(alg, key))
-			}
-		}
-
-		//TODO: try this with x5t SHA1 thumbprint on previously loaded keys to augment kid. If you're reading this
-		//TODO: comment feel free to get in touch with a github issue.
-
-		//if it didn't validate above, we try other keys, provided there are any
-		if len(kid) == 0 ||
-			key == nil ||
-			(err != nil && len(keySet) > 1) {
-
-			for _, kp := range keySet {
-				parsed, err = jwt.Parse(bytes.NewReader([]byte(token)),
-					jwt.WithVerify(alg, kp.Key))
-				if err == nil {
-					break
-				}
-			}
-		}
-	} else {
-		err = errors.New("no signature found on jwt token")
-	}
-	return parsed, err
 }
 
 func extractKid(token string) string {
