@@ -9,7 +9,20 @@ import (
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwt"
 	"testing"
+	"time"
 )
+
+func TestLoadRemoteJwksConcurrency(t *testing.T) {
+	jwt := NewJwt("Testy", "RS256", "", "https://j8a.au.auth0.com/.well-known/jwks.json", "120")
+	before := time.Now()
+	for i := 0; i < 2; i++ {
+		jwt.LoadJwks()
+	}
+	after := time.Now()
+	if after.Sub(before) < time.Duration(time.Second*10) {
+		t.Errorf("Jwks refresh exited too fast, should wait at least 10s")
+	}
+}
 
 func TestLoadRemoteJwksWithBadSkew(t *testing.T) {
 	cfg := NewJwt("MyJwks", "ES256", "", "https://j8a.au.auth0.com/.well-known/jwks.json", "notnumeric")
