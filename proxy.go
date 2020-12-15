@@ -624,7 +624,8 @@ func (proxy *Proxy) triggerKeyRotationCheck(kid string) {
 		log.Debug().
 			Str("route", route.Path).
 			Str("jwt", route.Jwt).
-			Msgf("unmatched kid %v on incoming req triggered background key rotation search for route %v jwt %v", kid, route.Path, route.Jwt)
+			Str(XRequestID, proxy.XRequestID).
+			Msgf("unmatched kid [%v] on incoming req triggered background key rotation search for route [%v] jwt [%v]", kid, route.Path, route.Jwt)
 	}
 }
 

@@ -234,7 +234,9 @@ func (jwt *Jwt) LoadJwks() error {
 		//release here, don't use defer
 		jwt.lock.Release(1)
 	} else {
-		log.Debug().Msgf("jwt [%s] already updating, skipping...", jwt.Name)
+		log.Debug().
+			Str("jwt", jwt.Name).
+			Msgf("jwt [%s] already updating, skipping...", jwt.Name)
 	}
 
 	return err
