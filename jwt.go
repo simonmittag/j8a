@@ -13,6 +13,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"golang.org/x/sync/semaphore"
 	"strconv"
+	"time"
 )
 
 type KeySet []KidPair
@@ -56,6 +57,7 @@ type Jwt struct {
 	Secret                KeySet
 	AcceptableSkewSeconds string
 	lock                  *semaphore.Weighted
+	updateCount           int
 }
 
 var validAlgNoNone = []string{"RS256", "RS384", "RS512", "PS256", "PS384", "PS512", "HS256", "HS384", "HS512", "ES256", "ES384", "ES512"}
@@ -77,6 +79,7 @@ const skewInvalid = "jwt [%s] acceptable skew seconds, must be 0 or greater, was
 const ecdsaKeySizeBad = "jwt [%s] invalid key size for alg [%s], parsed bitsize %d, check your configuration"
 
 const defaultSkew = "120"
+const jwksRefreshSlowwait = time.Second * 10
 
 func NewJwt(name string, alg string, key string, jwksUrl string, acceptableSkewSeconds string) *Jwt {
 	jwt := Jwt{
@@ -85,6 +88,7 @@ func NewJwt(name string, alg string, key string, jwksUrl string, acceptableSkewS
 		Key:                   key,
 		JwksUrl:               jwksUrl,
 		AcceptableSkewSeconds: acceptableSkewSeconds,
+		updateCount:           0,
 	}
 
 	jwt.Init()
@@ -222,6 +226,11 @@ func (jwt *Jwt) LoadJwks() error {
 			log.Debug().Msgf("jwt [%s] successfully parsed %s key from remote jwk", jwt.Name, alg)
 		}
 
+		//slow down JWKS updates to once every 10 seconds per route to prevent DOS attacks
+		if jwt.updateCount > 0 {
+			time.Sleep(jwksRefreshSlowwait)
+		}
+		jwt.updateCount++
 		//release here, don't use defer
 		jwt.lock.Release(1)
 	} else {
