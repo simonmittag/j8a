@@ -138,12 +138,19 @@ jwt:
   jwtjwks:
     alg: RS256
     jwksUrl: http://localhost:60083/mse6/jwks
+  jwtjwksbadrotate:
+    alg: RS256
+    jwksUrl: http://localhost:60083/mse6/jwksbadrotate
 
 routes:
   - path: "/about"
     resource: about
   - path: "/mse6/some"
     resource: mse61
+  - path: /mse6jwtjwksbadrotate
+    transform: /mse6
+    resource: mse6
+    jwt: jwtjwksbadrotate
   - path: /mse6jwt
     transform: /mse6
     resource: mse6

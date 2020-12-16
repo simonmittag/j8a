@@ -176,11 +176,11 @@ func (jwt *Jwt) LoadJwks() error {
 		if err == nil {
 			log.Debug().Msgf("jwt [%s] fetched %d jwk from jwks URL %s", jwt.Name, keyset.Len(), jwt.JwksUrl)
 		} else {
-			return err
+			log.Warn().Msgf("jwt [%s] unable to fetch jwk from jwks URL %s, cause: %v", jwt.Name, jwt.JwksUrl, err)
 		}
 
 		if keyset.Keys == nil || len(keyset.Keys) == 0 {
-			return errors.New(fmt.Sprintf("jwt [%s] unable to parse keys in keyset", jwt.Name))
+			err = errors.New(fmt.Sprintf("jwt [%s] unable to parse keys in keyset", jwt.Name))
 		}
 
 		for _, key := range keyset.Keys {
@@ -189,41 +189,49 @@ func (jwt *Jwt) LoadJwks() error {
 
 			//check alg conforms to what's configured. J8a does not support rotating key algos for security.
 			if jwt.Alg != key.Algorithm() {
-				return errors.New(fmt.Sprintf("jwt [%s] key algorithm %s in jwks keyset does not match configured alg %s", jwt.Name, key.Algorithm(), jwt.Alg))
+				msg := "jwt [%s] key algorithm [%s] in jwks keyset does not match configured alg [%s]. Alg switched since server start"
+				err = errors.New(fmt.Sprintf(msg, jwt.Name, key.Algorithm(), jwt.Alg))
+				log.Warn().
+					Str("jwt", jwt.Name).
+					Str("jwtAlg", jwt.Alg).
+					Str("keyAlg", key.Algorithm()).
+					Msgf(msg, jwt.Name, key.Algorithm(), jwt.Alg)
 			}
 
-			switch alg {
-			case jwa.RS256, jwa.RS384, jwa.RS512, jwa.PS256, jwa.PS384, jwa.PS512:
-				k := KidPair{
-					Kid: key.KeyID(),
-					Key: &rsa.PublicKey{
-						N: nil,
-						E: 0,
-					},
+			if err == nil {
+				switch alg {
+				case jwa.RS256, jwa.RS384, jwa.RS512, jwa.PS256, jwa.PS384, jwa.PS512:
+					k := KidPair{
+						Kid: key.KeyID(),
+						Key: &rsa.PublicKey{
+							N: nil,
+							E: 0,
+						},
+					}
+					err = key.Raw(k.Key)
+					if err == nil {
+						jwt.RSAPublic.Upsert(k)
+					}
+				//Note, removed support for HS256, secret keys make no sense for JWKS even over TLS.
+				case jwa.ES256, jwa.ES384, jwa.ES512:
+					k := KidPair{
+						Kid: key.KeyID(),
+						Key: &ecdsa.PublicKey{
+							Curve: nil,
+							X:     nil,
+							Y:     nil,
+						},
+					}
+					err = key.Raw(k.Key)
+					err = jwt.checkECDSABitSize(alg, k.Key.(*ecdsa.PublicKey))
+					if err == nil {
+						jwt.ECDSAPublic.Upsert(k)
+					}
+				default:
+					err = errors.New(fmt.Sprintf("unknown key type in Jwks %v", alg.String()))
 				}
-				err = key.Raw(k.Key)
-				if err == nil {
-					jwt.RSAPublic.Upsert(k)
-				}
-			//Note, removed support for HS256, secret keys make no sense for JWKS even over TLS.
-			case jwa.ES256, jwa.ES384, jwa.ES512:
-				k := KidPair{
-					Kid: key.KeyID(),
-					Key: &ecdsa.PublicKey{
-						Curve: nil,
-						X:     nil,
-						Y:     nil,
-					},
-				}
-				err = key.Raw(k.Key)
-				err = jwt.checkECDSABitSize(alg, k.Key.(*ecdsa.PublicKey))
-				if err == nil {
-					jwt.ECDSAPublic.Upsert(k)
-				}
-			default:
-				err = errors.New(fmt.Sprintf("unknown key type in Jwks %v", alg.String()))
+				log.Debug().Msgf("jwt [%s] successfully parsed %s key from remote jwk", jwt.Name, alg)
 			}
-			log.Debug().Msgf("jwt [%s] successfully parsed %s key from remote jwk", jwt.Name, alg)
 		}
 
 		//slow down JWKS updates to once every 10 seconds per route to prevent DOS attacks
