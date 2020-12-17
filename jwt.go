@@ -11,7 +11,9 @@ import (
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/rs/zerolog/log"
+	"golang.org/x/sync/semaphore"
 	"strconv"
+	"time"
 )
 
 type KeySet []KidPair
@@ -54,6 +56,8 @@ type Jwt struct {
 	ECDSAPublic           KeySet
 	Secret                KeySet
 	AcceptableSkewSeconds string
+	lock                  *semaphore.Weighted
+	updateCount           int
 }
 
 var validAlgNoNone = []string{"RS256", "RS384", "RS512", "PS256", "PS384", "PS512", "HS256", "HS384", "HS512", "ES256", "ES384", "ES512"}
@@ -75,8 +79,24 @@ const skewInvalid = "jwt [%s] acceptable skew seconds, must be 0 or greater, was
 const ecdsaKeySizeBad = "jwt [%s] invalid key size for alg [%s], parsed bitsize %d, check your configuration"
 
 const defaultSkew = "120"
+const jwksRefreshSlowwait = time.Second * 10
 
-func (jwt *Jwt) Validate() error {
+func NewJwt(name string, alg string, key string, jwksUrl string, acceptableSkewSeconds string) *Jwt {
+	jwt := Jwt{
+		Name:                  name,
+		Alg:                   alg,
+		Key:                   key,
+		JwksUrl:               jwksUrl,
+		AcceptableSkewSeconds: acceptableSkewSeconds,
+		updateCount:           0,
+	}
+
+	jwt.Init()
+	return &jwt
+}
+
+//we need this separate because the JSON unmarshaller creates this object without asking us.
+func (jwt *Jwt) Init() {
 	if jwt.RSAPublic == nil {
 		jwt.RSAPublic = make([]KidPair, 0)
 	}
@@ -87,6 +107,10 @@ func (jwt *Jwt) Validate() error {
 		jwt.Secret = make([]KidPair, 0)
 	}
 
+	jwt.lock = semaphore.NewWeighted(1)
+}
+
+func (jwt *Jwt) Validate() error {
 	var err error
 	alg := *new(jwa.SignatureAlgorithm)
 	err = alg.Accept(jwt.Alg)
@@ -142,60 +166,91 @@ func (jwt *Jwt) Validate() error {
 	return err
 }
 
+//TODO this method needs a refactor and has high cognitive complexity
 func (jwt *Jwt) LoadJwks() error {
-	keyset, err := jwk.Fetch(jwt.JwksUrl)
-	if err == nil {
-		log.Debug().Msgf("jwt [%s] fetched %d jwk from jwks URL %s", jwt.Name, keyset.Len(), jwt.JwksUrl)
+	var err error
+
+	//acquires the lock with true else skips
+	if jwt.lock.TryAcquire(1) {
+		var keyset *jwk.Set
+		keyset, err = jwk.Fetch(jwt.JwksUrl)
+		if err == nil {
+			log.Debug().Msgf("jwt [%s] fetched %d jwk from jwks URL %s", jwt.Name, keyset.Len(), jwt.JwksUrl)
+		} else {
+			log.Warn().Msgf("jwt [%s] unable to fetch jwk from jwks URL %s, cause: %v", jwt.Name, jwt.JwksUrl, err)
+		}
+
+		if keyset == nil || keyset.Keys == nil || len(keyset.Keys) == 0 {
+			err = errors.New(fmt.Sprintf("jwt [%s] unable to parse keys in keyset", jwt.Name))
+		} else {
+			for _, key := range keyset.Keys {
+				alg := *new(jwa.SignatureAlgorithm)
+				err = alg.Accept(key.Algorithm())
+
+				//check alg conforms to what's configured. J8a does not support rotating key algos for security.
+				if jwt.Alg != key.Algorithm() {
+					msg := "jwt [%s] key algorithm [%s] in jwks keyset does not match configured alg [%s]. Alg switched since server start"
+					err = errors.New(fmt.Sprintf(msg, jwt.Name, key.Algorithm(), jwt.Alg))
+					log.Warn().
+						Str("jwt", jwt.Name).
+						Str("jwtAlg", jwt.Alg).
+						Str("keyAlg", key.Algorithm()).
+						Msgf(msg, jwt.Name, key.Algorithm(), jwt.Alg)
+				}
+
+				if err == nil {
+					switch alg {
+					case jwa.RS256, jwa.RS384, jwa.RS512, jwa.PS256, jwa.PS384, jwa.PS512:
+						k := KidPair{
+							Kid: key.KeyID(),
+							Key: &rsa.PublicKey{
+								N: nil,
+								E: 0,
+							},
+						}
+						err = key.Raw(k.Key)
+						if err == nil {
+							jwt.RSAPublic.Upsert(k)
+						}
+					//Note, removed support for HS256, secret keys make no sense for JWKS even over TLS.
+					case jwa.ES256, jwa.ES384, jwa.ES512:
+						k := KidPair{
+							Kid: key.KeyID(),
+							Key: &ecdsa.PublicKey{
+								Curve: nil,
+								X:     nil,
+								Y:     nil,
+							},
+						}
+						err = key.Raw(k.Key)
+						err = jwt.checkECDSABitSize(alg, k.Key.(*ecdsa.PublicKey))
+						if err == nil {
+							jwt.ECDSAPublic.Upsert(k)
+						}
+					default:
+						err = errors.New(fmt.Sprintf("unknown key type in Jwks %v", alg.String()))
+					}
+					log.Debug().Msgf("jwt [%s] successfully parsed %s key from remote jwk", jwt.Name, alg)
+				} else {
+					//this is important otherwise the sequence of keys in a list may allow successful parse after error parse.
+					return err
+				}
+			}
+		}
+
+		//slow down JWKS updates to once every 10 seconds per route to prevent DOS attacks
+		if jwt.updateCount > 0 {
+			time.Sleep(jwksRefreshSlowwait)
+		}
+		jwt.updateCount++
+		//release here, don't use defer
+		jwt.lock.Release(1)
 	} else {
-		return err
+		log.Debug().
+			Str("jwt", jwt.Name).
+			Msgf("jwt [%s] already updating, skipping...", jwt.Name)
 	}
 
-	if keyset.Keys == nil || len(keyset.Keys) == 0 {
-		return errors.New(fmt.Sprintf("jwt [%s] unable to parse keys in keyset", jwt.Name))
-	}
-
-	for _, key := range keyset.Keys {
-		//here, use the key's signature algorithm, not what's supplied in the config.
-		alg := *new(jwa.SignatureAlgorithm)
-		err = alg.Accept(key.Algorithm())
-
-		if jwt.Alg != key.Algorithm() {
-			return errors.New(fmt.Sprintf("jwt [%s] key algorithm %s in jwks keyset does not match configured alg %s", jwt.Name, key.Algorithm(), jwt.Alg))
-		}
-
-		switch alg {
-		case jwa.RS256, jwa.RS384, jwa.RS512, jwa.PS256, jwa.PS384, jwa.PS512:
-			k := KidPair{
-				Kid: key.KeyID(),
-				Key: &rsa.PublicKey{
-					N: nil,
-					E: 0,
-				},
-			}
-			err = key.Raw(k.Key)
-			if err == nil {
-				jwt.RSAPublic.Upsert(k)
-			}
-		//Note, removed support for HS256, secret keys make no sense for JWKS even over TLS.
-		case jwa.ES256, jwa.ES384, jwa.ES512:
-			k := KidPair{
-				Kid: key.KeyID(),
-				Key: &ecdsa.PublicKey{
-					Curve: nil,
-					X:     nil,
-					Y:     nil,
-				},
-			}
-			err = key.Raw(k.Key)
-			err = jwt.checkECDSABitSize(alg, k.Key.(*ecdsa.PublicKey))
-			if err == nil {
-				jwt.ECDSAPublic.Upsert(k)
-			}
-		default:
-			err = errors.New(fmt.Sprintf("unknown key type in Jwks %v", alg.String()))
-		}
-		log.Debug().Msgf("jwt [%s] successfully parsed %s key from remote jwk", jwt.Name, alg)
-	}
 	return err
 }
 
