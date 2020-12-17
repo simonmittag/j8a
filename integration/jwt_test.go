@@ -5,7 +5,37 @@ import (
 	"github.com/simonmittag/j8a"
 	"net/http"
 	"testing"
+	"time"
 )
+
+func TestLoadJwksBadRotation(t *testing.T) {
+	cfg := j8a.NewJwt("MyJwks", "RS256", "", "http://localhost:60083/mse6/jwksbadrotate?rc=0", "120")
+	err := cfg.LoadJwks()
+	if err != nil {
+		t.Errorf("expected remote RS256 key to pass on first load but received %v", err)
+	} else {
+		t.Logf("normal. validation passed on jwksbadrotate with rc=0")
+	}
+
+	time.Sleep(time.Duration(time.Second * 10))
+
+	cfg.JwksUrl = "http://localhost:60083/mse6/jwksbadrotate"
+	err = cfg.LoadJwks()
+	if err != nil {
+		t.Errorf("expected remote RS256 key to pass on second load but received %v", err)
+	} else {
+		t.Logf("normal. validation passed on jwksbadrotate with rc=1")
+	}
+
+	time.Sleep(time.Duration(time.Second * 10))
+
+	err = cfg.LoadJwks()
+	if err == nil {
+		t.Errorf("expected remote HS256 key to fail on third load but received nil error")
+	} else {
+		t.Logf("normal. validation failed for jwksbadrotate with rc=2, cause: %v", err)
+	}
+}
 
 func TestLoadJwksWithBadSkew(t *testing.T) {
 	cfg := j8a.NewJwt("MyJwks", "ES256", "", "http://localhost:60083/mse6/jwkses256", "notnumeric")
