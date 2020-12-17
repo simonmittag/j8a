@@ -537,11 +537,11 @@ func (proxy *Proxy) validateJwt() bool {
 
 		switch alg {
 		case jwa.RS256, jwa.RS384, jwa.RS512, jwa.PS256, jwa.PS384, jwa.PS512:
-			parsed, err = proxy.verifySignature(token, routeSec.RSAPublic, alg)
+			parsed, err = proxy.verifySignature(token, routeSec.RSAPublic, alg, ev)
 		case jwa.ES256, jwa.ES384, jwa.ES512:
-			parsed, err = proxy.verifySignature(token, routeSec.ECDSAPublic, alg)
+			parsed, err = proxy.verifySignature(token, routeSec.ECDSAPublic, alg, ev)
 		case jwa.HS256, jwa.HS384, jwa.HS512:
-			parsed, err = proxy.verifySignature(token, routeSec.Secret, alg)
+			parsed, err = proxy.verifySignature(token, routeSec.Secret, alg, ev)
 		case jwa.NoSignature:
 			parsed, err = jwt.Parse(bytes.NewReader([]byte(token)))
 		default:
@@ -573,7 +573,7 @@ func (proxy *Proxy) validateJwt() bool {
 	return ok
 }
 
-func (proxy *Proxy) verifySignature(token string, keySet KeySet, alg jwa.SignatureAlgorithm) (jwt.Token, error) {
+func (proxy *Proxy) verifySignature(token string, keySet KeySet, alg jwa.SignatureAlgorithm, ev *zerolog.Event) (jwt.Token, error) {
 	var msg *jws.Message
 	var err error
 	var parsed jwt.Token
@@ -584,6 +584,8 @@ func (proxy *Proxy) verifySignature(token string, keySet KeySet, alg jwa.Signatu
 		kid := extractKid(token)
 		var key interface{}
 		if len(kid) > 0 {
+			ev.Str("jwtKid", kid)
+
 			key = keySet.Find(kid)
 			if key != nil {
 				parsed, err = jwt.Parse(bytes.NewReader([]byte(token)),

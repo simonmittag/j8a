@@ -8,6 +8,13 @@ import (
 	"time"
 )
 
+func TestKeyRotationSuccess(t *testing.T) {
+	k2tok := "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6ImsyIn0.eyJpc3MiOiJqb2UiLCJodHRwOi8vZXhhbXBsZS5jb20vaXNfcm9vdCI6dHJ1ZSwianRpIjoiNWZlNTUzOTAtMmIxMy00YmNjLWJmOGMtMTk0OGZkYmI2YjI5IiwiaWF0IjoxNjA4MjM4Nzg2fQ.DEh1rme5jg1PVka-hkRrA92kqtaQZiu8PkBduztssJrK5rKEPZOKk3EOBoq5CwiLbUh1ZF77EszYtBXUHaThi05HsUk4bIF6Qj9plY-nPtxgkSihC6m-d_FXu6qONGwNjmpgt9o-FCOmuvtzpOMh6LYRTIf_mley_w7tN-QwEIViEGGK54j6g-DPxPlxA_2MwfwiHjwtndI3JzfFWBnyOhvPoGJo9SSE4JP33neh7YOw6UZu7anZHWOSuRRun2Vb9rgr-6_NaUKWCRfd3IxcQWVH6rk_2m4AfqyWc9EJ438q_uxg5Md9sgw9qPQvkJyaeM0D6UcmEFMew-RBgiaqYg"
+	DoJwtTest(t, "/mse6jwtjwksbadrotate2", 401, k2tok)
+	time.Sleep(time.Second*10)
+	DoJwtTest(t, "/mse6jwtjwksbadrotate2", 200, k2tok)
+}
+
 func TestLoadJwksBadRotation(t *testing.T) {
 	cfg := j8a.NewJwt("MyJwks", "RS256", "", "http://localhost:60083/mse6/jwksbadrotate?rc=0", "120")
 	err := cfg.LoadJwks()
@@ -35,6 +42,9 @@ func TestLoadJwksBadRotation(t *testing.T) {
 	} else {
 		t.Logf("normal. validation failed for jwksbadrotate with rc=2, cause: %v", err)
 	}
+
+	//reset
+	http.Get("http://localhost:60083/mse6/jwksbadrotate?rc=0")
 }
 
 func TestLoadJwksWithBadSkew(t *testing.T) {
