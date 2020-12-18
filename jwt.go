@@ -183,13 +183,14 @@ func (jwt *Jwt) LoadJwks() error {
 		if keyset == nil || keyset.Keys == nil || len(keyset.Keys) == 0 {
 			err = errors.New(fmt.Sprintf("jwt [%s] unable to parse keys in keyset", jwt.Name))
 		} else {
+			Keyrange:
 			for _, key := range keyset.Keys {
 				alg := *new(jwa.SignatureAlgorithm)
 				err = alg.Accept(key.Algorithm())
 
 				//check alg conforms to what's configured. J8a does not support rotating key algos for security.
 				if jwt.Alg != key.Algorithm() {
-					msg := "jwt [%s] key algorithm [%s] in jwks keyset does not match configured alg [%s]. Alg switched since server start"
+					msg := "jwt [%s] key algorithm [%s] in jwks keyset does not match configured alg [%s]."
 					err = errors.New(fmt.Sprintf(msg, jwt.Name, key.Algorithm(), jwt.Alg))
 					log.Warn().
 						Str("jwt", jwt.Name).
@@ -232,8 +233,7 @@ func (jwt *Jwt) LoadJwks() error {
 					}
 					log.Debug().Msgf("jwt [%s] successfully parsed %s key from remote jwk", jwt.Name, alg)
 				} else {
-					//this is important otherwise the sequence of keys in a list may allow successful parse after error parse.
-					return err
+					break Keyrange
 				}
 			}
 		}
@@ -248,7 +248,7 @@ func (jwt *Jwt) LoadJwks() error {
 	} else {
 		log.Debug().
 			Str("jwt", jwt.Name).
-			Msgf("jwt [%s] already updating, skipping...", jwt.Name)
+			Msgf("jwt [%s] already updating within 10s, skipping attempt.", jwt.Name)
 	}
 
 	return err
