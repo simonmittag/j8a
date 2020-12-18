@@ -13,13 +13,29 @@ func TestKeyRotationSuccess(t *testing.T) {
 	k1tok := "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6ImsxIn0.eyJpc3MiOiJqb2UiLCJodHRwOi8vZXhhbXBsZS5jb20vaXNfcm9vdCI6dHJ1ZSwianRpIjoiOTMyOTBmZWEtOGViNS00NTE1LWE1OTgtYTkzMzMwZDE3MTFlIiwiaWF0IjoxNjA4MzI1MTc1fQ.jOHFb5NCId24hgI482fh-oPL-PaDJOWi8R9IBGg-MnpchR1oHsCNC4Atpuik4CtO-182qkjuIV-Dj85vdrsUMwe6nFhX_JvUITBbNO3bgE0REVncGfyeOZTOmLd8wnZrqnr5JGp2zaDOufEU-KMhpbWrBXZz5RxF_XgiMkXOwAdq88cYkU6DUprKirUk_HxE2Se91x5vJthfjb1sTMhHS7hvbPvmBad1OGoSBbh6MTFzg6f48-OK_Z2AhlVVLly4bp56DdJsGr1len5fJLksM9tqXtSARhk24xRPhUb2VWJwUu4PdV1yHXhT50ESQ4UM8leulvzal5KSOcSnltwBkw"
 	DoJwtTest(t, "/mse6jwtjwksbadrotate2", 200, k1tok)
 
-	//k2 should work after background update
+	//k2 should work after initial failure and background update
 	k2tok := "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6ImsyIn0.eyJpc3MiOiJqb2UiLCJodHRwOi8vZXhhbXBsZS5jb20vaXNfcm9vdCI6dHJ1ZSwianRpIjoiNWZlNTUzOTAtMmIxMy00YmNjLWJmOGMtMTk0OGZkYmI2YjI5IiwiaWF0IjoxNjA4MjM4Nzg2fQ.DEh1rme5jg1PVka-hkRrA92kqtaQZiu8PkBduztssJrK5rKEPZOKk3EOBoq5CwiLbUh1ZF77EszYtBXUHaThi05HsUk4bIF6Qj9plY-nPtxgkSihC6m-d_FXu6qONGwNjmpgt9o-FCOmuvtzpOMh6LYRTIf_mley_w7tN-QwEIViEGGK54j6g-DPxPlxA_2MwfwiHjwtndI3JzfFWBnyOhvPoGJo9SSE4JP33neh7YOw6UZu7anZHWOSuRRun2Vb9rgr-6_NaUKWCRfd3IxcQWVH6rk_2m4AfqyWc9EJ438q_uxg5Md9sgw9qPQvkJyaeM0D6UcmEFMew-RBgiaqYg"
 	DoJwtTest(t, "/mse6jwtjwksbadrotate2", 401, k2tok)
 	time.Sleep(time.Second * 10)
 	DoJwtTest(t, "/mse6jwtjwksbadrotate2", 200, k2tok)
 
 	//now test we can still use k1
+	DoJwtTest(t, "/mse6jwtjwksbadrotate2", 200, k1tok)
+
+	//we cannot initally use k3 because it's not in the config until but it will cause rotating to k2b which is bad
+	k3tok := "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6ImszIn0.eyJpc3MiOiJqb2UiLCJodHRwOi8vZXhhbXBsZS5jb20vaXNfcm9vdCI6dHJ1ZSwianRpIjoiOWI5ODk5NDctMWNhNi00Njk4LThiMmYtMjBhODE4ZjdlZDcxIiwiaWF0IjoxNjA4MzMwNDIxfQ.dCK241wxJrwAcv-eL4E_LgzeBXutfikWao5WBsJJFZDBlAf3yAHGe7SLz4P9EjqMPcn0BYiCTXGLKvkb7CEgMwKnl2GL7KImMxJZTnxHe2_45hV3KhFtfyuLMoO005eJfcD5U-27tEK6niXku8g5XRclSaVaphRJja1G0AleOFfplhhxaaMKokdpoj9E_Tr4TejUeW1LS_OvujE0idHxothGmtD3w21W9iujuVfRMCn37SxI59YcA4HlExd7zwXvb5iv9k40NSd8AfqILwVGZgDqb-uRUq3z5gOIOmNNRULNaiPrpVzhdMVdGXOUS7Gelk487RgsiUDIV619IvKpUw"
+	DoJwtTest(t, "/mse6jwtjwksbadrotate2", 401, k3tok)
+
+	//after 10s we still cannot use k3tok because k1, k2 are in config but k2b has caused the updater to exit in background
+	//however this will trigger another search for k3
+	time.Sleep(time.Second * 10)
+	DoJwtTest(t, "/mse6jwtjwksbadrotate2", 401, k3tok)
+
+	//and after 10s max k3 will now return a 200 and k1 and k2 still need to work from cache.
+	//this assures the updater continues to work after intermittent failure and no keys are forgotten
+	time.Sleep(time.Second * 10)
+	DoJwtTest(t, "/mse6jwtjwksbadrotate2", 200, k3tok)
+	DoJwtTest(t, "/mse6jwtjwksbadrotate2", 200, k2tok)
 	DoJwtTest(t, "/mse6jwtjwksbadrotate2", 200, k1tok)
 }
 
