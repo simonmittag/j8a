@@ -9,10 +9,18 @@ import (
 )
 
 func TestKeyRotationSuccess(t *testing.T) {
+	//use token with kid k1
+	k1tok := "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6ImsxIn0.eyJpc3MiOiJqb2UiLCJodHRwOi8vZXhhbXBsZS5jb20vaXNfcm9vdCI6dHJ1ZSwianRpIjoiOTMyOTBmZWEtOGViNS00NTE1LWE1OTgtYTkzMzMwZDE3MTFlIiwiaWF0IjoxNjA4MzI1MTc1fQ.jOHFb5NCId24hgI482fh-oPL-PaDJOWi8R9IBGg-MnpchR1oHsCNC4Atpuik4CtO-182qkjuIV-Dj85vdrsUMwe6nFhX_JvUITBbNO3bgE0REVncGfyeOZTOmLd8wnZrqnr5JGp2zaDOufEU-KMhpbWrBXZz5RxF_XgiMkXOwAdq88cYkU6DUprKirUk_HxE2Se91x5vJthfjb1sTMhHS7hvbPvmBad1OGoSBbh6MTFzg6f48-OK_Z2AhlVVLly4bp56DdJsGr1len5fJLksM9tqXtSARhk24xRPhUb2VWJwUu4PdV1yHXhT50ESQ4UM8leulvzal5KSOcSnltwBkw"
+	DoJwtTest(t, "/mse6jwtjwksbadrotate2", 200, k1tok)
+
+	//k2 should work after background update
 	k2tok := "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6ImsyIn0.eyJpc3MiOiJqb2UiLCJodHRwOi8vZXhhbXBsZS5jb20vaXNfcm9vdCI6dHJ1ZSwianRpIjoiNWZlNTUzOTAtMmIxMy00YmNjLWJmOGMtMTk0OGZkYmI2YjI5IiwiaWF0IjoxNjA4MjM4Nzg2fQ.DEh1rme5jg1PVka-hkRrA92kqtaQZiu8PkBduztssJrK5rKEPZOKk3EOBoq5CwiLbUh1ZF77EszYtBXUHaThi05HsUk4bIF6Qj9plY-nPtxgkSihC6m-d_FXu6qONGwNjmpgt9o-FCOmuvtzpOMh6LYRTIf_mley_w7tN-QwEIViEGGK54j6g-DPxPlxA_2MwfwiHjwtndI3JzfFWBnyOhvPoGJo9SSE4JP33neh7YOw6UZu7anZHWOSuRRun2Vb9rgr-6_NaUKWCRfd3IxcQWVH6rk_2m4AfqyWc9EJ438q_uxg5Md9sgw9qPQvkJyaeM0D6UcmEFMew-RBgiaqYg"
 	DoJwtTest(t, "/mse6jwtjwksbadrotate2", 401, k2tok)
-	time.Sleep(time.Second*10)
+	time.Sleep(time.Second * 10)
 	DoJwtTest(t, "/mse6jwtjwksbadrotate2", 200, k2tok)
+
+	//now test we can still use k1
+	DoJwtTest(t, "/mse6jwtjwksbadrotate2", 200, k1tok)
 }
 
 func TestLoadJwksBadRotation(t *testing.T) {
