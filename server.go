@@ -204,9 +204,6 @@ func (runtime Runtime) tlsConfig() *tls.Config {
 			//TLS 1.2 good ciphers
 			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
 			tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-			//TLS 1.2 weak ciphers for IE11, Safari 6-8. We keep this for backwards compatibility with older
-			//clients, it still gives us an A+ result on: https://www.ssllabs.com/ssltest/analyze.html?d=j8a.io
-			tls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,
 		},
 		Certificates: []tls.Certificate{chain},
 	}
