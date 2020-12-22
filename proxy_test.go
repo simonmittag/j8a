@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"regexp"
 	"testing"
 	"time"
@@ -383,7 +384,7 @@ func TestUpstreamNobody(t *testing.T) {
 	}
 }
 
-func TestValidateJwt(t *testing.T) {
+func TestValidateJwtNoClaims(t *testing.T) {
 	Runner = mockJwtRuntime("jwt",
 		"RS256",
 		"-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuvtFgDnIcdB/jqSLICns\nz7FXU/uiFSdJGVpGc5Dy+xm8wZwgiy6lJdL9/TtYjnmJefkPVyYdazabvGvOcns7\n3rshkt0g6Ackqa72yiUEsv1kzCvBObPYNXgr1dNda8/F/ZiO3V9BtcTgQs9Y6rdO\nWJq7zNpees8pfuhEamk3sQp8AmKImFNfuZceNeglMHLLt0NcmSQp4VmhDCladFa1\nEdLirtFM9BtEIOlX20SRcN1LjeRsos8JywpQRxe6M3bnGFXcDQHqrsvwkkzu+vBt\nnPFa2e+jkBSDWkf6ZwvdJnEEUiJkHYTgJuXD1sbGeUkQL1Jb5NaQHhQ1mt3xn1z0\ntwIDAQAB\n-----END PUBLIC KEY-----\n",
@@ -423,6 +424,57 @@ func TestValidateJwtWithClaims(t *testing.T) {
 
 	if !ok {
 		t.Errorf("jwt token did not validate")
+	}
+}
+
+func BenchmarkValidateJwtNoClaims(b *testing.B) {
+	os.Setenv("LOGLEVEL", "DEBUG")
+	initLogger()
+
+	Runner = mockJwtRuntime("jwt",
+		"RS256",
+		"-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuvtFgDnIcdB/jqSLICns\nz7FXU/uiFSdJGVpGc5Dy+xm8wZwgiy6lJdL9/TtYjnmJefkPVyYdazabvGvOcns7\n3rshkt0g6Ackqa72yiUEsv1kzCvBObPYNXgr1dNda8/F/ZiO3V9BtcTgQs9Y6rdO\nWJq7zNpees8pfuhEamk3sQp8AmKImFNfuZceNeglMHLLt0NcmSQp4VmhDCladFa1\nEdLirtFM9BtEIOlX20SRcN1LjeRsos8JywpQRxe6M3bnGFXcDQHqrsvwkkzu+vBt\nnPFa2e+jkBSDWkf6ZwvdJnEEUiJkHYTgJuXD1sbGeUkQL1Jb5NaQHhQ1mt3xn1z0\ntwIDAQAB\n-----END PUBLIC KEY-----\n",
+		"")
+
+	proxy := mockProxy([]byte(""),
+		"0",
+		"/path",
+		"/path",
+		"/get",
+		"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6Ims0MiJ9.eyJpc3MiOiJqb2UiLCJodHRwOi8vZXhhbXBsZS5jb20vaXNfcm9vdCI6dHJ1ZSwianRpIjoiNGFkOTcxMDMtZmQ4ZC00Zjc5LWIwNmEtZTRmOTE1NzkxYjUyIiwiaWF0IjoxNjA3ODU1MTU3fQ.irL3sYTzkM4yFGKBfTzoAAe5H7mGaHECXFy-lkOfVoaaPwuL29b-je_ROoeR8uqw_441QE2P-Ky5582tG2dcu7s3EC3FNuPN_CaZPmbhzV8YIKdzRY7GiTj9sij1_2uRB61b5Qns7H3AJjMuZeCcaGA9t3gSJlVZwkpy9qU46JpX13SPqdSSR9Sg2kZhNFmrRDM5ZGN2VMuzvK34dW72NUkHVaBJUmIRASAfKQnA39xGMskTjP8ZZSzGdYiu0MMhBCA9DZmiS9YBw2Sj6J6Vo7_6SyKAoQyd44JACWbM28jZpfSWDPe-nkMu5ccxNa3A4ocFibnGXaKItWER9MTfeA",
+		"jwt")
+
+	for i := 0; i < b.N; i++ {
+		ok := proxy.validateJwt()
+		if !ok {
+			b.Errorf("jwt token did not validate")
+		}
+	}
+}
+
+func BenchmarkValidateJwtWithClaims(b *testing.B) {
+	os.Setenv("LOGLEVEL", "DEBUG")
+	initLogger()
+
+	Runner = mockJwtRuntime("jwty",
+		"RS256",
+		"-----BEGIN PUBLIC KEY-----\nMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAtXhyIjACJ9I/1RLe6ewu\nBIzZ1275BUssbeUdE87qSNpkJHsn6lNKPUQVix/Hk8MDME6Et1zmyK7a2XoTovME\nLgaHFSpH3i+Eqdl1jG9c0/vkHlwC6Ba+MLxvSCn6HVrcSMMGpOdVHUU4cuqDRpVO\n4owby8e1ZSS1hdhaqs5t464BID7e907oe7hE8deqD9MXmGEimcXXEJTF84wH2xcB\nqUO35dcc5SBJfPAibZ6U2AaNIEZJouUYMJOqwVttTBvKYwhuEwcxsPrYfkufbmGb\n9dnTfKMJamujAwFf+YUwifYfpY763cQ4Ex7eHWVp4LlBB9zYYBBGp2ueLuhJSMWh\nk0yP4KBk8ZDcIgLZKsTzYDdnvbecii7qAxRYMaSEkdjSj2JTmV/GtDBLmkejVNqo\n9s/BvgEIDiPipTWesPKsaNigyhs6p6POJvOHkAAc3+88cfShLuDpobWmNEO6eOAG\nGvACbWs+EOepMrvWuL53QWgJzJaKsxgGejQ1jVCIRZeaVsWiPrJFSUk87lWwxGpR\ncSdvOATlGgjz28jL/CqtuAySGTb4S0LsBFgdpykrGChjbajxeMMjnV3khI4c/KXl\nSmOsxHfJ5vzfbicw1Inn/4RoVxw72p4t1NN3va1W6jZt/FZ5R8xgV5T5zgeAEkSm\nHJa/PXCQoBYwK7cuMJhjRaMCAwEAAQ==\n-----END PUBLIC KEY-----\n",
+		`.sub | select(.=="subscriber")`,
+		`.sub | select(.=="admin")`)
+
+	proxy := mockProxy([]byte(""),
+		"0",
+		"/path",
+		"/path",
+		"/get",
+		"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6ImszIn0.eyJpc3MiOiJpc3N1ZXIiLCJodHRwOi8vZXhhbXBsZS5jb20vaXNfcm9vdCI6dHJ1ZSwic3ViIjoiYWRtaW4iLCJub25jZSI6InNlc3Npb25JRCIsImp0aSI6IjFkYmM3ZjBmLWY1NjQtNGYyNy04MWViLWVhOTJkYTU5NzgzMSIsImlhdCI6MTYwODY2ODY4N30.W3iv8DDmwkMyt5M5KmKgJ1-Tns1LBm7ov-AdzDulDkp7NhrAqrtg6SnLr3KlBCqJQFh84PYEZ2uuOTapEkXkL2xiRIdEenumWMl_65qazpvdbkWWnZ52FP4tHH-3pWWcb0VEc1HSAJuvFN7pDO1Y9lIYeMPGAJY_4nRDHj-60MTNhd4MP6tf29wyBjvaHRlq1a6dCvPhNj6LESqTrGq1DnrvsdZf2FXHPDsv_DvbLOeh_l4-A1hKbrae7OTFYJijbfLwYNs3B12dUxHJ_bSyLmV84kAPZk-IBVUhusx2kbLEVEKT1upblv9ltgnmnsgbwSv3ClYr_1VPOTvpZDSMxhf2zTHIo1W7R0ZdF5f7aFSNmKW59ya5gUHgK9XjEKryyQuUXU2FCJXDARKGie-4VvHZiJo0Nv2De6PGutB_cXjPRs9lyFVui6XtakMaDKVUrE1BwjyXRlf0cGSARTv3wC9x2VmW1ZuoHm9mYCUV3dZiQ0M0gLjZZcLWF4Jq8MtLl-d0hjq5VoBqmmOBnga6JFROFom8Y0ak-5tRXbpJ67GBgyNTXuJ3iBOUXs0Od3t9ZjUfPQElii1q19pac9vtHsfMp9Otur6tKukHvPC-6kLKM4z0OpzvgaMQm7YhlV882GEFaSviW3hYMtyiwT9Ib3FPPsyGySTQWl-4QLk-b3o",
+		"jwty")
+
+	for i := 0; i < b.N; i++ {
+		ok := proxy.validateJwt()
+		if !ok {
+			b.Errorf("jwt token did not validate")
+		}
 	}
 }
 
@@ -497,7 +549,7 @@ func mockProxy(upBody []byte, cl string, path string, transform string, requestU
 		Dwn: Down{
 			URI:    requestUri,
 			Method: "HEAD",
-			Req: req,
+			Req:    req,
 			Resp: Resp{
 				Writer:        httptest.NewRecorder(),
 				Body:          &upBody,
@@ -511,7 +563,7 @@ func mockProxy(upBody []byte, cl string, path string, transform string, requestU
 			Transform: transform,
 			Resource:  "mse7",
 			Policy:    "",
-			Jwt: jwtName,
+			Jwt:       jwtName,
 		},
 	}
 	return proxy

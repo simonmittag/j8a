@@ -583,25 +583,27 @@ func (proxy *Proxy) verifyMandatoryJwtClaims(token jwt.Token) error {
 
 MatchClaim:
 	for _, claim := range Runner.Jwt[proxy.Route.Jwt].Claims {
-		jq, _ := gojq.Parse(claim)
-		json, _ := token.AsMap(context.Background())
-		iter := jq.Run(json)
+		if len(claim) > 0 {
+			jq, _ := gojq.Parse(claim)
+			json, _ := token.AsMap(context.Background())
+			iter := jq.Run(json)
 
-		value, ok := iter.Next()
+			value, ok := iter.Next()
 
-		//match found
-		if !ok {
-			err = errors.New(fmt.Sprintf("claim not matched %s", claim))
-			continue MatchClaim
-		} else {
-			return nil
-		}
+			//match found
+			if !ok {
+				err = errors.New(fmt.Sprintf("claim not matched %s", claim))
+				continue MatchClaim
+			} else {
+				return nil
+			}
 
-		//match didn't return error
-		if _, nok := value.(error); nok {
-			err = value.(error)
-		} else {
-			return nil
+			//match didn't return error
+			if _, nok := value.(error); nok {
+				err = value.(error)
+			} else {
+				return nil
+			}
 		}
 	}
 	return err
