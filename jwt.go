@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/itchyny/gojq"
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/rs/zerolog/log"
@@ -56,6 +57,7 @@ type Jwt struct {
 	ECDSAPublic           KeySet
 	Secret                KeySet
 	AcceptableSkewSeconds string
+	Claims                []string
 	lock                  *semaphore.Weighted
 	updateCount           int
 }
@@ -81,13 +83,14 @@ const ecdsaKeySizeBad = "jwt [%s] invalid key size for alg [%s], parsed bitsize 
 const defaultSkew = "120"
 const jwksRefreshSlowwait = time.Second * 10
 
-func NewJwt(name string, alg string, key string, jwksUrl string, acceptableSkewSeconds string) *Jwt {
+func NewJwt(name string, alg string, key string, jwksUrl string, acceptableSkewSeconds string, claims ...string) *Jwt {
 	jwt := Jwt{
 		Name:                  name,
 		Alg:                   alg,
 		Key:                   key,
 		JwksUrl:               jwksUrl,
 		AcceptableSkewSeconds: acceptableSkewSeconds,
+		Claims:                claims,
 		updateCount:           0,
 	}
 
@@ -157,6 +160,16 @@ func (jwt *Jwt) Validate() error {
 		jwt.AcceptableSkewSeconds = defaultSkew
 	}
 
+	if len(jwt.Claims) > 0 {
+		for _,claim := range jwt.Claims {
+			_, e := gojq.Parse(claim)
+			if e!=nil {
+				err = e
+				break
+			}
+		}
+	}
+
 	if len(jwt.Key) > 0 {
 		err = jwt.parseKey(alg)
 	} else if len(jwt.JwksUrl) > 0 {
@@ -183,7 +196,7 @@ func (jwt *Jwt) LoadJwks() error {
 		if keyset == nil || keyset.Keys == nil || len(keyset.Keys) == 0 {
 			err = errors.New(fmt.Sprintf("jwt [%s] unable to parse keys in keyset", jwt.Name))
 		} else {
-			Keyrange:
+		Keyrange:
 			for _, key := range keyset.Keys {
 				alg := *new(jwa.SignatureAlgorithm)
 				err = alg.Accept(key.Algorithm())

@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/itchyny/gojq"
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jws"
 	"github.com/lestrrat-go/jwx/jwt"
@@ -537,11 +538,11 @@ func (proxy *Proxy) validateJwt() bool {
 
 		switch alg {
 		case jwa.RS256, jwa.RS384, jwa.RS512, jwa.PS256, jwa.PS384, jwa.PS512:
-			parsed, err = proxy.verifySignature(token, routeSec.RSAPublic, alg, ev)
+			parsed, err = proxy.verifyJwtSignature(token, routeSec.RSAPublic, alg, ev)
 		case jwa.ES256, jwa.ES384, jwa.ES512:
-			parsed, err = proxy.verifySignature(token, routeSec.ECDSAPublic, alg, ev)
+			parsed, err = proxy.verifyJwtSignature(token, routeSec.ECDSAPublic, alg, ev)
 		case jwa.HS256, jwa.HS384, jwa.HS512:
-			parsed, err = proxy.verifySignature(token, routeSec.Secret, alg, ev)
+			parsed, err = proxy.verifyJwtSignature(token, routeSec.Secret, alg, ev)
 		case jwa.NoSignature:
 			parsed, err = jwt.Parse(bytes.NewReader([]byte(token)))
 		default:
@@ -552,6 +553,10 @@ func (proxy *Proxy) validateJwt() bool {
 		skew, _ := strconv.Atoi(routeSec.AcceptableSkewSeconds)
 		if parsed != nil && err == nil {
 			err = verifyDateClaims(token, skew)
+		}
+
+		if parsed != nil && err == nil {
+			err = proxy.verifyMandatoryJwtClaims(parsed)
 		}
 
 		if parsed != nil {
@@ -573,7 +578,36 @@ func (proxy *Proxy) validateJwt() bool {
 	return ok
 }
 
-func (proxy *Proxy) verifySignature(token string, keySet KeySet, alg jwa.SignatureAlgorithm, ev *zerolog.Event) (jwt.Token, error) {
+func (proxy *Proxy) verifyMandatoryJwtClaims(token jwt.Token) error {
+	var err error
+
+MatchClaim:
+	for _, claim := range Runner.Jwt[proxy.Route.Jwt].Claims {
+		jq, _ := gojq.Parse(claim)
+		json, _ := token.AsMap(context.Background())
+		iter := jq.Run(json)
+
+		value, ok := iter.Next()
+
+		//match found
+		if !ok {
+			err = errors.New(fmt.Sprintf("claim not matched %s", claim))
+			continue MatchClaim
+		} else {
+			return nil
+		}
+
+		//match didn't return error
+		if _, nok := value.(error); nok {
+			err = value.(error)
+		} else {
+			return nil
+		}
+	}
+	return err
+}
+
+func (proxy *Proxy) verifyJwtSignature(token string, keySet KeySet, alg jwa.SignatureAlgorithm, ev *zerolog.Event) (jwt.Token, error) {
 	var msg *jws.Message
 	var err error
 	var parsed jwt.Token

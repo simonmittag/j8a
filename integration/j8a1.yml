@@ -105,6 +105,9 @@ jwt:
       SmOsxHfJ5vzfbicw1Inn/4RoVxw72p4t1NN3va1W6jZt/FZ5R8xgV5T5zgeAEkSm
       HJa/PXCQoBYwK7cuMJhjRaMCAwEAAQ==
       -----END PUBLIC KEY-----
+    claims:
+      - .sub | select(.=="subscriber")
+      - .sub | select(.=="admin")
   jwtps256:
     acceptableSkewSeconds: 121
     alg: PS256
