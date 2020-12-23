@@ -452,15 +452,75 @@ func BenchmarkValidateJwtNoClaims(b *testing.B) {
 	}
 }
 
-func BenchmarkValidateJwtWithClaims(b *testing.B) {
+func BenchmarkValidateJWT1Claim(b *testing.B) {
+	doBenchValidateJwtWithClaims(b, `.sub | select(.=="admin")`)
+}
+
+func BenchmarkValidateJWT2Claims(b *testing.B) {
+	doBenchValidateJwtWithClaims(b, `.sub | select(.=="subscriber")`,
+		`.sub | select(.=="admin")`)
+}
+
+func BenchmarkValidateJWT3Claims(b *testing.B) {
+	doBenchValidateJwtWithClaims(b, `.sub | select(.=="subscriber")`,
+		`.sub | select(.=="developer")`,
+		`.sub | select(.=="admin")`)
+}
+
+func BenchmarkValidateJWT10Claims(b *testing.B) {
+	doBenchValidateJwtWithClaims(b, `.sub | select(.=="subscriber")`,
+		`.sub | select(.=="developer")`,
+		`.sub | select(.=="developer1")`,
+		`.sub | select(.=="developer2")`,
+		`.sub | select(.=="developer3")`,
+		`.sub | select(.=="developer4")`,
+		`.sub | select(.=="developer5")`,
+		`.sub | select(.=="developer6")`,
+		`.sub | select(.=="developer7")`,
+		`.sub | select(.=="admin")`)
+}
+
+//.9ms this is too slow
+func BenchmarkValidateJWT25Claims(b *testing.B) {
+	doBenchValidateJwtWithClaims(b, `.sub | select(.=="subscriber")`,
+		`.sub | select(.=="developer")`,
+		`.sub | select(.=="developer1")`,
+		`.sub | select(.=="developer2")`,
+		`.sub | select(.=="developer3")`,
+		`.sub | select(.=="developer4")`,
+		`.sub | select(.=="developer5")`,
+		`.sub | select(.=="developer6")`,
+		`.sub | select(.=="developer7")`,
+		`.sub | select(.=="developer8")`,
+		`.sub | select(.=="developer9")`,
+		`.sub | select(.=="developer10")`,
+		`.sub | select(.=="developer11")`,
+		`.sub | select(.=="developer12")`,
+		`.sub | select(.=="developer13")`,
+		`.sub | select(.=="developer14")`,
+		`.sub | select(.=="developer15")`,
+		`.sub | select(.=="developer16")`,
+		`.sub | select(.=="developer17")`,
+		`.sub | select(.=="developer18")`,
+		`.sub | select(.=="developer19")`,
+		`.sub | select(.=="developer20")`,
+		`.sub | select(.=="developer21")`,
+		`.sub | select(.=="developer22")`,
+		`.sub | select(.=="developer23")`,
+		`.sub | select(.=="developer24")`,
+		`.sub | select(.=="developer25")`,
+		`.sub | select(.=="admin")`)
+}
+
+func doBenchValidateJwtWithClaims(b *testing.B, claims ...string) {
 	os.Setenv("LOGLEVEL", "DEBUG")
 	initLogger()
 
 	Runner = mockJwtRuntime("jwty",
 		"RS256",
 		"-----BEGIN PUBLIC KEY-----\nMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAtXhyIjACJ9I/1RLe6ewu\nBIzZ1275BUssbeUdE87qSNpkJHsn6lNKPUQVix/Hk8MDME6Et1zmyK7a2XoTovME\nLgaHFSpH3i+Eqdl1jG9c0/vkHlwC6Ba+MLxvSCn6HVrcSMMGpOdVHUU4cuqDRpVO\n4owby8e1ZSS1hdhaqs5t464BID7e907oe7hE8deqD9MXmGEimcXXEJTF84wH2xcB\nqUO35dcc5SBJfPAibZ6U2AaNIEZJouUYMJOqwVttTBvKYwhuEwcxsPrYfkufbmGb\n9dnTfKMJamujAwFf+YUwifYfpY763cQ4Ex7eHWVp4LlBB9zYYBBGp2ueLuhJSMWh\nk0yP4KBk8ZDcIgLZKsTzYDdnvbecii7qAxRYMaSEkdjSj2JTmV/GtDBLmkejVNqo\n9s/BvgEIDiPipTWesPKsaNigyhs6p6POJvOHkAAc3+88cfShLuDpobWmNEO6eOAG\nGvACbWs+EOepMrvWuL53QWgJzJaKsxgGejQ1jVCIRZeaVsWiPrJFSUk87lWwxGpR\ncSdvOATlGgjz28jL/CqtuAySGTb4S0LsBFgdpykrGChjbajxeMMjnV3khI4c/KXl\nSmOsxHfJ5vzfbicw1Inn/4RoVxw72p4t1NN3va1W6jZt/FZ5R8xgV5T5zgeAEkSm\nHJa/PXCQoBYwK7cuMJhjRaMCAwEAAQ==\n-----END PUBLIC KEY-----\n",
-		`.sub | select(.=="subscriber")`,
-		`.sub | select(.=="admin")`)
+		claims...,
+	)
 
 	proxy := mockProxy([]byte(""),
 		"0",
