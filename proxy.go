@@ -578,8 +578,12 @@ func (proxy *Proxy) validateJwt() bool {
 }
 
 func (proxy *Proxy) verifyMandatoryJwtClaims(token jwt.Token) error {
-	var err error = errors.New("failed to match any mandatory claims")
+	var err error
 	jwtc := Runner.Jwt[proxy.Route.Jwt]
+
+	if jwtc.hasMandatoryClaims() {
+		err = errors.New("failed to match any mandatory claims")
+	}
 
 	for i, claim := range jwtc.Claims {
 		if len(claim) > 0 {

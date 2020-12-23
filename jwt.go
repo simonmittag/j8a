@@ -421,3 +421,7 @@ func (jwt *Jwt) checkECDSABitSize(alg jwa.SignatureAlgorithm, parsed *ecdsa.Publ
 	}
 	return err
 }
+
+func (jwt *Jwt) hasMandatoryClaims() bool {
+	return len(jwt.Claims)>0 && len(jwt.Claims[0])>0
+}
