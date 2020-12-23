@@ -578,30 +578,24 @@ func (proxy *Proxy) validateJwt() bool {
 }
 
 func (proxy *Proxy) verifyMandatoryJwtClaims(token jwt.Token) error {
-	var err error
+	var err error = errors.New("failed to match any mandatory claims")
 	jwtc := Runner.Jwt[proxy.Route.Jwt]
 
-MatchClaim:
-	for _, claim := range jwtc.Claims {
+	for i, claim := range jwtc.Claims {
 		if len(claim) > 0 {
 
 			json, _ := token.AsMap(context.Background())
-			iter := jwtc.claimsVal.Run(json)
+			iter := jwtc.claimsVal[i].Run(json)
 			value, ok := iter.Next()
 
-			//match found
-			if !ok {
-				err = errors.New(fmt.Sprintf("claim not matched %s", claim))
-				continue MatchClaim
-			} else {
-				return nil
-			}
-
-			//match didn't return error
-			if _, nok := value.(error); nok {
-				err = value.(error)
-			} else {
-				return nil
+			if value != nil {
+				if _, nok := value.(error); nok {
+					err = value.(error)
+				} else if ok {
+					return nil
+				} else {
+					err = errors.New(fmt.Sprintf("claim not matched %s", claim))
+				}
 			}
 		}
 	}

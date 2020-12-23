@@ -108,6 +108,7 @@ jwt:
     claims:
       - .sub | select(.=="subscriber")
       - .sub | select(.=="admin")
+      - nonce
   jwtps256:
     acceptableSkewSeconds: 121
     alg: PS256

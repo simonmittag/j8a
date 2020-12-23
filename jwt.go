@@ -14,6 +14,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"golang.org/x/sync/semaphore"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -58,7 +59,7 @@ type Jwt struct {
 	Secret                KeySet
 	AcceptableSkewSeconds string
 	Claims                []string
-	claimsVal             *gojq.Code
+	claimsVal             []*gojq.Code
 	lock                  *semaphore.Weighted
 	updateCount           int
 }
@@ -101,17 +102,11 @@ func NewJwt(name string, alg string, key string, jwksUrl string, acceptableSkewS
 
 //we need this separate because the JSON unmarshaller creates this object without asking us.
 func (jwt *Jwt) Init() {
-	if jwt.RSAPublic == nil {
-		jwt.RSAPublic = make([]KidPair, 0)
-	}
-	if jwt.ECDSAPublic == nil {
-		jwt.ECDSAPublic = make([]KidPair, 0)
-	}
-	if jwt.Secret == nil {
-		jwt.Secret = make([]KidPair, 0)
-	}
-
+	jwt.RSAPublic = make([]KidPair, 0)
+	jwt.ECDSAPublic = make([]KidPair, 0)
+	jwt.Secret = make([]KidPair, 0)
 	jwt.lock = semaphore.NewWeighted(1)
+	jwt.claimsVal = make([]*gojq.Code, 0)
 }
 
 func (jwt *Jwt) Validate() error {
@@ -162,14 +157,27 @@ func (jwt *Jwt) Validate() error {
 	}
 
 	if len(jwt.Claims) > 0 {
-		for _, claim := range jwt.Claims {
+		jwt.claimsVal = make([]*gojq.Code, len(jwt.Claims))
+		for i, claim := range jwt.Claims {
+
+			//poor mans jq query conversion
+			if len(claim)>0 &&
+				!strings.Contains(claim, " ") &&
+				string(claim[0]) != "." {
+				claim = "." + claim
+				jwt.Claims[i] = claim
+			}
+
 			q, e := gojq.Parse(claim)
 			if e != nil {
 				err = e
 				break
 			} else {
-				jwt.claimsVal, err = gojq.Compile(q)
-				if err != nil {
+				var c *gojq.Code
+				c, err = gojq.Compile(q)
+				if err == nil {
+					jwt.claimsVal[i] = c
+				} else {
 					break
 				}
 			}
