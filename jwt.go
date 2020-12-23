@@ -58,6 +58,7 @@ type Jwt struct {
 	Secret                KeySet
 	AcceptableSkewSeconds string
 	Claims                []string
+	claimsVal             *gojq.Code
 	lock                  *semaphore.Weighted
 	updateCount           int
 }
@@ -161,11 +162,16 @@ func (jwt *Jwt) Validate() error {
 	}
 
 	if len(jwt.Claims) > 0 {
-		for _,claim := range jwt.Claims {
-			_, e := gojq.Parse(claim)
-			if e!=nil {
+		for _, claim := range jwt.Claims {
+			q, e := gojq.Parse(claim)
+			if e != nil {
 				err = e
 				break
+			} else {
+				jwt.claimsVal, err = gojq.Compile(q)
+				if err != nil {
+					break
+				}
 			}
 		}
 	}

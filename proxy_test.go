@@ -452,6 +452,10 @@ func BenchmarkValidateJwtNoClaims(b *testing.B) {
 	}
 }
 
+func BenchmarkValidateJWT0Claim(b *testing.B) {
+	doBenchValidateJwtWithClaims(b, ``)
+}
+
 func BenchmarkValidateJWT1Claim(b *testing.B) {
 	doBenchValidateJwtWithClaims(b, `.sub | select(.=="admin")`)
 }
@@ -522,17 +526,24 @@ func doBenchValidateJwtWithClaims(b *testing.B, claims ...string) {
 		claims...,
 	)
 
+	token := "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6ImszIn0.eyJpc3MiOiJpc3N1ZXIiLCJodHRwOi8vZXhhbXBsZS5jb20vaXNfcm9vdCI6dHJ1ZSwic3ViIjoiYWRtaW4iLCJub25jZSI6InNlc3Npb25JRCIsImp0aSI6IjFkYmM3ZjBmLWY1NjQtNGYyNy04MWViLWVhOTJkYTU5NzgzMSIsImlhdCI6MTYwODY2ODY4N30.W3iv8DDmwkMyt5M5KmKgJ1-Tns1LBm7ov-AdzDulDkp7NhrAqrtg6SnLr3KlBCqJQFh84PYEZ2uuOTapEkXkL2xiRIdEenumWMl_65qazpvdbkWWnZ52FP4tHH-3pWWcb0VEc1HSAJuvFN7pDO1Y9lIYeMPGAJY_4nRDHj-60MTNhd4MP6tf29wyBjvaHRlq1a6dCvPhNj6LESqTrGq1DnrvsdZf2FXHPDsv_DvbLOeh_l4-A1hKbrae7OTFYJijbfLwYNs3B12dUxHJ_bSyLmV84kAPZk-IBVUhusx2kbLEVEKT1upblv9ltgnmnsgbwSv3ClYr_1VPOTvpZDSMxhf2zTHIo1W7R0ZdF5f7aFSNmKW59ya5gUHgK9XjEKryyQuUXU2FCJXDARKGie-4VvHZiJo0Nv2De6PGutB_cXjPRs9lyFVui6XtakMaDKVUrE1BwjyXRlf0cGSARTv3wC9x2VmW1ZuoHm9mYCUV3dZiQ0M0gLjZZcLWF4Jq8MtLl-d0hjq5VoBqmmOBnga6JFROFom8Y0ak-5tRXbpJ67GBgyNTXuJ3iBOUXs0Od3t9ZjUfPQElii1q19pac9vtHsfMp9Otur6tKukHvPC-6kLKM4z0OpzvgaMQm7YhlV882GEFaSviW3hYMtyiwT9Ib3FPPsyGySTQWl-4QLk-b3o"
+
 	proxy := mockProxy([]byte(""),
 		"0",
 		"/path",
 		"/path",
 		"/get",
-		"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6ImszIn0.eyJpc3MiOiJpc3N1ZXIiLCJodHRwOi8vZXhhbXBsZS5jb20vaXNfcm9vdCI6dHJ1ZSwic3ViIjoiYWRtaW4iLCJub25jZSI6InNlc3Npb25JRCIsImp0aSI6IjFkYmM3ZjBmLWY1NjQtNGYyNy04MWViLWVhOTJkYTU5NzgzMSIsImlhdCI6MTYwODY2ODY4N30.W3iv8DDmwkMyt5M5KmKgJ1-Tns1LBm7ov-AdzDulDkp7NhrAqrtg6SnLr3KlBCqJQFh84PYEZ2uuOTapEkXkL2xiRIdEenumWMl_65qazpvdbkWWnZ52FP4tHH-3pWWcb0VEc1HSAJuvFN7pDO1Y9lIYeMPGAJY_4nRDHj-60MTNhd4MP6tf29wyBjvaHRlq1a6dCvPhNj6LESqTrGq1DnrvsdZf2FXHPDsv_DvbLOeh_l4-A1hKbrae7OTFYJijbfLwYNs3B12dUxHJ_bSyLmV84kAPZk-IBVUhusx2kbLEVEKT1upblv9ltgnmnsgbwSv3ClYr_1VPOTvpZDSMxhf2zTHIo1W7R0ZdF5f7aFSNmKW59ya5gUHgK9XjEKryyQuUXU2FCJXDARKGie-4VvHZiJo0Nv2De6PGutB_cXjPRs9lyFVui6XtakMaDKVUrE1BwjyXRlf0cGSARTv3wC9x2VmW1ZuoHm9mYCUV3dZiQ0M0gLjZZcLWF4Jq8MtLl-d0hjq5VoBqmmOBnga6JFROFom8Y0ak-5tRXbpJ67GBgyNTXuJ3iBOUXs0Od3t9ZjUfPQElii1q19pac9vtHsfMp9Otur6tKukHvPC-6kLKM4z0OpzvgaMQm7YhlV882GEFaSviW3hYMtyiwT9Ib3FPPsyGySTQWl-4QLk-b3o",
+		token,
 		"jwty")
 
+	parsed, err2 := jwt.Parse(bytes.NewReader([]byte(token)))
+	if err2 != nil {
+		b.Errorf("token not parsed %v", err2)
+	}
+
 	for i := 0; i < b.N; i++ {
-		ok := proxy.validateJwt()
-		if !ok {
+		err := proxy.verifyMandatoryJwtClaims(parsed)
+		if err != nil {
 			b.Errorf("jwt token did not validate")
 		}
 	}
@@ -574,6 +585,7 @@ func mockJwtRuntime(jwtName string, alg string, key string, claims ...string) *R
 	jwaAlg.Accept(jwtConfig.Alg)
 
 	jwtConfig.parseKey(jwaAlg)
+	jwtConfig.Validate()
 
 	return &Runtime{
 		Config: Config{

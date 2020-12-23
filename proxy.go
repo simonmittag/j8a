@@ -10,7 +10,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/itchyny/gojq"
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jws"
 	"github.com/lestrrat-go/jwx/jwt"
@@ -580,14 +579,14 @@ func (proxy *Proxy) validateJwt() bool {
 
 func (proxy *Proxy) verifyMandatoryJwtClaims(token jwt.Token) error {
 	var err error
+	jwtc := Runner.Jwt[proxy.Route.Jwt]
 
 MatchClaim:
-	for _, claim := range Runner.Jwt[proxy.Route.Jwt].Claims {
+	for _, claim := range jwtc.Claims {
 		if len(claim) > 0 {
-			jq, _ := gojq.Parse(claim)
-			json, _ := token.AsMap(context.Background())
-			iter := jq.Run(json)
 
+			json, _ := token.AsMap(context.Background())
+			iter := jwtc.claimsVal.Run(json)
 			value, ok := iter.Next()
 
 			//match found
