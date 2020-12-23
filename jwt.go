@@ -148,7 +148,7 @@ func (jwt *Jwt) Validate() error {
 	}
 
 	if alg != jwa.NoSignature && len(jwt.Key) == 0 && len(jwt.JwksUrl) == 0 {
-		err = errors.New(fmt.Sprintf(missingKeyOrJwks, jwt.Name, alg))
+		return errors.New(fmt.Sprintf(missingKeyOrJwks, jwt.Name, alg))
 	}
 
 	if len(jwt.AcceptableSkewSeconds) > 0 {
