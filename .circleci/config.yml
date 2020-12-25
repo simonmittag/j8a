@@ -284,6 +284,7 @@ jobs:
       J8A_THREE_CFG: ./integration/j8a3.yml
       TEST_DURATION_SECONDS: 10
       TEST_CONCURRENCY_LOW: 8
+      TEST_CONCURRENCY_JWT_LOW: 8
       TEST_CONCURRENCY_HIGH: 25
     steps:
       - checkout # check out source code to working directory
@@ -345,6 +346,16 @@ jobs:
             echo "(ignore 'Step cancelled' messages upstream, j8a shutdown related)"
             echo "=> performance test results http, concurrency ${TEST_CONCURRENCY_LOW}, ${reqss} req/s"
       - run:
+          name: Execute concurrency ${TEST_CONCURRENCY_JWT_LOW} JWT performance tests in HTTP mode
+          command: cd performance && wrk -t ${TEST_CONCURRENCY_JWT_LOW} -c ${TEST_CONCURRENCY_JWT_LOW} -d ${TEST_DURATION_SECONDS}s -s jwttest.lua -- http://localhost:${J8A_ONE_PORT}/jwtrs256/post performance_results_jwt_http_low.json
+      - run:
+          name: Display concurrency ${TEST_CONCURRENCY_JWT_LOW} JWT performance test results in HTTP mode
+          command: |
+            export reqss=`cat performance/performance_results_jwt_http_low.json | jq .requestspersecond`
+            echo "(ignore 'Step cancelled' messages upstream, j8a shutdown related)"
+            echo "=> performance test results JWT http, concurrency ${TEST_CONCURRENCY_JWT_LOW}, ${reqss} req/s"
+            cat performance/performance_results_jwt_http_low.json | jq .
+      - run:
           name: Execute concurrency ${TEST_CONCURRENCY_LOW} performance tests in TLS mode
           command: cd performance && wrk -t ${TEST_CONCURRENCY_LOW} -c ${TEST_CONCURRENCY_LOW} -d ${TEST_DURATION_SECONDS}s -s test.lua -- https://localhost:${J8A_THREE_PORT}/mse6/post performance_results_tls_low.json
       - run:
@@ -391,6 +402,8 @@ jobs:
       TEST_DURATION_SECONDS: 10
       TEST_CONCURRENCY_LOW: 8
       TEST_CONCURRENCY_LOW_THRESHOLD: 2500
+      TEST_CONCURRENCY_JWT_LOW: 8
+      TEST_CONCURRENCY_JWT_LOW_THRESHOLD: 2500
       TEST_CONCURRENCY_HIGH: 25
       TEST_CONCURRENCY_HIGH_THRESHOLD: 500
     steps:
@@ -461,6 +474,24 @@ jobs:
           command: |
             export reqss=`cat performance/performance_results_http_low.json | jq .requestspersecond`
             test ${reqss} -gt ${TEST_CONCURRENCY_LOW_THRESHOLD} && (echo "performance test passed, ${reqss} req/s > ${TEST_CONCURRENCY_LOW_THRESHOLD} req/s";exit 0) || (echo "performance test failed, ${reqss} req/s < ${TEST_CONCURRENCY_LOW_THRESHOLD} req/s";pkill jq)
+      - run:
+          name: Execute concurrency ${TEST_CONCURRENCY_JWT_LOW} JWT performance tests in HTTP mode
+          command: cd performance && wrk -t ${TEST_CONCURRENCY_JWT_LOW} -c ${TEST_CONCURRENCY_JWT_LOW} -d ${TEST_DURATION_SECONDS}s -s jwttest.lua -- http://localhost:${J8A_ONE_PORT}/jwtrs256/post performance_results_jwt_http_low.json
+      - run:
+          name: Display concurrency ${TEST_CONCURRENCY_JWT_LOW} JWT performance test results in HTTP mode
+          command: |
+            export reqss=`cat performance/performance_results_jwt_http_low.json | jq .requestspersecond`
+            echo "(ignore 'Step cancelled' messages upstream, j8a shutdown related)"
+            echo "=> performance test results JWT http, concurrency ${TEST_CONCURRENCY_JWT_LOW}, ${reqss} req/s"
+            cat performance/performance_results_jwt_http_low.json | jq .
+      - store_artifacts:
+          path: performance/performance_results_jwt_http_low.json
+          destination: performance_results_jwt_http_low.json
+      - run:
+          name: Check concurrency ${TEST_CONCURRENCY_JWT_LOW} JWT performance tests in HTTP mode
+          command: |
+            export reqss=`cat performance/performance_results_jwt_http_low.json | jq .requestspersecond`
+            test ${reqss} -gt ${TEST_CONCURRENCY_JWT_LOW_THRESHOLD} && (echo "performance test passed, ${reqss} req/s > ${TEST_CONCURRENCY_JWT_LOW_THRESHOLD} req/s";exit 0) || (echo "performance test failed, ${reqss} req/s < ${TEST_CONCURRENCY_JWT_LOW_THRESHOLD} req/s";pkill jq)
       - run:
           name: Execute concurrency ${TEST_CONCURRENCY_LOW} performance tests in TLS mode
           command: cd performance && wrk -t ${TEST_CONCURRENCY_LOW} -c ${TEST_CONCURRENCY_LOW} -d ${TEST_DURATION_SECONDS}s -s test.lua -- https://localhost:${J8A_THREE_PORT}/mse6/post performance_results_tls_low.json
