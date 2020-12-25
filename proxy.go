@@ -555,7 +555,7 @@ func (proxy *Proxy) validateJwt() bool {
 		}
 
 		if parsed != nil && err == nil {
-			err = proxy.verifyMandatoryJwtClaims(parsed)
+			err = proxy.verifyMandatoryJwtClaims(parsed, ev)
 		}
 
 		if parsed != nil {
@@ -577,25 +577,32 @@ func (proxy *Proxy) validateJwt() bool {
 	return ok
 }
 
-func (proxy *Proxy) verifyMandatoryJwtClaims(token jwt.Token) error {
+func (proxy *Proxy) verifyMandatoryJwtClaims(token jwt.Token, ev *zerolog.Event) error {
 	var err error
 	jwtc := Runner.Jwt[proxy.Route.Jwt]
 
 	if jwtc.hasMandatoryClaims() {
-		err = errors.New("failed to match any mandatory claims")
+		err = errors.New("failed to match any claims required by route")
+		ev.Bool("jwtClaimsMatchRequiredAny", false)
+		ev.Bool("jwtClaimsHasRequiredAny", true)
+	} else {
+		ev.Bool("jwtClaimsHasRequiredAny", false)
 	}
 
 	for i, claim := range jwtc.Claims {
 		if len(claim) > 0 {
+			lk := "jwtClaimsMatchRequired[" + claim + "]"
+			ev.Bool(lk, false)
 
 			json, _ := token.AsMap(context.Background())
 			iter := jwtc.claimsVal[i].Run(json)
 			value, ok := iter.Next()
-
 			if value != nil {
 				if _, nok := value.(error); nok {
 					err = value.(error)
 				} else if ok {
+					ev.Bool("jwtClaimsMatchRequiredAny", true)
+					ev.Bool(lk, ok)
 					return nil
 				} else {
 					err = errors.New(fmt.Sprintf("claim not matched %s", claim))

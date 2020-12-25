@@ -109,6 +109,25 @@ jwt:
       - .sub | select(.=="subscriber")
       - .sub | select(.=="admin")
       - nonce
+  jwtrs256n:
+    acceptableSkewSeconds: 121
+    alg: RS256
+    key: |
+      -----BEGIN PUBLIC KEY-----
+      MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAtXhyIjACJ9I/1RLe6ewu
+      BIzZ1275BUssbeUdE87qSNpkJHsn6lNKPUQVix/Hk8MDME6Et1zmyK7a2XoTovME
+      LgaHFSpH3i+Eqdl1jG9c0/vkHlwC6Ba+MLxvSCn6HVrcSMMGpOdVHUU4cuqDRpVO
+      4owby8e1ZSS1hdhaqs5t464BID7e907oe7hE8deqD9MXmGEimcXXEJTF84wH2xcB
+      qUO35dcc5SBJfPAibZ6U2AaNIEZJouUYMJOqwVttTBvKYwhuEwcxsPrYfkufbmGb
+      9dnTfKMJamujAwFf+YUwifYfpY763cQ4Ex7eHWVp4LlBB9zYYBBGp2ueLuhJSMWh
+      k0yP4KBk8ZDcIgLZKsTzYDdnvbecii7qAxRYMaSEkdjSj2JTmV/GtDBLmkejVNqo
+      9s/BvgEIDiPipTWesPKsaNigyhs6p6POJvOHkAAc3+88cfShLuDpobWmNEO6eOAG
+      GvACbWs+EOepMrvWuL53QWgJzJaKsxgGejQ1jVCIRZeaVsWiPrJFSUk87lWwxGpR
+      cSdvOATlGgjz28jL/CqtuAySGTb4S0LsBFgdpykrGChjbajxeMMjnV3khI4c/KXl
+      SmOsxHfJ5vzfbicw1Inn/4RoVxw72p4t1NN3va1W6jZt/FZ5R8xgV5T5zgeAEkSm
+      HJa/PXCQoBYwK7cuMJhjRaMCAwEAAQ==
+      -----END PUBLIC KEY-----
+    claims:
   jwtps256:
     acceptableSkewSeconds: 121
     alg: PS256
@@ -194,6 +213,10 @@ routes:
     transform: /mse6
     resource: mse6
     jwt: jwtrs256
+  - path: /jwtrs256n
+    transform: /mse6
+    resource: mse6
+    jwt: jwtrs256n
   - path: /jwtnone
     transform: /mse6
     resource: mse6
