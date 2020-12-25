@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwt"
+	"github.com/rs/zerolog/log"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -217,7 +218,7 @@ func TestJwt_IatFail(t *testing.T) {
 	skew := 120
 	payload := dummyHs256TokenFactory(t, jwt.IssuedAtKey, iat)
 
-	err2 := verifyDateClaims(string(payload), skew)
+	err2 := verifyDateClaims(string(payload), skew, log.Trace())
 	if err2 == nil {
 		t.Error("got nil err but token should not have satisfied iat")
 	} else {
@@ -231,7 +232,7 @@ func TestJwt_IatFailSkew(t *testing.T) {
 	skew := 30
 	payload := dummyHs256TokenFactory(t, jwt.IssuedAtKey, iat)
 
-	err2 := verifyDateClaims(string(payload), skew)
+	err2 := verifyDateClaims(string(payload), skew, log.Trace())
 	if err2 == nil {
 		t.Error("got nil err but token should not have satisfied iat")
 	} else {
@@ -245,7 +246,7 @@ func TestJwt_IatPassWithinSkew(t *testing.T) {
 	skew := 120
 	payload := dummyHs256TokenFactory(t, jwt.IssuedAtKey, iat)
 
-	err2 := verifyDateClaims(string(payload), skew)
+	err2 := verifyDateClaims(string(payload), skew, log.Trace())
 	if err2 != nil {
 		t.Error("iat should have satisfied")
 	} else {
@@ -259,7 +260,7 @@ func TestJwt_ExpFail(t *testing.T) {
 	skew := 120
 	payload := dummyHs256TokenFactory(t, jwt.ExpirationKey, exp)
 
-	err2 := verifyDateClaims(string(payload), skew)
+	err2 := verifyDateClaims(string(payload), skew, log.Trace())
 	if err2 == nil {
 		t.Error("got nil err but token should not have satisfied exp")
 	} else {
@@ -273,7 +274,7 @@ func TestJwt_ExpFailSkew(t *testing.T) {
 	skew := 30
 	payload := dummyHs256TokenFactory(t, jwt.ExpirationKey, exp)
 
-	err2 := verifyDateClaims(string(payload), skew)
+	err2 := verifyDateClaims(string(payload), skew, log.Trace())
 	if err2 == nil {
 		t.Error("got nil err but token should not have satisfied exp")
 	} else {
@@ -287,7 +288,7 @@ func TestJwt_ExpPassWithinSkew(t *testing.T) {
 	skew := 120
 	payload := dummyHs256TokenFactory(t, jwt.ExpirationKey, exp)
 
-	err2 := verifyDateClaims(string(payload), skew)
+	err2 := verifyDateClaims(string(payload), skew, log.Trace())
 	if err2 != nil {
 		t.Error("exp should have satisfied")
 	} else {
@@ -301,7 +302,7 @@ func TestJwt_NbfFail(t *testing.T) {
 	skew := 120
 	payload := dummyHs256TokenFactory(t, jwt.NotBeforeKey, nbf)
 
-	err2 := verifyDateClaims(string(payload), skew)
+	err2 := verifyDateClaims(string(payload), skew, log.Trace())
 	if err2 == nil {
 		t.Error("got nil err but token should not have satisfied nbf")
 	} else {
@@ -315,7 +316,7 @@ func TestJwt_NbfFailSkew(t *testing.T) {
 	skew := 30
 	payload := dummyHs256TokenFactory(t, jwt.NotBeforeKey, nbf)
 
-	err2 := verifyDateClaims(string(payload), skew)
+	err2 := verifyDateClaims(string(payload), skew, log.Trace())
 	if err2 == nil {
 		t.Error("got nil err but token should not have satisfied nbf")
 	} else {
@@ -329,7 +330,7 @@ func TestJwt_NbfPassWithinSkew(t *testing.T) {
 	skew := 120
 	payload := dummyHs256TokenFactory(t, jwt.NotBeforeKey, nbf)
 
-	err2 := verifyDateClaims(string(payload), skew)
+	err2 := verifyDateClaims(string(payload), skew, log.Trace())
 	if err2 != nil {
 		t.Error("nbf should have satisfied")
 	} else {
@@ -343,7 +344,7 @@ func TestJwt_NbfPassNoSkew(t *testing.T) {
 	skew := 0
 	payload := dummyHs256TokenFactory(t, jwt.NotBeforeKey, nbf)
 
-	err2 := verifyDateClaims(string(payload), skew)
+	err2 := verifyDateClaims(string(payload), skew, log.Trace())
 	if err2 != nil {
 		t.Error("nbf should have satisfied")
 	} else {
@@ -357,7 +358,7 @@ func TestJwt_NbfFailNoSkew(t *testing.T) {
 	skew := 0
 	payload := dummyHs256TokenFactory(t, jwt.NotBeforeKey, nbf)
 
-	err2 := verifyDateClaims(string(payload), skew)
+	err2 := verifyDateClaims(string(payload), skew, log.Trace())
 	if err2 == nil {
 		t.Error("got nil err but token should not have satisfied nbf")
 	} else {
@@ -542,7 +543,7 @@ func doBenchValidateJwtWithClaims(b *testing.B, claims ...string) {
 	}
 
 	for i := 0; i < b.N; i++ {
-		err := proxy.verifyMandatoryJwtClaims(parsed)
+		err := proxy.verifyMandatoryJwtClaims(parsed, log.Trace())
 		if err != nil {
 			b.Errorf("jwt token did not validate")
 		}
