@@ -537,11 +537,11 @@ func (proxy *Proxy) validateJwt() bool {
 
 		switch alg {
 		case jwa.RS256, jwa.RS384, jwa.RS512, jwa.PS256, jwa.PS384, jwa.PS512:
-			parsed, err = proxy.verifySignature(token, routeSec.RSAPublic, alg, ev)
+			parsed, err = proxy.verifyJwtSignature(token, routeSec.RSAPublic, alg, ev)
 		case jwa.ES256, jwa.ES384, jwa.ES512:
-			parsed, err = proxy.verifySignature(token, routeSec.ECDSAPublic, alg, ev)
+			parsed, err = proxy.verifyJwtSignature(token, routeSec.ECDSAPublic, alg, ev)
 		case jwa.HS256, jwa.HS384, jwa.HS512:
-			parsed, err = proxy.verifySignature(token, routeSec.Secret, alg, ev)
+			parsed, err = proxy.verifyJwtSignature(token, routeSec.Secret, alg, ev)
 		case jwa.NoSignature:
 			parsed, err = jwt.Parse(bytes.NewReader([]byte(token)))
 		default:
@@ -551,7 +551,11 @@ func (proxy *Proxy) validateJwt() bool {
 		//date claims are verified separately to signature including skew
 		skew, _ := strconv.Atoi(routeSec.AcceptableSkewSeconds)
 		if parsed != nil && err == nil {
-			err = verifyDateClaims(token, skew)
+			err = verifyDateClaims(token, skew, ev)
+		}
+
+		if parsed != nil && err == nil {
+			err = proxy.verifyMandatoryJwtClaims(parsed, ev)
 		}
 
 		if parsed != nil {
@@ -573,7 +577,43 @@ func (proxy *Proxy) validateJwt() bool {
 	return ok
 }
 
-func (proxy *Proxy) verifySignature(token string, keySet KeySet, alg jwa.SignatureAlgorithm, ev *zerolog.Event) (jwt.Token, error) {
+func (proxy *Proxy) verifyMandatoryJwtClaims(token jwt.Token, ev *zerolog.Event) error {
+	var err error
+	jwtc := Runner.Jwt[proxy.Route.Jwt]
+
+	if jwtc.hasMandatoryClaims() {
+		err = errors.New("failed to match any claims required by route")
+		ev.Bool("jwtClaimsMatchRequiredAny", false)
+		ev.Bool("jwtClaimsHasRequiredAny", true)
+	} else {
+		ev.Bool("jwtClaimsHasRequiredAny", false)
+	}
+
+	for i, claim := range jwtc.Claims {
+		if len(claim) > 0 {
+			lk := "jwtClaimsMatchRequired[" + claim + "]"
+			ev.Bool(lk, false)
+
+			json, _ := token.AsMap(context.Background())
+			iter := jwtc.claimsVal[i].Run(json)
+			value, ok := iter.Next()
+			if value != nil {
+				if _, nok := value.(error); nok {
+					err = value.(error)
+				} else if ok {
+					ev.Bool("jwtClaimsMatchRequiredAny", true)
+					ev.Bool(lk, ok)
+					return nil
+				} else {
+					err = errors.New(fmt.Sprintf("claim not matched %s", claim))
+				}
+			}
+		}
+	}
+	return err
+}
+
+func (proxy *Proxy) verifyJwtSignature(token string, keySet KeySet, alg jwa.SignatureAlgorithm, ev *zerolog.Event) (jwt.Token, error) {
 	var msg *jws.Message
 	var err error
 	var parsed jwt.Token
@@ -660,21 +700,36 @@ func logDateClaims(parsed jwt.Token, ev *zerolog.Event) {
 	}
 }
 
-func verifyDateClaims(token string, skew int) error {
+func verifyDateClaims(token string, skew int, ev *zerolog.Event) error {
 	//arghh i need a deep copy of this token so i can modify it, but it's an interface wrapping a package private jwt.stdToken
 	//so i need to parse it again.
 	skewed, _ := jwt.Parse(bytes.NewReader([]byte(token)))
 
 	if skewed.IssuedAt().Unix() > int64(skew*1000) {
+		ev.Bool("jwtClaimsIatValidated", true)
 		skewed.Set("iat", skewed.IssuedAt().Add(-time.Second*time.Duration(skew)))
 	}
 	if skewed.NotBefore().Unix() > int64(skew*1000) {
+		ev.Bool("jwtClaimsNbfValidated", true)
 		skewed.Set("nbf", skewed.NotBefore().Add(-time.Second*time.Duration(skew)))
 	}
 	if skewed.Expiration().Unix() > 1 {
+		ev.Bool("jwtClaimsExpValidated", true)
 		skewed.Set("exp", skewed.Expiration().Add(time.Second*time.Duration(skew)))
 	}
-	return jwt.Verify(skewed)
+	err := jwt.Verify(skewed)
+
+	if err != nil && strings.Contains(err.Error(), "iat") {
+		ev.Bool("jwtClaimsIatValidated", false)
+	}
+	if err != nil && strings.Contains(err.Error(), "nbf") {
+		ev.Bool("jwtClaimsNbfValidated", false)
+	}
+	if err != nil && strings.Contains(err.Error(), "exp") {
+		ev.Bool("jwtClaimsExpValidated", false)
+	}
+
+	return err
 }
 
 func extractKid(token string) string {

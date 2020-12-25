@@ -13,7 +13,7 @@ import (
 )
 
 func TestLoadRemoteJwksConcurrency(t *testing.T) {
-	jwt := NewJwt("Testy", "RS256", "", "https://j8a.au.auth0.com/.well-known/jwks.json", "120")
+	jwt := NewJwt("Testy", "RS256", "", "https://j8a.au.auth0.com/.well-known/jwks.json", "120", "")
 	before := time.Now()
 	for i := 0; i < 2; i++ {
 		jwt.LoadJwks()
@@ -25,7 +25,7 @@ func TestLoadRemoteJwksConcurrency(t *testing.T) {
 }
 
 func TestLoadRemoteJwksWithBadSkew(t *testing.T) {
-	cfg := NewJwt("MyJwks", "ES256", "", "https://j8a.au.auth0.com/.well-known/jwks.json", "notnumeric")
+	cfg := NewJwt("MyJwks", "ES256", "", "https://j8a.au.auth0.com/.well-known/jwks.json", "notnumeric", "")
 	err := cfg.Validate()
 
 	if err == nil {
@@ -36,7 +36,7 @@ func TestLoadRemoteJwksWithBadSkew(t *testing.T) {
 }
 
 func TestFailJwksKeySetAlg(t *testing.T) {
-	cfg := NewJwt("MyJwks", "HS256", "", "https://j8a.au.auth0.com/.well-known/jwks.json", "")
+	cfg := NewJwt("MyJwks", "HS256", "", "https://j8a.au.auth0.com/.well-known/jwks.json", "", "")
 	err := cfg.LoadJwks()
 	if err == nil {
 		t.Errorf("expected remote RS256 key to fail HS256 JWKS config but received nil err")
@@ -46,7 +46,7 @@ func TestFailJwksKeySetAlg(t *testing.T) {
 }
 
 func TestFailJwksBadUrl(t *testing.T) {
-	cfg := NewJwt("MyJwks", "HS256", "", "https://asldkjflkaj394028094832sjlflalsdkfjsd.com.blah/.well-known/jwks.json", "")
+	cfg := NewJwt("MyJwks", "HS256", "", "https://asldkjflkaj394028094832sjlflalsdkfjsd.com.blah/.well-known/jwks.json", "", "")
 	err := cfg.LoadJwks()
 	if err == nil {
 		t.Errorf("expected remote bad Jwks URL to fail but received nil err")
@@ -56,7 +56,7 @@ func TestFailJwksBadUrl(t *testing.T) {
 }
 
 func TestFindJwtInKeySet(t *testing.T) {
-	cfg := NewJwt("MyJwks", "RS256", "", "https://j8a.au.auth0.com/.well-known/jwks.json", "")
+	cfg := NewJwt("MyJwks", "RS256", "", "https://j8a.au.auth0.com/.well-known/jwks.json", "", "")
 	cfg.LoadJwks()
 
 	if cfg.RSAPublic == nil {
@@ -88,29 +88,29 @@ func jwtValErr(t *testing.T, jwt Jwt, want error) {
 }
 
 func jwtPass(t *testing.T, alg string, key string) {
-	jwtValErr(t, *NewJwt("namer", alg, key, "", "120"), nil)
+	jwtValErr(t, *NewJwt("namer", alg, key, "", "120", ""), nil)
 }
 
 func jwtBadAlg(t *testing.T, alg string, key string) {
-	jwt := *NewJwt("namer", alg, key, "", "120")
+	jwt := *NewJwt("namer", alg, key, "", "120", "")
 	var want = errors.New(fmt.Sprintf(unknownAlg, jwt.Name, alg, validAlg))
 	jwtValErr(t, jwt, want)
 }
 
 func jwtBadKeyPreamble(t *testing.T, alg string, key string) {
-	jwt := *NewJwt("namer", alg, key, "", "120")
+	jwt := *NewJwt("namer", alg, key, "", "120", "")
 	var want = errors.New(fmt.Sprintf(pemOverflow, jwt.Name))
 	jwtValErr(t, jwt, want)
 }
 
 func jwtBadKeyAsn1(t *testing.T, alg string, key string) {
-	jwt := *NewJwt("namer", alg, key, "", "120")
+	jwt := *NewJwt("namer", alg, key, "", "120", "")
 	var want = errors.New(fmt.Sprintf(pemAsn1Bad, jwt.Name))
 	jwtValErr(t, jwt, want)
 }
 
 func jwtBadKeySize(t *testing.T, alg string, key string, badKeySize int) {
-	jwt := *NewJwt("namer", alg, key, "", "120")
+	jwt := *NewJwt("namer", alg, key, "", "120", "")
 	var want = errors.New(fmt.Sprintf(ecdsaKeySizeBad, jwt.Name, jwt.Alg, badKeySize))
 	jwtValErr(t, jwt, want)
 }
@@ -120,12 +120,12 @@ func TestJwtNonePass(t *testing.T) {
 }
 
 func TestJwtNoneFailWithKeyProvided(t *testing.T) {
-	jwt := *NewJwt("noner", "none", "keydata", "", "120")
+	jwt := *NewJwt("noner", "none", "keydata", "", "120", "")
 	jwtValErr(t, jwt, errors.New("jwt [noner] none type signature does not allow key data, check your configuration"))
 }
 
 func TestJwtFailWithoutNameProvided(t *testing.T) {
-	jwt := *NewJwt("", "HS256", "keydata", "", "120")
+	jwt := *NewJwt("", "HS256", "keydata", "", "120", "")
 	jwtValErr(t, jwt, errors.New("invalid jwt name not specified"))
 }
 
@@ -330,7 +330,7 @@ func TestJwtHS256BadAlg(t *testing.T) {
 }
 
 func TestJwtHS256NoKey(t *testing.T) {
-	jwt := *NewJwt("namer", "HS256", "", "", "120")
+	jwt := *NewJwt("namer", "HS256", "", "", "120", "")
 	jwtValErr(t, jwt, errors.New(fmt.Sprintf(missingKeyOrJwks, "namer", "HS256")))
 }
 
@@ -343,7 +343,7 @@ func TestJwtHS384BadAlg(t *testing.T) {
 }
 
 func TestJwtHS384NoKey(t *testing.T) {
-	jwt := *NewJwt("namer", "HS384", "", "", "120")
+	jwt := *NewJwt("namer", "HS384", "", "", "120", "")
 	jwtValErr(t, jwt, errors.New(fmt.Sprintf(missingKeyOrJwks, "namer", "HS384")))
 }
 
@@ -356,7 +356,7 @@ func TestJwtHS512BadAlg(t *testing.T) {
 }
 
 func TestJwtHS512NoKey(t *testing.T) {
-	jwt := *NewJwt("namer", "HS512", "", "", "120")
+	jwt := *NewJwt("namer", "HS512", "", "", "120", "")
 	jwtValErr(t, jwt, errors.New(fmt.Sprintf(missingKeyOrJwks, "namer", "HS512")))
 }
 

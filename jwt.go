@@ -8,11 +8,13 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/itchyny/gojq"
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/sync/semaphore"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -56,6 +58,8 @@ type Jwt struct {
 	ECDSAPublic           KeySet
 	Secret                KeySet
 	AcceptableSkewSeconds string
+	Claims                []string
+	claimsVal             []*gojq.Code
 	lock                  *semaphore.Weighted
 	updateCount           int
 }
@@ -81,13 +85,14 @@ const ecdsaKeySizeBad = "jwt [%s] invalid key size for alg [%s], parsed bitsize 
 const defaultSkew = "120"
 const jwksRefreshSlowwait = time.Second * 10
 
-func NewJwt(name string, alg string, key string, jwksUrl string, acceptableSkewSeconds string) *Jwt {
+func NewJwt(name string, alg string, key string, jwksUrl string, acceptableSkewSeconds string, claims ...string) *Jwt {
 	jwt := Jwt{
 		Name:                  name,
 		Alg:                   alg,
 		Key:                   key,
 		JwksUrl:               jwksUrl,
 		AcceptableSkewSeconds: acceptableSkewSeconds,
+		Claims:                claims,
 		updateCount:           0,
 	}
 
@@ -97,17 +102,11 @@ func NewJwt(name string, alg string, key string, jwksUrl string, acceptableSkewS
 
 //we need this separate because the JSON unmarshaller creates this object without asking us.
 func (jwt *Jwt) Init() {
-	if jwt.RSAPublic == nil {
-		jwt.RSAPublic = make([]KidPair, 0)
-	}
-	if jwt.ECDSAPublic == nil {
-		jwt.ECDSAPublic = make([]KidPair, 0)
-	}
-	if jwt.Secret == nil {
-		jwt.Secret = make([]KidPair, 0)
-	}
-
+	jwt.RSAPublic = make([]KidPair, 0)
+	jwt.ECDSAPublic = make([]KidPair, 0)
+	jwt.Secret = make([]KidPair, 0)
 	jwt.lock = semaphore.NewWeighted(1)
+	jwt.claimsVal = make([]*gojq.Code, 0)
 }
 
 func (jwt *Jwt) Validate() error {
@@ -144,7 +143,7 @@ func (jwt *Jwt) Validate() error {
 	}
 
 	if alg != jwa.NoSignature && len(jwt.Key) == 0 && len(jwt.JwksUrl) == 0 {
-		err = errors.New(fmt.Sprintf(missingKeyOrJwks, jwt.Name, alg))
+		return errors.New(fmt.Sprintf(missingKeyOrJwks, jwt.Name, alg))
 	}
 
 	if len(jwt.AcceptableSkewSeconds) > 0 {
@@ -155,6 +154,34 @@ func (jwt *Jwt) Validate() error {
 		}
 	} else {
 		jwt.AcceptableSkewSeconds = defaultSkew
+	}
+
+	if len(jwt.Claims) > 0 {
+		jwt.claimsVal = make([]*gojq.Code, len(jwt.Claims))
+		for i, claim := range jwt.Claims {
+
+			//poor mans jq query conversion
+			if len(claim)>0 &&
+				!strings.Contains(claim, " ") &&
+				string(claim[0]) != "." {
+				claim = "." + claim
+				jwt.Claims[i] = claim
+			}
+
+			q, e := gojq.Parse(claim)
+			if e != nil {
+				err = e
+				break
+			} else {
+				var c *gojq.Code
+				c, err = gojq.Compile(q)
+				if err == nil {
+					jwt.claimsVal[i] = c
+				} else {
+					break
+				}
+			}
+		}
 	}
 
 	if len(jwt.Key) > 0 {
@@ -183,7 +210,7 @@ func (jwt *Jwt) LoadJwks() error {
 		if keyset == nil || keyset.Keys == nil || len(keyset.Keys) == 0 {
 			err = errors.New(fmt.Sprintf("jwt [%s] unable to parse keys in keyset", jwt.Name))
 		} else {
-			Keyrange:
+		Keyrange:
 			for _, key := range keyset.Keys {
 				alg := *new(jwa.SignatureAlgorithm)
 				err = alg.Accept(key.Algorithm())
@@ -393,4 +420,8 @@ func (jwt *Jwt) checkECDSABitSize(alg jwa.SignatureAlgorithm, parsed *ecdsa.Publ
 		err = errors.New(fmt.Sprintf(ecdsaKeySizeBad, jwt.Name, alg, bitsize))
 	}
 	return err
+}
+
+func (jwt *Jwt) hasMandatoryClaims() bool {
+	return len(jwt.Claims)>0 && len(jwt.Claims[0])>0
 }
