@@ -12,7 +12,7 @@
 [![Version](https://img.shields.io/docker/v/simonmittag/j8a/0.7.3)](https://hub.docker.com/repository/docker/simonmittag/j8a)
 
 ## What is j8a?
-Achuta! j8a [ dʒʌbbʌ ] is a TLS reverse proxy server. It is built specifically for JSON API micro-services, security, efficiency and devops. 
+Achuta! j8a [ dʒʌbbʌ ] is a **TLS 1.3 reverse proxy server**. It is built specifically for JSON API micro-services, security, efficiency and devops. 
 
 ![](images/route.png)
 
