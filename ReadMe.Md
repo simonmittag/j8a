@@ -1,7 +1,3 @@
-![](images/j8a.png)
-
-Achuta! j8a [ dʒʌbbʌ ] is a TLS reverse proxy server for JSON APIs written in golang.
-
 [![Circleci Builds](https://circleci.com/gh/simonmittag/j8a.svg?style=shield)](https://circleci.com/gh/simonmittag/j8a)
 [![Github Workflows](https://github.com/simonmittag/j8a/workflows/Go/badge.svg)](https://github.com/simonmittag/j8a/actions)
 [![Dependabot](https://badgen.net/badge/Dependabot/enabled/green?icon=dependabot)](https://github.com/simonmittag/j8a/pulls?q=is%3Aopen+is%3Apr)
@@ -15,15 +11,19 @@ Achuta! j8a [ dʒʌbbʌ ] is a TLS reverse proxy server for JSON APIs written in
 [![Docker Pulls](https://img.shields.io/docker/pulls/simonmittag/j8a)](https://hub.docker.com/repository/docker/simonmittag/j8a)
 [![Version](https://img.shields.io/docker/v/simonmittag/j8a/0.7.3)](https://hub.docker.com/repository/docker/simonmittag/j8a)
 
+## What is j8a?
+Achuta! j8a [ dʒʌbbʌ ] is a TLS reverse proxy server. It is built specifically for JSON API micro-services, security, efficiency and devops. 
+
 ![](images/route.png)
 
 ## Features
 * Fast! [10k req/s](https://1567-245031269-gh.circle-artifacts.com/0/performance_results_http_low.json) HTTP traffic w/ efficient multiprocessor support.
-* TLS1.2, TLS/1.3 termination with zero config [A+ SSLLabs rating](https://www.ssllabs.com/ssltest/analyze.html?d=j8a.io).
-* HTTP/1.1 and HTTP/2.0 support w/ upstream <> downstream protocol translation.
+* Secure. TLS1.2, TLS/1.3 termination with zero config [A+ SSLLabs rating](https://www.ssllabs.com/ssltest/analyze.html?d=j8a.io).
+* Compliant. HTTP/1.1 and HTTP/2.0 support w/ upstream <> downstream protocol translation.
 * [Docker](https://hub.docker.com/repository/docker/simonmittag/j8a) native. Built-in CPU, memory stats, TLS health check w/ full JSON logs, no APM required.
-* JSON error wrapper w/ auto-recovery of failed repeatable requests.
-* API request tracing w/ individual X-Request-ID for upstream micro-services.
+* JWT. Token validation with full JWK/JWKS support for [RFC 7519](https://tools.ietf.org/html/rfc7519)
+* Verbose. API request tracing w/ individual X-Request-ID for upstream micro-services.
+* APM. Built-in, yes we promise.
 
 ## Up and running
 ### Docker
