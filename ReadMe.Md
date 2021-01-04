@@ -16,7 +16,7 @@ j8a [ dʒʌbbʌ ] is a modern **TLS 1.3 reverse proxy server** to front your JSO
 It is built specifically to route traffic for your micro-services architecture with the 
 security and operations needs of your devops team in mind. 
 
-![](images/route.png)
+![](images/route.gif)
 
 ## Features
 * Fast! [10k req/s](https://app.circleci.com/pipelines/github/simonmittag/j8a/606/workflows/b8016dcf-0a2f-447f-9297-50b7737990a1/jobs/1992) HTTPS traffic w/ efficient multiprocessor support.
