@@ -7,7 +7,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-ole/go-ole v1.2.4 // indirect
-	github.com/google/uuid v1.1.3
+	github.com/google/uuid v1.1.4
 	github.com/hako/durafmt v0.0.0-20200710122514-c0fb7b4da026
 	github.com/itchyny/gojq v0.12.0
 	github.com/kr/pretty v0.1.0 // indirect
