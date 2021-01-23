@@ -19,7 +19,7 @@ without sacrificing performance.
 ![](images/route.gif)
 
 ## Features
-* Fast! [10k req/s](https://app.circleci.com/pipelines/github/simonmittag/j8a/606/workflows/b8016dcf-0a2f-447f-9297-50b7737990a1/jobs/1992) HTTPS traffic w/ efficient multiprocessor support.
+* Fast! [20k req/s](https://app.circleci.com/pipelines/github/simonmittag/j8a/606/workflows/b8016dcf-0a2f-447f-9297-50b7737990a1/jobs/1992) HTTPS traffic on single CPU core.
 * Secure. TLS1.2, TLS/1.3 termination with zero config [A+ SSLLabs rating](https://www.ssllabs.com/ssltest/analyze.html?d=j8a.io). No weak ciphers ever again.
 * Observable. API request tracing w/ correlation ID for upstream micro-services.
 * APM. CPU, memory logging built-in. Daily TLS health and validity check for your full certificate chain.
