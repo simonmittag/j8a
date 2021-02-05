@@ -11,9 +11,9 @@ require (
 	github.com/hako/durafmt v0.0.0-20200710122514-c0fb7b4da026
 	github.com/itchyny/gojq v0.12.1
 	github.com/kr/pretty v0.1.0 // indirect
-	github.com/lestrrat-go/jwx v1.0.8
+	github.com/lestrrat-go/jwx v1.1.1
 	github.com/rs/zerolog v1.20.0
 	github.com/shirou/gopsutil v2.20.9+incompatible
-	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e
+	golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 )
