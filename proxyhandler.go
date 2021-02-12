@@ -310,6 +310,15 @@ func logHandledDownstreamRoundtrip(proxy *Proxy) {
 	msg := "downstream response served"
 	ev := log.Info()
 
+	if proxy.hasMadeUpstreamAttempt() {
+		ev = ev.Str("upReqURI", proxy.resolveUpstreamURI()).
+			Str("upLabel", proxy.Up.Atmpt.Label).
+			Int("upAtmptResCode", proxy.Up.Atmpt.StatusCode).
+			Int64("upAtmptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
+			Bool("upAtmptAbort", proxy.Up.Atmpt.AbortedFlag).
+			Str("upAtmpt", proxy.Up.Atmpt.print())
+	}
+
 	if proxy.Dwn.Resp.StatusCode > 399 {
 		msg = "downstream error response served"
 		ev = log.Warn()
@@ -328,15 +337,6 @@ func logHandledDownstreamRoundtrip(proxy *Proxy) {
 
 	if Runner.isTLSMode() {
 		ev = ev.Str("dwnTlsVer", proxy.Dwn.TlsVer)
-	}
-
-	if proxy.hasMadeUpstreamAttempt() {
-		ev = ev.Str("upReqURI", proxy.resolveUpstreamURI()).
-			Str("upLabel", proxy.Up.Atmpt.Label).
-			Int("upAtmptResCode", proxy.Up.Atmpt.StatusCode).
-			Int64("upAtmptElapsedMicros", time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
-			Bool("upAtmptAbort", proxy.Up.Atmpt.AbortedFlag).
-			Str("upAtmpt", proxy.Up.Atmpt.print())
 	}
 
 	ev.Msg(msg)
