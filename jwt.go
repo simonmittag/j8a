@@ -1,6 +1,7 @@
 package j8a
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"crypto/rsa"
 	"crypto/x509"
@@ -199,19 +200,21 @@ func (jwt *Jwt) LoadJwks() error {
 
 	//acquires the lock with true else skips
 	if jwt.lock.TryAcquire(1) {
-		var keyset *jwk.Set
-		keyset, err = jwk.Fetch(jwt.JwksUrl)
+		var keyset jwk.Set
+		keyset, err = jwk.Fetch(context.Background(), jwt.JwksUrl)
 		if err == nil {
 			log.Debug().Msgf("jwt [%s] fetched %d jwk from jwks URL %s", jwt.Name, keyset.Len(), jwt.JwksUrl)
 		} else {
 			log.Warn().Msgf("jwt [%s] unable to fetch jwk from jwks URL %s, cause: %v", jwt.Name, jwt.JwksUrl, err)
 		}
 
-		if keyset == nil || keyset.Keys == nil || len(keyset.Keys) == 0 {
+		if keyset == nil || keyset.Len() == 0 {
 			err = errors.New(fmt.Sprintf("jwt [%s] unable to parse keys in keyset", jwt.Name))
 		} else {
+			keys := keyset.Iterate(context.Background())
 		Keyrange:
-			for _, key := range keyset.Keys {
+			for keys.Next(context.Background()) {
+				key := keys.Pair().Value.(jwk.Key)
 				alg := *new(jwa.SignatureAlgorithm)
 				err = alg.Accept(key.Algorithm())
 

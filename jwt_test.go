@@ -1,7 +1,6 @@
 package j8a
 
 import (
-	"bytes"
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
@@ -498,7 +497,7 @@ func BenchmarkJwtEs512Parse(b *testing.B) {
 
 func DoBenchForBearerTokenParse(b *testing.B, token string) {
 	for i := 0; i < b.N; i++ {
-		_, err := jwt.Parse(bytes.NewReader([]byte(token)))
+		_, err := jwt.Parse([]byte(token))
 		if err != nil {
 			b.Errorf("token parsing failed, cause: %v", err)
 		}
@@ -510,7 +509,7 @@ func DoBenchForAlgBearerAndKey(b *testing.B, alg jwa.SignatureAlgorithm, bearer 
 	pub, _ := x509.ParsePKIXPublicKey(pem.Bytes)
 
 	for i := 0; i < b.N; i++ {
-		_, err := jwt.ParseVerify(bytes.NewReader([]byte(bearer)), alg, pub)
+		_, err := jwt.Parse([]byte(bearer), jwt.WithVerify(alg, pub))
 		if err != nil {
 			b.Errorf("key verification failed, cause: %v", err)
 		}
@@ -519,7 +518,7 @@ func DoBenchForAlgBearerAndKey(b *testing.B, alg jwa.SignatureAlgorithm, bearer 
 
 func DoBenchForAlgBearerAndSecret(b *testing.B, alg jwa.SignatureAlgorithm, bearer string, secret string) {
 	for i := 0; i < b.N; i++ {
-		_, err := jwt.ParseVerify(bytes.NewReader([]byte(bearer)), alg, []byte(secret))
+		_, err := jwt.Parse([]byte(bearer), jwt.WithVerify(alg, []byte(secret)))
 		if err != nil {
 			b.Errorf("key verification failed, cause: %v", err)
 		}

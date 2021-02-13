@@ -543,9 +543,9 @@ func (proxy *Proxy) validateJwt() bool {
 		case jwa.HS256, jwa.HS384, jwa.HS512:
 			parsed, err = proxy.verifyJwtSignature(token, routeSec.Secret, alg, ev)
 		case jwa.NoSignature:
-			parsed, err = jwt.Parse(bytes.NewReader([]byte(token)))
+			parsed, err = jwt.Parse([]byte(token))
 		default:
-			parsed, err = jwt.Parse(bytes.NewReader([]byte(token)))
+			parsed, err = jwt.Parse([]byte(token))
 		}
 
 		//date claims are verified separately to signature including skew
@@ -618,7 +618,7 @@ func (proxy *Proxy) verifyJwtSignature(token string, keySet KeySet, alg jwa.Sign
 	var err error
 	var parsed jwt.Token
 
-	msg, err = jws.Parse(bytes.NewReader([]byte(token)))
+	msg, err = jws.Parse([]byte(token))
 	if len(msg.Signatures()) > 0 {
 		//first we try to validate by a key with the kid parameter to match.
 		kid := extractKid(token)
@@ -628,7 +628,7 @@ func (proxy *Proxy) verifyJwtSignature(token string, keySet KeySet, alg jwa.Sign
 
 			key = keySet.Find(kid)
 			if key != nil {
-				parsed, err = jwt.Parse(bytes.NewReader([]byte(token)),
+				parsed, err = jwt.Parse([]byte(token),
 					jwt.WithVerify(alg, key))
 			} else {
 				proxy.triggerKeyRotationCheck(kid)
@@ -644,7 +644,7 @@ func (proxy *Proxy) verifyJwtSignature(token string, keySet KeySet, alg jwa.Sign
 			(err != nil && len(keySet) > 1) {
 
 			for _, kp := range keySet {
-				parsed, err = jwt.Parse(bytes.NewReader([]byte(token)),
+				parsed, err = jwt.Parse([]byte(token),
 					jwt.WithVerify(alg, kp.Key))
 				if err == nil {
 					break
@@ -703,7 +703,7 @@ func logDateClaims(parsed jwt.Token, ev *zerolog.Event) {
 func verifyDateClaims(token string, skew int, ev *zerolog.Event) error {
 	//arghh i need a deep copy of this token so i can modify it, but it's an interface wrapping a package private jwt.stdToken
 	//so i need to parse it again.
-	skewed, _ := jwt.Parse(bytes.NewReader([]byte(token)))
+	skewed, err := jwt.Parse([]byte(token))
 
 	if skewed.IssuedAt().Unix() > int64(skew*1000) {
 		ev.Bool("jwtClaimsIatValidated", true)
@@ -717,7 +717,10 @@ func verifyDateClaims(token string, skew int, ev *zerolog.Event) error {
 		ev.Bool("jwtClaimsExpValidated", true)
 		skewed.Set("exp", skewed.Expiration().Add(time.Second*time.Duration(skew)))
 	}
-	err := jwt.Verify(skewed)
+
+	if skewed!=nil {
+		err = jwt.Validate(skewed)
+	}
 
 	if err != nil && strings.Contains(err.Error(), "iat") {
 		ev.Bool("jwtClaimsIatValidated", false)
