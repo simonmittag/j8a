@@ -16,7 +16,7 @@ import (
 )
 
 //Version is the server version
-var Version string = "v0.7.3"
+var Version string = "v0.7.4"
 
 //ID is a unique server ID
 var ID string = "unknown"
