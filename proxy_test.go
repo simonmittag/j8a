@@ -537,7 +537,7 @@ func doBenchValidateJwtWithClaims(b *testing.B, claims ...string) {
 		token,
 		"jwty")
 
-	parsed, err2 := jwt.Parse(bytes.NewReader([]byte(token)))
+	parsed, err2 := jwt.Parse([]byte(token))
 	if err2 != nil {
 		b.Errorf("token not parsed %v", err2)
 	}
