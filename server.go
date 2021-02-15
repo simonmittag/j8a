@@ -69,7 +69,8 @@ func BootStrap() {
 		validateRoutes().
 		addDefaultPolicy().
 		setDefaultUpstreamParams().
-		setDefaultDownstreamParams()
+		setDefaultDownstreamParams().
+		validateHTTPConfig()
 
 	Runner = &Runtime{
 		Config: *config,
@@ -93,8 +94,8 @@ func (runtime Runtime) startListening() {
 		Float64("dwnIdleConnTimeoutSeconds", idleTimeoutDuration.Seconds()).
 		Msg("server derived downstream params")
 
-	server := &http.Server{
-		Addr:              ":" + strconv.Itoa(runtime.Connection.Downstream.Port),
+	httpConfig := &http.Server{
+		Addr:              ":" + strconv.Itoa(runtime.Connection.Downstream.Http.Port),
 		ReadHeaderTimeout: readTimeoutDuration,
 		ReadTimeout:       readTimeoutDuration,
 		WriteTimeout:      roundTripTimeoutDurationWithGrace,
@@ -103,30 +104,44 @@ func (runtime Runtime) startListening() {
 		ErrorLog:          golog.New(&zerologAdapter{}, "", 0),
 	}
 
+	tlsConfig := *httpConfig
+	tlsConfig.Addr = ":" + strconv.Itoa(runtime.Connection.Downstream.Tls.Port)
+
 	//signal the WaitGroup that boot is over.
 	Boot.Done()
 
 	var err error
-
-	if runtime.isTLSMode() {
-		server.TLSConfig = runtime.tlsConfig()
-		_, tlsErr := checkCertChain(server.TLSConfig.Certificates[0])
-		if tlsErr == nil {
-			go tlsHealthCheck(server.TLSConfig, true)
-			log.Info().Msgf("j8a %s listening in TLS mode on port %d...", Version, runtime.Connection.Downstream.Port)
-			err = server.ListenAndServeTLS("", "")
-		} else {
-			err = tlsErr
-		}
-	} else {
-		log.Info().Msgf("j8a %s listening in HTTP mode on port %d...", Version, runtime.Connection.Downstream.Port)
-		err = server.ListenAndServe()
+	if runtime.isHTTPOn() && !runtime.isTLSOn() {
+		err = runtime.startHTTP(httpConfig)
+	} else if !runtime.isHTTPOn() && runtime.isTLSOn() {
+		err = runtime.startTls(&tlsConfig)
+	} else if runtime.isHTTPOn() && runtime.isTLSOn() {
+		go runtime.startHTTP(httpConfig)
+		runtime.startTls(&tlsConfig)
 	}
 
 	if err != nil {
-		log.Fatal().Err(err).Msgf("unable to start j8a on port %d, exiting...", runtime.Connection.Downstream.Port)
+		log.Fatal().Err(err).Msgf("unable to start j8a, exiting...")
 		panic(err.Error())
 	}
+}
+
+func (runtime Runtime) startTls(server *http.Server) error {
+	server.TLSConfig = runtime.tlsConfig()
+	_, tlsErr := checkCertChain(server.TLSConfig.Certificates[0])
+	if tlsErr == nil {
+		go tlsHealthCheck(server.TLSConfig, true)
+		log.Info().Msgf("j8a %s listening in TLS mode on port %d...", Version, runtime.Connection.Downstream.Tls.Port)
+		return server.ListenAndServeTLS("", "")
+	} else {
+		return tlsErr
+	}
+}
+
+func (runtime Runtime) startHTTP(server *http.Server) error {
+	server.Addr = ":" + strconv.Itoa(runtime.Connection.Downstream.Http.Port)
+	log.Info().Msgf("j8a %s listening in HTTP mode on port %d...", Version, runtime.Connection.Downstream.Http.Port)
+	return server.ListenAndServe()
 }
 
 func (runtime Runtime) mapPathsToHandler() http.Handler {
@@ -165,7 +180,7 @@ func (proxy *Proxy) writeStandardResponseHeaders() {
 
 	header.Set("Server", fmt.Sprintf("j8a %s %s", Version, ID))
 	//for TLS response, we set HSTS header see RFC6797
-	if Runner.isTLSMode() {
+	if Runner.isTLSOn() {
 		header.Set("Strict-Transport-Security", "max-age=31536000")
 	}
 	//copy the X-REQUEST-ID from the request
@@ -181,8 +196,8 @@ func (runtime Runtime) tlsConfig() *tls.Config {
 	}()
 
 	//here we create a keypair from the PEM string in the config file
-	var cert []byte = []byte(runtime.Connection.Downstream.Cert)
-	var key []byte = []byte(runtime.Connection.Downstream.Key)
+	var cert []byte = []byte(runtime.Connection.Downstream.Tls.Cert)
+	var key []byte = []byte(runtime.Connection.Downstream.Tls.Key)
 	chain, _ := tls.X509KeyPair(cert, key)
 
 	var nocert error

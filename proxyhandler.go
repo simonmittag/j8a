@@ -335,7 +335,7 @@ func logHandledDownstreamRoundtrip(proxy *Proxy) {
 		Int64("dwnElapsedMicros", elapsed.Microseconds()).
 		Str(XRequestID, proxy.XRequestID)
 
-	if Runner.isTLSMode() {
+	if Runner.isTLSOn() {
 		ev = ev.Str("dwnTlsVer", proxy.Dwn.TlsVer)
 	}
 

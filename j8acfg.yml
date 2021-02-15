@@ -4,8 +4,8 @@ connection:
     readTimeoutSeconds: 3
     roundTripTimeoutSeconds: 20
     idleTimeoutSeconds: 30
-    port: 8080
-    mode: HTTP
+    http:
+      port: 8080
     maxBodyBytes: 65535
   upstream:
     socketTimeoutSeconds: 3
