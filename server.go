@@ -104,44 +104,45 @@ func (runtime Runtime) startListening() {
 		ErrorLog:          golog.New(&zerologAdapter{}, "", 0),
 	}
 
-	tlsConfig := *httpConfig
-	tlsConfig.Addr = ":" + strconv.Itoa(runtime.Connection.Downstream.Tls.Port)
-
 	//signal the WaitGroup that boot is over.
 	Boot.Done()
 
-	var err error
-	if runtime.isHTTPOn() && !runtime.isTLSOn() {
-		err = runtime.startHTTP(httpConfig)
-	} else if !runtime.isHTTPOn() && runtime.isTLSOn() {
-		err = runtime.startTls(&tlsConfig)
-	} else if runtime.isHTTPOn() && runtime.isTLSOn() {
-		go runtime.startHTTP(httpConfig)
-		runtime.startTls(&tlsConfig)
-	}
+	err := make(chan error)
 
-	if err != nil {
-		log.Fatal().Err(err).Msgf("unable to start j8a, exiting...")
-		panic(err.Error())
+	msg := fmt.Sprintf("j8a %s listener(s) init on", Version)
+	if runtime.isHTTPOn() {
+		msg = msg + fmt.Sprintf(" HTTP:%d", runtime.Connection.Downstream.Http.Port)
+		go runtime.startHTTP(httpConfig, err)
+	}
+	if runtime.isTLSOn() {
+		msg = msg + fmt.Sprintf(" TLS:%d", runtime.Connection.Downstream.Tls.Port)
+		tlsConfig := *httpConfig
+		tlsConfig.Addr = ":" + strconv.Itoa(runtime.Connection.Downstream.Tls.Port)
+		go runtime.startTls(&tlsConfig, err)
+	}
+	log.Info().Msg(msg + "...")
+
+	select {
+	case sig := <-err:
+		log.Fatal().Err(sig).Msgf("... j8a exiting with ")
+		panic(sig.Error())
 	}
 }
 
-func (runtime Runtime) startTls(server *http.Server) error {
+func (runtime Runtime) startTls(server *http.Server, err chan<- error) {
 	server.TLSConfig = runtime.tlsConfig()
 	_, tlsErr := checkCertChain(server.TLSConfig.Certificates[0])
 	if tlsErr == nil {
 		go tlsHealthCheck(server.TLSConfig, true)
-		log.Info().Msgf("j8a %s listening in TLS mode on port %d...", Version, runtime.Connection.Downstream.Tls.Port)
-		return server.ListenAndServeTLS("", "")
+		err <- server.ListenAndServeTLS("", "")
 	} else {
-		return tlsErr
+		err <- tlsErr
 	}
 }
 
-func (runtime Runtime) startHTTP(server *http.Server) error {
+func (runtime Runtime) startHTTP(server *http.Server, err chan<- error) {
 	server.Addr = ":" + strconv.Itoa(runtime.Connection.Downstream.Http.Port)
-	log.Info().Msgf("j8a %s listening in HTTP mode on port %d...", Version, runtime.Connection.Downstream.Http.Port)
-	return server.ListenAndServe()
+	err <- server.ListenAndServe()
 }
 
 func (runtime Runtime) mapPathsToHandler() http.Handler {
