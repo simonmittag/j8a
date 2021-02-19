@@ -158,11 +158,11 @@ func (runtime Runtime) mapPathsToHandler(port int) http.Handler {
 	for _, route := range runtime.Routes {
 		if route.Resource == about {
 			handler.Handle(route.Path, http.HandlerFunc(aboutHandler))
-			log.Debug().Msgf("assigned about handler to path [%s] for listener on port %d", route.Path, port)
+			log.Debug().Msgf("assigned about handler to path [%s] on port %d", route.Path, port)
 		}
 	}
 	handler.Handle("/", http.HandlerFunc(proxyHandler))
-	log.Debug().Msgf("assigned proxy handler to path [%s] for listener on port %d", "/", port)
+	log.Debug().Msgf("assigned proxy handler to path [%s] on port %d", "/", port)
 
 	return handler
 }
