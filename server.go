@@ -111,6 +111,9 @@ func (runtime Runtime) startListening() {
 
 	msg := fmt.Sprintf("j8a %s listener(s) init on", Version)
 	if runtime.isHTTPOn() {
+		if runtime.Connection.Downstream.Http.Redirecttls {
+			httpConfig.Handler = http.HandlerFunc(redirectHandler)
+		}
 		msg = msg + fmt.Sprintf(" HTTP:%d", runtime.Connection.Downstream.Http.Port)
 		go runtime.startHTTP(httpConfig, err)
 	}
@@ -118,6 +121,7 @@ func (runtime Runtime) startListening() {
 		msg = msg + fmt.Sprintf(" TLS:%d", runtime.Connection.Downstream.Tls.Port)
 		tlsConfig := *httpConfig
 		tlsConfig.Addr = ":" + strconv.Itoa(runtime.Connection.Downstream.Tls.Port)
+		tlsConfig.Handler = runtime.mapPathsToHandler()
 		go runtime.startTls(&tlsConfig, err)
 	}
 	log.Info().Msg(msg + "...")

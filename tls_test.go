@@ -159,10 +159,9 @@ func TestCertChainC_Invalid(t *testing.T) {
 
 func mockXTTlsConfig(certPem string, keyPem string, intercAPem string, rootcAPem string) *tls.Config {
 	r := mockRuntime()
-	r.Connection.Downstream.Cert = certPem + intercAPem + rootcAPem
-	r.Connection.Downstream.Key = keyPem
-	r.Connection.Downstream.Mode = "TLS"
-	r.Connection.Downstream.Port = 8443
+	r.Connection.Downstream.Tls.Cert = certPem + intercAPem + rootcAPem
+	r.Connection.Downstream.Tls.Key = keyPem
+	r.Connection.Downstream.Tls.Port = 8443
 
 	tlsConfig := r.tlsConfig()
 	return tlsConfig

@@ -29,8 +29,8 @@ var httpUpstreamMaxAttempts int
 type TLSType string
 
 const (
-	TLS12         TLSType = "TLS1.2"
-	TLS13         TLSType = "TLS1.3"
+	TLS12         TLSType = "1.2"
+	TLS13         TLSType = "1.3"
 	TLS_UNKNOWN   TLSType = "unknown"
 	TLS_NONE      TLSType = "none"
 	Authorization         = "Authorization"
@@ -100,6 +100,8 @@ type Down struct {
 	startDate   time.Time
 	HttpVer     string
 	TlsVer      string
+	Port        int
+	Listener    string
 }
 
 // Proxy wraps data for a single downstream request/response with multiple upstream HTTP request/response cycles.
@@ -211,6 +213,8 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 	proxy.Dwn.TlsVer = parseTlsVersion(request)
 	proxy.Dwn.UserAgent = parseUserAgent(request)
 	proxy.Dwn.Method = parseMethod(request)
+	proxy.Dwn.Listener = parseListener(request)
+	proxy.Dwn.Port = parsePort(request)
 
 	proxy.parseRequestBody(request)
 	proxy.Dwn.Req = request
@@ -226,6 +230,22 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 		Str(XRequestID, proxy.XRequestID).
 		Msg("parsed downstream request header and body")
 	return proxy
+}
+
+func parsePort(request *http.Request) int {
+	if request.TLS == nil {
+		return Runner.Connection.Downstream.Http.Port
+	} else {
+		return Runner.Connection.Downstream.Tls.Port
+	}
+}
+
+func parseListener(request *http.Request) string {
+	if request.TLS == nil {
+		return HTTP
+	} else {
+		return TLS
+	}
 }
 
 func (proxy *Proxy) parseRequestBody(request *http.Request) {
@@ -718,7 +738,7 @@ func verifyDateClaims(token string, skew int, ev *zerolog.Event) error {
 		skewed.Set("exp", skewed.Expiration().Add(time.Second*time.Duration(skew)))
 	}
 
-	if skewed!=nil {
+	if skewed != nil {
 		err = jwt.Validate(skewed)
 	}
 

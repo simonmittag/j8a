@@ -455,8 +455,10 @@ func mockRuntime() *Runtime {
 					IdleTimeoutSeconds:      3,
 					ReadTimeoutSeconds:      120,
 					RoundTripTimeoutSeconds: 120,
-					Mode:                    "HTTP",
-					Port:                    65534,
+					Http: Http{
+						Port:        65534,
+						Redirecttls: false,
+					},
 				},
 			},
 			Policies: map[string]Policy{
