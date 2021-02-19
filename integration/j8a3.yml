@@ -5,7 +5,7 @@ connection:
     roundTripTimeoutSeconds: 20
     idleTimeoutSeconds: 30
     http:
-      port: 8080
+      port: 8083
       redirecttls: true
     tls:
       port: 8443
