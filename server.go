@@ -100,7 +100,6 @@ func (runtime Runtime) startListening() {
 		ReadTimeout:       readTimeoutDuration,
 		WriteTimeout:      roundTripTimeoutDurationWithGrace,
 		IdleTimeout:       idleTimeoutDuration,
-		Handler:           runtime.mapPathsToHandler(),
 		ErrorLog:          golog.New(&zerologAdapter{}, "", 0),
 	}
 
@@ -113,6 +112,11 @@ func (runtime Runtime) startListening() {
 	if runtime.isHTTPOn() {
 		if runtime.Connection.Downstream.Http.Redirecttls {
 			httpConfig.Handler = http.HandlerFunc(redirectHandler)
+			log.Debug().Msgf("assigned redirect handler from HTTP:%d to TLS:%d",
+				runtime.Connection.Downstream.Http.Port,
+				runtime.Connection.Downstream.Tls.Port)
+		} else {
+			httpConfig.Handler = runtime.mapPathsToHandler(runtime.Connection.Downstream.Http.Port)
 		}
 		msg = msg + fmt.Sprintf(" HTTP:%d", runtime.Connection.Downstream.Http.Port)
 		go runtime.startHTTP(httpConfig, err)
@@ -121,7 +125,7 @@ func (runtime Runtime) startListening() {
 		msg = msg + fmt.Sprintf(" TLS:%d", runtime.Connection.Downstream.Tls.Port)
 		tlsConfig := *httpConfig
 		tlsConfig.Addr = ":" + strconv.Itoa(runtime.Connection.Downstream.Tls.Port)
-		tlsConfig.Handler = runtime.mapPathsToHandler()
+		tlsConfig.Handler = runtime.mapPathsToHandler(runtime.Connection.Downstream.Tls.Port)
 		go runtime.startTls(&tlsConfig, err)
 	}
 	log.Info().Msg(msg + "...")
@@ -149,19 +153,16 @@ func (runtime Runtime) startHTTP(server *http.Server, err chan<- error) {
 	err <- server.ListenAndServe()
 }
 
-func (runtime Runtime) mapPathsToHandler() http.Handler {
-	//TODO: do we need this handler with two handlerfuncs or can we map all requests to one handlerfunc to speed up?
-	//if one handlerfunc in the system, it would need to distinguish between /about and other routes.
-
+func (runtime Runtime) mapPathsToHandler(port int) http.Handler {
 	handler := http.NewServeMux()
 	for _, route := range runtime.Routes {
 		if route.Resource == about {
 			handler.Handle(route.Path, http.HandlerFunc(aboutHandler))
-			log.Debug().Msgf("assigned about handler to path %s", route.Path)
+			log.Debug().Msgf("assigned about handler to path [%s] for listener on port %d", route.Path, port)
 		}
 	}
 	handler.Handle("/", http.HandlerFunc(proxyHandler))
-	log.Debug().Msgf("assigned proxy handler to path %s", "/")
+	log.Debug().Msgf("assigned proxy handler to path [%s] for listener on port %d", "/", port)
 
 	return handler
 }
