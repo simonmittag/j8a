@@ -19,6 +19,8 @@ func redirectHandler(response http.ResponseWriter, request *http.Request) {
 		setOutgoing(response).
 		parseIncoming(request)
 
+	proxy.writeStandardResponseHeaders()
+
 	//all malformed requests are rejected here and we return a 400
 	if !validate(proxy) {
 		if proxy.Dwn.ReqTooLarge {
