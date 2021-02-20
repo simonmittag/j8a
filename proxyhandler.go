@@ -325,18 +325,20 @@ func logHandledDownstreamRoundtrip(proxy *Proxy) {
 		ev = ev.Str("dwnResErrMsg", proxy.Dwn.Resp.Message)
 	}
 
-	ev = ev.Str("dwnReqPath", proxy.Dwn.Path).
+	ev = ev.Str("dwnReqListnr", proxy.Dwn.Listener).
+		Str("dwnReqPort", fmt.Sprintf("%d", proxy.Dwn.Port)).
+		Str("dwnReqPath", proxy.Dwn.Path).
 		Str("dwnReqRemoteAddr", ipr.extractAddr(proxy.Dwn.Req.RemoteAddr)).
 		Str("dwnReqMethod", proxy.Dwn.Method).
 		Str("dwnReqUserAgent", proxy.Dwn.UserAgent).
-		Str("dwnHttpVer", proxy.Dwn.HttpVer).
+		Str("dwnReqHttpVer", proxy.Dwn.HttpVer).
 		Int("dwnResCode", proxy.Dwn.Resp.StatusCode).
 		Str("dwnResContentEnc", proxy.contentEncoding()).
-		Int64("dwnElapsedMicros", elapsed.Microseconds()).
+		Int64("dwnResElpsdMicros", elapsed.Microseconds()).
 		Str(XRequestID, proxy.XRequestID)
 
-	if Runner.isTLSMode() {
-		ev = ev.Str("dwnTlsVer", proxy.Dwn.TlsVer)
+	if Runner.isTLSOn() {
+		ev = ev.Str("dwnReqTlsVer", proxy.Dwn.TlsVer)
 	}
 
 	ev.Msg(msg)

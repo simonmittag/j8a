@@ -69,7 +69,8 @@ func BootStrap() {
 		validateRoutes().
 		addDefaultPolicy().
 		setDefaultUpstreamParams().
-		setDefaultDownstreamParams()
+		setDefaultDownstreamParams().
+		validateHTTPConfig()
 
 	Runner = &Runtime{
 		Config: *config,
@@ -93,55 +94,75 @@ func (runtime Runtime) startListening() {
 		Float64("dwnIdleConnTimeoutSeconds", idleTimeoutDuration.Seconds()).
 		Msg("server derived downstream params")
 
-	server := &http.Server{
-		Addr:              ":" + strconv.Itoa(runtime.Connection.Downstream.Port),
+	httpConfig := &http.Server{
+		Addr:              ":" + strconv.Itoa(runtime.Connection.Downstream.Http.Port),
 		ReadHeaderTimeout: readTimeoutDuration,
 		ReadTimeout:       readTimeoutDuration,
 		WriteTimeout:      roundTripTimeoutDurationWithGrace,
 		IdleTimeout:       idleTimeoutDuration,
-		Handler:           runtime.mapPathsToHandler(),
 		ErrorLog:          golog.New(&zerologAdapter{}, "", 0),
 	}
 
 	//signal the WaitGroup that boot is over.
 	Boot.Done()
 
-	var err error
+	err := make(chan error)
 
-	if runtime.isTLSMode() {
-		server.TLSConfig = runtime.tlsConfig()
-		_, tlsErr := checkCertChain(server.TLSConfig.Certificates[0])
-		if tlsErr == nil {
-			go tlsHealthCheck(server.TLSConfig, true)
-			log.Info().Msgf("j8a %s listening in TLS mode on port %d...", Version, runtime.Connection.Downstream.Port)
-			err = server.ListenAndServeTLS("", "")
+	msg := fmt.Sprintf("j8a %s listener(s) init on", Version)
+	if runtime.isHTTPOn() {
+		if runtime.Connection.Downstream.Http.Redirecttls {
+			httpConfig.Handler = http.HandlerFunc(redirectHandler)
+			log.Debug().Msgf("assigned redirect handler from HTTP:%d to TLS:%d",
+				runtime.Connection.Downstream.Http.Port,
+				runtime.Connection.Downstream.Tls.Port)
 		} else {
-			err = tlsErr
+			httpConfig.Handler = runtime.mapPathsToHandler(runtime.Connection.Downstream.Http.Port)
 		}
-	} else {
-		log.Info().Msgf("j8a %s listening in HTTP mode on port %d...", Version, runtime.Connection.Downstream.Port)
-		err = server.ListenAndServe()
+		msg = msg + fmt.Sprintf(" HTTP:%d", runtime.Connection.Downstream.Http.Port)
+		go runtime.startHTTP(httpConfig, err)
 	}
+	if runtime.isTLSOn() {
+		msg = msg + fmt.Sprintf(" TLS:%d", runtime.Connection.Downstream.Tls.Port)
+		tlsConfig := *httpConfig
+		tlsConfig.Addr = ":" + strconv.Itoa(runtime.Connection.Downstream.Tls.Port)
+		tlsConfig.Handler = runtime.mapPathsToHandler(runtime.Connection.Downstream.Tls.Port)
+		go runtime.startTls(&tlsConfig, err)
+	}
+	log.Info().Msg(msg + "...")
 
-	if err != nil {
-		log.Fatal().Err(err).Msgf("unable to start j8a on port %d, exiting...", runtime.Connection.Downstream.Port)
-		panic(err.Error())
+	select {
+	case sig := <-err:
+		log.Fatal().Err(sig).Msgf("... j8a exiting with ")
+		panic(sig.Error())
 	}
 }
 
-func (runtime Runtime) mapPathsToHandler() http.Handler {
-	//TODO: do we need this handler with two handlerfuncs or can we map all requests to one handlerfunc to speed up?
-	//if one handlerfunc in the system, it would need to distinguish between /about and other routes.
+func (runtime Runtime) startTls(server *http.Server, err chan<- error) {
+	server.TLSConfig = runtime.tlsConfig()
+	_, tlsErr := checkCertChain(server.TLSConfig.Certificates[0])
+	if tlsErr == nil {
+		go tlsHealthCheck(server.TLSConfig, true)
+		err <- server.ListenAndServeTLS("", "")
+	} else {
+		err <- tlsErr
+	}
+}
 
+func (runtime Runtime) startHTTP(server *http.Server, err chan<- error) {
+	server.Addr = ":" + strconv.Itoa(runtime.Connection.Downstream.Http.Port)
+	err <- server.ListenAndServe()
+}
+
+func (runtime Runtime) mapPathsToHandler(port int) http.Handler {
 	handler := http.NewServeMux()
 	for _, route := range runtime.Routes {
 		if route.Resource == about {
 			handler.Handle(route.Path, http.HandlerFunc(aboutHandler))
-			log.Debug().Msgf("assigned about handler to path %s", route.Path)
+			log.Debug().Msgf("assigned about handler to path [%s] on port %d", route.Path, port)
 		}
 	}
 	handler.Handle("/", http.HandlerFunc(proxyHandler))
-	log.Debug().Msgf("assigned proxy handler to path %s", "/")
+	log.Debug().Msgf("assigned proxy handler to path [%s] on port %d", "/", port)
 
 	return handler
 }
@@ -165,7 +186,7 @@ func (proxy *Proxy) writeStandardResponseHeaders() {
 
 	header.Set("Server", fmt.Sprintf("j8a %s %s", Version, ID))
 	//for TLS response, we set HSTS header see RFC6797
-	if Runner.isTLSMode() {
+	if Runner.isTLSOn() {
 		header.Set("Strict-Transport-Security", "max-age=31536000")
 	}
 	//copy the X-REQUEST-ID from the request
@@ -181,8 +202,8 @@ func (runtime Runtime) tlsConfig() *tls.Config {
 	}()
 
 	//here we create a keypair from the PEM string in the config file
-	var cert []byte = []byte(runtime.Connection.Downstream.Cert)
-	var key []byte = []byte(runtime.Connection.Downstream.Key)
+	var cert []byte = []byte(runtime.Connection.Downstream.Tls.Cert)
+	var key []byte = []byte(runtime.Connection.Downstream.Tls.Key)
 	chain, _ := tls.X509KeyPair(cert, key)
 
 	var nocert error

@@ -79,7 +79,7 @@ func TestParseTlsVersionV12(t *testing.T) {
 	req.TLS = &tls.ConnectionState{
 		Version: tls.VersionTLS12,
 	}
-	if "TLS1.2" != parseTlsVersion(req) {
+	if "1.2" != parseTlsVersion(req) {
 		t.Errorf("wrong TLS version")
 	}
 }
@@ -89,7 +89,7 @@ func TestParseTlsVersionV13(t *testing.T) {
 	req.TLS = &tls.ConnectionState{
 		Version: tls.VersionTLS13,
 	}
-	if "TLS1.3" != parseTlsVersion(req) {
+	if "1.3" != parseTlsVersion(req) {
 		t.Errorf("wrong TLS version")
 	}
 }

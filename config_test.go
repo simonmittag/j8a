@@ -48,45 +48,12 @@ func TestDefaultDownstreamRoundtripTimeout(t *testing.T) {
 	}
 }
 
-//TestDefaultDownstreamIdleTimeout
-func TestDefaultDownstreamTlsPort(t *testing.T) {
-	config := new(Config)
-	config.Connection.Downstream.Mode = "tls"
-	//TODO: should i turn the entire config method set into receiver type pointer?
-	config = config.setDefaultDownstreamParams()
-
-	got := config.Connection.Downstream.Port
-	want := 443
-	if got != want {
-		t.Errorf("default tls config got port %d, want %d", got, want)
-	}
-}
-
-//TestDefaultDownstreamIdleTimeout
-func TestDefaultDownstreamHttpPort(t *testing.T) {
-	config := new(Config).setDefaultDownstreamParams()
-	got := config.Connection.Downstream.Port
-	want := 8080
-	if got != want {
-		t.Errorf("default http config got port %d, want %d", got, want)
-	}
-}
-
 func TestDefaultDownstreamMaxBodyBytes(t *testing.T) {
 	config := new(Config).setDefaultDownstreamParams()
 	got := config.Connection.Downstream.MaxBodyBytes
 	want := int64(2097152)
 	if got != want {
 		t.Errorf("default dwn max body bytes got %d, want %d", got, want)
-	}
-}
-
-func TestDefaultDownstreamMode(t *testing.T) {
-	config := new(Config).setDefaultDownstreamParams()
-	got := config.Connection.Downstream.Mode
-	want := "HTTP"
-	if got != want {
-		t.Errorf("default config got mode %s, want %s", got, want)
 	}
 }
 
@@ -243,18 +210,6 @@ func TestParseConnection(t *testing.T) {
 			t.Errorf("incorrectly parsed downstream idleTimeoutSeconds, want %d, got %d", wits, gits)
 		}
 
-		wp := 8080
-		gp := c.Downstream.Port
-		if wp != gp {
-			t.Errorf("incorrectly parsed downstream port, want %d, got %d", wp, gp)
-		}
-
-		wm := "TLS"
-		gm := c.Downstream.Mode
-		if wm != gm {
-			t.Errorf("incorrectly parsed downstream mode, want %s, got %s", wm, gm)
-		}
-
 		wuits := 120
 		guits := c.Upstream.IdleTimeoutSeconds
 		if wuits != guits {
@@ -404,7 +359,7 @@ func TestLoadConfigFromFile(t *testing.T) {
 func TestLoadConfig(t *testing.T) {
 	ConfigFile = "./integration/j8a3.yml"
 	config := new(Config).load()
-	if config.Connection.Downstream.Port != 8443 {
+	if config.Connection.Downstream.Tls.Port != 8443 {
 		t.Error("config not loaded from load() function")
 	}
 }

@@ -164,6 +164,15 @@ func (config Config) reApplyResourceSchemes() *Config {
 	return &config
 }
 
+func (config Config) validateHTTPConfig() *Config {
+	if !config.isTLSOn() &&
+		config.Connection.Downstream.Http.Redirecttls == true {
+		config.panic("cannot redirect to TLS if not properly configured.")
+	}
+
+	return &config
+}
+
 func (config Config) addDefaultPolicy() *Config {
 	defaultPolicy := new(Policy)
 	lw := LabelWeight{
@@ -199,25 +208,19 @@ func (config Config) setDefaultDownstreamParams() *Config {
 		config.Connection.Downstream.MaxBodyBytes = 2 << 20
 	}
 
-	if len(config.Connection.Downstream.Mode) == 0 {
-		config.Connection.Downstream.Mode = HTTP
-	} else {
-		config.Connection.Downstream.Mode = strings.ToUpper(config.Connection.Downstream.Mode)
-	}
-
-	if config.Connection.Downstream.Port == 0 {
-		if config.isTLSMode() {
-			config.Connection.Downstream.Port = 443
-		} else {
-			config.Connection.Downstream.Port = 8080
-		}
+	if !config.isHTTPOn() {
+		config.Connection.Downstream.Http.Redirecttls = false
 	}
 
 	return &config
 }
 
-func (config Config) isTLSMode() bool {
-	return strings.ToUpper(config.Connection.Downstream.Mode) == TLS
+func (config Config) isTLSOn() bool {
+	return config.Connection.Downstream.Tls.Port > 0
+}
+
+func (config Config) isHTTPOn() bool {
+	return config.Connection.Downstream.Http.Port > 0
 }
 
 func (config Config) setDefaultUpstreamParams() *Config {

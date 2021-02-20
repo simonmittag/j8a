@@ -24,9 +24,22 @@ type Downstream struct {
 	// MaxBodyBytes is the maximum size of the incoming HTTP request body before it is rejected
 	MaxBodyBytes int64
 
-	// Serving Mode, can be "TLS"
-	Mode string
+	// Http block. defaults to on
+	Http Http
 
+	// Tls block defaults to off
+	Tls Tls
+}
+
+type Http struct {
+	// Serving HTTP on this port
+	Port int
+
+	// Redirect HTTP to tls if set to "TLS". Only one value allowed.
+	Redirecttls bool
+}
+
+type Tls struct {
 	// Serving on this port
 	Port int
 

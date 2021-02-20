@@ -4,8 +4,8 @@ connection:
     readTimeoutSeconds: 3
     roundTripTimeoutSeconds: 20
     idleTimeoutSeconds: 30
-    port: 8081
-    mode: HTTP
+    http:
+      port: 8081
   upstream:
     socketTimeoutSeconds: 3
     readTimeoutSeconds: 30

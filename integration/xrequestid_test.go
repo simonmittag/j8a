@@ -19,7 +19,7 @@ func TestSupplyXRequestID(t *testing.T) {
 		defer resp.Body.Close()
 	}
 
-	//must be case insensitive
+	//must be case lowercase HTTP/2
 	got := resp.Header.Get("x-request-id")
 	want := "test1"
 	if got != want {
