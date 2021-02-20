@@ -44,6 +44,44 @@ func TestHTTP11GetOverTLS13(t *testing.T) {
 	HTTP11GetOverTlsVersion(t, tls.VersionTLS13, weDontWantAnyError)
 }
 
+func TestHTTP11Redirect2TLSNoFollow(t *testing.T) {
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+	url := "http://localhost:8083/mse6/get"
+	response, err2 := client.Get(url)
+
+	want := 308
+	got := response.StatusCode
+
+	if want != got {
+		t.Errorf("redirect did not return 308")
+	}
+
+	if err2 != nil {
+		t.Errorf("redirect did not return 308")
+	}
+}
+
+func TestHTTP11Redirect2TLSFollow(t *testing.T) {
+	client := &http.Client{}
+	url := "http://localhost:8083/mse6/get"
+	response, err2 := client.Get(url)
+
+	want := 200
+	got := response.StatusCode
+
+	if want != got {
+		t.Errorf("redirect did not follow")
+	}
+
+	if err2 != nil {
+		t.Errorf("redirect did not follow")
+	}
+}
+
 func HTTP11GetOverTlsVersion(t *testing.T, tlsVersion uint16, wantErr string) {
 	var conn *tls.Conn
 	var err error
