@@ -66,7 +66,13 @@ func TestHTTP11Redirect2TLSNoFollow(t *testing.T) {
 }
 
 func TestHTTP11Redirect2TLSFollow(t *testing.T) {
-	client := &http.Client{}
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		},
+	}
 	url := "http://localhost:8083/mse6/get"
 	response, err2 := client.Get(url)
 
