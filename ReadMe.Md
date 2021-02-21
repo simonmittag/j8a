@@ -52,8 +52,8 @@ J8ACFG_YML="---
                 readTimeoutSeconds: 3
                 roundTripTimeoutSeconds: 20
                 idleTimeoutSeconds: 30
-                port: 80
-                mode: HTTP
+                http:
+                  port: 80
                 maxBodyBytes: 65535
               upstream:
                 socketTimeoutSeconds: 3
