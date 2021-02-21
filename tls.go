@@ -208,12 +208,21 @@ func parseTlsLinks(chain []*x509.Certificate) []TlsLink {
 }
 
 func splitCertPools(chain tls.Certificate) (*x509.CertPool, *x509.CertPool) {
+	errMsg := "unable to parse TLS certificate chain, cause: %v, exiting ..."
+	//safety in case anything else goes wrong. we're now in a goroutine
+	defer func() {
+		if r := recover(); r != nil {
+			log.Fatal().Msgf(errMsg, r)
+			os.Exit(-1)
+		}
+	}()
+
 	root := x509.NewCertPool()
 	inter := x509.NewCertPool()
 	for _, c := range chain.Certificate {
 		c1, caerr := x509.ParseCertificate(c)
-		if caerr != nil || c1 == nil {
-			log.Fatal().Msgf("unable to parse TLS certificate chain, cause: %v. Exiting ...", caerr)
+		if caerr != nil {
+			log.Fatal().Msgf(errMsg, caerr)
 			os.Exit(-1)
 		}
 		//for CA's we treat you as intermediate unless you signed yourself
