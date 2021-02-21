@@ -10,6 +10,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"math"
 	"math/big"
+	"os"
 	"strings"
 	"time"
 )
@@ -210,7 +211,11 @@ func splitCertPools(chain tls.Certificate) (*x509.CertPool, *x509.CertPool) {
 	root := x509.NewCertPool()
 	inter := x509.NewCertPool()
 	for _, c := range chain.Certificate {
-		c1, _ := x509.ParseCertificate(c)
+		c1, caerr := x509.ParseCertificate(c)
+		if caerr != nil || c1 == nil {
+			log.Fatal().Msgf("unable to parse TLS certificate chain, cause: %v. Exiting ...", caerr)
+			os.Exit(-1)
+		}
 		//for CA's we treat you as intermediate unless you signed yourself
 		if c1.IsCA {
 			//as above, you're intermediate in the last position unless you signed yourself, that makes you a root cert.
