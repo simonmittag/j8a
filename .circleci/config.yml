@@ -26,7 +26,7 @@ jobs:
 
   metrics:
     docker:
-      - image: circleci/golang:1.14
+      - image: circleci/golang:1.16
     environment:
       TEST_RESULTS: /tmp/test-results
       LOGLEVEL: TRACE
@@ -74,7 +74,7 @@ jobs:
 
   integration:
     docker:
-      - image: circleci/golang:1.14
+      - image: circleci/golang:1.16
     environment:
       LOGLEVEL: TRACE
       LOGCOLOR: FALSE
