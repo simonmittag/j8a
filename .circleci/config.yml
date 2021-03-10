@@ -14,7 +14,7 @@ workflows:
 jobs:
   unit:
     docker:
-      - image: circleci/golang:1.14 #
+      - image: circleci/golang:1.16 #
     environment:
       LOGCOLOR: TRUE
       LOGLEVEL: TRACE
