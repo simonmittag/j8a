@@ -268,7 +268,7 @@ jobs:
 
   localperformance:
     docker:
-      - image: simonmittag/wrk
+      - image: simonmittag/wrk:go1.16
     environment:
       LOGLEVEL: WARN
       LOGCOLOR: FALSE
