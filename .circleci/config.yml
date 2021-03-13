@@ -14,7 +14,7 @@ workflows:
 jobs:
   unit:
     docker:
-      - image: circleci/golang:1.14 #
+      - image: circleci/golang:1.16 #
     environment:
       LOGCOLOR: TRUE
       LOGLEVEL: TRACE
@@ -26,7 +26,7 @@ jobs:
 
   metrics:
     docker:
-      - image: circleci/golang:1.14
+      - image: circleci/golang:1.16
     environment:
       TEST_RESULTS: /tmp/test-results
       LOGLEVEL: TRACE
@@ -74,7 +74,7 @@ jobs:
 
   integration:
     docker:
-      - image: circleci/golang:1.14
+      - image: circleci/golang:1.16
     environment:
       LOGLEVEL: TRACE
       LOGCOLOR: FALSE
@@ -268,7 +268,7 @@ jobs:
 
   localperformance:
     docker:
-      - image: simonmittag/wrk
+      - image: simonmittag/wrk:go1.16
     environment:
       LOGLEVEL: WARN
       LOGCOLOR: FALSE
@@ -385,7 +385,7 @@ jobs:
 
   performance:
     docker:
-      - image: simonmittag/wrk
+      - image: simonmittag/wrk:go1.16
     environment:
       LOGLEVEL: WARN
       LOGCOLOR: FALSE
