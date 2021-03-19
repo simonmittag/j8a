@@ -34,6 +34,8 @@ var Runner *Runtime
 var Boot sync.WaitGroup = sync.WaitGroup{}
 
 const tlsHandshakeError = "TLS handshake error"
+const aboutPath = "/about"
+const UpgradeHeader = "Upgrade"
 
 type zerologAdapter struct {
 	ipr iprex
@@ -101,6 +103,7 @@ func (runtime Runtime) startListening() {
 		WriteTimeout:      roundTripTimeoutDurationWithGrace,
 		IdleTimeout:       idleTimeoutDuration,
 		ErrorLog:          golog.New(&zerologAdapter{}, "", 0),
+		Handler:           HandlerDelegate{},
 	}
 
 	//signal the WaitGroup that boot is over.
@@ -110,14 +113,6 @@ func (runtime Runtime) startListening() {
 
 	msg := fmt.Sprintf("j8a %s listener(s) init on", Version)
 	if runtime.isHTTPOn() {
-		if runtime.Connection.Downstream.Http.Redirecttls {
-			httpConfig.Handler = http.HandlerFunc(redirectHandler)
-			log.Debug().Msgf("assigned redirect handler from HTTP:%d to TLS:%d",
-				runtime.Connection.Downstream.Http.Port,
-				runtime.Connection.Downstream.Tls.Port)
-		} else {
-			httpConfig.Handler = runtime.mapPathsToHandler(runtime.Connection.Downstream.Http.Port)
-		}
 		msg = msg + fmt.Sprintf(" HTTP:%d", runtime.Connection.Downstream.Http.Port)
 		go runtime.startHTTP(httpConfig, err)
 	}
@@ -125,7 +120,6 @@ func (runtime Runtime) startListening() {
 		msg = msg + fmt.Sprintf(" TLS:%d", runtime.Connection.Downstream.Tls.Port)
 		tlsConfig := *httpConfig
 		tlsConfig.Addr = ":" + strconv.Itoa(runtime.Connection.Downstream.Tls.Port)
-		tlsConfig.Handler = runtime.mapPathsToHandler(runtime.Connection.Downstream.Tls.Port)
 		go runtime.startTls(&tlsConfig, err)
 	}
 	log.Info().Msg(msg + "...")
@@ -134,6 +128,24 @@ func (runtime Runtime) startListening() {
 	case sig := <-err:
 		log.Fatal().Err(sig).Msgf("... j8a exiting with ")
 		panic(sig.Error())
+	}
+}
+
+type HandlerDelegate struct{}
+
+func (hd HandlerDelegate) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if Runner.isHTTPOn() &&
+		Runner.Connection.Downstream.Http.Redirecttls &&
+		r.TLS == nil {
+		redirectHandler(w, r)
+		//TODO: this header is also used to upgrade to HTTP/2 not just websockets.
+	} else if len(r.Header.Get(UpgradeHeader)) > 0 {
+		websocketHandler(w, r)
+		//TODO: this does not resolve whether about was actually configured in routes.
+	} else if r.RequestURI == aboutPath {
+		aboutHandler(w, r)
+	} else {
+		proxyHandler(w, r)
 	}
 }
 
@@ -151,20 +163,6 @@ func (runtime Runtime) startTls(server *http.Server, err chan<- error) {
 func (runtime Runtime) startHTTP(server *http.Server, err chan<- error) {
 	server.Addr = ":" + strconv.Itoa(runtime.Connection.Downstream.Http.Port)
 	err <- server.ListenAndServe()
-}
-
-func (runtime Runtime) mapPathsToHandler(port int) http.Handler {
-	handler := http.NewServeMux()
-	for _, route := range runtime.Routes {
-		if route.Resource == about {
-			handler.Handle(route.Path, http.HandlerFunc(aboutHandler))
-			log.Debug().Msgf("assigned about handler to path [%s] on port %d", route.Path, port)
-		}
-	}
-	handler.Handle("/", http.HandlerFunc(proxyHandler))
-	log.Debug().Msgf("assigned proxy handler to path [%s] on port %d", "/", port)
-
-	return handler
 }
 
 func (runtime Runtime) initUserAgent() Runtime {
