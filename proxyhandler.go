@@ -30,7 +30,11 @@ var httpHeadersNoRewrite []string = []string{date, contentLength, transferEncodi
 //extract IPs for stdout. thread safe.
 var ipr iprex = iprex{}
 
-func proxyHandler(response http.ResponseWriter, request *http.Request) {
+func httpHandler(response http.ResponseWriter, request *http.Request) {
+	proxyHandler(response, request, handleHTTP)
+}
+
+func proxyHandler(response http.ResponseWriter, request *http.Request, exec proxyfunc) {
 	matched := false
 
 	//preprocess incoming request in proxy object
@@ -58,8 +62,8 @@ func proxyHandler(response http.ResponseWriter, request *http.Request) {
 			}
 			url, label, mapped := route.mapURL(proxy)
 			if mapped {
-				//mapped requests are sent to httpclient
-				handle(proxy.firstAttempt(url, label))
+				//mapped requests are sent to handlers
+				exec(proxy.firstAttempt(url, label))
 			} else {
 				//unmapped request means an internal configuration error in server
 				sendStatusCodeAsJSON(proxy.respondWith(503, "unable to map upstream resource"))
@@ -80,7 +84,7 @@ func validate(proxy *Proxy) bool {
 		!proxy.Dwn.ReqTooLarge
 }
 
-func handle(proxy *Proxy) {
+func handleHTTP(proxy *Proxy) {
 	upstreamResponse, upstreamError := performUpstreamRequest(proxy)
 	if upstreamResponse != nil && upstreamResponse.Body != nil {
 		defer upstreamResponse.Body.Close()
@@ -88,7 +92,7 @@ func handle(proxy *Proxy) {
 
 	if !processUpstreamResponse(proxy, upstreamResponse, upstreamError) {
 		if proxy.shouldRetryUpstreamAttempt() {
-			handle(proxy.nextAttempt())
+			handleHTTP(proxy.nextAttempt())
 		} else {
 			//sends 504 for downstream timeout, 504 for upstream timeout, 502 in all other cases
 			if proxy.hasDownstreamAborted() {

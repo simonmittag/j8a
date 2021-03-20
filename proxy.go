@@ -47,6 +47,8 @@ var httpRepeatableMethods = append(httpSafeMethods, httpIdempotentMethods...)
 //RFC7231 4.3
 var httpLegalMethods []string = append(httpRepeatableMethods, []string{"POST", "CONNECT"}...)
 
+type proxyfunc func(*Proxy)
+
 // Atmpt wraps connection attempts to specific upstreams that are already mapped by label
 type Atmpt struct {
 	URL            *URL
