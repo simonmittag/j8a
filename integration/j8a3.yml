@@ -108,6 +108,9 @@ policies:
     - label: blue
       weight: 0.2
 routes:
+  - path: "/websocket"
+    transform: "/mse6/websocket"
+    resource: websocket
   - path: "/about"
     resource: about
   - path: "/mse6/some"
@@ -158,6 +161,11 @@ routes:
   - path: /badssl
     resource: badssl
 resources:
+  websocket:
+    - url:
+        scheme: ws
+        host: localhost
+        port: 60083
   badssl:
     - url:
         scheme: https
