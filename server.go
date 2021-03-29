@@ -36,10 +36,7 @@ var Boot sync.WaitGroup = sync.WaitGroup{}
 const tlsHandshakeError = "TLS handshake error"
 const aboutPath = "/about"
 const UpgradeHeader = "Upgrade"
-<<<<<<< HEAD
 const websocket = "websocket"
-=======
->>>>>>> 22b671c (new handlers)
 
 type zerologAdapter struct {
 	ipr iprex
@@ -142,22 +139,16 @@ func (hd HandlerDelegate) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Runner.Connection.Downstream.Http.Redirecttls &&
 		r.TLS == nil {
 		redirectHandler(w, r)
-<<<<<<< HEAD
+		//TODO: check for HTTP 1.1
 	} else if r.Header.Get(UpgradeHeader) == websocket {
-=======
 		//TODO: this header is also used to upgrade to HTTP/2 not just websockets.
 	} else if len(r.Header.Get(UpgradeHeader)) > 0 {
->>>>>>> 22b671c (new handlers)
 		websocketHandler(w, r)
 		//TODO: this does not resolve whether about was actually configured in routes.
 	} else if r.RequestURI == aboutPath {
 		aboutHandler(w, r)
 	} else {
-<<<<<<< HEAD
 		httpHandler(w, r)
-=======
-		proxyHandler(w, r)
->>>>>>> 22b671c (new handlers)
 	}
 }
 
