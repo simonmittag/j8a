@@ -10,8 +10,13 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-//ServerID is a unique identifier made up as md5 of hostname and version.
+const dwnReqRemoteAddr = "dwnReqRemoteAddr"
+const dwnElapsedMicros = "dwnElapsedMicros"
+const dwnRegUserAgent = "dwnReqUserAgent"
+const dwnRegHttpVer = "dwnReqHttpVer"
+const upReqURI = "upReqURI"
 
+//ServerID is a unique identifier made up as md5 of hostname and version.
 //initServerId creates a unique ID for the server log.
 func initServerID() {
 	hasher := md5.New()
