@@ -47,7 +47,7 @@ func upgradeWebsocket(proxy *Proxy) {
 		proxy.logstub(log.Warn()).Msg(msg)
 		sendStatusCodeAsJSON(proxy.respondWith(400, msg))
 	} else {
-		proxy.logstub(log.Trace()).Msg(dwnConUpgraded)
+		proxy.logstub(log.Info()).Msg(dwnConUpgraded)
 	}
 
 	upCon, _, _, upErr := ws.DefaultDialer.Dial(context.Background(), proxy.resolveUpstreamURI())
@@ -69,95 +69,94 @@ func upgradeWebsocket(proxy *Proxy) {
 func readDwnWebsocket(dwnCon net.Conn, upCon net.Conn, proxy *Proxy) {
 ReadDwn:
 	for {
-		msg, op, err := wsutil.ReadClientData(dwnCon)
-		if err == nil {
-			err = wsutil.WriteClientMessage(upCon, op, msg)
-			if err == nil {
+		msg, op, readDwnErr := wsutil.ReadClientData(dwnCon)
+		if readDwnErr == nil {
+			upWriteErr := wsutil.WriteClientMessage(upCon, op, msg)
+			if upWriteErr == nil {
 				proxy.logstub(log.Trace()).
 					Int8(opCode, int8(op)).
 					Int(msgBytes, len(msg)).
 					Msgf(upBytesWritten, len(msg))
 			} else {
-				var ulm string
-				if io.EOF == err {
-					ulm = upConClosed
+				if io.EOF == upWriteErr {
+					proxy.logstub(log.Trace()).
+						Int8(opCode, int8(op)).
+						Msg(upConClosed)
 				} else {
-					ulm = upErr + err.Error()
+					proxy.logstub(log.Warn()).
+						Int8(opCode, int8(op)).
+						Msg(upErr + upWriteErr.Error())
 				}
-				proxy.logstub(log.Warn()).
-					Int8(opCode, int8(op)).
-					Msg(ulm)
 				break ReadDwn
 			}
 		} else {
-			if io.EOF == err {
-				proxy.logstub(log.Trace()).
-					Int8(opCode, int8(op)).
-					Msg(dwnConClosed)
-			} else {
+			if io.EOF != readDwnErr {
 				proxy.logstub(log.Warn()).
 					Int8(opCode, int8(op)).
-					Msg(dwnErr + err.Error())
+					Msg(dwnErr + readDwnErr.Error())
 			}
 			break ReadDwn
 		}
 	}
 
-	dwnErr := upCon.Close()
-	if dwnErr == nil {
+	ue := upCon.Close()
+	if ue == nil {
 		proxy.logstub(log.Trace()).Msg(upConClosed)
 	}
 
-	upErr := dwnCon.Close()
-	if upErr == nil {
-		proxy.logstub(log.Trace()).Msg(dwnConClosed)
+	de := dwnCon.Close()
+	if de == nil {
+		proxy.logstub(log.Info()).Msg(dwnConClosed)
 	}
 }
 
 func readUpWebsocket(dwnCon net.Conn, upCon net.Conn, proxy *Proxy) {
 ReadUp:
 	for {
-		msg, op, err := wsutil.ReadServerData(upCon)
-		if err == nil {
-			err = wsutil.WriteServerMessage(dwnCon, op, msg)
-			if err == nil {
+		msg, op, readUpErr := wsutil.ReadServerData(upCon)
+		if readUpErr == nil {
+			writeDwnErr := wsutil.WriteServerMessage(dwnCon, op, msg)
+			if writeDwnErr == nil {
 				proxy.logstub(log.Trace()).
 					Int8(opCode, int8(op)).
 					Int(msgBytes, len(msg)).
 					Msgf(dwnBytesWritten, len(msg))
 			} else {
-				var dlm string
-				if io.EOF == err {
-					dlm = dwnConClosed
+				if io.EOF == writeDwnErr {
+					proxy.logstub(log.Info()).
+						Int8(opCode, int8(op)).
+						Msg(dwnConClosed)
 				} else {
-					dlm = dwnErr + err.Error()
+					proxy.logstub(log.Warn()).
+						Int8(opCode, int8(op)).
+						Msg(dwnErr + writeDwnErr.Error())
 				}
-				proxy.logstub(log.Warn()).
-					Int8(opCode, int8(op)).
-					Msg(dlm)
+
 				break ReadUp
 			}
 		} else {
-			if io.EOF == err {
+			if io.EOF == readUpErr {
 				proxy.logstub(log.Trace()).
 					Int8(opCode, int8(op)).
 					Msg(upConClosed)
+			} else if _, ok := readUpErr.(*net.OpError); ok {
+				//TODO: we cause this case during downstream abort check if this is the only time
 			} else {
 				proxy.logstub(log.Warn()).
 					Int8(opCode, int8(op)).
-					Msg(upErr + err.Error())
+					Msg(upErr + readUpErr.Error())
 			}
 			break ReadUp
 		}
 	}
 
-	dwnErr := upCon.Close()
-	if dwnErr == nil {
+	ue := upCon.Close()
+	if ue == nil {
 		proxy.logstub(log.Trace()).Msg(upConClosed)
 	}
 
-	upErr := dwnCon.Close()
-	if upErr == nil {
-		proxy.logstub(log.Trace()).Msg(dwnConClosed)
+	de := dwnCon.Close()
+	if de == nil {
+		proxy.logstub(log.Info()).Msg(dwnConClosed)
 	}
 }
