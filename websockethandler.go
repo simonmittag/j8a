@@ -15,14 +15,16 @@ import (
 
 const upConDialed = "upstream websocket connection dialed"
 const upConClosed = "upstream websocket connection closed"
-const upErr = "error writing to upstream websocket, cause: "
+const upWriteErr = "error writing to upstream websocket, cause: "
+const upReadErr = "error reading from upstream websocket, cause: "
 const upConWsFail = "upstream failed websocket upgrade, cause: %s"
 const upBytesWritten = "%d bytes written to upstream websocket"
 
 const dwnConClosed = "downstream websocket connection closed"
 const dwnConUpgraded = "downstream upgraded to websocket connection"
 const dwnConWsFail = "downstream failed websocket upgrade, cause: %s"
-const dwnErr = "error reading from downstream websocket, cause: "
+const dwnReadErr = "error reading from downstream websocket, cause: "
+const dwnWriteErr = "error writing to downstream websocket, cause: "
 const dwnBytesWritten = "%d bytes written to downstream websocket"
 
 const opCode = "opCode"
@@ -39,25 +41,25 @@ func websocketHandler(response http.ResponseWriter, request *http.Request) {
 	proxyHandler(response, request, upgradeWebsocket)
 }
 
-func (proxy *Proxy) logstub(e *zerolog.Event) *zerolog.Event {
+func (proxy *Proxy) scaffoldWebsocketLog(e *zerolog.Event) *zerolog.Event {
 	return e.Str(XRequestID, proxy.XRequestID).
 		Str(dwnReqRemoteAddr, proxy.Dwn.Req.RemoteAddr).
 		Int64(dwnElapsedMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
-		Str(dwnRegUserAgent, proxy.Dwn.UserAgent).
-		Str(dwnRegHttpVer, proxy.Dwn.HttpVer)
+		Str(dwnReqUserAgent, proxy.Dwn.UserAgent).
+		Str(dwnReqHttpVer, proxy.Dwn.HttpVer).
+		Str(dwnReqPath, proxy.Dwn.Path)
 }
 
 func upgradeWebsocket(proxy *Proxy) {
-	//up has to run first to catch missing connections. once dwn is upgraded
-	//to websocket we cannot send HTTP 400 bad request.
+	//upCon has to run first. if it fails we still want to send a 50x HTTP response.
 	upCon, _, _, upErr := ws.DefaultDialer.Dial(context.Background(), proxy.resolveUpstreamURI())
 	if upErr != nil {
 		msg := fmt.Sprintf(upConWsFail, upErr)
-		proxy.logstub(log.Warn()).Msg(msg)
+		proxy.scaffoldWebsocketLog(log.Warn()).Msg(msg)
 		sendStatusCodeAsJSON(proxy.respondWith(502, msg))
 		return
 	} else {
-		proxy.logstub(log.Trace()).
+		proxy.scaffoldWebsocketLog(log.Trace()).
 			Str(upReqURI, proxy.resolveUpstreamURI()).
 			Msg(upConDialed)
 	}
@@ -65,71 +67,68 @@ func upgradeWebsocket(proxy *Proxy) {
 	dwnCon, _, _, dwnErr := ws.UpgradeHTTP(proxy.Dwn.Req, proxy.Dwn.Resp.Writer)
 	if dwnErr != nil {
 		msg := fmt.Sprintf(dwnConWsFail, dwnErr)
-		proxy.logstub(log.Warn()).Msg(msg)
+		proxy.scaffoldWebsocketLog(log.Warn()).Msg(msg)
 		sendStatusCodeAsJSON(proxy.respondWith(400, msg))
 		return
 	} else {
-		proxy.logstub(log.Info()).Msg(dwnConUpgraded)
+		proxy.scaffoldWebsocketLog(log.Info()).Msg(dwnConUpgraded)
 	}
 
 	var status = make(chan WebsocketStatus)
+	defer close(status)
 
 	go readDwnWebsocket(dwnCon, upCon, proxy, status)
 	go readUpWebsocket(dwnCon, upCon, proxy, status)
+	_ = <-status
 
-	closer := func() {
-		ue := upCon.Close()
-		if ue == nil {
-			proxy.logstub(log.Trace()).Msg(upConClosed)
-		}
-
-		de := dwnCon.Close()
-		if de == nil {
-			proxy.logstub(log.Info()).Msg(dwnConClosed)
-		}
+	ue := upCon.Close()
+	if ue == nil {
+		proxy.scaffoldWebsocketLog(log.Trace()).Msg(upConClosed)
 	}
 
-	_ = <-status
-	closer()
+	de := dwnCon.Close()
+	if de == nil {
+		proxy.scaffoldWebsocketLog(log.Info()).Msg(dwnConClosed)
+	}
 }
 
 func readDwnWebsocket(dwnCon net.Conn, upCon net.Conn, proxy *Proxy, status chan WebsocketStatus) {
 ReadDwn:
 	for {
-		msg, op, readDwnErr := wsutil.ReadClientData(dwnCon)
-		if readDwnErr == nil {
-			upWriteErr := wsutil.WriteClientMessage(upCon, op, msg)
-			if upWriteErr == nil {
-				proxy.logstub(log.Trace()).
+		msg, op, dre := wsutil.ReadClientData(dwnCon)
+		if dre == nil {
+			uwe := wsutil.WriteClientMessage(upCon, op, msg)
+			if uwe == nil {
+				proxy.scaffoldWebsocketLog(log.Trace()).
 					Int8(opCode, int8(op)).
 					Int(msgBytes, len(msg)).
 					Msgf(upBytesWritten, len(msg))
 			} else {
-				if io.EOF == upWriteErr {
+				if io.EOF == uwe {
 					status <- WebsocketStatus{
-						UpExit: upWriteErr,
+						UpExit: uwe,
 					}
 				} else {
-					proxy.logstub(log.Warn()).
+					proxy.scaffoldWebsocketLog(log.Warn()).
 						Int8(opCode, int8(op)).
-						Msg(upErr + upWriteErr.Error())
+						Msg(upWriteErr + uwe.Error())
 					status <- WebsocketStatus{
-						UpErr: upWriteErr,
+						UpErr: uwe,
 					}
 				}
 				break ReadDwn
 			}
 		} else {
-			if io.EOF == readDwnErr {
+			if io.EOF == dre {
 				status <- WebsocketStatus{
-					DwnExit: readDwnErr,
+					DwnExit: dre,
 				}
 			} else {
-				proxy.logstub(log.Warn()).
+				proxy.scaffoldWebsocketLog(log.Warn()).
 					Int8(opCode, int8(op)).
-					Msg(dwnErr + readDwnErr.Error())
+					Msg(dwnReadErr + dre.Error())
 				status <- WebsocketStatus{
-					DwnErr: readDwnErr,
+					DwnErr: dre,
 				}
 			}
 			break ReadDwn
@@ -140,40 +139,44 @@ ReadDwn:
 func readUpWebsocket(dwnCon net.Conn, upCon net.Conn, proxy *Proxy, status chan WebsocketStatus) {
 ReadUp:
 	for {
-		msg, op, readUpErr := wsutil.ReadServerData(upCon)
-		if readUpErr == nil {
-			writeDwnErr := wsutil.WriteServerMessage(dwnCon, op, msg)
-			if writeDwnErr == nil {
-				proxy.logstub(log.Trace()).
+		msg, op, ure := wsutil.ReadServerData(upCon)
+		if ure == nil {
+			dwe := wsutil.WriteServerMessage(dwnCon, op, msg)
+			if dwe == nil {
+				proxy.scaffoldWebsocketLog(log.Trace()).
 					Int8(opCode, int8(op)).
 					Int(msgBytes, len(msg)).
 					Msgf(dwnBytesWritten, len(msg))
 			} else {
-				if io.EOF == writeDwnErr {
+				if io.EOF == dwe {
 					status <- WebsocketStatus{
-						DwnExit: writeDwnErr,
+						DwnExit: dwe,
 					}
 				} else {
-					proxy.logstub(log.Warn()).
+					proxy.scaffoldWebsocketLog(log.Warn()).
 						Int8(opCode, int8(op)).
-						Msg(dwnErr + writeDwnErr.Error())
+						Msg(dwnWriteErr + dwe.Error())
 					status <- WebsocketStatus{
-						DwnErr: writeDwnErr,
+						DwnErr: dwe,
 					}
 				}
 				break ReadUp
 			}
 		} else {
-			if io.EOF == readUpErr {
+			if io.EOF == ure {
 				status <- WebsocketStatus{
-					UpExit: readUpErr,
+					UpExit: ure,
+				}
+			} else if _, netop := ure.(*net.OpError); netop {
+				status <- WebsocketStatus{
+					UpExit: ure,
 				}
 			} else {
-				proxy.logstub(log.Warn()).
+				proxy.scaffoldWebsocketLog(log.Warn()).
 					Int8(opCode, int8(op)).
-					Msg(upErr + readUpErr.Error())
+					Msg(upReadErr + ure.Error())
 				status <- WebsocketStatus{
-					UpErr: readUpErr,
+					UpErr: ure,
 				}
 			}
 			break ReadUp

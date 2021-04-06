@@ -11,10 +11,27 @@ import (
 )
 
 const dwnReqRemoteAddr = "dwnReqRemoteAddr"
+const dwnReqPort = "dwnReqPort"
+const dwnReqPath = "dwnReqPath"
+const dwnReqMethod = "dwnReqMethod"
+const dwnReqUserAgent = "dwnReqUserAgent"
+const dwnReqHttpVer = "dwnReqHttpVer"
+const dwnReqTlsVer = "dwnReqTlsVer"
+const dwnReqListnr = "dwnReqListnr"
+
 const dwnElapsedMicros = "dwnElapsedMicros"
-const dwnRegUserAgent = "dwnReqUserAgent"
-const dwnRegHttpVer = "dwnReqHttpVer"
+const dwnResErrMsg = "dwnResErrMsg"
+const dwnResCode = "dwnResCode"
+const dwnResContentEnc = "dwnResContentEnc"
+const dwnResElpsdMicros = "dwnResElpsdMicros"
+
 const upReqURI = "upReqURI"
+const upAtmtpElapsedMicros = "upAtmptElapsedMicros"
+const upAtmpt = "upAtmpt"
+const upLabel = "upLabel"
+const upAtmptResCode = "upAtmptResCode"
+const upAtmptElapsedMicros = "upAtmptElapsedMicros"
+const upAtmptAbort = "upAtmptAbort"
 
 //ServerID is a unique identifier made up as md5 of hostname and version.
 //initServerId creates a unique ID for the server log.
