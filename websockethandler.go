@@ -75,7 +75,6 @@ func upgradeWebsocket(proxy *Proxy) {
 	}
 
 	var status = make(chan WebsocketStatus)
-	defer close(status)
 
 	go readDwnWebsocket(dwnCon, upCon, proxy, status)
 	go readUpWebsocket(dwnCon, upCon, proxy, status)
