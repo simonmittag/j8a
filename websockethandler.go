@@ -69,8 +69,8 @@ func upgradeWebsocket(proxy *Proxy) {
 				uev.Msg(upWebsocketConnectionFailed)
 			} else {
 				uev.Msgf(upWebsocketUnspecifiedNetworkEvent, upErr)
-			} //TODO: brittle
-		} else if wse && 404 == int(wsStatusErr) {
+			}
+		} else if wse && 400 <= int(wsStatusErr) && 599 >= int(wsStatusErr) {
 			uev.Msg(upWebsocketConnectionFailed)
 		} else {
 			uev.Msgf(upWebsocketUnspecifiedNetworkEvent, upErr)
@@ -109,7 +109,7 @@ func upgradeWebsocket(proxy *Proxy) {
 	}
 }
 
-func readDwnWebsocket(dwnCon net.Conn, upCon net.Conn, proxy *Proxy, status chan WebsocketStatus) {
+func readDwnWebsocket(dwnCon net.Conn, upCon net.Conn, proxy *Proxy, status chan<- WebsocketStatus) {
 ReadDwn:
 	for {
 		msg, op, dre := wsutil.ReadClientData(dwnCon)
@@ -153,7 +153,7 @@ ReadDwn:
 	}
 }
 
-func readUpWebsocket(dwnCon net.Conn, upCon net.Conn, proxy *Proxy, status chan WebsocketStatus) {
+func readUpWebsocket(dwnCon net.Conn, upCon net.Conn, proxy *Proxy, status chan<- WebsocketStatus) {
 ReadUp:
 	for {
 		msg, op, ure := wsutil.ReadServerData(upCon)
