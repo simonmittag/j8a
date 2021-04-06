@@ -10,6 +10,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -17,7 +18,7 @@ const upConDialed = "upstream websocket connection dialed"
 const upConClosed = "upstream websocket connection closed"
 const upWriteErr = "error writing to upstream websocket, cause: "
 const upReadErr = "error reading from upstream websocket, cause: "
-const upConWsFail = "upstream failed websocket upgrade, cause: %s"
+const upConWsFail = "upstream failed websocket upgrade"
 const upBytesWritten = "%d bytes written to upstream websocket"
 
 const dwnConClosed = "downstream websocket connection closed"
@@ -47,27 +48,44 @@ func (proxy *Proxy) scaffoldWebsocketLog(e *zerolog.Event) *zerolog.Event {
 		Int64(dwnElapsedMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
 		Str(dwnReqUserAgent, proxy.Dwn.UserAgent).
 		Str(dwnReqHttpVer, proxy.Dwn.HttpVer).
-		Str(dwnReqPath, proxy.Dwn.Path)
+		Str(dwnReqPath, proxy.Dwn.Path).
+		Str(upReqURI, proxy.resolveUpstreamURI())
 }
+
+const upWebsocketConnectionFailed = "upstream websocket connection failed"
+const upWebsocketUnspecifiedNetworkEvent = "upstream websocket unspecified network event: %s"
+const connect = "connect"
 
 func upgradeWebsocket(proxy *Proxy) {
 	//upCon has to run first. if it fails we still want to send a 50x HTTP response.
 	upCon, _, _, upErr := ws.DefaultDialer.Dial(context.Background(), proxy.resolveUpstreamURI())
+	uev := proxy.scaffoldWebsocketLog(log.Trace())
 	if upErr != nil {
-		msg := fmt.Sprintf(upConWsFail, upErr)
-		proxy.scaffoldWebsocketLog(log.Warn()).Msg(msg)
-		sendStatusCodeAsJSON(proxy.respondWith(502, msg))
+		netOpErr, noe := upErr.(*net.OpError)
+		wsStatusErr, wse := upErr.(ws.StatusError)
+		if noe {
+			syscallErr, sce := netOpErr.Err.(*os.SyscallError)
+			if sce && syscallErr.Syscall == connect {
+				uev.Msg(upWebsocketConnectionFailed)
+			} else {
+				uev.Msgf(upWebsocketUnspecifiedNetworkEvent, upErr)
+			} //TODO: brittle
+		} else if wse && 404 == int(wsStatusErr) {
+			uev.Msg(upWebsocketConnectionFailed)
+		} else {
+			uev.Msgf(upWebsocketUnspecifiedNetworkEvent, upErr)
+		}
+
+		sendStatusCodeAsJSON(proxy.respondWith(502, upConWsFail))
 		return
 	} else {
-		proxy.scaffoldWebsocketLog(log.Trace()).
-			Str(upReqURI, proxy.resolveUpstreamURI()).
-			Msg(upConDialed)
+		uev.Msg(upConDialed)
 	}
 
 	dwnCon, _, _, dwnErr := ws.UpgradeHTTP(proxy.Dwn.Req, proxy.Dwn.Resp.Writer)
 	if dwnErr != nil {
 		msg := fmt.Sprintf(dwnConWsFail, dwnErr)
-		proxy.scaffoldWebsocketLog(log.Warn()).Msg(msg)
+		proxy.scaffoldWebsocketLog(log.Trace()).Msg(msg)
 		sendStatusCodeAsJSON(proxy.respondWith(400, msg))
 		return
 	} else {
