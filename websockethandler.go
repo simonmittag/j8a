@@ -105,21 +105,19 @@ func upgradeWebsocket(proxy *Proxy) {
 	go readUpWebsocket(dwnCon, upCon, proxy, status, tx)
 	_ = <-status
 
-	ue := upCon.Close()
-	if ue == nil {
-		proxy.scaffoldWebsocketLog(log.Trace()).
-			Int64(upBytesRead, tx.UpBytesRead).
-			Int64(upBytesWrite, tx.UpBytesWrite).
-			Msg(upConClosed)
-	}
+	ws.WriteFrame(upCon, ws.NewCloseFrame(ws.NewCloseFrameBody(ws.StatusNormalClosure, upConClosed)))
+	upCon.Close()
+	proxy.scaffoldWebsocketLog(log.Trace()).
+		Int64(upBytesRead, tx.UpBytesRead).
+		Int64(upBytesWrite, tx.UpBytesWrite).
+		Msg(upConClosed)
 
-	de := dwnCon.Close()
-	if de == nil {
-		proxy.scaffoldWebsocketLog(log.Info()).
-			Int64(dwnBytesRead, tx.DwnBytesRead).
-			Int64(dwnBytesWrite, tx.DwnBytesWrite).
-			Msg(dwnConClosed)
-	}
+	ws.WriteFrame(dwnCon, ws.NewCloseFrame(ws.NewCloseFrameBody(ws.StatusNormalClosure, dwnConClosed)))
+	dwnCon.Close()
+	proxy.scaffoldWebsocketLog(log.Info()).
+		Int64(dwnBytesRead, tx.DwnBytesRead).
+		Int64(dwnBytesWrite, tx.DwnBytesWrite).
+		Msg(dwnConClosed)
 }
 
 func readDwnWebsocket(dwnCon net.Conn, upCon net.Conn, proxy *Proxy, status chan<- WebsocketStatus, tx *WebsocketTx) {
@@ -153,13 +151,17 @@ ReadDwn:
 				break ReadDwn
 			}
 		} else {
-			if io.EOF == dre {
+			if _, closed := dre.(wsutil.ClosedError); closed {
+				status <- WebsocketStatus{
+					DwnExit: dre,
+				}
+			} else if io.EOF == dre {
 				status <- WebsocketStatus{
 					DwnExit: dre,
 				}
 			} else if _, netop := dre.(*net.OpError); netop {
 				status <- WebsocketStatus{
-					UpExit: dre,
+					DwnExit: dre,
 				}
 			} else {
 				proxy.scaffoldWebsocketLog(log.Warn()).
@@ -204,7 +206,11 @@ ReadUp:
 				break ReadUp
 			}
 		} else {
-			if io.EOF == ure {
+			if _, closed := ure.(wsutil.ClosedError); closed {
+				status <- WebsocketStatus{
+					UpExit: ure,
+				}
+			} else if io.EOF == ure {
 				status <- WebsocketStatus{
 					UpExit: ure,
 				}
