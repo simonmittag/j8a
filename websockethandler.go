@@ -23,7 +23,7 @@ const upBytesWritten = "%d bytes written to upstream websocket"
 
 const dwnConClosed = "downstream websocket connection closed"
 const dwnConUpgraded = "downstream upgraded to websocket connection"
-const dwnConWsFail = "downstream failed websocket upgrade, cause: %s"
+const dwnConWsFail = "downstream connection closed, failed websocket upgrade, cause: %s"
 const dwnReadErr = "error reading from downstream websocket, cause: "
 const dwnWriteErr = "error writing to downstream websocket, cause: "
 const dwnBytesWritten = "%d bytes written to downstream websocket"
