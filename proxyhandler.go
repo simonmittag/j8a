@@ -333,8 +333,8 @@ func scaffoldUpAttemptLog(proxy *Proxy) *zerolog.Event {
 		Str(upAtmpt, proxy.Up.Atmpt.print())
 }
 
-const downstreamResponseServed = "downstream response served"
-const downstreamErrorResponseServed = "downstream error response served"
+const downstreamResponseServed = "downstream HTTP response served"
+const downstreamErrorResponseServed = "downstream HTTP error response served"
 
 func logHandledDownstreamRoundtrip(proxy *Proxy) {
 	elapsed := time.Since(proxy.Dwn.startDate)

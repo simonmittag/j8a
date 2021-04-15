@@ -64,8 +64,22 @@ const upWebsocketUnspecifiedNetworkEvent = "upstream websocket unspecified netwo
 const connect = "connect"
 
 func upgradeWebsocket(proxy *Proxy) {
+	var status = make(chan WebsocketStatus)
+	var tx *WebsocketTx = &WebsocketTx{}
+
 	//upCon has to run first. if it fails we still want to send a 50x HTTP response.
 	upCon, _, _, upErr := ws.DefaultDialer.Dial(context.Background(), proxy.resolveUpstreamURI())
+	defer func() {
+		if upCon != nil {
+			ws.WriteFrame(upCon, ws.NewCloseFrame(ws.NewCloseFrameBody(ws.StatusNormalClosure, upConClosed)))
+			upCon.Close()
+			proxy.scaffoldWebsocketLog(log.Trace()).
+				Int64(upBytesRead, tx.UpBytesRead).
+				Int64(upBytesWrite, tx.UpBytesWrite).
+				Msg(upConClosed)
+		}
+	}()
+
 	uev := proxy.scaffoldWebsocketLog(log.Trace())
 	if upErr != nil {
 		netOpErr, noe := upErr.(*net.OpError)
@@ -90,34 +104,28 @@ func upgradeWebsocket(proxy *Proxy) {
 	}
 
 	dwnCon, _, _, dwnErr := ws.UpgradeHTTP(proxy.Dwn.Req, proxy.Dwn.Resp.Writer)
+	defer func() {
+		if dwnCon != nil && dwnErr == nil {
+			ws.WriteFrame(dwnCon, ws.NewCloseFrame(ws.NewCloseFrameBody(ws.StatusNormalClosure, dwnConClosed)))
+			dwnCon.Close()
+			proxy.scaffoldWebsocketLog(log.Info()).
+				Int64(dwnBytesRead, tx.DwnBytesRead).
+				Int64(dwnBytesWrite, tx.DwnBytesWrite).
+				Msg(dwnConClosed)
+		}
+	}()
+
 	if dwnErr != nil {
 		msg := fmt.Sprintf(dwnConWsFail, dwnErr)
-		proxy.scaffoldWebsocketLog(log.Trace()).Msg(msg)
-		sendStatusCodeAsJSON(proxy.respondWith(400, msg))
+		proxy.scaffoldWebsocketLog(log.Warn()).Msg(msg)
 		return
 	} else {
 		proxy.scaffoldWebsocketLog(log.Info()).Msg(dwnConUpgraded)
 	}
 
-	var status = make(chan WebsocketStatus)
-	var tx *WebsocketTx = &WebsocketTx{}
 	go readDwnWebsocket(dwnCon, upCon, proxy, status, tx)
 	go readUpWebsocket(dwnCon, upCon, proxy, status, tx)
 	_ = <-status
-
-	ws.WriteFrame(upCon, ws.NewCloseFrame(ws.NewCloseFrameBody(ws.StatusNormalClosure, upConClosed)))
-	upCon.Close()
-	proxy.scaffoldWebsocketLog(log.Trace()).
-		Int64(upBytesRead, tx.UpBytesRead).
-		Int64(upBytesWrite, tx.UpBytesWrite).
-		Msg(upConClosed)
-
-	ws.WriteFrame(dwnCon, ws.NewCloseFrame(ws.NewCloseFrameBody(ws.StatusNormalClosure, dwnConClosed)))
-	dwnCon.Close()
-	proxy.scaffoldWebsocketLog(log.Info()).
-		Int64(dwnBytesRead, tx.DwnBytesRead).
-		Int64(dwnBytesWrite, tx.DwnBytesWrite).
-		Msg(dwnConClosed)
 }
 
 func readDwnWebsocket(dwnCon net.Conn, upCon net.Conn, proxy *Proxy, status chan<- WebsocketStatus, tx *WebsocketTx) {
@@ -191,6 +199,8 @@ ReadUp:
 					Int64(msgBytes, lm).
 					Msgf(dwnBytesWritten, lm)
 			} else {
+				//TODO this doesn't cover everything readDwnWebsocket does. it needs the same
+				//error handling but we don't want code duplication.
 				if io.EOF == dwe {
 					status <- WebsocketStatus{
 						DwnExit: dwe,
