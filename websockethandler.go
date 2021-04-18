@@ -103,21 +103,21 @@ func upgradeWebsocket(proxy *Proxy) {
 		uev.Msg(upConDialed)
 	}
 
-	dwnCon, _, _, dwnErr := ws.UpgradeHTTP(proxy.Dwn.Req, proxy.Dwn.Resp.Writer)
-	defer func() {
-		if dwnCon != nil && dwnErr == nil {
-			ws.WriteFrame(dwnCon, ws.NewCloseFrame(ws.NewCloseFrameBody(ws.StatusNormalClosure, dwnConClosed)))
-			dwnCon.Close()
-			proxy.scaffoldWebsocketLog(log.Info()).
-				Int64(dwnBytesRead, tx.DwnBytesRead).
-				Int64(dwnBytesWrite, tx.DwnBytesWrite).
-				Msg(dwnConClosed)
-		}
-	}()
-
+	u := MyUpgrader{}
+	dwnCon, _, _, dwnErr := u.Upgrade(proxy.Dwn.Req, proxy.Dwn.Resp.Writer)
 	if dwnErr != nil {
+		err2, rje := dwnErr.(*rejectConnectionError)
+		if rje {
+			log.Warn().
+				Int(dwnResCode, err2.code).
+				Msgf("unable to upgrade downstream connection, cause: %v", err2)
+		}
 		msg := fmt.Sprintf(dwnConWsFail, dwnErr)
-		proxy.scaffoldWebsocketLog(log.Warn()).Msg(msg)
+		proxy.respondWith(400, msg)
+		proxy.scaffoldWebsocketLog(log.Warn()).
+			Int16(dwnResCode, 400).
+			Msg(msg)
+		//gobwas/ws has sent a HTTP 426 across the hijacked connection already
 		return
 	} else {
 		proxy.scaffoldWebsocketLog(log.Info()).Msg(dwnConUpgraded)
@@ -241,3 +241,4 @@ ReadUp:
 	}
 
 }
+
