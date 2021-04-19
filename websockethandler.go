@@ -67,7 +67,7 @@ func upgradeWebsocket(proxy *Proxy) {
 	var status = make(chan WebsocketStatus)
 	var tx *WebsocketTx = &WebsocketTx{}
 
-	//upCon has to run first. if it fails we still want to send a 50x HTTP response.
+	//upCon has to run first. if it fails we still want to send a 50x HTTP response from within j8a.
 	upCon, _, _, upErr := ws.DefaultDialer.Dial(context.Background(), proxy.resolveUpstreamURI())
 	defer func() {
 		if upCon != nil {
@@ -104,6 +104,17 @@ func upgradeWebsocket(proxy *Proxy) {
 	}
 
 	dwnCon, _, _, dwnErr := ws.DefaultHTTPUpgrader.Upgrade(proxy.Dwn.Req, proxy.Dwn.Resp.Writer)
+	defer func() {
+		if dwnCon != nil && dwnErr == nil {
+			ws.WriteFrame(dwnCon, ws.NewCloseFrame(ws.NewCloseFrameBody(ws.StatusNormalClosure, dwnConClosed)))
+			dwnCon.Close()
+			proxy.scaffoldWebsocketLog(log.Info()).
+				Int64(dwnBytesRead, tx.DwnBytesRead).
+				Int64(dwnBytesWrite, tx.DwnBytesWrite).
+				Msg(dwnConClosed)
+		}
+	}()
+
 	if dwnErr != nil {
 		msg := fmt.Sprintf(dwnConWsFail, dwnErr)
 		rce, rcet := dwnErr.(*ws.RejectConnectionErrorType)
@@ -111,7 +122,7 @@ func upgradeWebsocket(proxy *Proxy) {
 		if rcet {
 			proxy.respondWith(rce.Code(), msg)
 			ev.Int(dwnResCode, rce.Code())
-		} // else should never happen
+		}
 		ev.Msg(msg)
 
 		return
