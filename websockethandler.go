@@ -3,10 +3,10 @@ package j8a
 import (
 	"context"
 	"fmt"
-	"github.com/simonmittag/ws"
-	"github.com/simonmittag/ws/wsutil"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/simonmittag/ws"
+	"github.com/simonmittag/ws/wsutil"
 	"io"
 	"net"
 	"net/http"
@@ -103,21 +103,17 @@ func upgradeWebsocket(proxy *Proxy) {
 		uev.Msg(upConDialed)
 	}
 
-
 	dwnCon, _, _, dwnErr := ws.DefaultHTTPUpgrader.Upgrade(proxy.Dwn.Req, proxy.Dwn.Resp.Writer)
 	if dwnErr != nil {
-		rce, ok := dwnErr.(*ws.RejectConnectionErrorType)
-		if ok {
-			log.Warn().
-				Int(dwnResCode, rce.Code()).
-				Msgf("unable to upgrade downstream connection, cause: %v", rce)
-		}
 		msg := fmt.Sprintf(dwnConWsFail, dwnErr)
-		proxy.respondWith(400, msg)
-		proxy.scaffoldWebsocketLog(log.Warn()).
-			Int16(dwnResCode, 400).
-			Msg(msg)
-		//gobwas/ws has sent a HTTP 426 across the hijacked connection already
+		rce, rcet := dwnErr.(*ws.RejectConnectionErrorType)
+		ev := proxy.scaffoldWebsocketLog(log.Warn())
+		if rcet {
+			proxy.respondWith(rce.Code(), msg)
+			ev.Int(dwnResCode, rce.Code())
+		} // else should never happen
+		ev.Msg(msg)
+
 		return
 	} else {
 		proxy.scaffoldWebsocketLog(log.Info()).Msg(dwnConUpgraded)
@@ -241,4 +237,3 @@ ReadUp:
 	}
 
 }
-
