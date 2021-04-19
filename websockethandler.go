@@ -3,8 +3,8 @@ package j8a
 import (
 	"context"
 	"fmt"
-	"github.com/gobwas/ws"
-	"github.com/gobwas/ws/wsutil"
+	"github.com/simonmittag/ws"
+	"github.com/simonmittag/ws/wsutil"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"io"
@@ -103,14 +103,14 @@ func upgradeWebsocket(proxy *Proxy) {
 		uev.Msg(upConDialed)
 	}
 
-	u := MyUpgrader{}
-	dwnCon, _, _, dwnErr := u.Upgrade(proxy.Dwn.Req, proxy.Dwn.Resp.Writer)
+
+	dwnCon, _, _, dwnErr := ws.DefaultHTTPUpgrader.Upgrade(proxy.Dwn.Req, proxy.Dwn.Resp.Writer)
 	if dwnErr != nil {
-		err2, rje := dwnErr.(*rejectConnectionError)
-		if rje {
+		rce, ok := dwnErr.(*ws.RejectConnectionErrorType)
+		if ok {
 			log.Warn().
-				Int(dwnResCode, err2.code).
-				Msgf("unable to upgrade downstream connection, cause: %v", err2)
+				Int(dwnResCode, rce.Code()).
+				Msgf("unable to upgrade downstream connection, cause: %v", rce)
 		}
 		msg := fmt.Sprintf(dwnConWsFail, dwnErr)
 		proxy.respondWith(400, msg)
