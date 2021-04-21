@@ -103,7 +103,7 @@ func upgradeWebsocket(proxy *Proxy) {
 		uev.Msg(upConDialed)
 	}
 
-	dwnCon, _, _, dwnErr := ws.DefaultHTTPUpgrader.Upgrade(proxy.Dwn.Req, proxy.Dwn.Resp.Writer)
+	dwnCon, _, _, dwnErr := scaffoldHTTPUpgrader(proxy).Upgrade(proxy.Dwn.Req, proxy.Dwn.Resp.Writer)
 	defer func() {
 		if dwnCon != nil && dwnErr == nil {
 			ws.WriteFrame(dwnCon, ws.NewCloseFrame(ws.NewCloseFrameBody(ws.StatusNormalClosure, dwnConClosed)))
@@ -119,6 +119,7 @@ func upgradeWebsocket(proxy *Proxy) {
 		msg := fmt.Sprintf(dwnConWsFail, dwnErr)
 		rce, rcet := dwnErr.(*ws.RejectConnectionErrorType)
 		ev := proxy.scaffoldWebsocketLog(log.Warn())
+		//below only logs response code it was already send by simonmittag/ws on hijacked conn.
 		if rcet {
 			proxy.respondWith(rce.Code(), msg)
 			ev.Int(dwnResCode, rce.Code())
@@ -135,9 +136,25 @@ func upgradeWebsocket(proxy *Proxy) {
 	_ = <-status
 }
 
+func scaffoldHTTPUpgrader(proxy *Proxy) ws.HTTPUpgrader {
+	var h = make(map[string][]string)
+	h[Server] = []string{serverVersion()}
+	h[XRequestID] = []string{proxy.XRequestID}
+	if Runner.isTLSOn() {
+		h[strictTransportSecurity] = []string{maxAge31536000}
+	}
+
+	upg := ws.HTTPUpgrader{
+		Timeout: time.Second * time.Duration(Runner.Connection.Downstream.ReadTimeoutSeconds),
+		Header:  h,
+	}
+	return upg
+}
+
 func readDwnWebsocket(dwnCon net.Conn, upCon net.Conn, proxy *Proxy, status chan<- WebsocketStatus, tx *WebsocketTx) {
 ReadDwn:
 	for {
+		dwnCon.SetReadDeadline(time.Now().Add(time.Second * time.Duration(Runner.Connection.Downstream.IdleTimeoutSeconds)))
 		msg, op, dre := wsutil.ReadClientData(dwnCon)
 		if dre == nil {
 			lm := int64(len(msg))
@@ -194,6 +211,7 @@ ReadDwn:
 func readUpWebsocket(dwnCon net.Conn, upCon net.Conn, proxy *Proxy, status chan<- WebsocketStatus, tx *WebsocketTx) {
 ReadUp:
 	for {
+		upCon.SetReadDeadline(time.Now().Add(time.Second * time.Duration(Runner.Connection.Upstream.IdleTimeoutSeconds)))
 		msg, op, ure := wsutil.ReadServerData(upCon)
 		if ure == nil {
 			lm := int64(len(msg))

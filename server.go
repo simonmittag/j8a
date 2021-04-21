@@ -16,7 +16,8 @@ import (
 )
 
 //Version is the server version
-var Version string = "v0.7.5"
+const Server string = "Server"
+const Version string = "v0.7.5"
 
 //ID is a unique server ID
 var ID string = "unknown"
@@ -37,6 +38,8 @@ const tlsHandshakeError = "TLS handshake error"
 const aboutPath = "/about"
 const UpgradeHeader = "Upgrade"
 const websocket = "websocket"
+const strictTransportSecurity = "Strict-Transport-Security"
+const maxAge31536000 = "max-age=31536000"
 
 type zerologAdapter struct {
 	ipr iprex
@@ -182,13 +185,19 @@ func (runtime Runtime) initStats() Runtime {
 func (proxy *Proxy) writeStandardResponseHeaders() {
 	header := proxy.Dwn.Resp.Writer.Header()
 
-	header.Set("Server", fmt.Sprintf("j8a %s %s", Version, ID))
+	header.Set(Server, serverVersion())
 	//for TLS response, we set HSTS header see RFC6797
 	if Runner.isTLSOn() {
 		header.Set("Strict-Transport-Security", "max-age=31536000")
 	}
 	//copy the X-REQUEST-ID from the request
 	header.Set(XRequestID, proxy.XRequestID)
+}
+
+const j8a string = "j8a"
+
+func serverVersion() string {
+	return fmt.Sprintf("%s %s %s", j8a, Version, ID)
 }
 
 func (runtime Runtime) tlsConfig() *tls.Config {
