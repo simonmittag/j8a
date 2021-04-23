@@ -3,6 +3,7 @@ package j8a
 import (
 	"context"
 	"fmt"
+	"github.com/hako/durafmt"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/simonmittag/ws"
@@ -21,7 +22,7 @@ const upReadErr = "error reading from upstream websocket, cause: "
 const upConWsFail = "upstream failed websocket upgrade"
 const upBytesWritten = "upstream websocket %d bytes written"
 
-const dwnConClosed = "downstream websocket connection closed"
+const dwnConClosed = "downstream websocket connection closed after %s"
 const dwnConUpgraded = "downstream upgraded to websocket connection"
 const dwnConWsFail = "downstream connection closed, failed websocket upgrade, cause: %s"
 const dwnReadErr = "error reading from downstream websocket, cause: "
@@ -49,11 +50,18 @@ func websocketHandler(response http.ResponseWriter, request *http.Request) {
 	proxyHandler(response, request, upgradeWebsocket)
 }
 
-func (proxy *Proxy) scaffoldWebsocketLog(e *zerolog.Event) *zerolog.Event {
-	return e.Str(XRequestID, proxy.XRequestID).
-		Str(dwnReqRemoteAddr, proxy.Dwn.Req.RemoteAddr).
-		Int64(dwnElapsedMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
-		Str(dwnReqUserAgent, proxy.Dwn.UserAgent).
+//use elapsed to pass zero or *one* time exactly
+func (proxy *Proxy) scaffoldWebsocketLog(e *zerolog.Event, elapsed ...int64) *zerolog.Event {
+	e.Str(XRequestID, proxy.XRequestID).
+		Str(dwnReqRemoteAddr, proxy.Dwn.Req.RemoteAddr)
+
+	if len(elapsed) > 0 {
+		e.Int64(dwnElapsedMicros, elapsed[0])
+	} else {
+		e.Int64(dwnElapsedMicros, time.Since(proxy.Dwn.startDate).Microseconds())
+	}
+
+	return e.Str(dwnReqUserAgent, proxy.Dwn.UserAgent).
 		Str(dwnReqHttpVer, proxy.Dwn.HttpVer).
 		Str(dwnReqPath, proxy.Dwn.Path).
 		Str(upReqURI, proxy.resolveUpstreamURI())
@@ -61,7 +69,7 @@ func (proxy *Proxy) scaffoldWebsocketLog(e *zerolog.Event) *zerolog.Event {
 
 const upWebsocketConnectionFailed = "upstream websocket connection failed"
 const upWebsocketUnspecifiedNetworkEvent = "upstream websocket unspecified network event: %s"
-const webSocketTimeout = " websocket connection idle timeout fired after %d secs"
+const webSocketTimeout = " websocket connection idle timeout fired after %d seconds"
 const upWebsocketTimeoutFired = "upstream" + webSocketTimeout
 const dwnWebsocketTimeoutFired = "downstream" + webSocketTimeout
 const webSocketHangup = " websocket connection hung up TCP socket on us by remote end"
@@ -82,7 +90,7 @@ func upgradeWebsocket(proxy *Proxy) {
 	upCon, _, _, upErr := ws.DefaultDialer.Dial(context.Background(), proxy.resolveUpstreamURI())
 	defer func() {
 		if upCon != nil {
-			ws.WriteFrame(upCon, ws.NewCloseFrame(ws.NewCloseFrameBody(ws.StatusNormalClosure, upConClosed)))
+			ws.WriteFrame(upCon, ws.NewCloseFrame(ws.NewCloseFrameBody(ws.StatusNormalClosure, "")))
 			upCon.Close()
 			proxy.scaffoldWebsocketLog(log.Trace()).
 				Int64(upBytesRead, tx.UpBytesRead).
@@ -117,12 +125,14 @@ func upgradeWebsocket(proxy *Proxy) {
 	dwnCon, _, _, dwnErr := scaffoldHTTPUpgrader(proxy).Upgrade(proxy.Dwn.Req, proxy.Dwn.Resp.Writer)
 	defer func() {
 		if dwnCon != nil && dwnErr == nil {
-			ws.WriteFrame(dwnCon, ws.NewCloseFrame(ws.NewCloseFrameBody(ws.StatusNormalClosure, dwnConClosed)))
+			ws.WriteFrame(dwnCon, ws.NewCloseFrame(ws.NewCloseFrameBody(ws.StatusNormalClosure, "")))
 			dwnCon.Close()
-			proxy.scaffoldWebsocketLog(log.Info()).
-				Int64(dwnBytesRead, tx.DwnBytesRead).
+
+			elapsed := time.Since(proxy.Dwn.startDate)
+			ev := proxy.scaffoldWebsocketLog(log.Info(), elapsed.Microseconds())
+			ev.Int64(dwnBytesRead, tx.DwnBytesRead).
 				Int64(dwnBytesWrite, tx.DwnBytesWrite).
-				Msg(dwnConClosed)
+				Msgf(dwnConClosed, durafmt.Parse(elapsed).LimitFirstN(2).String())
 		}
 	}()
 
