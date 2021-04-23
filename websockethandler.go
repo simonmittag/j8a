@@ -19,14 +19,14 @@ const upConClosed = "upstream websocket connection closed"
 const upWriteErr = "error writing to upstream websocket, cause: "
 const upReadErr = "error reading from upstream websocket, cause: "
 const upConWsFail = "upstream failed websocket upgrade"
-const upBytesWritten = "%d bytes written to upstream websocket"
+const upBytesWritten = "upstream websocket %d bytes written"
 
 const dwnConClosed = "downstream websocket connection closed"
 const dwnConUpgraded = "downstream upgraded to websocket connection"
 const dwnConWsFail = "downstream connection closed, failed websocket upgrade, cause: %s"
 const dwnReadErr = "error reading from downstream websocket, cause: "
 const dwnWriteErr = "error writing to downstream websocket, cause: "
-const dwnBytesWritten = "%d bytes written to downstream websocket"
+const dwnBytesWritten = "downstream websocket %d bytes written"
 
 const opCode = "opCode"
 const msgBytes = "msgBytes"
@@ -61,7 +61,18 @@ func (proxy *Proxy) scaffoldWebsocketLog(e *zerolog.Event) *zerolog.Event {
 
 const upWebsocketConnectionFailed = "upstream websocket connection failed"
 const upWebsocketUnspecifiedNetworkEvent = "upstream websocket unspecified network event: %s"
+const webSocketTimeout = " websocket connection idle timeout fired after %d secs"
+const upWebsocketTimeoutFired = "upstream" + webSocketTimeout
+const dwnWebsocketTimeoutFired = "downstream" + webSocketTimeout
+const webSocketHangup = " websocket connection hung up TCP socket on us by remote end"
+const upWebSocketHangup = "upstream" + webSocketHangup
+const dwnWebSocketHangup = "downstream" + webSocketHangup
+const webSocketClosed = " websocket connection close requested by remote end"
+const upWebSocketClosed = "upstream" + webSocketClosed
+const dwnWebSocketClosed = "downstream" + webSocketClosed
+
 const connect = "connect"
+const iotimeout = "i/o timeout"
 
 func upgradeWebsocket(proxy *Proxy) {
 	var status = make(chan WebsocketStatus)
@@ -133,7 +144,44 @@ func upgradeWebsocket(proxy *Proxy) {
 
 	go readDwnWebsocket(dwnCon, upCon, proxy, status, tx)
 	go readUpWebsocket(dwnCon, upCon, proxy, status, tx)
-	_ = <-status
+
+	proxy.logWebsocketConnectionExitStatus(<-status)
+}
+
+const EOF = "EOF"
+
+func (proxy *Proxy) logWebsocketConnectionExitStatus(conStat WebsocketStatus) {
+	isTimeout := func(err error) bool {
+		noe, noet := err.(*net.OpError)
+		return noet && noe.Err != nil && noe.Err.Error() == iotimeout
+	}
+	isHangup := func(err error) bool {
+		return err != nil && err.Error() == EOF
+	}
+	isCloseRequested := func(err error) bool {
+		ce, cet := err.(wsutil.ClosedError)
+		return cet && ce.Code == 1000
+	}
+
+	ev := proxy.scaffoldWebsocketLog(log.Trace())
+	if conStat.UpExit != nil {
+		if isTimeout(conStat.UpExit) {
+			ev.Msgf(upWebsocketTimeoutFired, Runner.Connection.Upstream.IdleTimeoutSeconds)
+		} else if isHangup(conStat.UpExit) {
+			ev.Msg(upWebSocketHangup)
+		} else if isCloseRequested(conStat.UpExit) {
+			ev.Msg(upWebSocketClosed)
+		}
+	}
+	if conStat.DwnExit != nil {
+		if isTimeout(conStat.DwnExit) {
+			ev.Msgf(dwnWebsocketTimeoutFired, Runner.Connection.Downstream.IdleTimeoutSeconds)
+		} else if isHangup(conStat.DwnExit) {
+			ev.Msg(dwnWebSocketHangup)
+		} else if isCloseRequested(conStat.DwnExit) {
+			ev.Msg(dwnWebSocketClosed)
+		}
+	}
 }
 
 func scaffoldHTTPUpgrader(proxy *Proxy) ws.HTTPUpgrader {
