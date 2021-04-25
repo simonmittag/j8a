@@ -33,10 +33,12 @@ const opCode = "opCode"
 const msgBytes = "msgBytes"
 
 type WebsocketStatus struct {
-	DwnExit error
-	DwnErr  error
-	UpExit  error
-	UpErr   error
+	DwnOpCode ws.OpCode
+	DwnExit   error
+	DwnErr    error
+	UpOpCode  ws.OpCode
+	UpExit    error
+	UpErr     error
 }
 
 type WebsocketTx struct {
@@ -181,6 +183,8 @@ func (proxy *Proxy) logWebsocketConnectionExitStatus(conStat WebsocketStatus) {
 			ev.Msg(upWebSocketHangup)
 		} else if isCloseRequested(conStat.UpExit) {
 			ev.Msg(upWebSocketClosed)
+		} else {
+			ev.Msg(conStat.UpExit.Error())
 		}
 	}
 	if conStat.DwnExit != nil {
@@ -190,6 +194,8 @@ func (proxy *Proxy) logWebsocketConnectionExitStatus(conStat WebsocketStatus) {
 			ev.Msg(dwnWebSocketHangup)
 		} else if isCloseRequested(conStat.DwnExit) {
 			ev.Msg(dwnWebSocketClosed)
+		} else {
+			ev.Msg(conStat.DwnExit.Error())
 		}
 	}
 }
@@ -212,12 +218,13 @@ func scaffoldHTTPUpgrader(proxy *Proxy) ws.HTTPUpgrader {
 func readDwnWebsocket(dwnCon net.Conn, upCon net.Conn, proxy *Proxy, status chan<- WebsocketStatus, tx *WebsocketTx) {
 ReadDwn:
 	for {
-		dwnCon.SetReadDeadline(time.Now().Add(time.Second * time.Duration(Runner.Connection.Downstream.IdleTimeoutSeconds)))
+		dwnCon.SetDeadline(time.Now().Add(time.Second * time.Duration(Runner.Connection.Downstream.IdleTimeoutSeconds)))
 		msg, op, dre := wsutil.ReadClientData(dwnCon)
 		if dre == nil {
 			lm := int64(len(msg))
 			tx.DwnBytesRead += lm
 
+			upCon.SetDeadline(time.Now().Add(time.Second * time.Duration(Runner.Connection.Upstream.IdleTimeoutSeconds)))
 			uwe := wsutil.WriteClientMessage(upCon, op, msg)
 			if uwe == nil {
 				tx.UpBytesWrite += lm
@@ -226,40 +233,24 @@ ReadDwn:
 					Int64(msgBytes, lm).
 					Msgf(upBytesWritten, lm)
 			} else {
-				if io.EOF == uwe {
-					status <- WebsocketStatus{
-						UpExit: uwe,
-					}
+				if isExit(uwe) {
+					status <- WebsocketStatus{UpExit: uwe, UpOpCode: op}
 				} else {
 					proxy.scaffoldWebsocketLog(log.Warn()).
 						Int8(opCode, int8(op)).
 						Msg(upWriteErr + uwe.Error())
-					status <- WebsocketStatus{
-						UpErr: uwe,
-					}
+					status <- WebsocketStatus{UpErr: uwe, UpOpCode: op}
 				}
 				break ReadDwn
 			}
 		} else {
-			if _, closed := dre.(wsutil.ClosedError); closed {
-				status <- WebsocketStatus{
-					DwnExit: dre,
-				}
-			} else if io.EOF == dre {
-				status <- WebsocketStatus{
-					DwnExit: dre,
-				}
-			} else if _, netop := dre.(*net.OpError); netop {
-				status <- WebsocketStatus{
-					DwnExit: dre,
-				}
+			if isExit(dre) {
+				status <- WebsocketStatus{DwnExit: dre, DwnOpCode: op}
 			} else {
 				proxy.scaffoldWebsocketLog(log.Warn()).
 					Int8(opCode, int8(op)).
 					Msg(dwnReadErr + dre.Error())
-				status <- WebsocketStatus{
-					DwnErr: dre,
-				}
+				status <- WebsocketStatus{DwnErr: dre, DwnOpCode: op}
 			}
 			break ReadDwn
 		}
@@ -269,11 +260,14 @@ ReadDwn:
 func readUpWebsocket(dwnCon net.Conn, upCon net.Conn, proxy *Proxy, status chan<- WebsocketStatus, tx *WebsocketTx) {
 ReadUp:
 	for {
-		upCon.SetReadDeadline(time.Now().Add(time.Second * time.Duration(Runner.Connection.Upstream.IdleTimeoutSeconds)))
+		upCon.SetDeadline(time.Now().Add(time.Second * time.Duration(Runner.Connection.Upstream.IdleTimeoutSeconds)))
 		msg, op, ure := wsutil.ReadServerData(upCon)
 		if ure == nil {
 			lm := int64(len(msg))
 			tx.UpBytesRead += lm
+
+			//we must set both deadlines inside the loop to keep updating timeouts
+			dwnCon.SetDeadline(time.Now().Add(time.Second * time.Duration(Runner.Connection.Downstream.IdleTimeoutSeconds)))
 			dwe := wsutil.WriteServerMessage(dwnCon, op, msg)
 			if dwe == nil {
 				tx.DwnBytesWrite += lm
@@ -282,45 +276,32 @@ ReadUp:
 					Int64(msgBytes, lm).
 					Msgf(dwnBytesWritten, lm)
 			} else {
-				//TODO this doesn't cover everything readDwnWebsocket does. it needs the same
-				//error handling but we don't want code duplication.
-				if io.EOF == dwe {
-					status <- WebsocketStatus{
-						DwnExit: dwe,
-					}
+				if isExit(dwe) {
+					status <- WebsocketStatus{DwnExit: dwe, DwnOpCode: op}
 				} else {
 					proxy.scaffoldWebsocketLog(log.Warn()).
 						Int8(opCode, int8(op)).
 						Msg(dwnWriteErr + dwe.Error())
-					status <- WebsocketStatus{
-						DwnErr: dwe,
-					}
+					status <- WebsocketStatus{DwnErr: dwe, DwnOpCode: op}
 				}
 				break ReadUp
 			}
 		} else {
-			if _, closed := ure.(wsutil.ClosedError); closed {
-				status <- WebsocketStatus{
-					UpExit: ure,
-				}
-			} else if io.EOF == ure {
-				status <- WebsocketStatus{
-					UpExit: ure,
-				}
-			} else if _, netop := ure.(*net.OpError); netop {
-				status <- WebsocketStatus{
-					UpExit: ure,
-				}
+			if isExit(ure) {
+				status <- WebsocketStatus{UpExit: ure, UpOpCode: op}
 			} else {
 				proxy.scaffoldWebsocketLog(log.Warn()).
 					Int8(opCode, int8(op)).
 					Msg(upReadErr + ure.Error())
-				status <- WebsocketStatus{
-					UpErr: ure,
-				}
+				status <- WebsocketStatus{UpErr: ure, UpOpCode: op}
 			}
 			break ReadUp
 		}
 	}
+}
 
+func isExit(err error) bool {
+	_, closed := err.(wsutil.ClosedError)
+	_, netop := err.(*net.OpError)
+	return closed || netop || err == io.EOF
 }
