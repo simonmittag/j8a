@@ -233,25 +233,21 @@ ReadDwn:
 					Int64(msgBytes, lm).
 					Msgf(upBytesWritten, lm)
 			} else {
-				if isExit(uwe) {
-					status <- WebsocketStatus{UpExit: uwe, UpOpCode: op}
-				} else {
+				if !isExit(uwe) {
 					proxy.scaffoldWebsocketLog(log.Warn()).
 						Int8(opCode, int8(op)).
 						Msg(upWriteErr + uwe.Error())
-					status <- WebsocketStatus{UpErr: uwe, UpOpCode: op}
 				}
+				status <- WebsocketStatus{UpExit: uwe, UpOpCode: op}
 				break ReadDwn
 			}
 		} else {
-			if isExit(dre) {
-				status <- WebsocketStatus{DwnExit: dre, DwnOpCode: op}
-			} else {
+			if !isExit(dre) {
 				proxy.scaffoldWebsocketLog(log.Warn()).
 					Int8(opCode, int8(op)).
 					Msg(dwnReadErr + dre.Error())
-				status <- WebsocketStatus{DwnErr: dre, DwnOpCode: op}
 			}
+			status <- WebsocketStatus{DwnExit: dre, DwnOpCode: op}
 			break ReadDwn
 		}
 	}
@@ -276,25 +272,21 @@ ReadUp:
 					Int64(msgBytes, lm).
 					Msgf(dwnBytesWritten, lm)
 			} else {
-				if isExit(dwe) {
-					status <- WebsocketStatus{DwnExit: dwe, DwnOpCode: op}
-				} else {
+				if !isExit(dwe) {
 					proxy.scaffoldWebsocketLog(log.Warn()).
 						Int8(opCode, int8(op)).
 						Msg(dwnWriteErr + dwe.Error())
-					status <- WebsocketStatus{DwnErr: dwe, DwnOpCode: op}
 				}
+				status <- WebsocketStatus{DwnExit: dwe, DwnOpCode: op}
 				break ReadUp
 			}
 		} else {
-			if isExit(ure) {
-				status <- WebsocketStatus{UpExit: ure, UpOpCode: op}
-			} else {
+			if !isExit(ure) {
 				proxy.scaffoldWebsocketLog(log.Warn()).
 					Int8(opCode, int8(op)).
 					Msg(upReadErr + ure.Error())
-				status <- WebsocketStatus{UpErr: ure, UpOpCode: op}
 			}
+			status <- WebsocketStatus{UpExit: ure, UpOpCode: op}
 			break ReadUp
 		}
 	}
