@@ -93,6 +93,9 @@ func upgradeWebsocket(proxy *Proxy) {
 	defer func() {
 		if upCon != nil {
 			ws.WriteFrame(upCon, ws.NewCloseFrame(ws.NewCloseFrameBody(ws.StatusNormalClosure, "")))
+
+			//after sending close frame we are not expected to process any other frames and tear down socket.
+			//See: https://tools.ietf.org/html/rfc6455#section-5.5.1
 			upCon.Close()
 			proxy.scaffoldWebsocketLog(log.Trace()).
 				Int64(upBytesRead, tx.UpBytesRead).
@@ -128,6 +131,9 @@ func upgradeWebsocket(proxy *Proxy) {
 	defer func() {
 		if dwnCon != nil && dwnErr == nil {
 			ws.WriteFrame(dwnCon, ws.NewCloseFrame(ws.NewCloseFrameBody(ws.StatusNormalClosure, "")))
+
+			//after sending close frame we are not expected to process any other frames and tear down socket.
+			//See: https://tools.ietf.org/html/rfc6455#section-5.5.1
 			dwnCon.Close()
 
 			elapsed := time.Since(proxy.Dwn.startDate)
