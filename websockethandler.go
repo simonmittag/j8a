@@ -35,10 +35,8 @@ const msgBytes = "msgBytes"
 type WebsocketStatus struct {
 	DwnOpCode ws.OpCode
 	DwnExit   error
-	DwnErr    error
 	UpOpCode  ws.OpCode
 	UpExit    error
-	UpErr     error
 }
 
 type WebsocketTx struct {
@@ -70,7 +68,9 @@ func (proxy *Proxy) scaffoldWebsocketLog(e *zerolog.Event, elapsed ...int64) *ze
 }
 
 const upWebsocketConnectionFailed = "upstream websocket connection failed"
-const upWebsocketUnspecifiedNetworkEvent = "upstream websocket unspecified network event: %s"
+const websocketUnspecifiedNetworkEvent = " websocket unspecified network event: %s"
+const upWebsocketUnspecifiedNetworkEvent = "upstream" + websocketUnspecifiedNetworkEvent
+const dwnWebsocketUnspecifiedNetworkEvent = "downstream" + websocketUnspecifiedNetworkEvent
 const webSocketTimeout = " websocket connection idle timeout fired after %d seconds"
 const upWebsocketTimeoutFired = "upstream" + webSocketTimeout
 const dwnWebsocketTimeoutFired = "downstream" + webSocketTimeout
@@ -80,6 +80,9 @@ const dwnWebSocketHangup = "downstream" + webSocketHangup
 const webSocketClosed = " websocket connection close requested by remote end"
 const upWebSocketClosed = "upstream" + webSocketClosed
 const dwnWebSocketClosed = "downstream" + webSocketClosed
+const webSocketProtocolError = " websocket connection protocol error: %s"
+const upWebSocketProtocolError = "upstream" + webSocketProtocolError
+const dwnWebSocketProtocolError = "downstream" + webSocketProtocolError
 
 const connect = "connect"
 const iotimeout = "i/o timeout"
@@ -178,7 +181,12 @@ func (proxy *Proxy) logWebsocketConnectionExitStatus(conStat WebsocketStatus) {
 	}
 	isCloseRequested := func(err error) bool {
 		ce, cet := err.(wsutil.ClosedError)
-		return cet && ce.Code == 1000
+		return cet && ce.Code == 1000 || ce.Code == 1005
+	}
+
+	isProtocolError := func(err error) bool {
+		_, pet := err.(ws.ProtocolError)
+		return pet
 	}
 
 	ev := proxy.scaffoldWebsocketLog(log.Trace())
@@ -189,8 +197,10 @@ func (proxy *Proxy) logWebsocketConnectionExitStatus(conStat WebsocketStatus) {
 			ev.Msg(upWebSocketHangup)
 		} else if isCloseRequested(conStat.UpExit) {
 			ev.Msg(upWebSocketClosed)
+		} else if isProtocolError(conStat.UpExit) {
+			ev.Msgf(upWebSocketProtocolError, conStat.UpExit)
 		} else {
-			ev.Msg(conStat.UpExit.Error())
+			ev.Msgf(upWebsocketUnspecifiedNetworkEvent, conStat.UpExit.Error())
 		}
 	}
 	if conStat.DwnExit != nil {
@@ -200,8 +210,10 @@ func (proxy *Proxy) logWebsocketConnectionExitStatus(conStat WebsocketStatus) {
 			ev.Msg(dwnWebSocketHangup)
 		} else if isCloseRequested(conStat.DwnExit) {
 			ev.Msg(dwnWebSocketClosed)
+		} else if isProtocolError(conStat.DwnExit) {
+			ev.Msgf(dwnWebSocketProtocolError, conStat.DwnExit)
 		} else {
-			ev.Msg(conStat.DwnExit.Error())
+			ev.Msgf(dwnWebsocketUnspecifiedNetworkEvent, conStat.DwnExit.Error())
 		}
 	}
 }

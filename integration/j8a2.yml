@@ -20,6 +20,9 @@ policies:
     - label: blue
       weight: 0.2
 routes:
+  - path: "/websocket"
+    transform: "/mse6/websocket"
+    resource: websocket
   - path: "/about"
     resource: about
   - path: "/mse6/some"
@@ -192,3 +195,8 @@ resources:
         scheme: http
         host: localhost
         port: 60100
+  websocket:
+    - url:
+        scheme: ws
+        host: localhost
+        port: 60083
