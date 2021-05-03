@@ -28,15 +28,11 @@ func TestWSConnectionEstablishedAndEchoMessageWithCleanExit(t *testing.T) {
 		t.Errorf("unable to read back ws echo message, cause: %v", e3)
 	}
 
-	cf := ws.Frame{
-		Header: ws.Header{
-			Fin:    true,
-			OpCode: ws.OpClose,
-			Masked: true,
-			Mask:   [4]byte{01, 01, 01, 01},
-		},
-		Payload: ws.NewCloseFrameBody(ws.StatusNormalClosure, "close requested"),
-	}
+	//so this is how you orderly close a WS connection in gobwas.
+	cf := ws.NewCloseFrame(ws.NewCloseFrameBody(
+		ws.StatusNormalClosure, "unit test close requested",
+	))
+	cf = ws.MaskFrameInPlace(cf)
 	e4 := ws.WriteFrame(con, cf)
 	if e4 != nil {
 		t.Errorf("unable to close ws protocol connection, cause: %v", e4)
