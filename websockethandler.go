@@ -86,6 +86,7 @@ const dwnWebSocketProtocolError = "downstream" + webSocketProtocolError
 
 const connect = "connect"
 const iotimeout = "i/o timeout"
+const j8aRequestsClose = "j8a requests close"
 
 func upgradeWebsocket(proxy *Proxy) {
 	var status = make(chan WebsocketStatus)
@@ -95,7 +96,9 @@ func upgradeWebsocket(proxy *Proxy) {
 	upCon, _, _, upErr := ws.DefaultDialer.Dial(context.Background(), proxy.resolveUpstreamURI())
 	defer func() {
 		if upCon != nil {
-			ws.WriteFrame(upCon, ws.NewCloseFrame(ws.NewCloseFrameBody(ws.StatusNormalClosure, "")))
+			cf := ws.NewCloseFrame(ws.NewCloseFrameBody(ws.StatusNormalClosure, j8aRequestsClose))
+			cf = ws.MaskFrameInPlace(cf)
+			ws.WriteFrame(upCon, cf)
 
 			//after sending close frame we are not expected to process any other frames and tear down socket.
 			//See: https://tools.ietf.org/html/rfc6455#section-5.5.1
@@ -133,7 +136,7 @@ func upgradeWebsocket(proxy *Proxy) {
 	dwnCon, _, _, dwnErr := scaffoldHTTPUpgrader(proxy).Upgrade(proxy.Dwn.Req, proxy.Dwn.Resp.Writer)
 	defer func() {
 		if dwnCon != nil && dwnErr == nil {
-			ws.WriteFrame(dwnCon, ws.NewCloseFrame(ws.NewCloseFrameBody(ws.StatusNormalClosure, "")))
+			ws.WriteFrame(dwnCon, ws.NewCloseFrame(ws.NewCloseFrameBody(ws.StatusNormalClosure, j8aRequestsClose)))
 
 			//after sending close frame we are not expected to process any other frames and tear down socket.
 			//See: https://tools.ietf.org/html/rfc6455#section-5.5.1
