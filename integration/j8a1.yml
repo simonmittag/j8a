@@ -172,6 +172,8 @@ routes:
   - path: "/websocket"
     transform: "/mse6/websocket"
     resource: websocket
+  - path: "/websocketdown"
+    resource: websocketdown
   - path: "/mse6/some"
     resource: mse61
   - path: /mse6jwtjwksbadrotate
@@ -398,3 +400,8 @@ resources:
         scheme: ws
         host: localhost
         port: 60083
+  websocketdown:
+    - url:
+        scheme: ws
+        host: localhost
+        port: 60999

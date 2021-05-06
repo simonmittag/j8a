@@ -9,28 +9,6 @@ import (
 	"testing"
 )
 
-func TestWSConnectionEstablishedAndEchoMessageWithUpstreamExitClean(t *testing.T) {
-	con, _, _, e := ws.DefaultDialer.Dial(context.Background(), "ws://localhost:8080/websocket?n=1&c")
-	if e != nil {
-		t.Errorf("unable to connect to ws, cause: %v", e)
-		return
-	}
-
-	if !echoHelloWorld(t, con) {
-		return
-	}
-
-	_, _, e4 := wsutil.ReadServerData(con)
-	if e4 == nil {
-		t.Errorf("upstream should have closed connection, but was nil err")
-	} else {
-		if wce, wcet := e4.(wsutil.ClosedError); !wcet {
-			t.Errorf("j8a should have closed normal, but returned %s", wce)
-		}
-		t.Logf("normal. j8a closed connection with %s", e4)
-	}
-}
-
 func TestWSConnectionEstablishedAndEchoMessageWithDownstreamExitClean(t *testing.T) {
 	con, _, _, e := ws.DefaultDialer.Dial(context.Background(), "ws://localhost:8080/websocket?n=1")
 	if e != nil {
@@ -58,6 +36,36 @@ func TestWSConnectionEstablishedAndEchoMessageWithDownstreamExitClean(t *testing
 		t.Errorf("unable to close TCP socket connection, cause: %v", e5)
 	}
 
+}
+
+const wsse = "unexpected HTTP response status: "
+
+func Test404ResponseUpstreamURLIsNotMapped(t *testing.T) {
+	_, _, _, e := ws.DefaultDialer.Dial(context.Background(), "ws://localhost:8080/nourl")
+	if e == nil {
+		t.Errorf("bad url should return an error but did not: %v", e)
+		return
+	} else {
+		if wse, ok := e.(ws.StatusError); ok {
+			if wse.Error() != wsse+"404" {
+				t.Errorf("j8a should return 404 for not found but got %s", wse.Error())
+			}
+		}
+	}
+}
+
+func Test502ResponseUpstreamURLisUnavailable(t *testing.T) {
+	_, _, _, e := ws.DefaultDialer.Dial(context.Background(), "ws://localhost:8080/websocketdown")
+	if e == nil {
+		t.Errorf("bad url should return an error but did not: %v", e)
+		return
+	} else {
+		if wse, ok := e.(ws.StatusError); ok {
+			if wse.Error() != wsse+"502" {
+				t.Errorf("j8a should return 502 for not found but got %s", wse.Error())
+			}
+		}
+	}
 }
 
 func TestWSConnectionEstablishedAndEchoMessageWithDownstreamExitDirtyClosingJustProtocol(t *testing.T) {
@@ -120,6 +128,28 @@ func TestWSConnectionEstablishedAndEchoMessageWithDownstreamExitDirtyClosingJust
 		} else {
 			t.Logf("normal. j8a closed connection with %s", e6)
 		}
+	}
+}
+
+func TestWSConnectionEstablishedAndEchoMessageWithUpstreamExitClean(t *testing.T) {
+	con, _, _, e := ws.DefaultDialer.Dial(context.Background(), "ws://localhost:8080/websocket?n=1&c")
+	if e != nil {
+		t.Errorf("unable to connect to ws, cause: %v", e)
+		return
+	}
+
+	if !echoHelloWorld(t, con) {
+		return
+	}
+
+	_, _, e4 := wsutil.ReadServerData(con)
+	if e4 == nil {
+		t.Errorf("upstream should have closed connection, but was nil err")
+	} else {
+		if wce, wcet := e4.(wsutil.ClosedError); !wcet {
+			t.Errorf("j8a should have closed normal, but returned %s", wce)
+		}
+		t.Logf("normal. j8a closed connection with %s", e4)
 	}
 }
 
