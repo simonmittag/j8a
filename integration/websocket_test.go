@@ -6,8 +6,11 @@ import (
 	"github.com/simonmittag/ws"
 	"github.com/simonmittag/ws/wsutil"
 	"net"
+	"strings"
 	"testing"
 )
+
+const wsse = "unexpected HTTP response status: "
 
 func TestWSConnectionEstablishedAndEchoMessageWithDownstreamExitClean(t *testing.T) {
 	con, _, _, e := ws.DefaultDialer.Dial(context.Background(), "ws://localhost:8080/websocket?n=1")
@@ -38,7 +41,74 @@ func TestWSConnectionEstablishedAndEchoMessageWithDownstreamExitClean(t *testing
 
 }
 
-const wsse = "unexpected HTTP response status: "
+func Test101ResponseForWsUpgrade(t *testing.T) {
+	c, err := net.Dial("tcp", ":8080")
+	if err != nil {
+		t.Errorf("test failure. unable to connect to j8a server for integration test, cause: %v", err)
+		return
+	}
+	defer c.Close()
+
+	//step 2 we send headers and terminate HTTP message.
+	checkWrite(t, c, "GET /websocket HTTP/1.1\r\n")
+	checkWrite(t, c, "Host: localhost:8080\r\n")
+	checkWrite(t, c, "User-Agent: integration\r\n")
+	checkWrite(t, c, "Origin: http://localhost\r\n")
+	checkWrite(t, c, "Content-Type: application/json\r\n")
+	checkWrite(t, c, "Connection: Upgrade\r\n")
+	checkWrite(t, c, "Upgrade: websocket\r\n")
+	checkWrite(t, c, "Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw==\r\n")
+	checkWrite(t, c, "Sec-WebSocket-Version: 13\r\n")
+	checkWrite(t, c, "\r\n")
+
+	buf := make([]byte, 1024)
+	l, err := c.Read(buf)
+	t.Logf("normal. j8a responded with %v bytes and error code %v", l, err)
+	t.Logf("normal. j8a partial response: %v", string(buf))
+	if l == 0 {
+		t.Error("test failure. j8a did not respond, 0 bytes read")
+	}
+	response := string(buf)
+	if !strings.Contains(response, "Server: j8a") {
+		t.Error("test failure. j8a did not respond, server information not found on response ")
+	}
+	if !strings.Contains(response, "101 Switching Protocols") {
+		t.Error("test failure. j8a did not upgrade to websocket connection ")
+	}
+}
+
+func Test400ResponseForBadSecHeader(t *testing.T) {
+	c, err := net.Dial("tcp", ":8080")
+	if err != nil {
+		t.Errorf("test failure. unable to connect to j8a server for integration test, cause: %v", err)
+		return
+	}
+	defer c.Close()
+
+	//step 2 we send headers and terminate HTTP message.
+	checkWrite(t, c, "GET /websocket HTTP/1.1\r\n")
+	checkWrite(t, c, "Host: localhost:8080\r\n")
+	checkWrite(t, c, "User-Agent: integration\r\n")
+	checkWrite(t, c, "Origin: http://localhost\r\n")
+	checkWrite(t, c, "Content-Type: application/json\r\n")
+	checkWrite(t, c, "Connection: Upgrade\r\n")
+	checkWrite(t, c, "Upgrade: websocket\r\n")
+	checkWrite(t, c, "Sec-WebSocket-Key: XXXXXXXXXXXXXXXXXXXXXX\r\n")
+	checkWrite(t, c, "Sec-WebSocket-Version: 13\r\n")
+	checkWrite(t, c, "\r\n")
+
+	buf := make([]byte, 1024)
+	l, err := c.Read(buf)
+	t.Logf("normal. j8a responded with %v bytes and error code %v", l, err)
+	t.Logf("normal. j8a partial response: %v", string(buf))
+	if l == 0 {
+		t.Error("test failure. j8a did not respond, 0 bytes read")
+	}
+	response := string(buf)
+	if !strings.Contains(response, "400 Bad Request") {
+		t.Error("test failure. j8a should have responded with bad request ")
+	}
+}
 
 func Test404ResponseUpstreamURLIsNotMapped(t *testing.T) {
 	_, _, _, e := ws.DefaultDialer.Dial(context.Background(), "ws://localhost:8080/nourl")
@@ -51,6 +121,105 @@ func Test404ResponseUpstreamURLIsNotMapped(t *testing.T) {
 				t.Errorf("j8a should return 404 for not found but got %s", wse.Error())
 			}
 		}
+	}
+}
+
+func Test405ResponseForInvalidHTTPMethod(t *testing.T) {
+	c, err := net.Dial("tcp", ":8080")
+	if err != nil {
+		t.Errorf("test failure. unable to connect to j8a server for integration test, cause: %v", err)
+		return
+	}
+	defer c.Close()
+
+	//step 2 we send headers and terminate HTTP message.
+	checkWrite(t, c, "PUT /websocket HTTP/1.1\r\n")
+	checkWrite(t, c, "Host: localhost:8080\r\n")
+	checkWrite(t, c, "User-Agent: integration\r\n")
+	checkWrite(t, c, "Origin: http://localhost\r\n")
+	checkWrite(t, c, "Content-Type: application/json\r\n")
+	checkWrite(t, c, "Connection: Upgrade\r\n")
+	checkWrite(t, c, "Upgrade: websocket\r\n")
+	checkWrite(t, c, "Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw==\r\n")
+	checkWrite(t, c, "Sec-WebSocket-Version: 13\r\n")
+	checkWrite(t, c, "\r\n")
+
+	buf := make([]byte, 1024)
+	l, err := c.Read(buf)
+	t.Logf("normal. j8a responded with %v bytes and error code %v", l, err)
+	t.Logf("normal. j8a partial response: %v", string(buf))
+	if l == 0 {
+		t.Error("test failure. j8a did not respond, 0 bytes read")
+	}
+	response := string(buf)
+	if !strings.Contains(response, "405 Method Not Allowed") {
+		t.Error("test failure. j8a should have responded with bad protocol version ")
+	}
+}
+
+func Test426ResponseForBadWsProtocolVersion(t *testing.T) {
+	c, err := net.Dial("tcp", ":8080")
+	if err != nil {
+		t.Errorf("test failure. unable to connect to j8a server for integration test, cause: %v", err)
+		return
+	}
+	defer c.Close()
+
+	//step 2 we send headers and terminate HTTP message.
+	checkWrite(t, c, "GET /websocket HTTP/1.1\r\n")
+	checkWrite(t, c, "Host: localhost:8080\r\n")
+	checkWrite(t, c, "User-Agent: integration\r\n")
+	checkWrite(t, c, "Origin: http://localhost\r\n")
+	checkWrite(t, c, "Content-Type: application/json\r\n")
+	checkWrite(t, c, "Connection: Upgrade\r\n")
+	checkWrite(t, c, "Upgrade: websocket\r\n")
+	checkWrite(t, c, "Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw==\r\n")
+	checkWrite(t, c, "Sec-WebSocket-Version: XX\r\n")
+	checkWrite(t, c, "\r\n")
+
+	buf := make([]byte, 1024)
+	l, err := c.Read(buf)
+	t.Logf("normal. j8a responded with %v bytes and error code %v", l, err)
+	t.Logf("normal. j8a partial response: %v", string(buf))
+	if l == 0 {
+		t.Error("test failure. j8a did not respond, 0 bytes read")
+	}
+	response := string(buf)
+	if !strings.Contains(response, "426 Upgrade Required") {
+		t.Error("test failure. j8a should have responded with bad protocol version ")
+	}
+}
+
+func Test502ResponseForBadHTTPProtocolVersion(t *testing.T) {
+	c, err := net.Dial("tcp", ":8080")
+	if err != nil {
+		t.Errorf("test failure. unable to connect to j8a server for integration test, cause: %v", err)
+		return
+	}
+	defer c.Close()
+
+	//step 2 we send headers and terminate HTTP message.
+	checkWrite(t, c, "GET /websocket HTTP/2\r\n")
+	checkWrite(t, c, "Host: localhost:8080\r\n")
+	checkWrite(t, c, "User-Agent: integration\r\n")
+	checkWrite(t, c, "Origin: http://localhost\r\n")
+	checkWrite(t, c, "Content-Type: application/json\r\n")
+	checkWrite(t, c, "Connection: Upgrade\r\n")
+	checkWrite(t, c, "Upgrade: websocket\r\n")
+	checkWrite(t, c, "Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw==\r\n")
+	checkWrite(t, c, "Sec-WebSocket-Version: 13\r\n")
+	checkWrite(t, c, "\r\n")
+
+	buf := make([]byte, 1024)
+	l, err := c.Read(buf)
+	t.Logf("normal. j8a responded with %v bytes and error code %v", l, err)
+	t.Logf("normal. j8a partial response: %v", string(buf))
+	if l == 0 {
+		t.Error("test failure. j8a did not respond, 0 bytes read")
+	}
+	response := string(buf)
+	if !strings.Contains(response, "400 Bad Request") {
+		t.Error("test failure. j8a should have responded with bad request ")
 	}
 }
 

@@ -2,6 +2,7 @@ package j8a
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"github.com/hako/durafmt"
 	"github.com/rs/zerolog"
@@ -92,8 +93,15 @@ func upgradeWebsocket(proxy *Proxy) {
 	var status = make(chan WebsocketStatus)
 	var tx *WebsocketTx = &WebsocketTx{}
 
+	//dialer uses TLSInsecureSkipVerify to accept any certificate or host name.
+	dialer := ws.Dialer{
+		TLSConfig: &tls.Config{
+			InsecureSkipVerify: Runner.Connection.Upstream.TlsInsecureSkipVerify,
+		},
+	}
+
 	//upCon has to run first. if it fails we still want to send a 50x HTTP response from within j8a.
-	upCon, _, _, upErr := ws.DefaultDialer.Dial(context.Background(), proxy.resolveUpstreamURI())
+	upCon, _, _, upErr := dialer.Dial(context.Background(), proxy.resolveUpstreamURI())
 	defer func() {
 		if upCon != nil {
 			cf := ws.NewCloseFrame(ws.NewCloseFrameBody(ws.StatusNormalClosure, j8aRequestsClose))
