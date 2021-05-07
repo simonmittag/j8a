@@ -190,7 +190,7 @@ func Test426ResponseForBadWsProtocolVersion(t *testing.T) {
 	}
 }
 
-func Test502ResponseForBadHTTPProtocolVersion(t *testing.T) {
+func Test400ResponseForBadHTTPProtocolVersion(t *testing.T) {
 	c, err := net.Dial("tcp", ":8080")
 	if err != nil {
 		t.Errorf("test failure. unable to connect to j8a server for integration test, cause: %v", err)
