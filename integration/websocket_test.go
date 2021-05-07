@@ -206,9 +206,9 @@ func Test400ResponseForBadHTTPProtocolVersion(t *testing.T) {
 	checkWrite(t, c, "Content-Type: application/json\r\n")
 	checkWrite(t, c, "Connection: Upgrade\r\n")
 	checkWrite(t, c, "Upgrade: websocket\r\n")
-	checkWrite(t, c, "Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw==\r\n")
-	checkWrite(t, c, "Sec-WebSocket-Version: 13\r\n")
-	checkWrite(t, c, "\r\n")
+	//checkWrite(t, c, "Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw==\r\n")
+	//checkWrite(t, c, "Sec-WebSocket-Version: 13\r\n")
+	//checkWrite(t, c, "\r\n")
 
 	buf := make([]byte, 1024)
 	l, err := c.Read(buf)
