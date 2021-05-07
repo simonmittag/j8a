@@ -3,11 +3,13 @@ package integration
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"github.com/simonmittag/ws"
 	"github.com/simonmittag/ws/wsutil"
 	"net"
 	"strings"
 	"testing"
+	"time"
 )
 
 const wsse = "unexpected HTTP response status: "
@@ -300,8 +302,110 @@ func TestWSConnectionEstablishedAndEchoMessageWithDownstreamExitDirtyClosingJust
 	}
 }
 
+func TestWSConnectionEstablishedThenUpstreamTimeout(t *testing.T) {
+	con, _, _, e := ws.DefaultDialer.Dial(context.Background(), "ws://localhost:8080/websocket?n=1")
+	if e != nil {
+		t.Errorf("unable to connect to ws, cause: %v", e)
+		return
+	} else {
+		t.Log("normal. established connection")
+	}
+
+	if !echoHelloWorld(t, con) {
+		return
+	}
+
+	t.Log("normal. sleeping for 10 seconds")
+	time.Sleep(time.Second * 11)
+	t.Log("normal. waking up")
+
+	_, _, e4 := wsutil.ReadServerData(con)
+	if e4 == nil {
+		t.Errorf("error. upstream should have closed connection, but was nil err")
+	} else {
+		if wce, wcet := e4.(wsutil.ClosedError); !wcet {
+			t.Errorf("error. j8a should have closed normal, but returned %s", wce)
+		}
+		t.Logf("normal. j8a closed connection with %s", e4)
+	}
+}
+
+func TestWSSConnectionEstablishedThenDownstreamTimeout(t *testing.T) {
+	dialer := ws.Dialer{
+		TLSConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
+	}
+	con, _, _, e := dialer.Dial(context.Background(), "wss://localhost:8443/websocket?n=1")
+	if e != nil {
+		t.Errorf("unable to connect to ws, cause: %v", e)
+		return
+	} else {
+		t.Log("normal. established connection")
+	}
+
+	if !echoHelloWorld(t, con) {
+		return
+	}
+
+	t.Log("normal. sleeping for 31 seconds")
+	time.Sleep(time.Second * 31)
+	t.Log("normal. waking up")
+
+	_, _, e4 := wsutil.ReadServerData(con)
+	if e4 == nil {
+		t.Errorf("error. upstream should have closed connection, but was nil err")
+	} else {
+		t.Logf("normal. j8a closed tls connection with %s", e4)
+	}
+}
+
 func TestWSConnectionEstablishedAndEchoMessageWithUpstreamExitClean(t *testing.T) {
 	con, _, _, e := ws.DefaultDialer.Dial(context.Background(), "ws://localhost:8080/websocket?n=1&c")
+	if e != nil {
+		t.Errorf("unable to connect to ws, cause: %v", e)
+		return
+	}
+
+	if !echoHelloWorld(t, con) {
+		return
+	}
+
+	_, _, e4 := wsutil.ReadServerData(con)
+	if e4 == nil {
+		t.Errorf("upstream should have closed connection, but was nil err")
+	} else {
+		if wce, wcet := e4.(wsutil.ClosedError); !wcet {
+			t.Errorf("j8a should have closed normal, but returned %s", wce)
+		}
+		t.Logf("normal. j8a closed connection with %s", e4)
+	}
+}
+
+func TestWSConnectionEstablishedAndEchoMessageWithUpstreamExitProtocolOnly(t *testing.T) {
+	con, _, _, e := ws.DefaultDialer.Dial(context.Background(), "ws://localhost:8080/websocket?n=1&c1")
+	if e != nil {
+		t.Errorf("unable to connect to ws, cause: %v", e)
+		return
+	}
+
+	if !echoHelloWorld(t, con) {
+		return
+	}
+
+	_, _, e4 := wsutil.ReadServerData(con)
+	if e4 == nil {
+		t.Errorf("upstream should have closed connection, but was nil err")
+	} else {
+		if wce, wcet := e4.(wsutil.ClosedError); !wcet {
+			t.Errorf("j8a should have closed normal, but returned %s", wce)
+		}
+		t.Logf("normal. j8a closed connection with %s", e4)
+	}
+}
+
+func TestWSConnectionEstablishedAndEchoMessageWithUpstreamExitSocketOnly(t *testing.T) {
+	con, _, _, e := ws.DefaultDialer.Dial(context.Background(), "ws://localhost:8080/websocket?n=1&c2")
 	if e != nil {
 		t.Errorf("unable to connect to ws, cause: %v", e)
 		return

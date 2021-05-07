@@ -97,7 +97,7 @@ connection:
   upstream:
     socketTimeoutSeconds: 3
     readTimeoutSeconds: 30
-    idleTimeoutSeconds: 10
+    idleTimeoutSeconds: 60
     maxAttempts: 4
     poolSize: 8
     tlsInsecureSkipVerify: yes
