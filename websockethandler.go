@@ -21,7 +21,7 @@ const upConDialed = "upstream websocket connection dialed"
 const upConClosed = "upstream websocket connection closed"
 const upWriteErr = "error writing to upstream websocket, cause: "
 const upReadErr = "error reading from upstream websocket, cause: "
-const upConWsFail = "upstream failed websocket upgrade"
+const upConWsFail = "upstream failed websocket connection"
 const upBytesWritten = "upstream websocket %d bytes written"
 
 const dwnConClosed = "downstream websocket connection closed after %s"
@@ -97,6 +97,7 @@ func upgradeWebsocket(proxy *Proxy) {
 
 	//dialer uses TLSInsecureSkipVerify to accept any certificate or host name.
 	dialer := ws.Dialer{
+		Timeout: time.Duration(Runner.Connection.Upstream.SocketTimeoutSeconds) * time.Second,
 		TLSConfig: &tls.Config{
 			InsecureSkipVerify: Runner.Connection.Upstream.TlsInsecureSkipVerify,
 		},

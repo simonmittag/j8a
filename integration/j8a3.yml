@@ -95,7 +95,7 @@ connection:
         GsMkN4GFOfQKoBI/aCXn4DM=
         -----END PRIVATE KEY-----
   upstream:
-    socketTimeoutSeconds: 3
+    socketTimeoutSeconds: 10
     readTimeoutSeconds: 30
     idleTimeoutSeconds: 60
     maxAttempts: 4
@@ -296,8 +296,8 @@ resources:
   websocketdown:
     - url:
         scheme: ws
-        host: localhost
-        port: 60999
+        host: 10.247.13.14
+        port: 29471
   websocketsecure:
     - url:
         scheme: wss

@@ -239,6 +239,35 @@ func Test502ResponseUpstreamURLisUnavailable(t *testing.T) {
 	}
 }
 
+func Test502ResponseUpstreamURLisUnavailableAfterLongSocketTimeout(t *testing.T) {
+	start := time.Now()
+
+	dialer := ws.Dialer{
+		TLSConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
+	}
+	t.Log("begin dialling j8a")
+	_, _, _, e := dialer.Dial(context.Background(), "wss://localhost:8443/websocketdown")
+	t.Log("j8a returns")
+	elapsed := time.Since(start)
+	want := 10
+	if elapsed > time.Duration(want)*time.Second {
+		t.Errorf("upstream socket connection timeout exceed, want: %vs, got: %vs", want, elapsed)
+	}
+
+	if e == nil {
+		t.Errorf("bad url should return an error but did not: %v", e)
+		return
+	} else {
+		if wse, ok := e.(ws.StatusError); ok {
+			if wse.Error() != wsse+"502" {
+				t.Errorf("j8a should return 502 for not found but got %s", wse.Error())
+			}
+		}
+	}
+}
+
 func TestWSConnectionEstablishedAndEchoMessageWithDownstreamExitDirtyClosingJustProtocol(t *testing.T) {
 	con, _, _, e := ws.DefaultDialer.Dial(context.Background(), "ws://localhost:8080/websocket?n=1")
 	if e != nil {

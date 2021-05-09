@@ -208,8 +208,8 @@ resources:
   websocketdown:
     - url:
         scheme: ws
-        host: localhost
-        port: 60999
+        host: 10.247.13.14
+        port: 29471
   websocketsecure:
     - url:
         scheme: wss
