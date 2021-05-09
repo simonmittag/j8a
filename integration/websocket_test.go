@@ -252,8 +252,12 @@ func Test502ResponseUpstreamURLisUnavailableAfterLongSocketTimeout(t *testing.T)
 	t.Log("j8a returns")
 	elapsed := time.Since(start)
 	want := 10
-	if elapsed > time.Duration(want)*time.Second {
+	grace := 4
+	if elapsed > time.Duration(want+grace)*time.Second {
 		t.Errorf("upstream socket connection timeout exceed, want: %vs, got: %vs", want, elapsed)
+	}
+	if elapsed < time.Duration(want)*time.Second {
+		t.Errorf("upstream socket connection timed out too fast, want at least: %vs, got: %vs", want, elapsed)
 	}
 
 	if e == nil {
