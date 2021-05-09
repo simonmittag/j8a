@@ -3,6 +3,7 @@ package j8a
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"github.com/hako/durafmt"
 	"github.com/rs/zerolog"
@@ -84,6 +85,7 @@ const dwnWebSocketClosed = "downstream" + webSocketClosed
 const webSocketProtocolError = " websocket connection protocol error: %s"
 const upWebSocketProtocolError = "upstream" + webSocketProtocolError
 const dwnWebSocketProtocolError = "downstream" + webSocketProtocolError
+const upWebsocketSecureHostnameVerificationFailure = "upstream wss connection hostname verification failure: %v"
 
 const connect = "connect"
 const iotimeout = "i/o timeout"
@@ -122,6 +124,7 @@ func upgradeWebsocket(proxy *Proxy) {
 	if upErr != nil {
 		netOpErr, noe := upErr.(*net.OpError)
 		wsStatusErr, wse := upErr.(ws.StatusError)
+		_, chnet := upErr.(x509.HostnameError)
 		if noe {
 			syscallErr, sce := netOpErr.Err.(*os.SyscallError)
 			if sce && syscallErr.Syscall == connect {
@@ -131,6 +134,8 @@ func upgradeWebsocket(proxy *Proxy) {
 			}
 		} else if wse && 400 <= int(wsStatusErr) && 599 >= int(wsStatusErr) {
 			uev.Msg(upWebsocketConnectionFailed)
+		} else if chnet {
+			uev.Msgf(upWebsocketSecureHostnameVerificationFailure, upErr)
 		} else {
 			uev.Msgf(upWebsocketUnspecifiedNetworkEvent, upErr)
 		}

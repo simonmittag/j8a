@@ -426,6 +426,44 @@ func TestWSConnectionEstablishedAndEchoMessageWithUpstreamExitSocketOnly(t *test
 	}
 }
 
+func TestWSSConnectionUpstreamSucceedsTLSInsecureSkipVerifyOn(t *testing.T) {
+	con, _, _, e := ws.DefaultDialer.Dial(context.Background(), "ws://localhost:8080/websocketsecure/websocket?n=1&c")
+	if e != nil {
+		t.Errorf("unable to connect to ws, cause: %v", e)
+		return
+	}
+
+	if !echoHelloWorld(t, con) {
+		return
+	}
+
+	_, _, e4 := wsutil.ReadServerData(con)
+	if e4 == nil {
+		t.Errorf("upstream should have closed connection, but was nil err")
+	} else {
+		if wce, wcet := e4.(wsutil.ClosedError); !wcet {
+			t.Errorf("j8a should have closed normal, but returned %s", wce)
+		}
+		t.Logf("normal. j8a closed connection with %s", e4)
+	}
+}
+
+func TestWSSConnectionUpstreamFailsTLSInsecureSkipVerifyOff(t *testing.T) {
+	_, _, _, e := ws.DefaultDialer.Dial(context.Background(), "ws://localhost:8081/websocketsecure/websocket?n=1&c")
+	if e == nil {
+		t.Errorf("connection error should be 502 but was nil")
+	} else {
+		e1, wsset := e.(ws.StatusError)
+		if !wsset {
+			t.Errorf("should have received websocket status error, but got: %v", e1)
+		} else if e1.Error() == wsse+"502" {
+			t.Logf("normal. received status error %v", e)
+		} else {
+			t.Errorf("error. should have received 502 from remote but got: %v", e1)
+		}
+	}
+}
+
 func echoHelloWorld(t *testing.T, con net.Conn) bool {
 	want := []byte("hello world")
 	e2 := wsutil.WriteClientMessage(con, ws.OpText, want)

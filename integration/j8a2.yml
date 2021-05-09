@@ -20,9 +20,6 @@ policies:
     - label: blue
       weight: 0.2
 routes:
-  - path: "/websocket"
-    transform: "/mse6/websocket"
-    resource: websocket
   - path: "/about"
     resource: about
   - path: "/mse6/some"
@@ -72,6 +69,14 @@ routes:
     resource: badlocal
   - path: /badssl
     resource: badssl
+  - path: "/websocket"
+    transform: "/mse6/websocket"
+    resource: websocket
+  - path: "/websocketdown"
+    resource: websocketdown
+  - path: /websocketsecure
+    transform: /badssl
+    resource: websocketsecure
 resources:
   badssl:
     - url:
@@ -200,3 +205,13 @@ resources:
         scheme: ws
         host: localhost
         port: 60083
+  websocketdown:
+    - url:
+        scheme: ws
+        host: localhost
+        port: 60999
+  websocketsecure:
+    - url:
+        scheme: wss
+        host: localhost
+        port: 60101
