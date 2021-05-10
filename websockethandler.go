@@ -105,6 +105,13 @@ func upgradeWebsocket(proxy *Proxy) {
 
 	//upCon has to run first. if it fails we still want to send a 50x HTTP response from within j8a.
 	upCon, _, _, upErr := dialer.Dial(context.Background(), proxy.resolveUpstreamURI())
+
+	//configure keepAlive on upstream TCP socket connection
+	if tcpc, tcpct := upCon.(*net.TCPConn); tcpct {
+		tcpc.SetKeepAlive(true)
+		tcpc.SetKeepAlivePeriod(getKeepAliveIntervalDuration())
+	}
+
 	defer func() {
 		if upCon != nil {
 			cf := ws.NewCloseFrame(ws.NewCloseFrameBody(ws.StatusNormalClosure, j8aRequestsClose))
