@@ -4,10 +4,13 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"fmt"
+	"github.com/google/uuid"
 	"github.com/simonmittag/ws"
 	"github.com/simonmittag/ws/wsutil"
 	"net"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -21,7 +24,7 @@ func TestWSConnectionEstablishedAndEchoMessageWithDownstreamExitClean(t *testing
 		return
 	}
 
-	if !echoHelloWorld(t, con) {
+	if !echoMessage(t, con, "hello world") {
 		return
 	}
 
@@ -272,6 +275,48 @@ func Test502ResponseUpstreamURLisUnavailableAfterLongSocketTimeout(t *testing.T)
 	}
 }
 
+func TestMultipleWebsocketConnectionsSucceed(t *testing.T) {
+	max := 100
+	wg := sync.WaitGroup{}
+
+	for i := 0; i < max; i++ {
+		wg.Add(1)
+		go func(j int) {
+			con, _, _, e := ws.DefaultDialer.Dial(context.Background(), "ws://localhost:8080/websocket?n=1")
+			if e != nil {
+				t.Errorf("unable to connect to ws, cause: %v", e)
+				wg.Done()
+				return
+			}
+
+			payload, _ := uuid.NewRandom()
+			if !echoMessage(t, con, fmt.Sprintf("goroutine %d hello %s", j, payload.String())) {
+				wg.Done()
+				return
+			}
+
+			//so this is how you orderly close a WS connection in gobwas.
+			cf := ws.NewCloseFrame(ws.NewCloseFrameBody(
+				ws.StatusNormalClosure, "unit test close requested",
+			))
+			cf = ws.MaskFrameInPlace(cf)
+			e4 := ws.WriteFrame(con, cf)
+			if e4 != nil {
+				t.Errorf("unable to close ws protocol connection, cause: %v", e4)
+				return
+			}
+
+			e5 := con.Close()
+			if e5 != nil {
+				t.Errorf("unable to close TCP socket connection, cause: %v", e5)
+			}
+			wg.Done()
+		}(i)
+	}
+
+	wg.Wait()
+}
+
 func TestWSConnectionEstablishedAndEchoMessageWithDownstreamExitDirtyClosingJustProtocol(t *testing.T) {
 	con, _, _, e := ws.DefaultDialer.Dial(context.Background(), "ws://localhost:8080/websocket?n=1")
 	if e != nil {
@@ -279,7 +324,7 @@ func TestWSConnectionEstablishedAndEchoMessageWithDownstreamExitDirtyClosingJust
 		return
 	}
 
-	if !echoHelloWorld(t, con) {
+	if !echoMessage(t, con, "hello world") {
 		return
 	}
 
@@ -314,7 +359,7 @@ func TestWSConnectionEstablishedAndEchoMessageWithDownstreamExitDirtyClosingJust
 		return
 	}
 
-	if !echoHelloWorld(t, con) {
+	if !echoMessage(t, con, "hello world") {
 		return
 	}
 
@@ -344,7 +389,7 @@ func TestWSConnectionEstablishedThenUpstreamTimeout(t *testing.T) {
 		t.Log("normal. established connection")
 	}
 
-	if !echoHelloWorld(t, con) {
+	if !echoMessage(t, con, "hello world") {
 		return
 	}
 
@@ -377,7 +422,7 @@ func TestWSSConnectionEstablishedThenDownstreamTimeout(t *testing.T) {
 		t.Log("normal. established connection")
 	}
 
-	if !echoHelloWorld(t, con) {
+	if !echoMessage(t, con, "hello world") {
 		return
 	}
 
@@ -400,7 +445,7 @@ func TestWSConnectionEstablishedAndEchoMessageWithUpstreamExitClean(t *testing.T
 		return
 	}
 
-	if !echoHelloWorld(t, con) {
+	if !echoMessage(t, con, "hello world") {
 		return
 	}
 
@@ -422,7 +467,7 @@ func TestWSConnectionEstablishedAndEchoMessageWithUpstreamExitProtocolOnly(t *te
 		return
 	}
 
-	if !echoHelloWorld(t, con) {
+	if !echoMessage(t, con, "hello world") {
 		return
 	}
 
@@ -444,7 +489,7 @@ func TestWSConnectionEstablishedAndEchoMessageWithUpstreamExitSocketOnly(t *test
 		return
 	}
 
-	if !echoHelloWorld(t, con) {
+	if !echoMessage(t, con, "hello world") {
 		return
 	}
 
@@ -466,7 +511,7 @@ func TestWSSConnectionUpstreamSucceedsTLSInsecureSkipVerifyOn(t *testing.T) {
 		return
 	}
 
-	if !echoHelloWorld(t, con) {
+	if !echoMessage(t, con, "hello world") {
 		return
 	}
 
@@ -497,8 +542,8 @@ func TestWSSConnectionUpstreamFailsTLSInsecureSkipVerifyOff(t *testing.T) {
 	}
 }
 
-func echoHelloWorld(t *testing.T, con net.Conn) bool {
-	want := []byte("hello world")
+func echoMessage(t *testing.T, con net.Conn, echo string) bool {
+	want := []byte(echo)
 	e2 := wsutil.WriteClientMessage(con, ws.OpText, want)
 	if e2 != nil {
 		t.Errorf("unable to write ws message, cause: %v", e2)

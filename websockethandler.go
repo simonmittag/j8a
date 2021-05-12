@@ -98,6 +98,7 @@ func upgradeWebsocket(proxy *Proxy) {
 	//dialer uses TLSInsecureSkipVerify to accept any certificate or host name.
 	dialer := ws.Dialer{
 		Timeout: time.Duration(Runner.Connection.Upstream.SocketTimeoutSeconds) * time.Second,
+		NetDial: nil,
 		TLSConfig: &tls.Config{
 			InsecureSkipVerify: Runner.Connection.Upstream.TlsInsecureSkipVerify,
 		},
