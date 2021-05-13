@@ -279,8 +279,8 @@ func Test1000ConcurrentWebsocketConnectionsSucceed(t *testing.T) {
 	ConcurrentWebsocketConnectionsSucceed(t, 1000)
 }
 
-func Test16384ConcurrentWebsocketConnectionsSucceed(t *testing.T) {
-	ConcurrentWebsocketConnectionsSucceed(t, 16384)
+func Test8192ConcurrentWebsocketConnectionsSucceed(t *testing.T) {
+	ConcurrentWebsocketConnectionsSucceed(t, 8192)
 }
 
 func ConcurrentWebsocketConnectionsSucceed(t *testing.T, total int) {
