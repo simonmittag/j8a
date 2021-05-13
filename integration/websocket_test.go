@@ -275,7 +275,7 @@ func Test502ResponseUpstreamURLisUnavailableAfterLongSocketTimeout(t *testing.T)
 	}
 }
 
-func TestMultipleWebsocketConnectionsSucceed(t *testing.T) {
+func Test100ConcurrentWebsocketConnectionsSucceed(t *testing.T) {
 	max := 100
 	wg := sync.WaitGroup{}
 
