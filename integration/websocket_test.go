@@ -275,7 +275,7 @@ func Test502ResponseUpstreamURLisUnavailableAfterLongSocketTimeout(t *testing.T)
 	}
 }
 
-func Test100ConcurrentWebsocketConnectionsSucceed(t *testing.T) {
+func Test1000ConcurrentWebsocketConnectionsSucceed(t *testing.T) {
 	max := 1000
 	wg := sync.WaitGroup{}
 	dialer := ws.Dialer{
