@@ -276,14 +276,21 @@ func Test502ResponseUpstreamURLisUnavailableAfterLongSocketTimeout(t *testing.T)
 }
 
 func Test1000ConcurrentWebsocketConnectionsSucceed(t *testing.T) {
-	max := 1000
+	ConcurrentWebsocketConnectionsSucceed(t, 1000)
+}
+
+func Test16384ConcurrentWebsocketConnectionsSucceed(t *testing.T) {
+	ConcurrentWebsocketConnectionsSucceed(t, 16384)
+}
+
+func ConcurrentWebsocketConnectionsSucceed(t *testing.T, total int) {
 	wg := sync.WaitGroup{}
 	dialer := ws.Dialer{
 		TLSConfig: &tls.Config{
 			InsecureSkipVerify: true,
 		},
 	}
-	for i := 0; i < max; i++ {
+	for i := 0; i < total; i++ {
 		wg.Add(1)
 		go func(j int) {
 			con, _, _, e := dialer.Dial(context.Background(), "ws://localhost:8080/websocket?n=1")
