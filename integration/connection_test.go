@@ -8,16 +8,16 @@ import (
 	"testing"
 )
 
-func Test100ConcurrentTCPConnectionsUsingHTTP11(t *testing.T) {
-	total := 100
+func Test1000ConcurrentTCPConnectionsUsingHTTP11(t *testing.T) {
+	total := 1000
 	good := 0
 	bad := 0
 
 	wg := sync.WaitGroup{}
 	client := &http.Client{
 		Transport: &http.Transport{
-			MaxIdleConns:        1000,
-			MaxIdleConnsPerHost: 1000,
+			MaxIdleConns:        2000,
+			MaxIdleConnsPerHost: 2000,
 			//disable HTTP/2 support for TLS
 			TLSNextProto: map[string]func(authority string, c *tls.Conn) http.RoundTripper{},
 		},
