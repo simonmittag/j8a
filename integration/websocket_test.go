@@ -275,12 +275,12 @@ func Test502ResponseUpstreamURLisUnavailableAfterLongSocketTimeout(t *testing.T)
 	}
 }
 
-func Test1000ConcurrentWebsocketConnectionsSucceed(t *testing.T) {
-	ConcurrentWebsocketConnectionsSucceed(t, 1000)
+func Test10240ConcurrentWebsocketConnectionsSucceed(t *testing.T) {
+	ConcurrentWebsocketConnectionsSucceed(t, 1024)
 }
 
-func Test8192ConcurrentWebsocketConnectionsSucceed(t *testing.T) {
-	ConcurrentWebsocketConnectionsSucceed(t, 8192)
+func Test4096ConcurrentWebsocketConnectionsSucceed(t *testing.T) {
+	ConcurrentWebsocketConnectionsSucceed(t, 4096)
 }
 
 func ConcurrentWebsocketConnectionsSucceed(t *testing.T, total int) {
@@ -290,18 +290,23 @@ func ConcurrentWebsocketConnectionsSucceed(t *testing.T, total int) {
 			InsecureSkipVerify: true,
 		},
 	}
+	good := 0
+	bad := 0
+
 	for i := 0; i < total; i++ {
 		wg.Add(1)
 		go func(j int) {
 			con, _, _, e := dialer.Dial(context.Background(), "ws://localhost:8080/websocket?n=1")
 			if e != nil {
 				t.Errorf("unable to connect to ws, cause: %v", e)
+				bad++
 				wg.Done()
 				return
 			}
 
 			payload, _ := uuid.NewRandom()
 			if !echoMessage(t, con, fmt.Sprintf("goroutine %d hello %s", j, payload.String())) {
+				bad++
 				wg.Done()
 				return
 			}
@@ -314,18 +319,26 @@ func ConcurrentWebsocketConnectionsSucceed(t *testing.T, total int) {
 			e4 := ws.WriteFrame(con, cf)
 			if e4 != nil {
 				t.Errorf("unable to close ws protocol connection, cause: %v", e4)
+				bad++
+				wg.Done()
 				return
 			}
 
 			e5 := con.Close()
 			if e5 != nil {
 				t.Errorf("unable to close TCP socket connection, cause: %v", e5)
+				bad++
+				wg.Done()
+				return
 			}
+
+			good++
 			wg.Done()
 		}(i)
 	}
 
 	wg.Wait()
+	t.Logf("done! good: %d, bad: %d", good, bad)
 }
 
 func TestWSConnectionEstablishedAndEchoMessageWithDownstreamExitDirtyClosingJustProtocol(t *testing.T) {

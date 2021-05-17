@@ -8,8 +8,15 @@ import (
 	"testing"
 )
 
-func Test1000ConcurrentTCPConnectionsUsingHTTP11(t *testing.T) {
-	total := 1000
+func Test1024ConcurrentTCPConnectionsUsingHTTP11(t *testing.T) {
+	ConcurrentHTTP11ConnectionsSucceed(1024, t)
+}
+
+func Test4096ConcurrentTCPConnectionsUsingHTTP11(t *testing.T) {
+	ConcurrentHTTP11ConnectionsSucceed(4096, t)
+}
+
+func ConcurrentHTTP11ConnectionsSucceed(total int, t *testing.T) {
 	good := 0
 	bad := 0
 
