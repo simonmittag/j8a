@@ -20,6 +20,9 @@ func ConcurrentHTTP11ConnectionsSucceed(total int, t *testing.T) {
 	good := 0
 	bad := 0
 
+	R200 := 0
+	N200 := 0
+
 	wg := sync.WaitGroup{}
 	client := &http.Client{
 		Transport: &http.Transport{
@@ -38,16 +41,18 @@ func ConcurrentHTTP11ConnectionsSucceed(total int, t *testing.T) {
 			t.Logf("goroutine %d, sending request", j)
 			resp, err := client.Get(fmt.Sprintf("http://localhost:%d/mse6/slowbody?wait=2", serverPort))
 			if err != nil {
-				t.Errorf("received upstream error instead of 200: %v", err)
+				t.Errorf("received upstream error for GET request: %v", err)
 				bad++
 			} else if resp != nil && resp.Body != nil {
 				defer resp.Body.Close()
 				if resp.Status != "200 OK" {
-					t.Errorf("goroutine %d, received non 200 status: %v", j, resp.Status)
-					bad++
+					t.Errorf("goroutine %d, received non 200 status but normal server response: %v", j, resp.Status)
+					good++
+					R200++
 				} else {
 					t.Logf("goroutine %d, received status 200 OK", j)
 					good++
+					N200++
 				}
 			}
 
@@ -56,5 +61,5 @@ func ConcurrentHTTP11ConnectionsSucceed(total int, t *testing.T) {
 	}
 
 	wg.Wait()
-	t.Logf("done! good: %d, bad: %d", good, bad)
+	t.Logf("done! good HTTP response: %d, 200s: %d, non 200s: %d, connection errors: %d", good, R200, N200, bad)
 }
