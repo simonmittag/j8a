@@ -48,11 +48,11 @@ func ConcurrentHTTP11ConnectionsSucceed(total int, t *testing.T) {
 				if resp.Status != "200 OK" {
 					t.Errorf("goroutine %d, received non 200 status but normal server response: %v", j, resp.Status)
 					good++
-					R200++
+					N200++
 				} else {
 					t.Logf("goroutine %d, received status 200 OK", j)
 					good++
-					N200++
+					R200++
 				}
 			}
 
