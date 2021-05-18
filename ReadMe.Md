@@ -25,6 +25,7 @@ Websocket traffic without sacrificing performance.
 * APM. CPU, memory logging built-in. Daily TLS health and validity check for your full certificate chain.
 * JWT token validation with full JWK(S) support for [RFC 7519](https://tools.ietf.org/html/rfc7519).
 * HTTP/1.1 and HTTP/2 support w/ upstream <> downstream protocol translation.
+* Websocket Support for [RFC 6455](https://datatracker.ietf.org/doc/html/rfc6455)  
 * [Docker](https://hub.docker.com/repository/docker/simonmittag/j8a) native
 
 ## Up and running
