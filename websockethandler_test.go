@@ -25,11 +25,11 @@ func TestWebSocketHandler(t *testing.T) {
 	c := &http.Client{}
 	resp, err := c.Get(server.URL)
 
-	if resp==nil {
+	if resp == nil {
 		t.Error("no HTTP resonse")
 	} else if resp.StatusCode != 502 {
 		t.Errorf("wanted 502 for bad gateway but got: %v", err)
-	} else if err!=nil {
+	} else if err != nil {
 		t.Errorf("got HTTP error: %v", err)
 	}
 }
@@ -54,10 +54,51 @@ func TestLogExitStatusNetOpError(t *testing.T) {
 			Addr:   nil,
 			Err:    io.EOF,
 		},
-		UpOpCode:  0,
-		UpExit:    nil,
+		UpOpCode: 0,
+		UpExit:   nil,
 	}
 	mpws.logWebsocketConnectionExitStatus(x)
+}
+
+func TestScaffoldHTTPUpgrader(t *testing.T) {
+	Runner = mockRuntime()
+	mpws := mockProxyWS()
+	scaffoldHTTPUpgrader(&mpws)
+	//coverage only
+}
+
+func TestReadUpWS(t *testing.T) {
+	Runner = mockRuntime()
+	Runner.Connection.Upstream.IdleTimeoutSeconds = 1
+	Runner.Connection.Downstream.IdleTimeoutSeconds = 1
+	mpws := mockProxyWS()
+	wss := make(chan WebsocketStatus)
+
+	server, client := net.Pipe()
+	go readUpWebsocket(server, client, &mpws, wss, &WebsocketTx{})
+
+	res := <-wss
+	if res.UpExit == nil {
+		t.Error("should have received upErr, got nil")
+	}
+	//coverage only
+}
+
+func TestReadDwnWS(t *testing.T) {
+	Runner = mockRuntime()
+	Runner.Connection.Upstream.IdleTimeoutSeconds = 1
+	Runner.Connection.Downstream.IdleTimeoutSeconds = 1
+	mpws := mockProxyWS()
+	wss := make(chan WebsocketStatus)
+
+	server, client := net.Pipe()
+	go readDwnWebsocket(server, client, &mpws, wss, &WebsocketTx{})
+
+	res := <-wss
+	if res.DwnExit == nil {
+		t.Error("should have received dwnErr, got nil")
+	}
+	//coverage only
 }
 
 func mockProxyWS() Proxy {
@@ -90,4 +131,3 @@ func mockProxyWS() Proxy {
 		},
 	}
 }
-
