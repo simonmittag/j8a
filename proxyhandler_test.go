@@ -30,7 +30,7 @@ func (m *MockHttp) Get(uri string) (*http.Response, error) {
 type ProxyHttpHandler struct{}
 
 func (t ProxyHttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	proxyHandler(w, r)
+	proxyHandler(w, r, handleHTTP)
 }
 
 func TestIllegalRequestMethod(t *testing.T) {

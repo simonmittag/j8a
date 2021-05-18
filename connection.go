@@ -60,7 +60,7 @@ type Upstream struct {
 	IdleTimeoutSeconds int
 
 	// SocketTimeoutSeconds is the wait period to establish socket connection with an upstream server.
-	// This setting controls roundtrip time for simple TCP connections, combined with handshake time for TLS
+	// This setting controls roundtrip time for establishing simple TCP connections, combined with handshake time for TLS
 	// if applicable.
 	SocketTimeoutSeconds int
 

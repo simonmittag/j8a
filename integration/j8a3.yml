@@ -95,9 +95,9 @@ connection:
         GsMkN4GFOfQKoBI/aCXn4DM=
         -----END PRIVATE KEY-----
   upstream:
-    socketTimeoutSeconds: 3
+    socketTimeoutSeconds: 10
     readTimeoutSeconds: 30
-    idleTimeoutSeconds: 10
+    idleTimeoutSeconds: 60
     maxAttempts: 4
     poolSize: 8
     tlsInsecureSkipVerify: yes
@@ -157,6 +157,14 @@ routes:
     resource: badlocal
   - path: /badssl
     resource: badssl
+  - path: "/websocket"
+    transform: "/mse6/websocket"
+    resource: websocket
+  - path: "/websocketdown"
+    resource: websocketdown
+  - path: /websocketsecure
+    transform: /badssl
+    resource: websocketsecure
 resources:
   badssl:
     - url:
@@ -280,3 +288,18 @@ resources:
         scheme: http
         host: localhost
         port: 60100
+  websocket:
+    - url:
+        scheme: ws
+        host: localhost
+        port: 60083
+  websocketdown:
+    - url:
+        scheme: ws
+        host: 10.247.13.14
+        port: 29471
+  websocketsecure:
+    - url:
+        scheme: wss
+        host: localhost
+        port: 60101
