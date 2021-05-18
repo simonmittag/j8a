@@ -1,9 +1,9 @@
 package j8a
 
 import (
-"net/http"
-"net/http/httptest"
-"testing"
+	"net/http"
+	"net/http/httptest"
+	"testing"
 )
 
 //this testHandler binds the mock HTTP server to proxyHandler.
@@ -30,5 +30,41 @@ func TestWebSocketHandler(t *testing.T) {
 	} else if err!=nil {
 		t.Errorf("got HTTP error: %v", err)
 	}
+}
+
+func TestUpgradeWebsocket(t *testing.T) {
+	Runner = mockRuntime()
+
+	p := Proxy{
+		XRequestID:    "1",
+		XRequestDebug: false,
+		Up: Up{
+			Atmpt: &Atmpt{
+				URL: &URL{
+					Scheme: "ws",
+					Host:   "localhost",
+					Port:   80,
+				},
+			},
+		},
+		Dwn:           Down{
+			Req:         &http.Request{
+				RemoteAddr: "10.1.1.1",
+			},
+			Resp:        Resp{
+				Writer: &httptest.ResponseRecorder{},
+			},
+			Method:      "GET",
+			Path:        "/path",
+		},
+		Route:         &Route{
+			Path:      "/path",
+			PathRegex: nil,
+			Resource:  "res",
+		},
+	}
+	upgradeWebsocket(&p)
+
+	//test only nil pointer
 }
 
