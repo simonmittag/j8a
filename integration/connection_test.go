@@ -38,7 +38,6 @@ func ConcurrentHTTP11ConnectionsSucceed(total int, t *testing.T) {
 
 		go func(j int) {
 			serverPort := 8080
-			t.Logf("goroutine %d, sending request", j)
 			resp, err := client.Get(fmt.Sprintf("http://localhost:%d/mse6/slowbody?wait=2", serverPort))
 			if err != nil {
 				t.Errorf("received upstream error for GET request: %v", err)
@@ -46,7 +45,7 @@ func ConcurrentHTTP11ConnectionsSucceed(total int, t *testing.T) {
 			} else if resp != nil && resp.Body != nil {
 				defer resp.Body.Close()
 				if resp.Status != "200 OK" {
-					t.Errorf("goroutine %d, received non 200 status but normal server response: %v", j, resp.Status)
+					t.Logf("goroutine %d, received non 200 status but normal server response: %v", j, resp.Status)
 					good++
 					N200++
 				} else {
