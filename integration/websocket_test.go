@@ -279,9 +279,9 @@ func Test10240ConcurrentWebsocketConnectionsSucceed(t *testing.T) {
 	ConcurrentWebsocketConnectionsSucceed(t, 1024)
 }
 
-func Test4096ConcurrentWebsocketConnectionsSucceed(t *testing.T) {
-	ConcurrentWebsocketConnectionsSucceed(t, 4096)
-}
+//func Test4096ConcurrentWebsocketConnectionsSucceed(t *testing.T) {
+//	ConcurrentWebsocketConnectionsSucceed(t, 4096)
+//}
 
 func ConcurrentWebsocketConnectionsSucceed(t *testing.T, total int) {
 	wg := sync.WaitGroup{}
