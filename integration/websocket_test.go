@@ -275,8 +275,8 @@ func Test502ResponseUpstreamURLisUnavailableAfterLongSocketTimeout(t *testing.T)
 	}
 }
 
-func Test10240ConcurrentWebsocketConnectionsSucceed(t *testing.T) {
-	ConcurrentWebsocketConnectionsSucceed(t, 1024)
+func Test100ConcurrentWebsocketConnectionsSucceed(t *testing.T) {
+	ConcurrentWebsocketConnectionsSucceed(t, 100)
 }
 
 //func Test4096ConcurrentWebsocketConnectionsSucceed(t *testing.T) {
