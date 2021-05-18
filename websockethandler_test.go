@@ -1,6 +1,8 @@
 package j8a
 
 import (
+	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -35,7 +37,31 @@ func TestWebSocketHandler(t *testing.T) {
 func TestUpgradeWebsocket(t *testing.T) {
 	Runner = mockRuntime()
 
-	p := Proxy{
+	p := mockProxyWS()
+	upgradeWebsocket(&p)
+
+	//test only nil pointer
+}
+
+func TestLogExitStatusNetOpError(t *testing.T) {
+	mpws := mockProxyWS()
+	x := WebsocketStatus{
+		DwnOpCode: 0,
+		DwnExit: &net.OpError{
+			Op:     "",
+			Net:    "",
+			Source: nil,
+			Addr:   nil,
+			Err:    io.EOF,
+		},
+		UpOpCode:  0,
+		UpExit:    nil,
+	}
+	mpws.logWebsocketConnectionExitStatus(x)
+}
+
+func mockProxyWS() Proxy {
+	return Proxy{
 		XRequestID:    "1",
 		XRequestDebug: false,
 		Up: Up{
@@ -47,24 +73,21 @@ func TestUpgradeWebsocket(t *testing.T) {
 				},
 			},
 		},
-		Dwn:           Down{
-			Req:         &http.Request{
+		Dwn: Down{
+			Req: &http.Request{
 				RemoteAddr: "10.1.1.1",
 			},
-			Resp:        Resp{
+			Resp: Resp{
 				Writer: &httptest.ResponseRecorder{},
 			},
-			Method:      "GET",
-			Path:        "/path",
+			Method: "GET",
+			Path:   "/path",
 		},
-		Route:         &Route{
+		Route: &Route{
 			Path:      "/path",
 			PathRegex: nil,
 			Resource:  "res",
 		},
 	}
-	upgradeWebsocket(&p)
-
-	//test only nil pointer
 }
 
