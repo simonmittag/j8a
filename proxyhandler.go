@@ -3,6 +3,7 @@ package j8a
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"github.com/rs/zerolog"
@@ -235,6 +236,10 @@ func jsonifyUpstreamHeaders(proxy *Proxy) []byte {
 	return jsonb
 }
 
+const upAtmptResBodyTrunc = "upAtmptResBodyTrunc"
+const more = "..."
+const moreGzip = " [gzipped]..."
+
 func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byte, error) {
 	var upstreamResponseBody []byte
 	var bodyError error
@@ -274,8 +279,14 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 		scaffoldUpAttemptLog(proxy).
 			Msg(upstreamResBodyAbort)
 	case <-proxy.Up.Atmpt.CompleteBody:
-		scaffoldUpAttemptLog(proxy).
-			Int(upResBodyBytes, len(upstreamResponseBody)).
+		ul := scaffoldUpAttemptLog(proxy)
+		if !proxy.Up.Atmpt.isGzip {
+			ul.Str(upAtmptResBodyTrunc, string(upstreamResponseBody[0:25])+more)
+		} else {
+			ul.Str(upAtmptResBodyTrunc, hex.EncodeToString(upstreamResponseBody[0:25])+moreGzip)
+		}
+
+		ul.Int(upResBodyBytes, len(upstreamResponseBody)).
 			Msg(upstreamResBodyProcessed)
 	}
 
