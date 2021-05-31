@@ -380,8 +380,8 @@ func logHandledDownstreamRoundtrip(proxy *Proxy) {
 		Str(dwnReqUserAgent, proxy.Dwn.UserAgent).
 		Str(dwnReqHttpVer, proxy.Dwn.HttpVer).
 		Int(dwnResCode, proxy.Dwn.Resp.StatusCode).
-		Int64(dwnResContentLength, proxy.Dwn.Resp.ContentLength).
-		Str(dwnResContentEnc, proxy.contentEncoding()).
+		Int64(dwnResCntntLen, proxy.Dwn.Resp.ContentLength).
+		Str(dwnResCntntEnc, proxy.contentEncoding()).
 		Int64(dwnResElpsdMicros, elapsed.Microseconds()).
 		Str(XRequestID, proxy.XRequestID)
 
