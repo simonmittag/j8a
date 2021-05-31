@@ -368,6 +368,8 @@ func (proxy Proxy) bodyReader() io.Reader {
 	return nil
 }
 
+const upstreamAttemptInitialized = "upstream attempt initialized"
+
 func (proxy *Proxy) firstAttempt(URL *URL, label string) *Proxy {
 	first := Atmpt{
 		Label:          label,
@@ -386,10 +388,14 @@ func (proxy *Proxy) firstAttempt(URL *URL, label string) *Proxy {
 	proxy.Up.Count = 1
 
 	scaffoldUpAttemptLog(proxy).
-		Msg("upstream attempt initialized")
+		Str(upAtmptResource, URL.String()).
+		Msg(upstreamAttemptInitialized)
 
 	return proxy
 }
+
+const upAtmptCnt = "upAtmptCnt"
+const upAtmptResource = "upAtmptResource"
 
 func (proxy *Proxy) nextAttempt() *Proxy {
 	next := Atmpt{
@@ -412,7 +418,9 @@ func (proxy *Proxy) nextAttempt() *Proxy {
 	proxy.Up.Atmpt = &proxy.Up.Atmpts[len(proxy.Up.Atmpts)-1]
 
 	scaffoldUpAttemptLog(proxy).
-		Msg("upstream attempt initialized")
+		Int(upAtmptCnt, proxy.Up.Count).
+		Str(upAtmptResource, next.URL.String()).
+		Msg(upstreamAttemptInitialized)
 	return proxy
 }
 
