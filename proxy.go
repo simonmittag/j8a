@@ -260,7 +260,7 @@ func (proxy *Proxy) parseRequestBody(request *http.Request) {
 	//content length 0, do not read just go back
 	if request.ContentLength == 0 {
 		log.Trace().
-			Int64(dwnElapsedMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
+			Int64(dwnElpsdMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
 			Str(XRequestID, proxy.XRequestID).Msg(dwnHeaderContentLengthZero)
 		return
 	}
@@ -270,7 +270,7 @@ func (proxy *Proxy) parseRequestBody(request *http.Request) {
 		proxy.Dwn.ReqTooLarge = true
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
-			Int64(dwnElapsedMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
+			Int64(dwnElpsdMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
 			Msgf(dwnBodyContentLengthExceedsMaxBytes, request.ContentLength, Runner.Connection.Downstream.MaxBodyBytes)
 		return
 	}
@@ -292,18 +292,18 @@ func (proxy *Proxy) parseRequestBody(request *http.Request) {
 		proxy.Dwn.ReqTooLarge = true
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
-			Int64(dwnElapsedMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
+			Int64(dwnElpsdMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
 			Msgf(dwnBodyTooLarge, n, Runner.Connection.Downstream.MaxBodyBytes)
 	} else if err != nil && err != io.EOF {
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
-			Int64(dwnElapsedMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
+			Int64(dwnElpsdMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
 			Msgf(dwnBodyReadAbort, err)
 	} else {
 		proxy.Dwn.Body = buf
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
-			Int64(dwnElapsedMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
+			Int64(dwnElpsdMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
 			Msgf(dwnBodyRead, n, request.ContentLength)
 	}
 

@@ -140,7 +140,7 @@ func scaffoldUpstreamRequest(proxy *Proxy) *http.Request {
 
 	log.Trace().
 		Str(dwnReqPath, proxy.Dwn.Path).
-		Int64(dwnElapsedMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
+		Int64(dwnElpsdMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
 		Str(XRequestID, proxy.XRequestID).
 		Str(upReqURI, upReqURI).
 		Msg(upstreamURIResolved)
@@ -184,7 +184,7 @@ func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
 					//TODO can this be removed?
 					Str("error", fmt.Sprintf("error: %v", err)).
 					Str(XRequestID, proxy.XRequestID).
-					Int64(upAtmptElapsedMicros, time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
+					Int64(upAtmptElpsdMicros, time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
 					Str(upAtmpt, proxy.Up.Atmpt.print()).
 					Msg(safeToIgnoreFailedHeaderChannelClosure)
 			}
@@ -343,8 +343,8 @@ func scaffoldUpAttemptLog(proxy *Proxy) *zerolog.Event {
 
 	return ev.
 		Str(XRequestID, proxy.XRequestID).
-		Int64(upAtmtpElapsedMicros, time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
-		Int64(dwnElapsedMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
+		Int64(upAtmtpElpsdMicros, time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
+		Int64(dwnElpsdMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
 		Str(upAtmpt, proxy.Up.Atmpt.print())
 }
 
@@ -360,7 +360,8 @@ func logHandledDownstreamRoundtrip(proxy *Proxy) {
 		ev = ev.Str(upReqURI, proxy.resolveUpstreamURI()).
 			Str(upLabel, proxy.Up.Atmpt.Label).
 			Int(upAtmptResCode, proxy.Up.Atmpt.StatusCode).
-			Int64(upAtmptElapsedMicros, time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
+			Int(upAtmptResBodyBytes, len(*proxy.Up.Atmpt.respBody)).
+			Int64(upAtmptElpsdMicros, time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
 			Bool(upAtmptAbort, proxy.Up.Atmpt.AbortedFlag).
 			Str(upAtmpt, proxy.Up.Atmpt.print())
 	}
@@ -379,6 +380,7 @@ func logHandledDownstreamRoundtrip(proxy *Proxy) {
 		Str(dwnReqUserAgent, proxy.Dwn.UserAgent).
 		Str(dwnReqHttpVer, proxy.Dwn.HttpVer).
 		Int(dwnResCode, proxy.Dwn.Resp.StatusCode).
+		Int64(dwnResContentLength, proxy.Dwn.Resp.ContentLength).
 		Str(dwnResContentEnc, proxy.contentEncoding()).
 		Int64(dwnResElpsdMicros, elapsed.Microseconds()).
 		Str(XRequestID, proxy.XRequestID)
