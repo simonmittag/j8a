@@ -3,6 +3,7 @@ package j8a
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -159,6 +160,7 @@ func scaffoldUpstreamRequest(proxy *Proxy) *http.Request {
 	return upstreamRequest
 }
 
+const upResHeaders = "upResHeaders"
 const upstreamResHeaderAborted = "aborting upstream response header processing. downstream connection read timeout fired or user cancelled request"
 const upstreamResHeadersProcessed = "upstream response headers processed"
 const upConReadTimeoutFired = "upstream connection read timeout fired, aborting upstream response header processing."
@@ -209,6 +211,7 @@ func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
 			Msg(upstreamResHeaderAborted)
 	case <-proxy.Up.Atmpt.CompleteHeader:
 		scaffoldUpAttemptLog(proxy).
+			RawJSON(upResHeaders, jsonifyUpstreamHeaders(proxy)).
 			Msg(upstreamResHeadersProcessed)
 	}
 
@@ -220,6 +223,15 @@ const safeToIgnoreFailedBodyChannelClosure = "safe to ignore. recovered internal
 const upstreamConReadTimeoutFired = "upstream connection read timeout fired, aborting upstream response body processing"
 const upstreamResBodyAbort = "aborting upstream response body processing. downstream connection read timeout fired or user cancelled request"
 const upstreamResBodyProcessed = "upstream response body processed"
+const emptyJSON = "{}"
+
+func jsonifyUpstreamHeaders(proxy *Proxy) []byte {
+	jsonb, err := json.Marshal(proxy.Up.Atmpt.resp.Header)
+	if err!=nil {
+		jsonb = []byte(emptyJSON)
+	}
+	return jsonb
+}
 
 func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byte, error) {
 	var upstreamResponseBody []byte
