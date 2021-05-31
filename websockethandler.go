@@ -58,9 +58,9 @@ func (proxy *Proxy) scaffoldWebsocketLog(e *zerolog.Event, elapsed ...int64) *ze
 		Str(dwnReqRemoteAddr, proxy.Dwn.Req.RemoteAddr)
 
 	if len(elapsed) > 0 {
-		e.Int64(dwnElapsedMicros, elapsed[0])
+		e.Int64(dwnElpsdMicros, elapsed[0])
 	} else {
-		e.Int64(dwnElapsedMicros, time.Since(proxy.Dwn.startDate).Microseconds())
+		e.Int64(dwnElpsdMicros, time.Since(proxy.Dwn.startDate).Microseconds())
 	}
 
 	return e.Str(dwnReqUserAgent, proxy.Dwn.UserAgent).
