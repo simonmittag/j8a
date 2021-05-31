@@ -108,11 +108,11 @@ type Down struct {
 
 // Proxy wraps data for a single downstream request/response with multiple upstream HTTP request/response cycles.
 type Proxy struct {
-	XRequestID    string
-	XRequestDebug bool
-	Up            Up
-	Dwn           Down
-	Route         *Route
+	XRequestID   string
+	XRequestInfo bool
+	Up           Up
+	Dwn          Down
+	Route        *Route
 }
 
 // TODO downstream aborted needs to cover both timeouts and user aborted requests.
@@ -208,7 +208,7 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 		cancel()
 	})
 
-	proxy.XRequestDebug = parseXRequestDebug(request)
+	proxy.XRequestInfo = parseXRequestInfo(request)
 	proxy.Dwn.Path = request.URL.EscapedPath()
 	proxy.Dwn.URI = request.URL.RequestURI()
 	proxy.Dwn.HttpVer = parseHTTPVer(request)
@@ -325,9 +325,15 @@ func parseHTTPVer(request *http.Request) string {
 	return fmt.Sprintf("%d.%d", request.ProtoMajor, request.ProtoMinor)
 }
 
-func parseXRequestDebug(request *http.Request) bool {
-	h := request.Header.Get("X-REQUEST-DEBUG")
-	return len(h) > 0 && strings.ToLower(h) == "true"
+const xRequestInfo = "X-REQUEST-INFO"
+const xRequestDebug = "X-REQUEST-DEBUG"
+const trueStr = "true"
+
+func parseXRequestInfo(request *http.Request) bool {
+	h := request.Header.Get(xRequestInfo)
+	h2 := request.Header.Get(xRequestDebug)
+	return (len(h) > 0 && strings.ToLower(h) == trueStr) ||
+		(len(h2) > 0 && strings.ToLower(h2) == trueStr)
 }
 
 func parseTlsVersion(request *http.Request) string {
@@ -440,22 +446,28 @@ func (proxy *Proxy) copyUpstreamResponseHeaders() {
 	}
 }
 
+const upstreamEncodeGzip = "encoding upstream body with as gzip"
+const upstreamDecodeGzip = "decoding upstream body from gzip"
+const upstreamCopyNoRecode = "copying upstream body without recoding"
+const upstreamResponseNoBody = "upstream response has no body, nothing to copy"
+
 func (proxy *Proxy) encodeUpstreamResponseBody() {
 	atmpt := *proxy.Up.Atmpt
 	if atmpt.respBody != nil && len(*atmpt.respBody) > 0 {
 		if proxy.shouldGzipEncodeResponseBody() {
 			proxy.Dwn.Resp.Body = Gzip(*proxy.Up.Atmpt.respBody)
+
 			scaffoldUpAttemptLog(proxy).
-				Msg("copying upstream body with gzip re-encoding")
+				Msg(upstreamEncodeGzip)
 		} else {
 			if proxy.shouldGzipDecodeResponseBody() {
 				proxy.Dwn.Resp.Body = Gunzip(*proxy.Up.Atmpt.respBody)
 				scaffoldUpAttemptLog(proxy).
-					Msg("copying upstream body with gzip re-decoding")
+					Msg(upstreamDecodeGzip)
 			} else {
 				proxy.Dwn.Resp.Body = proxy.Up.Atmpt.respBody
 				scaffoldUpAttemptLog(proxy).
-					Msgf("copying upstream body as is")
+					Msgf(upstreamCopyNoRecode)
 			}
 		}
 	} else {
@@ -463,7 +475,7 @@ func (proxy *Proxy) encodeUpstreamResponseBody() {
 		nobody := make([]byte, 0)
 		proxy.Dwn.Resp.Body = &nobody
 		scaffoldUpAttemptLog(proxy).
-			Msgf("skipping empty upstream body")
+			Msg(upstreamResponseNoBody)
 	}
 }
 
