@@ -335,8 +335,8 @@ func shouldProxyHeader(header string) bool {
 
 func scaffoldUpAttemptLog(proxy *Proxy) *zerolog.Event {
 	var ev *zerolog.Event
-	if proxy.XRequestDebug {
-		ev = log.Debug()
+	if proxy.XRequestInfo {
+		ev = log.Info()
 	} else {
 		ev = log.Trace()
 	}
