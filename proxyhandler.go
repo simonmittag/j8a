@@ -221,13 +221,15 @@ func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
 const upReadTimeoutSecs = "upReadTimeoutSecs"
 const safeToIgnoreFailedBodyChannelClosure = "safe to ignore. recovered internally from closed body success channel after request already handled."
 const upstreamConReadTimeoutFired = "upstream connection read timeout fired, aborting upstream response body processing"
+
+const upResBodyBytes = "upResBodyBytes"
 const upstreamResBodyAbort = "aborting upstream response body processing. downstream connection read timeout fired or user cancelled request"
 const upstreamResBodyProcessed = "upstream response body processed"
 const emptyJSON = "{}"
 
 func jsonifyUpstreamHeaders(proxy *Proxy) []byte {
 	jsonb, err := json.Marshal(proxy.Up.Atmpt.resp.Header)
-	if err!=nil {
+	if err != nil {
 		jsonb = []byte(emptyJSON)
 	}
 	return jsonb
@@ -273,6 +275,7 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 			Msg(upstreamResBodyAbort)
 	case <-proxy.Up.Atmpt.CompleteBody:
 		scaffoldUpAttemptLog(proxy).
+			Int(upResBodyBytes, len(upstreamResponseBody)).
 			Msg(upstreamResBodyProcessed)
 	}
 
