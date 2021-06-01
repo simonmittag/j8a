@@ -284,10 +284,20 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 			Msg(upstreamResBodyAbort)
 	case <-proxy.Up.Atmpt.CompleteBody:
 		ul := scaffoldUpAttemptLog(proxy)
-		if !proxy.Up.Atmpt.isGzip {
-			ul.Str(upAtmptResBodyTrunc, string(upstreamResponseBody[0:25])+more)
+
+		//truncate body for logging
+		var trunc []byte
+		if len(upstreamResponseBody) > 25 {
+			trunc = upstreamResponseBody[0:25]
 		} else {
-			ul.Str(upAtmptResBodyTrunc, hex.EncodeToString(upstreamResponseBody[0:25])+moreGzip)
+			trunc = upstreamResponseBody
+		}
+
+		//and show what is necessary depending on encoding
+		if !proxy.Up.Atmpt.isGzip {
+			ul.Str(upAtmptResBodyTrunc, string(trunc)+more)
+		} else {
+			ul.Str(upAtmptResBodyTrunc, hex.EncodeToString(trunc)+moreGzip)
 		}
 
 		ul.Int(upResBodyBytes, len(upstreamResponseBody)).
