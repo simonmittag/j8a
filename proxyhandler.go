@@ -136,7 +136,7 @@ func scaffoldUpstreamRequest(proxy *Proxy) *http.Request {
 
 	upstreamRequest, _ := http.NewRequestWithContext(ctx,
 		proxy.Dwn.Method,
-		upReqURI,
+		upURI,
 		proxy.bodyReader())
 
 	log.Trace().
