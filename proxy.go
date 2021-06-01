@@ -196,7 +196,7 @@ func (proxy *Proxy) hasMadeUpstreamAttempt() bool {
 	return proxy.Up.Atmpt != nil && proxy.Up.Atmpt.resp != nil
 }
 
-const headerBodyParsed = "parsed downstream request header and body"
+const headerBodyParsed = "downstream request header and body successfully parsed"
 const bodyBytes = "bodyBytes"
 const method = "method"
 const path = "path"
@@ -261,7 +261,7 @@ func parseListener(request *http.Request) string {
 	}
 }
 
-const dwnHeaderContentLengthZero = "downstream request header content-length 0"
+const dwnHeaderContentLengthZero = "downstream request has content-length 0"
 const dwnBodyContentLengthExceedsMaxBytes = "downstream request body content-length %d exceeds max allowed bytes %d, refuse reading body"
 const dwnBodyTooLarge = "downstream request body too large. %d body bytes > server max %d"
 const dwnBodyReadAbort = "downstream request body aborting read, cause: %v"
