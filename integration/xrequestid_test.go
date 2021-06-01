@@ -85,6 +85,34 @@ func TestSupplyXRequestInfoUpstreamGzip(t *testing.T) {
 	}
 }
 
+func TestSupplyXRequestInfoUpstreamTinyGzip(t *testing.T) {
+	client := &http.Client{}
+	req, _ := http.NewRequest("GET", "http://localhost:8080/mse6/tinygzip", nil)
+	req.Header.Add("Accept-Encoding", "identity")
+	req.Header.Add("X-Request-Info", "true")
+	req.Header.Add("X-Request-Id", "test2")
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Errorf("error connecting to server, cause: %s", err)
+	}
+	if resp != nil && resp.Body != nil {
+		defer resp.Body.Close()
+	}
+
+	//must be case lowercase HTTP/2
+	got := resp.Header.Get("x-request-id")
+	want := "test2"
+	if got != want {
+		t.Errorf("server did not return supplied X-Request-Id, want %s, got %s", want, got)
+	}
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	utf8 := string(body)
+	if !strings.Contains(utf8, "{}") {
+		t.Errorf("should have sent decoded gzip respose with tiny serverside request info but got this instead: %s", body)
+	}
+}
+
 func TestSupplyXRequestInfoUpstreamIdentity(t *testing.T) {
 	client := &http.Client{}
 	req, _ := http.NewRequest("GET", "http://localhost:8080/mse6/get", nil)
@@ -110,5 +138,33 @@ func TestSupplyXRequestInfoUpstreamIdentity(t *testing.T) {
 	utf8 := string(body)
 	if !strings.Contains(utf8, "get endpoint") {
 		t.Errorf("should have sent decoded gzip respose with serverside request info but got this instead: %s", body)
+	}
+}
+
+func TestSupplyXRequestInfoUpstreamTinyIdentity(t *testing.T) {
+	client := &http.Client{}
+	req, _ := http.NewRequest("GET", "http://localhost:8080/mse6/tiny", nil)
+	req.Header.Add("Accept-Encoding", "identity")
+	req.Header.Add("X-Request-Info", "true")
+	req.Header.Add("X-Request-Id", "test3")
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Errorf("error connecting to server, cause: %s", err)
+	}
+	if resp != nil && resp.Body != nil {
+		defer resp.Body.Close()
+	}
+
+	//must be case lowercase HTTP/2
+	got := resp.Header.Get("x-request-id")
+	want := "test3"
+	if got != want {
+		t.Errorf("server did not return supplied X-Request-Id, want %s, got %s", want, got)
+	}
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	utf8 := string(body)
+	if !strings.Contains(utf8, "{}") {
+		t.Errorf("should have sent decoded gzip respose with tiny serverside request info but got this instead: %s", body)
 	}
 }
