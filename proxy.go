@@ -196,6 +196,11 @@ func (proxy *Proxy) hasMadeUpstreamAttempt() bool {
 	return proxy.Up.Atmpt != nil && proxy.Up.Atmpt.resp != nil
 }
 
+const headerBodyParsed = "parsed downstream request header and body"
+const bodyBytes = "bodyBytes"
+const method = "method"
+const path = "path"
+
 // ParseIncoming is a factory method for a new ProxyRequest, embeds the incoming request.
 func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 	proxy.Dwn.startDate = time.Now()
@@ -224,13 +229,19 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 	proxy.Dwn.AbortedFlag = false
 	proxy.Dwn.Resp.SendGzip = strings.Contains(request.Header.Get("Accept-Encoding"), "gzip")
 
-	log.Trace().
-		Str("path", proxy.Dwn.Path).
-		Str("method", proxy.Dwn.Method).
-		Int("bodyBytes", len(proxy.Dwn.Body)).
-		Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+	var ev *zerolog.Event
+	if proxy.XRequestInfo {
+		ev = log.Info()
+	} else {
+		ev = log.Trace()
+	}
+
+	ev.Str(path, proxy.Dwn.Path).
+		Str(method, proxy.Dwn.Method).
+		Int(bodyBytes, len(proxy.Dwn.Body)).
+		Int64(dwnElpsdMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
 		Str(XRequestID, proxy.XRequestID).
-		Msg("parsed downstream request header and body")
+		Msg(headerBodyParsed)
 	return proxy
 }
 
@@ -259,8 +270,13 @@ const dwnBodyRead = "downstream request body read (%d/%d) bytes/content-length"
 func (proxy *Proxy) parseRequestBody(request *http.Request) {
 	//content length 0, do not read just go back
 	if request.ContentLength == 0 {
-		log.Trace().
-			Int64(dwnElpsdMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
+		var ev *zerolog.Event
+		if proxy.XRequestInfo {
+			ev = log.Info()
+		} else {
+			ev = log.Trace()
+		}
+		ev.Int64(dwnElpsdMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
 			Str(XRequestID, proxy.XRequestID).Msg(dwnHeaderContentLengthZero)
 		return
 	}
@@ -446,10 +462,10 @@ func (proxy *Proxy) copyUpstreamResponseHeaders() {
 	}
 }
 
-const upstreamEncodeGzip = "encoding upstream body with as gzip"
-const upstreamDecodeGzip = "decoding upstream body from gzip"
-const upstreamCopyNoRecode = "copying upstream body without recoding"
-const upstreamResponseNoBody = "upstream response has no body, nothing to copy"
+const upstreamEncodeGzip = "upstream response body re-encoded with gzip before passing downstream"
+const upstreamDecodeGzip = "upstream response body decoded from gzip before passing downstream"
+const upstreamCopyNoRecode = "upstream response body copied without re-coding before passing downstream"
+const upstreamResponseNoBody = "upstream response has no body, nothing to copy before passing downstream"
 
 func (proxy *Proxy) encodeUpstreamResponseBody() {
 	atmpt := *proxy.Up.Atmpt
