@@ -5,8 +5,6 @@ import (
 	"compress/gzip"
 	"io/ioutil"
 	"sync"
-
-	"github.com/rs/zerolog/log"
 )
 
 var gzipMagicBytes = []byte{0x1f, 0x8b}
@@ -38,7 +36,6 @@ func Gzip(input []byte) *[]byte {
 	defer zipPool.Put(wrt)
 
 	enc := buf.Bytes()
-	log.Trace().Msgf("zipped byte buffer size %d", len(enc))
 	return &enc
 }
 
@@ -52,6 +49,5 @@ func Gunzip(input []byte) *[]byte {
 	_ = rd.Close()
 	defer unzipPool.Put(rd)
 
-	log.Trace().Msgf("unzipped byte buffer size %d", len(dec))
 	return &dec
 }
