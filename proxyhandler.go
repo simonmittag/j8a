@@ -132,7 +132,7 @@ func scaffoldUpstreamRequest(proxy *Proxy) *http.Request {
 		cancel()
 	})
 
-	upReqURI := proxy.resolveUpstreamURI()
+	upURI := proxy.resolveUpstreamURI()
 
 	upstreamRequest, _ := http.NewRequestWithContext(ctx,
 		proxy.Dwn.Method,
@@ -143,7 +143,7 @@ func scaffoldUpstreamRequest(proxy *Proxy) *http.Request {
 		Str(dwnReqPath, proxy.Dwn.Path).
 		Int64(dwnElpsdMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
 		Str(XRequestID, proxy.XRequestID).
-		Str(upReqURI, upReqURI).
+		Str(upReqURI, upURI).
 		Msg(upstreamURIResolved)
 
 	proxy.Up.Atmpt.Aborted = upstreamRequest.Context().Done()
