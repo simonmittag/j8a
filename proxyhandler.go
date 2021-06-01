@@ -139,8 +139,14 @@ func scaffoldUpstreamRequest(proxy *Proxy) *http.Request {
 		upURI,
 		proxy.bodyReader())
 
-	log.Trace().
-		Str(dwnReqPath, proxy.Dwn.Path).
+	var ev *zerolog.Event
+	if proxy.XRequestInfo {
+		ev = log.Info()
+	} else {
+		ev = log.Trace()
+	}
+
+	ev.Str(dwnReqPath, proxy.Dwn.Path).
 		Int64(dwnElpsdMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
 		Str(XRequestID, proxy.XRequestID).
 		Str(upReqURI, upURI).

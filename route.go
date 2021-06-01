@@ -1,6 +1,7 @@
 package j8a
 
 import (
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"net/http"
 	"regexp"
@@ -43,6 +44,16 @@ func (route Route) matchURI(request *http.Request) bool {
 	return matched
 }
 
+const upstreamResourceMapped = "upstream resource mapped"
+const policyMsg = "policy"
+const upResource = "upResource"
+const routeMsg = "route"
+const labelMsg = "label"
+const defaultMsg = "default"
+const routeMapped = "route mapped"
+const routeNotMapped = "route not mapped"
+const emptyString = ""
+
 // maps a route to a URL. Returns the URL, the name of the mapped policy and whether mapping was successful
 func (route Route) mapURL(proxy *Proxy) (*URL, string, bool) {
 	var policy Policy
@@ -57,38 +68,45 @@ func (route Route) mapURL(proxy *Proxy) (*URL, string, bool) {
 		return nil, "", false
 	}
 	//if a policy exists, we match resources with a label. TODO: this should be an interface
+
 	if len(route.Policy) > 0 {
 		for _, resourceMapping := range resource {
 			for _, resourceLabel := range resourceMapping.Labels {
 				if policyLabel == resourceLabel {
-					log.Trace().
-						Str("route", route.Path).
-						Str("upRes", resourceMapping.URL.String()).
-						Str("label", resourceLabel).
-						Str("policy", route.Policy).
+					var ev *zerolog.Event
+					if proxy.XRequestInfo {
+						ev = log.Info()
+					} else {
+						ev = log.Trace()
+					}
+
+					ev.Str(routeMsg, route.Path).
+						Str(upResource, resourceMapping.URL.String()).
+						Str(labelMsg, resourceLabel).
+						Str(policyMsg, route.Policy).
 						Str(XRequestID, proxy.XRequestID).
-						Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
-						Msg("upstream resource mapped")
+						Int64(dwnElpsdMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
+						Msg(upstreamResourceMapped)
 					return &resourceMapping.URL, policyLabel, true
 				}
 			}
 		}
 	} else {
 		log.Trace().
-			Str("routePath", route.Path).
-			Str("policy", "default").
+			Str(routeMsg, route.Path).
+			Str(policyMsg, defaultMsg).
 			Str(XRequestID, proxy.XRequestID).
-			Str("upstream", resource[0].URL.String()).
-			Msg("route mapped")
-		return &resource[0].URL, "default", true
+			Str(upResource, resource[0].URL.String()).
+			Msg(routeMapped)
+		return &resource[0].URL, defaultMsg, true
 	}
 
 	log.Trace().
-		Str("routePath", route.Path).
+		Str(routeMsg, route.Path).
 		Str(XRequestID, proxy.XRequestID).
-		Msg("route not mapped")
+		Msg(routeNotMapped)
 
-	return nil, "", false
+	return nil, emptyString, false
 }
 
 func (route Route) hasJwt() bool {

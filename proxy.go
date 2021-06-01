@@ -410,14 +410,13 @@ func (proxy *Proxy) firstAttempt(URL *URL, label string) *Proxy {
 	proxy.Up.Count = 1
 
 	scaffoldUpAttemptLog(proxy).
-		Str(upAtmptResource, URL.String()).
+		Str(upResource, URL.String()).
 		Msg(upstreamAttemptInitialized)
 
 	return proxy
 }
 
 const upAtmptCnt = "upAtmptCnt"
-const upAtmptResource = "upAtmptResource"
 
 func (proxy *Proxy) nextAttempt() *Proxy {
 	next := Atmpt{
@@ -441,7 +440,7 @@ func (proxy *Proxy) nextAttempt() *Proxy {
 
 	scaffoldUpAttemptLog(proxy).
 		Int(upAtmptCnt, proxy.Up.Count).
-		Str(upAtmptResource, next.URL.String()).
+		Str(upResource, next.URL.String()).
 		Msg(upstreamAttemptInitialized)
 	return proxy
 }
