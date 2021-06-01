@@ -229,6 +229,10 @@ const upstreamResBodyProcessed = "upstream response body processed"
 const emptyJSON = "{}"
 
 func jsonifyUpstreamHeaders(proxy *Proxy) []byte {
+	if proxy.Up.Atmpt == nil || proxy.Up.Atmpt.resp == nil {
+		return []byte(emptyJSON)
+	}
+	//catch all
 	jsonb, err := json.Marshal(proxy.Up.Atmpt.resp.Header)
 	if err != nil {
 		jsonb = []byte(emptyJSON)
