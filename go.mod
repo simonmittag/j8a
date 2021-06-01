@@ -9,7 +9,7 @@ require (
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/google/uuid v1.2.0
 	github.com/hako/durafmt v0.0.0-20200710122514-c0fb7b4da026
-	github.com/itchyny/gojq v0.12.2
+	github.com/itchyny/gojq v0.12.3
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/lestrrat-go/jwx v1.1.5
 	github.com/rs/zerolog v1.22.0
