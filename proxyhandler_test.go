@@ -510,3 +510,69 @@ func mockRuntime() *Runtime {
 		Start: time.Now(),
 	}
 }
+
+func TestJsonifyUpstreamHeadersWithEmptyUp(t *testing.T) {
+	res := jsonifyUpstreamHeaders(&Proxy{
+		Up: Up{},
+	})
+
+	if string(res) != "{}" {
+		t.Errorf("should have returned json object")
+	}
+}
+
+func TestJsonifyUpstreamHeadersWithEmptyProxy(t *testing.T) {
+	res := jsonifyUpstreamHeaders(&Proxy{})
+
+	if string(res) != "{}" {
+		t.Errorf("should have returned json object")
+	}
+}
+
+func TestJsonifyUpstreamHeadersWithEmptyAtmpt(t *testing.T) {
+	res := jsonifyUpstreamHeaders(&Proxy{
+		Up: Up{
+			Atmpt: &Atmpt{},
+		},
+	})
+
+	if string(res) != "{}" {
+		t.Errorf("should have returned json object")
+	}
+}
+
+func TestJsonifyUpstreamHeadersWithNilHeaders(t *testing.T) {
+	res := jsonifyUpstreamHeaders(&Proxy{
+		Up: Up{
+			Atmpt: &Atmpt{
+				resp: &http.Response{
+					Header: nil,
+				},
+			},
+		},
+	})
+
+	if string(res) != "{}" {
+		t.Errorf("should have returned json object")
+	}
+}
+
+func TestJsonifyUpstreamHeadersWithHeader(t *testing.T) {
+	h := http.Header{}
+	h.Add("K", "v")
+	res := jsonifyUpstreamHeaders(&Proxy{
+		Up: Up{
+			Atmpt: &Atmpt{
+				resp: &http.Response{
+					Header: h,
+				},
+			},
+		},
+	})
+
+	want := `{"K":["v"]}`
+	got := string(res)
+	if got != want {
+		t.Errorf("should have returned json encoded headers, but got: %v", got)
+	}
+}

@@ -3,6 +3,8 @@ package j8a
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -130,18 +132,24 @@ func scaffoldUpstreamRequest(proxy *Proxy) *http.Request {
 		cancel()
 	})
 
-	upReqURI := proxy.resolveUpstreamURI()
+	upURI := proxy.resolveUpstreamURI()
 
 	upstreamRequest, _ := http.NewRequestWithContext(ctx,
 		proxy.Dwn.Method,
-		upReqURI,
+		upURI,
 		proxy.bodyReader())
 
-	log.Trace().
-		Str(dwnReqPath, proxy.Dwn.Path).
-		Int64(dwnElapsedMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
+	var ev *zerolog.Event
+	if proxy.XRequestInfo {
+		ev = log.Info()
+	} else {
+		ev = log.Trace()
+	}
+
+	ev.Str(dwnReqPath, proxy.Dwn.Path).
+		Int64(dwnElpsdMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
 		Str(XRequestID, proxy.XRequestID).
-		Str(upReqURI, upReqURI).
+		Str(upReqURI, upURI).
 		Msg(upstreamURIResolved)
 
 	proxy.Up.Atmpt.Aborted = upstreamRequest.Context().Done()
@@ -159,6 +167,7 @@ func scaffoldUpstreamRequest(proxy *Proxy) *http.Request {
 	return upstreamRequest
 }
 
+const upResHeaders = "upResHeaders"
 const upstreamResHeaderAborted = "aborting upstream response header processing. downstream connection read timeout fired or user cancelled request"
 const upstreamResHeadersProcessed = "upstream response headers processed"
 const upConReadTimeoutFired = "upstream connection read timeout fired, aborting upstream response header processing."
@@ -182,7 +191,7 @@ func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
 					//TODO can this be removed?
 					Str("error", fmt.Sprintf("error: %v", err)).
 					Str(XRequestID, proxy.XRequestID).
-					Int64(upAtmptElapsedMicros, time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
+					Int64(upAtmptElpsdMicros, time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
 					Str(upAtmpt, proxy.Up.Atmpt.print()).
 					Msg(safeToIgnoreFailedHeaderChannelClosure)
 			}
@@ -209,6 +218,7 @@ func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
 			Msg(upstreamResHeaderAborted)
 	case <-proxy.Up.Atmpt.CompleteHeader:
 		scaffoldUpAttemptLog(proxy).
+			RawJSON(upResHeaders, jsonifyUpstreamHeaders(proxy)).
 			Msg(upstreamResHeadersProcessed)
 	}
 
@@ -218,8 +228,27 @@ func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
 const upReadTimeoutSecs = "upReadTimeoutSecs"
 const safeToIgnoreFailedBodyChannelClosure = "safe to ignore. recovered internally from closed body success channel after request already handled."
 const upstreamConReadTimeoutFired = "upstream connection read timeout fired, aborting upstream response body processing"
+
+const upResBodyBytes = "upResBodyBytes"
 const upstreamResBodyAbort = "aborting upstream response body processing. downstream connection read timeout fired or user cancelled request"
 const upstreamResBodyProcessed = "upstream response body processed"
+const emptyJSON = "{}"
+
+func jsonifyUpstreamHeaders(proxy *Proxy) []byte {
+	if proxy.Up.Atmpt == nil || proxy.Up.Atmpt.resp == nil || proxy.Up.Atmpt.resp.Header == nil {
+		return []byte(emptyJSON)
+	}
+	//catch all
+	jsonb, err := json.Marshal(proxy.Up.Atmpt.resp.Header)
+	if err != nil {
+		jsonb = []byte(emptyJSON)
+	}
+	return jsonb
+}
+
+const upAtmptResBodyTrunc = "upAtmptResBodyTrunc"
+const more = "..."
+const moreGzip = " [gzipped]"
 
 func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byte, error) {
 	var upstreamResponseBody []byte
@@ -260,7 +289,32 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 		scaffoldUpAttemptLog(proxy).
 			Msg(upstreamResBodyAbort)
 	case <-proxy.Up.Atmpt.CompleteBody:
-		scaffoldUpAttemptLog(proxy).
+		ul := scaffoldUpAttemptLog(proxy)
+
+		//truncate body for logging
+		var t []byte
+		if len(upstreamResponseBody) > 25 {
+			t = append(t, upstreamResponseBody[0:25]...)
+		} else {
+			t = upstreamResponseBody
+		}
+
+		//and show what is necessary depending on encoding
+		if !proxy.Up.Atmpt.isGzip {
+			s := string(t)
+			if len(s) == 25 {
+				s += more
+			}
+			ul.Str(upAtmptResBodyTrunc, s)
+		} else {
+			s := hex.EncodeToString(t)
+			if len(s) == 50 {
+				s += more
+			}
+			ul.Str(upAtmptResBodyTrunc, s+moreGzip)
+		}
+
+		ul.Int(upResBodyBytes, len(upstreamResponseBody)).
 			Msg(upstreamResBodyProcessed)
 	}
 
@@ -320,16 +374,16 @@ func shouldProxyHeader(header string) bool {
 
 func scaffoldUpAttemptLog(proxy *Proxy) *zerolog.Event {
 	var ev *zerolog.Event
-	if proxy.XRequestDebug {
-		ev = log.Debug()
+	if proxy.XRequestInfo {
+		ev = log.Info()
 	} else {
 		ev = log.Trace()
 	}
 
 	return ev.
 		Str(XRequestID, proxy.XRequestID).
-		Int64(upAtmtpElapsedMicros, time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
-		Int64(dwnElapsedMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
+		Int64(upAtmtpElpsdMicros, time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
+		Int64(dwnElpsdMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
 		Str(upAtmpt, proxy.Up.Atmpt.print())
 }
 
@@ -345,7 +399,8 @@ func logHandledDownstreamRoundtrip(proxy *Proxy) {
 		ev = ev.Str(upReqURI, proxy.resolveUpstreamURI()).
 			Str(upLabel, proxy.Up.Atmpt.Label).
 			Int(upAtmptResCode, proxy.Up.Atmpt.StatusCode).
-			Int64(upAtmptElapsedMicros, time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
+			Int(upAtmptResBodyBytes, len(*proxy.Up.Atmpt.respBody)).
+			Int64(upAtmptElpsdMicros, time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
 			Bool(upAtmptAbort, proxy.Up.Atmpt.AbortedFlag).
 			Str(upAtmpt, proxy.Up.Atmpt.print())
 	}
@@ -364,7 +419,8 @@ func logHandledDownstreamRoundtrip(proxy *Proxy) {
 		Str(dwnReqUserAgent, proxy.Dwn.UserAgent).
 		Str(dwnReqHttpVer, proxy.Dwn.HttpVer).
 		Int(dwnResCode, proxy.Dwn.Resp.StatusCode).
-		Str(dwnResContentEnc, proxy.contentEncoding()).
+		Int64(dwnResCntntLen, proxy.Dwn.Resp.ContentLength).
+		Str(dwnResCntntEnc, proxy.contentEncoding()).
 		Int64(dwnResElpsdMicros, elapsed.Microseconds()).
 		Str(XRequestID, proxy.XRequestID)
 
