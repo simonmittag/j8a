@@ -16,21 +16,25 @@ func connectionTimeoutTestPeriod() int {
 }
 
 func TestServerUpstreamSocketTimeoutWithBadLocal(t *testing.T) {
+	want := connectionTimeoutTestPeriod()
+
 	start := time.Now()
 	resp, err := http.Get("http://localhost:8080/badlocal")
 	elapsed := time.Since(start)
 
-	want := connectionTimeoutTestPeriod()
 	if elapsed > time.Duration(want)*time.Second {
 		t.Errorf("upstream connection timeout exceed, want: %vs, got: %vs", want, elapsed)
+		return
 	}
 
 	if err != nil {
 		t.Errorf("error connecting to upstream, cause: %v", err)
+		return
 	}
 
-	if resp.StatusCode != 502 {
+	if resp == nil || resp.StatusCode != 502 {
 		t.Errorf("upstream connection failure, want 502, got %v", resp.StatusCode)
+		return
 	}
 }
 
