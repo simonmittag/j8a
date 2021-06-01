@@ -247,7 +247,7 @@ func jsonifyUpstreamHeaders(proxy *Proxy) []byte {
 }
 
 const upAtmptResBodyTrunc = "upAtmptResBodyTrunc"
-var more = []byte("...")
+const more = "..."
 const moreGzip = " [gzipped]"
 
 func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byte, error) {
@@ -292,19 +292,26 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 		ul := scaffoldUpAttemptLog(proxy)
 
 		//truncate body for logging
-		var trunc []byte
+		var t []byte
 		if len(upstreamResponseBody) > 25 {
-			trunc = append(trunc, upstreamResponseBody[0:25]...)
-			trunc = append(trunc, more...)
+			t = append(t, upstreamResponseBody[0:25]...)
 		} else {
-			trunc = upstreamResponseBody
+			t = upstreamResponseBody
 		}
 
 		//and show what is necessary depending on encoding
 		if !proxy.Up.Atmpt.isGzip {
-			ul.Str(upAtmptResBodyTrunc, string(trunc))
+			s := string(t)
+			if len(s) == 25 {
+				s += more
+			}
+			ul.Str(upAtmptResBodyTrunc, s)
 		} else {
-			ul.Str(upAtmptResBodyTrunc, hex.EncodeToString(trunc)+moreGzip)
+			s := hex.EncodeToString(t)
+			if len(s) == 50 {
+				s += more
+			}
+			ul.Str(upAtmptResBodyTrunc, s+moreGzip)
 		}
 
 		ul.Int(upResBodyBytes, len(upstreamResponseBody)).
