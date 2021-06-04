@@ -10,8 +10,36 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-//ServerID is a unique identifier made up as md5 of hostname and version.
+const dwnReqRemoteAddr = "dwnReqRemoteAddr"
+const dwnReqPort = "dwnReqPort"
+const dwnReqPath = "dwnReqPath"
+const dwnReqMethod = "dwnReqMethod"
+const dwnReqUserAgent = "dwnReqUserAgent"
+const dwnReqHttpVer = "dwnReqHttpVer"
+const dwnReqTlsVer = "dwnReqTlsVer"
+const dwnReqListnr = "dwnReqListnr"
+const upBytesRead = "upBytesRead"
+const upBytesWrite = "upBytesWrite"
 
+const dwnElpsdMicros = "dwnElpsdMicros"
+const dwnResErrMsg = "dwnResErrMsg"
+const dwnResCode = "dwnResCode"
+const dwnResCntntEnc = "dwnResCntntEnc"
+const dwnResCntntLen = "dwnResCntntLen"
+const dwnResElpsdMicros = "dwnResElpsdMicros"
+const dwnBytesRead = "dwnBytesRead"
+const dwnBytesWrite = "dwnBytesWrite"
+
+const upReqURI = "upReqURI"
+const upAtmtpElpsdMicros = "upAtmptElpsdMicros"
+const upAtmpt = "upAtmpt"
+const upLabel = "upLabel"
+const upAtmptResCode = "upAtmptResCode"
+const upAtmptResBodyBytes = "upAtmptResBodyBytes"
+const upAtmptElpsdMicros = "upAtmptElpsdMicros"
+const upAtmptAbort = "upAtmptAbort"
+
+//ServerID is a unique identifier made up as md5 of hostname and version.
 //initServerId creates a unique ID for the server log.
 func initServerID() {
 	hasher := md5.New()

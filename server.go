@@ -16,7 +16,9 @@ import (
 )
 
 //Version is the server version
-var Version string = "v0.7.5"
+const Server string = "Server"
+
+var Version string = "v0.8.1"
 
 //ID is a unique server ID
 var ID string = "unknown"
@@ -34,6 +36,11 @@ var Runner *Runtime
 var Boot sync.WaitGroup = sync.WaitGroup{}
 
 const tlsHandshakeError = "TLS handshake error"
+const aboutPath = "/about"
+const UpgradeHeader = "Upgrade"
+const websocket = "websocket"
+const strictTransportSecurity = "Strict-Transport-Security"
+const maxAge31536000 = "max-age=31536000"
 
 type zerologAdapter struct {
 	ipr iprex
@@ -101,6 +108,7 @@ func (runtime Runtime) startListening() {
 		WriteTimeout:      roundTripTimeoutDurationWithGrace,
 		IdleTimeout:       idleTimeoutDuration,
 		ErrorLog:          golog.New(&zerologAdapter{}, "", 0),
+		Handler:           HandlerDelegate{},
 	}
 
 	//signal the WaitGroup that boot is over.
@@ -110,14 +118,6 @@ func (runtime Runtime) startListening() {
 
 	msg := fmt.Sprintf("j8a %s listener(s) init on", Version)
 	if runtime.isHTTPOn() {
-		if runtime.Connection.Downstream.Http.Redirecttls {
-			httpConfig.Handler = http.HandlerFunc(redirectHandler)
-			log.Debug().Msgf("assigned redirect handler from HTTP:%d to TLS:%d",
-				runtime.Connection.Downstream.Http.Port,
-				runtime.Connection.Downstream.Tls.Port)
-		} else {
-			httpConfig.Handler = runtime.mapPathsToHandler(runtime.Connection.Downstream.Http.Port)
-		}
 		msg = msg + fmt.Sprintf(" HTTP:%d", runtime.Connection.Downstream.Http.Port)
 		go runtime.startHTTP(httpConfig, err)
 	}
@@ -125,7 +125,6 @@ func (runtime Runtime) startListening() {
 		msg = msg + fmt.Sprintf(" TLS:%d", runtime.Connection.Downstream.Tls.Port)
 		tlsConfig := *httpConfig
 		tlsConfig.Addr = ":" + strconv.Itoa(runtime.Connection.Downstream.Tls.Port)
-		tlsConfig.Handler = runtime.mapPathsToHandler(runtime.Connection.Downstream.Tls.Port)
 		go runtime.startTls(&tlsConfig, err)
 	}
 	log.Info().Msg(msg + "...")
@@ -134,6 +133,23 @@ func (runtime Runtime) startListening() {
 	case sig := <-err:
 		log.Fatal().Err(sig).Msgf("... j8a exiting with ")
 		panic(sig.Error())
+	}
+}
+
+type HandlerDelegate struct{}
+
+func (hd HandlerDelegate) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if Runner.isHTTPOn() &&
+		Runner.Connection.Downstream.Http.Redirecttls &&
+		r.TLS == nil {
+		redirectHandler(w, r)
+	} else if r.ProtoMajor == 1 && r.Header.Get(UpgradeHeader) == websocket {
+		websocketHandler(w, r)
+		//TODO: this does not resolve whether about was actually configured in routes.
+	} else if r.RequestURI == aboutPath {
+		aboutHandler(w, r)
+	} else {
+		httpHandler(w, r)
 	}
 }
 
@@ -153,20 +169,6 @@ func (runtime Runtime) startHTTP(server *http.Server, err chan<- error) {
 	err <- server.ListenAndServe()
 }
 
-func (runtime Runtime) mapPathsToHandler(port int) http.Handler {
-	handler := http.NewServeMux()
-	for _, route := range runtime.Routes {
-		if route.Resource == about {
-			handler.Handle(route.Path, http.HandlerFunc(aboutHandler))
-			log.Debug().Msgf("assigned about handler to path [%s] on port %d", route.Path, port)
-		}
-	}
-	handler.Handle("/", http.HandlerFunc(proxyHandler))
-	log.Debug().Msgf("assigned proxy handler to path [%s] on port %d", "/", port)
-
-	return handler
-}
-
 func (runtime Runtime) initUserAgent() Runtime {
 	if httpClient == nil {
 		httpClient = scaffoldHTTPClient(runtime)
@@ -184,13 +186,19 @@ func (runtime Runtime) initStats() Runtime {
 func (proxy *Proxy) writeStandardResponseHeaders() {
 	header := proxy.Dwn.Resp.Writer.Header()
 
-	header.Set("Server", fmt.Sprintf("j8a %s %s", Version, ID))
+	header.Set(Server, serverVersion())
 	//for TLS response, we set HSTS header see RFC6797
 	if Runner.isTLSOn() {
 		header.Set("Strict-Transport-Security", "max-age=31536000")
 	}
 	//copy the X-REQUEST-ID from the request
 	header.Set(XRequestID, proxy.XRequestID)
+}
+
+const j8a string = "j8a"
+
+func serverVersion() string {
+	return fmt.Sprintf("%s %s %s", j8a, Version, ID)
 }
 
 func (runtime Runtime) tlsConfig() *tls.Config {

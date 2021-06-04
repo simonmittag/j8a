@@ -47,6 +47,8 @@ var httpRepeatableMethods = append(httpSafeMethods, httpIdempotentMethods...)
 //RFC7231 4.3
 var httpLegalMethods []string = append(httpRepeatableMethods, []string{"POST", "CONNECT"}...)
 
+type proxyfunc func(*Proxy)
+
 // Atmpt wraps connection attempts to specific upstreams that are already mapped by label
 type Atmpt struct {
 	URL            *URL
@@ -106,11 +108,11 @@ type Down struct {
 
 // Proxy wraps data for a single downstream request/response with multiple upstream HTTP request/response cycles.
 type Proxy struct {
-	XRequestID    string
-	XRequestDebug bool
-	Up            Up
-	Dwn           Down
-	Route         *Route
+	XRequestID   string
+	XRequestInfo bool
+	Up           Up
+	Dwn          Down
+	Route        *Route
 }
 
 // TODO downstream aborted needs to cover both timeouts and user aborted requests.
@@ -194,6 +196,11 @@ func (proxy *Proxy) hasMadeUpstreamAttempt() bool {
 	return proxy.Up.Atmpt != nil && proxy.Up.Atmpt.resp != nil
 }
 
+const headerBodyParsed = "downstream request header and body successfully parsed"
+const bodyBytes = "bodyBytes"
+const method = "method"
+const path = "path"
+
 // ParseIncoming is a factory method for a new ProxyRequest, embeds the incoming request.
 func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 	proxy.Dwn.startDate = time.Now()
@@ -206,7 +213,7 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 		cancel()
 	})
 
-	proxy.XRequestDebug = parseXRequestDebug(request)
+	proxy.XRequestInfo = parseXRequestInfo(request)
 	proxy.Dwn.Path = request.URL.EscapedPath()
 	proxy.Dwn.URI = request.URL.RequestURI()
 	proxy.Dwn.HttpVer = parseHTTPVer(request)
@@ -222,13 +229,19 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 	proxy.Dwn.AbortedFlag = false
 	proxy.Dwn.Resp.SendGzip = strings.Contains(request.Header.Get("Accept-Encoding"), "gzip")
 
-	log.Trace().
-		Str("path", proxy.Dwn.Path).
-		Str("method", proxy.Dwn.Method).
-		Int("bodyBytes", len(proxy.Dwn.Body)).
-		Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
+	var ev *zerolog.Event
+	if proxy.XRequestInfo {
+		ev = log.Info()
+	} else {
+		ev = log.Trace()
+	}
+
+	ev.Str(path, proxy.Dwn.Path).
+		Str(method, proxy.Dwn.Method).
+		Int(bodyBytes, len(proxy.Dwn.Body)).
+		Int64(dwnElpsdMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
 		Str(XRequestID, proxy.XRequestID).
-		Msg("parsed downstream request header and body")
+		Msg(headerBodyParsed)
 	return proxy
 }
 
@@ -248,12 +261,23 @@ func parseListener(request *http.Request) string {
 	}
 }
 
+const dwnHeaderContentLengthZero = "downstream request has content-length 0"
+const dwnBodyContentLengthExceedsMaxBytes = "downstream request body content-length %d exceeds max allowed bytes %d, refuse reading body"
+const dwnBodyTooLarge = "downstream request body too large. %d body bytes > server max %d"
+const dwnBodyReadAbort = "downstream request body aborting read, cause: %v"
+const dwnBodyRead = "downstream request body read (%d/%d) bytes/content-length"
+
 func (proxy *Proxy) parseRequestBody(request *http.Request) {
 	//content length 0, do not read just go back
 	if request.ContentLength == 0 {
-		log.Trace().
-			Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
-			Str(XRequestID, proxy.XRequestID).Msg("downstream request header content-length 0, don't attempt reading body")
+		var ev *zerolog.Event
+		if proxy.XRequestInfo {
+			ev = log.Info()
+		} else {
+			ev = log.Trace()
+		}
+		ev.Int64(dwnElpsdMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
+			Str(XRequestID, proxy.XRequestID).Msg(dwnHeaderContentLengthZero)
 		return
 	}
 
@@ -262,8 +286,8 @@ func (proxy *Proxy) parseRequestBody(request *http.Request) {
 		proxy.Dwn.ReqTooLarge = true
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
-			Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
-			Msgf("downstream request body content-length %d exceeds max allowed bytes %d, refuse reading body", request.ContentLength, Runner.Connection.Downstream.MaxBodyBytes)
+			Int64(dwnElpsdMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
+			Msgf(dwnBodyContentLengthExceedsMaxBytes, request.ContentLength, Runner.Connection.Downstream.MaxBodyBytes)
 		return
 	}
 
@@ -284,19 +308,19 @@ func (proxy *Proxy) parseRequestBody(request *http.Request) {
 		proxy.Dwn.ReqTooLarge = true
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
-			Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
-			Msgf("downstream request body too large. %d body bytes > server max %d", n, Runner.Connection.Downstream.MaxBodyBytes)
+			Int64(dwnElpsdMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
+			Msgf(dwnBodyTooLarge, n, Runner.Connection.Downstream.MaxBodyBytes)
 	} else if err != nil && err != io.EOF {
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
-			Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
-			Msgf("downstream request body aborting read, cause: %v", err)
+			Int64(dwnElpsdMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
+			Msgf(dwnBodyReadAbort, err)
 	} else {
 		proxy.Dwn.Body = buf
 		log.Trace().
 			Str(XRequestID, proxy.XRequestID).
-			Int64("dwnElapsedMicros", time.Since(proxy.Dwn.startDate).Microseconds()).
-			Msgf("downstream request body read (%d/%d) bytes/content-length", n, request.ContentLength)
+			Int64(dwnElpsdMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
+			Msgf(dwnBodyRead, n, request.ContentLength)
 	}
 
 }
@@ -317,9 +341,15 @@ func parseHTTPVer(request *http.Request) string {
 	return fmt.Sprintf("%d.%d", request.ProtoMajor, request.ProtoMinor)
 }
 
-func parseXRequestDebug(request *http.Request) bool {
-	h := request.Header.Get("X-REQUEST-DEBUG")
-	return len(h) > 0 && strings.ToLower(h) == "true"
+const xRequestInfo = "X-REQUEST-INFO"
+const xRequestDebug = "X-REQUEST-DEBUG"
+const trueStr = "true"
+
+func parseXRequestInfo(request *http.Request) bool {
+	h := request.Header.Get(xRequestInfo)
+	h2 := request.Header.Get(xRequestDebug)
+	return (len(h) > 0 && strings.ToLower(h) == trueStr) ||
+		(len(h2) > 0 && strings.ToLower(h2) == trueStr)
 }
 
 func parseTlsVersion(request *http.Request) string {
@@ -360,6 +390,8 @@ func (proxy Proxy) bodyReader() io.Reader {
 	return nil
 }
 
+const upstreamAttemptInitialized = "upstream attempt initialized"
+
 func (proxy *Proxy) firstAttempt(URL *URL, label string) *Proxy {
 	first := Atmpt{
 		Label:          label,
@@ -378,10 +410,13 @@ func (proxy *Proxy) firstAttempt(URL *URL, label string) *Proxy {
 	proxy.Up.Count = 1
 
 	scaffoldUpAttemptLog(proxy).
-		Msg("upstream attempt initialized")
+		Str(upResource, URL.String()).
+		Msg(upstreamAttemptInitialized)
 
 	return proxy
 }
+
+const upAtmptCnt = "upAtmptCnt"
 
 func (proxy *Proxy) nextAttempt() *Proxy {
 	next := Atmpt{
@@ -404,7 +439,9 @@ func (proxy *Proxy) nextAttempt() *Proxy {
 	proxy.Up.Atmpt = &proxy.Up.Atmpts[len(proxy.Up.Atmpts)-1]
 
 	scaffoldUpAttemptLog(proxy).
-		Msg("upstream attempt initialized")
+		Int(upAtmptCnt, proxy.Up.Count).
+		Str(upResource, next.URL.String()).
+		Msg(upstreamAttemptInitialized)
 	return proxy
 }
 
@@ -424,22 +461,28 @@ func (proxy *Proxy) copyUpstreamResponseHeaders() {
 	}
 }
 
+const upstreamEncodeGzip = "upstream response body re-encoded with gzip before passing downstream"
+const upstreamDecodeGzip = "upstream response body decoded from gzip before passing downstream"
+const upstreamCopyNoRecode = "upstream response body copied without re-coding before passing downstream"
+const upstreamResponseNoBody = "upstream response has no body, nothing to copy before passing downstream"
+
 func (proxy *Proxy) encodeUpstreamResponseBody() {
 	atmpt := *proxy.Up.Atmpt
 	if atmpt.respBody != nil && len(*atmpt.respBody) > 0 {
 		if proxy.shouldGzipEncodeResponseBody() {
 			proxy.Dwn.Resp.Body = Gzip(*proxy.Up.Atmpt.respBody)
+
 			scaffoldUpAttemptLog(proxy).
-				Msg("copying upstream body with gzip re-encoding")
+				Msg(upstreamEncodeGzip)
 		} else {
 			if proxy.shouldGzipDecodeResponseBody() {
 				proxy.Dwn.Resp.Body = Gunzip(*proxy.Up.Atmpt.respBody)
 				scaffoldUpAttemptLog(proxy).
-					Msg("copying upstream body with gzip re-decoding")
+					Msg(upstreamDecodeGzip)
 			} else {
 				proxy.Dwn.Resp.Body = proxy.Up.Atmpt.respBody
 				scaffoldUpAttemptLog(proxy).
-					Msgf("copying upstream body as is")
+					Msgf(upstreamCopyNoRecode)
 			}
 		}
 	} else {
@@ -447,7 +490,7 @@ func (proxy *Proxy) encodeUpstreamResponseBody() {
 		nobody := make([]byte, 0)
 		proxy.Dwn.Resp.Body = &nobody
 		scaffoldUpAttemptLog(proxy).
-			Msgf("skipping empty upstream body")
+			Msg(upstreamResponseNoBody)
 	}
 }
 

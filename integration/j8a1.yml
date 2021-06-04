@@ -169,8 +169,6 @@ jwt:
     jwksUrl: http://localhost:60084/mse6/jwksbadrotate
 
 routes:
-  - path: "/about"
-    resource: about
   - path: "/mse6/some"
     resource: mse61
   - path: /mse6jwtjwksbadrotate
@@ -269,6 +267,14 @@ routes:
     resource: badlocal
   - path: /badssl
     resource: badssl
+  - path: "/websocket"
+    transform: "/mse6/websocket"
+    resource: websocket
+  - path: "/websocketdown"
+    resource: websocketdown
+  - path: /websocketsecure
+    transform: /badssl
+    resource: websocketsecure
 resources:
   badssl:
     - url:
@@ -392,3 +398,18 @@ resources:
         scheme: http
         host: localhost
         port: 60100
+  websocket:
+    - url:
+        scheme: ws
+        host: localhost
+        port: 60083
+  websocketdown:
+    - url:
+        scheme: ws
+        host: 10.247.13.14
+        port: 29471
+  websocketsecure:
+    - url:
+        scheme: wss
+        host: localhost
+        port: 60101

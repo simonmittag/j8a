@@ -3,6 +3,7 @@ package j8a
 import (
 	"fmt"
 	"github.com/hako/durafmt"
+	"os"
 	"sync"
 	"time"
 
@@ -36,11 +37,26 @@ const growthRateThreshold float64 = 2.0
 var procStatsLock sync.Mutex
 var procHistory samples
 
+const pid = "pid"
+const pidCPUCorePct = "pidCpuCore"
+const pidMemPct = "pidMemPct"
+const pidRssBytes = "pidRssBytes"
+const pidVmsBytes = "pidVmsBytes"
+const pidSwapBytes = "pidSwapBytes"
+const serverPerformance = "server performance"
+const pcd2f = "%.2f"
+
+const rssMemIncrease = "RSS memory increase for previous %s with high factor >=%s, monitor actively."
+
 func (s sample) log() {
-	log.Debug().Int32("pid", s.pid).Str("cpuCore"+
-		"Pct", fmt.Sprintf("%.2f", s.cpuPc)).Str("memPct", fmt.Sprintf("%.2f", s.mPc)).
-		Uint64("rssBytes", s.rssBytes).Uint64("vmsBytes", s.vmsBytes).Uint64("swapBytes", s.swapBytes).
-		Msg("server performance")
+	log.Debug().
+		Int32(pid, s.pid).
+		Str(pidCPUCorePct, fmt.Sprintf(pcd2f, s.cpuPc)).
+		Str(pidMemPct, fmt.Sprintf(pcd2f, s.mPc)).
+		Uint64(pidRssBytes, s.rssBytes).
+		Uint64(pidVmsBytes, s.vmsBytes).
+		Uint64(pidSwapBytes, s.swapBytes).
+		Msg(serverPerformance)
 }
 
 func (samples *samples) append(s sample) {
@@ -73,7 +89,7 @@ High:
 	for m := len(*samples) - 1; m >= 0; m-- {
 		if growthRates[m].high {
 			log.Debug().
-				Msgf("RSS memory increase for previous %s with high factor >=%s, monitor actively.",
+				Msgf(rssMemIncrease,
 					durafmt.Parse(time.Duration(time.Second*historySamplerSleepSeconds*historyMaxSamples)).LimitFirstN(1).String(),
 					fmt.Sprintf("%.1f", growthRateThreshold))
 			break High
@@ -131,6 +147,8 @@ func logProcStats(proc *process.Process) {
 	}()
 }
 
+const uptimeMicros = "uptimeMicros"
+
 func logUptime() {
 	go func() {
 		for {
@@ -138,8 +156,9 @@ func logUptime() {
 			if upNanos > time.Second*10 {
 				uptime := durafmt.Parse(upNanos).LimitFirstN(1).String()
 				log.Debug().
-					Int64("uptimeMicros", int64(upNanos/1000)).
-					Msgf(fmt.Sprintf("server uptime is %s", uptime))
+					Int(pid, os.Getpid()).
+					Int64(uptimeMicros, int64(upNanos/1000)).
+					Msgf(fmt.Sprintf("server upTime is %s", uptime))
 			}
 			time.Sleep(time.Hour * 24)
 		}

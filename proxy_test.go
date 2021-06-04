@@ -47,7 +47,7 @@ func TestAbortAllUpstreamAttempts(t *testing.T) {
 
 	proxy := Proxy{
 		XRequestID:    "",
-		XRequestDebug: false,
+		XRequestInfo: false,
 		Up: Up{
 			Atmpts: []Atmpt{mockAtmpt()},
 			Atmpt:  &atmpt,
