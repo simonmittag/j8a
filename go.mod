@@ -12,7 +12,7 @@ require (
 	github.com/itchyny/gojq v0.12.2
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/lestrrat-go/jwx v1.1.6
-	github.com/rs/zerolog v1.21.0
+	github.com/rs/zerolog v1.22.0
 	github.com/shirou/gopsutil v2.20.9+incompatible
 	golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
