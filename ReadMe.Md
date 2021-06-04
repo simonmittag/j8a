@@ -9,7 +9,14 @@
 [![Go Version](https://img.shields.io/github/go-mod/go-version/simonmittag/j8a)](https://img.shields.io/github/go-mod/go-version/simonmittag/j8a)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Docker Pulls](https://img.shields.io/docker/pulls/simonmittag/j8a)](https://hub.docker.com/repository/docker/simonmittag/j8a)
-[![Version](https://img.shields.io/docker/v/simonmittag/j8a/0.8.0)](https://hub.docker.com/repository/docker/simonmittag/j8a)
+[![Version](https://img.shields.io/docker/v/simonmittag/j8a/0.8.1)](https://hub.docker.com/repository/docker/simonmittag/j8a)
+
+## What's new?
+###v0.8.1
+* upgraded to lestrrat-go/jwx@1.2.1
+* upgraded to gojq@0.12.4
+* upgraded to Alpine/Go@v1.16.4
+* minor refactoring, new log vars.
 
 ## What is j8a?
 [j8a [ dʒʌbbʌ ]](https://j8a.io) is a modern **TLS 1.3 reverse proxy server** designed as a lightweight API gateway for 
