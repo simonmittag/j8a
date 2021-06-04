@@ -12,7 +12,7 @@
 [![Version](https://img.shields.io/docker/v/simonmittag/j8a/0.8.1)](https://hub.docker.com/repository/docker/simonmittag/j8a)
 
 ## What's new?
-###v0.8.1
+### v0.8.1
 * upgraded to lestrrat-go/jwx@1.2.1
 * upgraded to gojq@0.12.4
 * upgraded to Alpine/Go@v1.16.4
