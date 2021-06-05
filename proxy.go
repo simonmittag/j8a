@@ -493,18 +493,20 @@ func (proxy *Proxy) encodeUpstreamResponseBody() {
 			Msg(upstreamResponseNoBody)
 	}
 }
+const identity = "identity"
+const gzipS = "gzip"
+const space = " "
 
 func (proxy *Proxy) contentEncoding() string {
-	ce := "identity"
+	ce := identity
 	if proxy.Dwn.Resp.SendGzip {
-		ce = "gzip"
+		ce = gzipS
 	} else if proxy.hasMadeUpstreamAttempt() && !proxy.shouldGzipDecodeResponseBody() {
 		ceA := proxy.Up.Atmpt.resp.Header[contentEncoding]
 		if len(ceA) > 0 {
-			ce = strings.Join(ceA, " ")
+			ce = strings.Join(ceA, space)
 		}
 	}
-
 	return ce
 }
 

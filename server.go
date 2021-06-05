@@ -189,7 +189,7 @@ func (proxy *Proxy) writeStandardResponseHeaders() {
 	header.Set(Server, serverVersion())
 	//for TLS response, we set HSTS header see RFC6797
 	if Runner.isTLSOn() {
-		header.Set("Strict-Transport-Security", "max-age=31536000")
+		header.Set(strictTransportSecurity, maxAge31536000)
 	}
 	//copy the X-REQUEST-ID from the request
 	header.Set(XRequestID, proxy.XRequestID)
@@ -240,28 +240,35 @@ func (runtime Runtime) tlsConfig() *tls.Config {
 	return config
 }
 
+const contentType = "Content-Type"
+const applicationJSON = "application/json"
+const none = "none"
+
 func sendStatusCodeAsJSON(proxy *Proxy) {
-	proxy.writeStandardResponseHeaders()
-	proxy.Dwn.Resp.Writer.Header().Set("Content-Type", "application/json")
-	proxy.writeContentEncodingHeader()
-
-	proxy.Dwn.Resp.Writer.WriteHeader(proxy.Dwn.Resp.StatusCode)
-
 	statusCodeResponse := StatusCodeResponse{
 		Code:    proxy.Dwn.Resp.StatusCode,
 		Message: proxy.Dwn.Resp.Message,
 	}
 
-	if len(proxy.Dwn.Resp.Message) == 0 || proxy.Dwn.Resp.Message == "none" {
+	if len(proxy.Dwn.Resp.Message) == 0 || proxy.Dwn.Resp.Message == none {
 		statusCodeResponse.withCode(proxy.Dwn.Resp.StatusCode)
 		proxy.Dwn.Resp.Message = statusCodeResponse.Message
 	}
 
 	if proxy.Dwn.Resp.SendGzip {
-		proxy.Dwn.Resp.Writer.Write(*Gzip(statusCodeResponse.AsJSON()))
+		proxy.Dwn.Resp.Body = Gzip(statusCodeResponse.AsJSON())
 	} else {
-		proxy.Dwn.Resp.Writer.Write(statusCodeResponse.AsJSON())
+		b := []byte(statusCodeResponse.AsJSON())
+		proxy.Dwn.Resp.Body = &b
 	}
+
+	proxy.writeStandardResponseHeaders()
+	proxy.Dwn.Resp.Writer.Header().Set(contentType, applicationJSON)
+	proxy.setContentLengthHeader()
+	proxy.writeContentEncodingHeader()
+	proxy.Dwn.Resp.Writer.WriteHeader(proxy.Dwn.Resp.StatusCode)
+
+	proxy.Dwn.Resp.Writer.Write(*proxy.Dwn.Resp.Body)
 
 	logHandledDownstreamRoundtrip(proxy)
 }
