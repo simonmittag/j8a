@@ -13,6 +13,10 @@
 
 ## What's new?
 ### v0.8.2 (06/06/2021)
+* upgraded to Alpine/Go@v1.16.5
+* bugfix for missing Content-Encoding header for internal responses.
+
+### v0.8.1 (04/06/2021)
 * upgraded to lestrrat-go/jwx@1.2.1
 * upgraded to gojq@0.12.4
 * upgraded to Alpine/Go@v1.16.4
