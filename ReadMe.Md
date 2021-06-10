@@ -9,9 +9,12 @@
 [![Go Version](https://img.shields.io/github/go-mod/go-version/simonmittag/j8a)](https://img.shields.io/github/go-mod/go-version/simonmittag/j8a)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Docker Pulls](https://img.shields.io/docker/pulls/simonmittag/j8a)](https://hub.docker.com/repository/docker/simonmittag/j8a)
-[![Version](https://img.shields.io/docker/v/simonmittag/j8a/0.8.2)](https://hub.docker.com/repository/docker/simonmittag/j8a)
+[![Version](https://img.shields.io/docker/v/simonmittag/j8a/0.8.3)](https://hub.docker.com/repository/docker/simonmittag/j8a)
 
 ## What's new?
+### v0.8.3 (10/06/2021)
+* fixed bug with upstream servers and unsupported brotli compression.
+
 ### v0.8.2 (06/06/2021)
 * upgraded to Alpine/Go@v1.16.5
 * bugfix for missing Content-Encoding header for internal responses.
