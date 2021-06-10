@@ -165,6 +165,8 @@ routes:
   - path: /websocketsecure
     transform: /badssl
     resource: websocketsecure
+  - path: /todos
+    resource: jsonplaceholder
 resources:
   badssl:
     - url:
@@ -303,3 +305,8 @@ resources:
         scheme: wss
         host: localhost
         port: 60101
+  jsonplaceholder:
+    - url:
+        scheme: https
+        host: jsonplaceholder.typicode.com
+        port: 443

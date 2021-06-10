@@ -18,6 +18,7 @@ import (
 const XRequestID = "X-Request-Id"
 const contentEncoding = "Content-Encoding"
 const transferEncoding = "Transfer-Encoding"
+const acceptEncoding = "Accept-Encoding"
 const contentLength = "Content-Length"
 const date = "Date"
 const server = "Server"
@@ -27,7 +28,7 @@ var httpClient HTTPClient
 
 //httpHeadersNoRewrite contains a list of headers that are not copied in either direction. they must be set by the
 //server or are ignored.
-var httpHeadersNoRewrite []string = []string{date, contentLength, transferEncoding, server}
+var httpHeadersNoRewrite []string = []string{date, contentLength, acceptEncoding, transferEncoding, server}
 
 //extract IPs for stdout. thread safe.
 var ipr iprex = iprex{}
@@ -119,6 +120,7 @@ func handleHTTP(proxy *Proxy) {
 }
 
 const upstreamURIResolved = "upstream URI resolved"
+const gzipIdentity = gzipS + ", " + identity
 
 func scaffoldUpstreamRequest(proxy *Proxy) *http.Request {
 	//this context is used to time out the upstream request
@@ -153,6 +155,12 @@ func scaffoldUpstreamRequest(proxy *Proxy) *http.Request {
 		Msg(upstreamURIResolved)
 
 	proxy.Up.Atmpt.Aborted = upstreamRequest.Context().Done()
+
+	//do not copy accept encoding header, only set it to gzip if present downstream
+	ae := proxy.Dwn.Req.Header.Get(acceptEncoding)
+	if len(ae) > 0 && strings.Contains(strings.ToLower(ae), gzipS) {
+		upstreamRequest.Header.Add(acceptEncoding, gzipIdentity)
+	}
 
 	//set upstream headers
 	for key, values := range proxy.Dwn.Req.Header {
