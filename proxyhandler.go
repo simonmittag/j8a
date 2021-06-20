@@ -93,6 +93,7 @@ func validate(proxy *Proxy) bool {
 		!proxy.Dwn.ReqTooLarge
 }
 
+const connectionClosedByRemoteUserAgent = "connection closed by remote user agent"
 const gatewayTimeoutTriggeredByDownstreamEvent = "gateway timeout triggered by downstream event"
 const gatewayTimeoutTriggeredByUpstreamEvent = "gateway timeout triggered by upstream attempt"
 const badGatewayTriggeredUnableToProcessUpstreamResponse = "bad gateway triggered. unable to process upstream response"
@@ -107,9 +108,12 @@ func handleHTTP(proxy *Proxy) {
 		if proxy.shouldRetryUpstreamAttempt() {
 			handleHTTP(proxy.nextAttempt())
 		} else {
-			//sends 504 for downstream timeout, 504 for upstream timeout, 502 in all other cases
-			if proxy.hasDownstreamAborted() {
+			//sends 504 for downstream timeout, 504 for upstream timeout, 499 for downstream remote hangup,
+			//502 in all other cases
+			if proxy.Dwn.TimeoutFlag == true {
 				sendStatusCodeAsJSON(proxy.respondWith(504, gatewayTimeoutTriggeredByDownstreamEvent))
+			} else if proxy.Dwn.AbortedFlag == true {
+				sendStatusCodeAsJSON(proxy.respondWith(499, connectionClosedByRemoteUserAgent))
 			} else if proxy.hasUpstreamAttemptAborted() {
 				sendStatusCodeAsJSON(proxy.respondWith(504, gatewayTimeoutTriggeredByUpstreamEvent))
 			} else {
@@ -176,7 +180,8 @@ func scaffoldUpstreamRequest(proxy *Proxy) *http.Request {
 }
 
 const upResHeaders = "upResHeaders"
-const upstreamResHeaderAborted = "aborting upstream response header processing. downstream connection read timeout fired or user cancelled request"
+const upstreamResHeaderAborted = "aborting upstream response header processing. downstream connection closed by remote user agent"
+const upstreamResHeaderTimeout = "aborting upstream response header processing. downstream connection read timeout fired"
 const upstreamResHeadersProcessed = "upstream response headers processed"
 const upConReadTimeoutFired = "upstream connection read timeout fired, aborting upstream response header processing."
 const safeToIgnoreFailedHeaderChannelClosure = "safe to ignore. recovered internally from closed header success channel after request already handled."
@@ -219,6 +224,11 @@ func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
 		scaffoldUpAttemptLog(proxy).
 			Int(upReadTimeoutSecs, Runner.Connection.Upstream.ReadTimeoutSeconds).
 			Msg(upConReadTimeoutFired)
+	case <-proxy.Dwn.Timeout:
+		proxy.abortAllUpstreamAttempts()
+		proxy.Dwn.TimeoutFlag = true
+		scaffoldUpAttemptLog(proxy).
+			Msg(upstreamResHeaderTimeout)
 	case <-proxy.Dwn.Aborted:
 		proxy.abortAllUpstreamAttempts()
 		proxy.Dwn.AbortedFlag = true
@@ -238,7 +248,8 @@ const safeToIgnoreFailedBodyChannelClosure = "safe to ignore. recovered internal
 const upstreamConReadTimeoutFired = "upstream connection read timeout fired, aborting upstream response body processing"
 
 const upResBodyBytes = "upResBodyBytes"
-const upstreamResBodyAbort = "aborting upstream response body processing. downstream connection read timeout fired or user cancelled request"
+const upstreamResBodyAbort = "aborting upstream response body processing. downstream connection closed by remote end"
+const upstreamResBodyTimeout = "aborting upstream response body processing. downstream connection read timeout fired"
 const upstreamResBodyProcessed = "upstream response body processed"
 const emptyJSON = "{}"
 
@@ -291,6 +302,11 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 		scaffoldUpAttemptLog(proxy).
 			Int(upReadTimeoutSecs, Runner.Connection.Upstream.ReadTimeoutSeconds).
 			Msg(upstreamConReadTimeoutFired)
+	case <-proxy.Dwn.Timeout:
+		proxy.abortAllUpstreamAttempts()
+		proxy.Dwn.TimeoutFlag = true
+		scaffoldUpAttemptLog(proxy).
+			Msg(upstreamResBodyTimeout)
 	case <-proxy.Dwn.Aborted:
 		proxy.abortAllUpstreamAttempts()
 		proxy.Dwn.AbortedFlag = true
@@ -365,7 +381,7 @@ func isUpstreamClientError(proxy *Proxy) bool {
 }
 
 func shouldProxyUpstreamResponse(proxy *Proxy, bodyError error) bool {
-	return !proxy.hasDownstreamAborted() &&
+	return !proxy.hasDownstreamAbortedOrTimedout() &&
 		!proxy.hasUpstreamAttemptAborted() &&
 		bodyError == nil &&
 		proxy.Up.Atmpt.resp.StatusCode < 500

@@ -98,6 +98,8 @@ type Down struct {
 	Body        []byte
 	Aborted     <-chan struct{}
 	AbortedFlag bool
+	Timeout     <-chan struct{}
+	TimeoutFlag bool
 	ReqTooLarge bool
 	startDate   time.Time
 	HttpVer     string
@@ -115,17 +117,20 @@ type Proxy struct {
 	Route        *Route
 }
 
-// TODO downstream aborted needs to cover both timeouts and user aborted requests.
-func (proxy *Proxy) hasDownstreamAborted() bool {
+func (proxy *Proxy) hasDownstreamAbortedOrTimedout() bool {
 
 	//non blocking read if request context was aborted
 	select {
+	case <-proxy.Dwn.Timeout:
+		proxy.Dwn.TimeoutFlag = true
 	case <-proxy.Dwn.Aborted:
 		proxy.Dwn.AbortedFlag = true
 	default:
 	}
-	if proxy.Dwn.AbortedFlag == true {
+	if proxy.Dwn.TimeoutFlag == true {
 		proxy.respondWith(504, "gateway timeout triggered after downstream roundtripTimeoutSeconds")
+	} else if proxy.Dwn.AbortedFlag == true {
+		proxy.respondWith(499, "remote user agent closed connection")
 	}
 	return proxy.Dwn.AbortedFlag
 }
@@ -180,7 +185,7 @@ Retry:
 	}
 
 	// once downstream context has signalled, do not re-attempt upstream
-	if proxy.hasDownstreamAborted() {
+	if proxy.hasDownstreamAbortedOrTimedout() {
 		retry = false
 	}
 
@@ -206,13 +211,15 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 	proxy.Dwn.startDate = time.Now()
 	proxy.XRequestID = createXRequestID(request)
 
-	//set request new request context based on http req context,
-	//and initialise cancel func with timeout.
-	ctx, cancel := context.WithCancel(request.Context())
-	proxy.Dwn.Aborted = ctx.Done()
+	//set request new request context for timeout
+	ctx, cancel := context.WithCancel(context.TODO())
+	proxy.Dwn.Timeout = ctx.Done()
 	time.AfterFunc(Runner.getDownstreamRoundTripTimeoutDuration(), func() {
 		cancel()
 	})
+
+	//this is separate context for abort. abort is manual close
+	proxy.Dwn.Aborted = request.Context().Done()
 
 	proxy.XRequestInfo = parseXRequestInfo(request)
 	proxy.Dwn.Path = request.URL.EscapedPath()
@@ -494,6 +501,7 @@ func (proxy *Proxy) encodeUpstreamResponseBody() {
 			Msg(upstreamResponseNoBody)
 	}
 }
+
 const identity = "identity"
 const gzipS = "gzip"
 const space = " "
