@@ -206,8 +206,9 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 	proxy.Dwn.startDate = time.Now()
 	proxy.XRequestID = createXRequestID(request)
 
-	//set request context and initialise timeout func
-	ctx, cancel := context.WithCancel(context.TODO())
+	//set request new request context based on http req context,
+	//and initialise cancel func with timeout.
+	ctx, cancel := context.WithCancel(request.Context())
 	proxy.Dwn.Aborted = ctx.Done()
 	time.AfterFunc(Runner.getDownstreamRoundTripTimeoutDuration(), func() {
 		cancel()
