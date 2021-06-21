@@ -180,11 +180,13 @@ func scaffoldUpstreamRequest(proxy *Proxy) *http.Request {
 }
 
 const upResHeaders = "upResHeaders"
-const upstreamResHeaderAborted = "aborting upstream response header processing. downstream connection closed by remote user agent"
-const upstreamResHeaderTimeout = "aborting upstream response header processing. downstream connection read timeout fired"
+const upstreamResHeaderAborted = "upstream response header processing aborted"
 const upstreamResHeadersProcessed = "upstream response headers processed"
 const upConReadTimeoutFired = "upstream connection read timeout fired, aborting upstream response header processing."
 const safeToIgnoreFailedHeaderChannelClosure = "safe to ignore. recovered internally from closed header success channel after request already handled."
+
+const downstreamRtFired = "downstream roundtrip timeout fired"
+const downstreamReqAborted = "downstream request aborted"
 
 func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
 	//get a reference to this before any race conditions may occur
@@ -225,13 +227,19 @@ func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
 			Int(upReadTimeoutSecs, Runner.Connection.Upstream.ReadTimeoutSeconds).
 			Msg(upConReadTimeoutFired)
 	case <-proxy.Dwn.Timeout:
-		proxy.abortAllUpstreamAttempts()
 		proxy.Dwn.TimeoutFlag = true
 		scaffoldUpAttemptLog(proxy).
-			Msg(upstreamResHeaderTimeout)
-	case <-proxy.Dwn.Aborted:
+			Msg(downstreamRtFired)
+
 		proxy.abortAllUpstreamAttempts()
+		scaffoldUpAttemptLog(proxy).
+			Msg(upstreamResHeaderAborted)
+	case <-proxy.Dwn.Aborted:
 		proxy.Dwn.AbortedFlag = true
+		scaffoldUpAttemptLog(proxy).
+			Msg(downstreamReqAborted)
+
+		proxy.abortAllUpstreamAttempts()
 		scaffoldUpAttemptLog(proxy).
 			Msg(upstreamResHeaderAborted)
 	case <-proxy.Up.Atmpt.CompleteHeader:
@@ -248,8 +256,7 @@ const safeToIgnoreFailedBodyChannelClosure = "safe to ignore. recovered internal
 const upstreamConReadTimeoutFired = "upstream connection read timeout fired, aborting upstream response body processing"
 
 const upResBodyBytes = "upResBodyBytes"
-const upstreamResBodyAbort = "aborting upstream response body processing. downstream connection closed by remote end"
-const upstreamResBodyTimeout = "aborting upstream response body processing. downstream connection read timeout fired"
+const upstreamResBodyAbort = "aborting upstream response body processing."
 const upstreamResBodyProcessed = "upstream response body processed"
 const emptyJSON = "{}"
 
@@ -303,13 +310,19 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 			Int(upReadTimeoutSecs, Runner.Connection.Upstream.ReadTimeoutSeconds).
 			Msg(upstreamConReadTimeoutFired)
 	case <-proxy.Dwn.Timeout:
-		proxy.abortAllUpstreamAttempts()
 		proxy.Dwn.TimeoutFlag = true
 		scaffoldUpAttemptLog(proxy).
-			Msg(upstreamResBodyTimeout)
-	case <-proxy.Dwn.Aborted:
+			Msg(downstreamRtFired)
+
 		proxy.abortAllUpstreamAttempts()
+		scaffoldUpAttemptLog(proxy).
+			Msg(upstreamResBodyAbort)
+	case <-proxy.Dwn.Aborted:
 		proxy.Dwn.AbortedFlag = true
+		scaffoldUpAttemptLog(proxy).
+			Msg(downstreamReqAborted)
+
+		proxy.abortAllUpstreamAttempts()
 		scaffoldUpAttemptLog(proxy).
 			Msg(upstreamResBodyAbort)
 	case <-proxy.Up.Atmpt.CompleteBody:

@@ -147,13 +147,15 @@ func (proxy *Proxy) resolveUpstreamURI() string {
 	return uri
 }
 
+const abortedUpstreamAttempt = "upstream attempt aborted."
+
 func (proxy *Proxy) abortAllUpstreamAttempts() {
 	for _, atmpt := range proxy.Up.Atmpts {
 		atmpt.AbortedFlag = true
 		if atmpt.CancelFunc != nil {
 			atmpt.CancelFunc()
 			scaffoldUpAttemptLog(proxy).
-				Msgf("aborted upstream attempt after prior downstream abort.")
+				Msgf(abortedUpstreamAttempt)
 		}
 	}
 }
@@ -169,6 +171,8 @@ func (proxy *Proxy) hasUpstreamAttemptAborted() bool {
 }
 
 // tells us if we can safely retry with another upstream attempt
+const upstreamRetriesStopped = "upstream retries stopped after upstream attempt"
+
 func (proxy *Proxy) shouldRetryUpstreamAttempt() bool {
 
 	// part one is checking for repeatable methods. we don't retry i.e. POST
@@ -191,7 +195,7 @@ Retry:
 
 	if !retry {
 		scaffoldUpAttemptLog(proxy).
-			Msg("upstream retries stopped after upstream attempt")
+			Msg(upstreamRetriesStopped)
 	}
 
 	return retry
@@ -201,7 +205,7 @@ func (proxy *Proxy) hasMadeUpstreamAttempt() bool {
 	return proxy.Up.Atmpt != nil && proxy.Up.Atmpt.resp != nil
 }
 
-const headerBodyParsed = "downstream request header and body successfully parsed"
+const headerParsed = "downstream request headers successfully parsed"
 const bodyBytes = "bodyBytes"
 const method = "method"
 const path = "path"
@@ -230,26 +234,18 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 	proxy.Dwn.Method = parseMethod(request)
 	proxy.Dwn.Listener = parseListener(request)
 	proxy.Dwn.Port = parsePort(request)
-
-	proxy.parseRequestBody(request)
 	proxy.Dwn.Req = request
-
 	proxy.Dwn.AbortedFlag = false
-	proxy.Dwn.Resp.SendGzip = strings.Contains(request.Header.Get("Accept-Encoding"), "gzip")
+	proxy.Dwn.Resp.SendGzip = strings.Contains(request.Header.Get(acceptEncoding), gzipS)
 
-	var ev *zerolog.Event
-	if proxy.XRequestInfo {
-		ev = log.Info()
-	} else {
-		ev = log.Trace()
-	}
-
-	ev.Str(path, proxy.Dwn.Path).
+	infoOrTraceEv(proxy).Str(path, proxy.Dwn.Path).
 		Str(method, proxy.Dwn.Method).
-		Int(bodyBytes, len(proxy.Dwn.Body)).
 		Int64(dwnElpsdMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
 		Str(XRequestID, proxy.XRequestID).
-		Msg(headerBodyParsed)
+		Msg(headerParsed)
+
+	proxy.parseRequestBody(request)
+
 	return proxy
 }
 
@@ -269,30 +265,26 @@ func parseListener(request *http.Request) string {
 	}
 }
 
-const dwnHeaderContentLengthZero = "downstream request has content-length 0"
+const dwnHeaderContentLengthZero = "downstream request has content-length 0, body not read."
 const dwnBodyContentLengthExceedsMaxBytes = "downstream request body content-length %d exceeds max allowed bytes %d, refuse reading body"
 const dwnBodyTooLarge = "downstream request body too large. %d body bytes > server max %d"
-const dwnBodyReadAbort = "downstream request body aborting read, cause: %v"
+const dwnBodyReadAbort = "downstream request body read aborted, cause: %v"
 const dwnBodyRead = "downstream request body read (%d/%d) bytes/content-length"
 
 func (proxy *Proxy) parseRequestBody(request *http.Request) {
 	//content length 0, do not read just go back
 	if request.ContentLength == 0 {
-		var ev *zerolog.Event
-		if proxy.XRequestInfo {
-			ev = log.Info()
-		} else {
-			ev = log.Trace()
-		}
-		ev.Int64(dwnElpsdMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
-			Str(XRequestID, proxy.XRequestID).Msg(dwnHeaderContentLengthZero)
+		infoOrTraceEv(proxy).
+			Int64(dwnElpsdMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
+			Str(XRequestID, proxy.XRequestID).
+			Msg(dwnHeaderContentLengthZero)
 		return
 	}
 
 	//only try to parse the request if supplied content-length is within limits
 	if request.ContentLength >= Runner.Connection.Downstream.MaxBodyBytes {
 		proxy.Dwn.ReqTooLarge = true
-		log.Trace().
+		infoOrTraceEv(proxy).
 			Str(XRequestID, proxy.XRequestID).
 			Int64(dwnElpsdMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
 			Msgf(dwnBodyContentLengthExceedsMaxBytes, request.ContentLength, Runner.Connection.Downstream.MaxBodyBytes)
@@ -314,23 +306,40 @@ func (proxy *Proxy) parseRequestBody(request *http.Request) {
 	n := len(buf)
 	if int64(n) > Runner.Connection.Downstream.MaxBodyBytes {
 		proxy.Dwn.ReqTooLarge = true
-		log.Trace().
+		infoOrTraceEv(proxy).
+			Str(path, proxy.Dwn.Path).
+			Str(method, proxy.Dwn.Method).
 			Str(XRequestID, proxy.XRequestID).
 			Int64(dwnElpsdMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
 			Msgf(dwnBodyTooLarge, n, Runner.Connection.Downstream.MaxBodyBytes)
 	} else if err != nil && err != io.EOF {
-		log.Trace().
+		infoOrTraceEv(proxy).
+			Str(path, proxy.Dwn.Path).
+			Str(method, proxy.Dwn.Method).
 			Str(XRequestID, proxy.XRequestID).
 			Int64(dwnElpsdMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
 			Msgf(dwnBodyReadAbort, err)
 	} else {
 		proxy.Dwn.Body = buf
-		log.Trace().
+		infoOrTraceEv(proxy).
+			Str(path, proxy.Dwn.Path).
+			Str(method, proxy.Dwn.Method).
 			Str(XRequestID, proxy.XRequestID).
+			Int(bodyBytes, len(proxy.Dwn.Body)).
 			Int64(dwnElpsdMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
 			Msgf(dwnBodyRead, n, request.ContentLength)
 	}
 
+}
+
+func infoOrTraceEv(proxy *Proxy) *zerolog.Event {
+	var ev *zerolog.Event
+	if proxy.XRequestInfo {
+		ev = log.Info()
+	} else {
+		ev = log.Trace()
+	}
+	return ev
 }
 
 func parseMethod(request *http.Request) string {

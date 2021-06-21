@@ -15,7 +15,7 @@ func TestDownstreamTransferEncoding(t *testing.T) {
 	//DownstreamTransferEncoding("identity", "200", t)
 	DownstreamTransferEncoding("chunked", "200", t)
 
-	////illegal. Since go v1.16 identity is not supported
+	//illegal. Since go v1.16 identity is not supported
 	DownstreamTransferEncoding("identity", "501", t)
 	DownstreamTransferEncoding("fugazi", "501", t)
 	DownstreamTransferEncoding("deflate", "501", t)
