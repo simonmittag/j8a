@@ -132,7 +132,7 @@ func (proxy *Proxy) hasDownstreamAbortedOrTimedout() bool {
 	} else if proxy.Dwn.AbortedFlag == true {
 		proxy.respondWith(499, "remote user agent closed connection")
 	}
-	return proxy.Dwn.AbortedFlag
+	return proxy.Dwn.AbortedFlag || proxy.Dwn.TimeoutFlag
 }
 
 func (proxy *Proxy) resolveUpstreamURI() string {
@@ -147,7 +147,7 @@ func (proxy *Proxy) resolveUpstreamURI() string {
 	return uri
 }
 
-const abortedUpstreamAttempt = "upstream attempt aborted."
+const abortedUpstreamAttempt = "upstream attempt aborted"
 
 func (proxy *Proxy) abortAllUpstreamAttempts() {
 	for _, atmpt := range proxy.Up.Atmpts {
@@ -171,7 +171,7 @@ func (proxy *Proxy) hasUpstreamAttemptAborted() bool {
 }
 
 // tells us if we can safely retry with another upstream attempt
-const upstreamRetriesStopped = "upstream retries stopped after upstream attempt"
+const upstreamRetriesStopped = "upstream retries stopped"
 
 func (proxy *Proxy) shouldRetryUpstreamAttempt() bool {
 
@@ -265,11 +265,13 @@ func parseListener(request *http.Request) string {
 	}
 }
 
-const dwnHeaderContentLengthZero = "downstream request has content-length 0, body not read."
+const dwnHeaderContentLengthZero = "downstream request has content-length 0, body not read"
 const dwnBodyContentLengthExceedsMaxBytes = "downstream request body content-length %d exceeds max allowed bytes %d, refuse reading body"
 const dwnBodyTooLarge = "downstream request body too large. %d body bytes > server max %d"
+const dwnBodyReadTimeout = "downstream request body read timed out, cause: %v"
 const dwnBodyReadAbort = "downstream request body read aborted, cause: %v"
 const dwnBodyRead = "downstream request body read (%d/%d) bytes/content-length"
+const timeout = "timeout"
 
 func (proxy *Proxy) parseRequestBody(request *http.Request) {
 	//content length 0, do not read just go back
@@ -313,12 +315,18 @@ func (proxy *Proxy) parseRequestBody(request *http.Request) {
 			Int64(dwnElpsdMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
 			Msgf(dwnBodyTooLarge, n, Runner.Connection.Downstream.MaxBodyBytes)
 	} else if err != nil && err != io.EOF {
-		infoOrTraceEv(proxy).
+		ev := infoOrTraceEv(proxy).
 			Str(path, proxy.Dwn.Path).
 			Str(method, proxy.Dwn.Method).
 			Str(XRequestID, proxy.XRequestID).
-			Int64(dwnElpsdMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
-			Msgf(dwnBodyReadAbort, err)
+			Int64(dwnElpsdMicros, time.Since(proxy.Dwn.startDate).Microseconds())
+		if strings.Contains(err.Error(), timeout) {
+			proxy.Dwn.TimeoutFlag = true
+			ev.Msgf(dwnBodyReadTimeout, err)
+		} else {
+			proxy.Dwn.AbortedFlag = true
+			ev.Msgf(dwnBodyReadAbort, err)
+		}
 	} else {
 		proxy.Dwn.Body = buf
 		infoOrTraceEv(proxy).

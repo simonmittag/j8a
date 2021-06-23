@@ -42,6 +42,7 @@ const jwtBearerTokenMissing = "jwt bearer token missing, invalid, expired or una
 const unableToMapUpstreamResource = "unable to map upstream resource"
 const upstreamResourceNotFound = "upstream resource not found"
 const httpRequestEntityTooLarge = "http request entity too large, limit is %d bytes"
+const downstreamRequestAbortedBeforeFirstUpstream = "downstream request aborted or timed out before first upstream attempt"
 
 func proxyHandler(response http.ResponseWriter, request *http.Request, exec proxyfunc) {
 	matched := false
@@ -58,6 +59,17 @@ func proxyHandler(response http.ResponseWriter, request *http.Request, exec prox
 		} else {
 			sendStatusCodeAsJSON(proxy.respondWith(400, badOrMalFormedRequest))
 		}
+		return
+	}
+
+	//if we timed out or aborted during downstream request parsing we stop the handler before the first upstream attempt.
+	if proxy.hasDownstreamAbortedOrTimedout() {
+		infoOrTraceEv(proxy).Str(path, proxy.Dwn.Path).
+			Str(method, proxy.Dwn.Method).
+			Int64(dwnElpsdMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
+			Str(XRequestID, proxy.XRequestID).
+			Msg(downstreamRequestAbortedBeforeFirstUpstream)
+		sendStatusCodeAsJSON(proxy)
 		return
 	}
 
