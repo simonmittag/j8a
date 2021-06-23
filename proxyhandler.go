@@ -268,7 +268,7 @@ const safeToIgnoreFailedBodyChannelClosure = "safe to ignore. recovered internal
 const upstreamConReadTimeoutFired = "upstream connection read timeout fired, aborting upstream response body processing"
 
 const upResBodyBytes = "upResBodyBytes"
-const upstreamResBodyAbort = "aborting upstream response body processing."
+const upstreamResBodyAbort = "upstream response body processing aborted"
 const upstreamResBodyProcessed = "upstream response body processed"
 const emptyJSON = "{}"
 
