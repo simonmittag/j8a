@@ -10,21 +10,18 @@ import (
 	"testing"
 )
 
-func TestDownstreamTransferEncoding(t *testing.T) {
-	//legal
-	//DownstreamTransferEncoding("identity", "200", t)
-	DownstreamTransferEncoding("chunked", "200", t)
-
+func TestDownstreamTransferEncodingUnsupported(t *testing.T) {
 	//illegal. Since go v1.16 identity is not supported
-	DownstreamTransferEncoding("identity", "501", t)
-	DownstreamTransferEncoding("fugazi", "501", t)
-	DownstreamTransferEncoding("deflate", "501", t)
-	DownstreamTransferEncoding("compress", "501", t)
-	DownstreamTransferEncoding("gzip", "501", t)
+	DownstreamTransferEncodingNoBodyResponsds501Unsupported("identity", t)
+	DownstreamTransferEncodingNoBodyResponsds501Unsupported("fugazi", t)
+	DownstreamTransferEncodingNoBodyResponsds501Unsupported("deflate", t)
+	DownstreamTransferEncodingNoBodyResponsds501Unsupported("compress", t)
+	DownstreamTransferEncodingNoBodyResponsds501Unsupported("gzip", t)
 }
 
-func DownstreamTransferEncoding(enc string, rCode string, t *testing.T) {
+func DownstreamTransferEncodingNoBodyResponsds501Unsupported(enc string, t *testing.T) {
 	//if this test fails, check the j8a configuration for connection.downstream.ReadTimeoutSeconds
+	rCode := "501"
 
 	//step 1 make a connection
 	c, err := net.Dial("tcp", ":8080")
