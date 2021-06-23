@@ -105,8 +105,8 @@ func validate(proxy *Proxy) bool {
 		!proxy.Dwn.ReqTooLarge
 }
 
-const connectionClosedByRemoteUserAgent = "connection closed by remote user agent"
-const gatewayTimeoutTriggeredByDownstreamEvent = "gateway timeout triggered by downstream event"
+const connectionClosedByRemoteUserAgent = "downstream remote user agent aborted request or closed connection"
+const gatewayTimeoutTriggeredByDownstreamEvent = "gateway timeout triggered by downstream timeout"
 const gatewayTimeoutTriggeredByUpstreamEvent = "gateway timeout triggered by upstream attempt"
 const badGatewayTriggeredUnableToProcessUpstreamResponse = "bad gateway triggered. unable to process upstream response"
 

@@ -128,9 +128,9 @@ func (proxy *Proxy) hasDownstreamAbortedOrTimedout() bool {
 	default:
 	}
 	if proxy.Dwn.TimeoutFlag == true {
-		proxy.respondWith(504, "gateway timeout triggered after downstream roundtripTimeoutSeconds")
+		proxy.respondWith(504, gatewayTimeoutTriggeredByDownstreamEvent)
 	} else if proxy.Dwn.AbortedFlag == true {
-		proxy.respondWith(499, "remote user agent closed connection")
+		proxy.respondWith(499, connectionClosedByRemoteUserAgent)
 	}
 	return proxy.Dwn.AbortedFlag || proxy.Dwn.TimeoutFlag
 }
