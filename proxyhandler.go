@@ -42,6 +42,7 @@ const jwtBearerTokenMissing = "jwt bearer token missing, invalid, expired or una
 const unableToMapUpstreamResource = "unable to map upstream resource"
 const upstreamResourceNotFound = "upstream resource not found"
 const httpRequestEntityTooLarge = "http request entity too large, limit is %d bytes"
+const downstreamRequestAbortedBeforeFirstUpstream = "downstream request aborted or timed out before first upstream attempt"
 
 func proxyHandler(response http.ResponseWriter, request *http.Request, exec proxyfunc) {
 	matched := false
@@ -58,6 +59,17 @@ func proxyHandler(response http.ResponseWriter, request *http.Request, exec prox
 		} else {
 			sendStatusCodeAsJSON(proxy.respondWith(400, badOrMalFormedRequest))
 		}
+		return
+	}
+
+	//if we timed out or aborted during downstream request parsing we stop the handler before the first upstream attempt.
+	if proxy.hasDownstreamAbortedOrTimedout() {
+		infoOrTraceEv(proxy).Str(path, proxy.Dwn.Path).
+			Str(method, proxy.Dwn.Method).
+			Int64(dwnElpsdMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
+			Str(XRequestID, proxy.XRequestID).
+			Msg(downstreamRequestAbortedBeforeFirstUpstream)
+		sendStatusCodeAsJSON(proxy)
 		return
 	}
 
@@ -93,7 +105,8 @@ func validate(proxy *Proxy) bool {
 		!proxy.Dwn.ReqTooLarge
 }
 
-const gatewayTimeoutTriggeredByDownstreamEvent = "gateway timeout triggered by downstream event"
+const connectionClosedByRemoteUserAgent = "downstream remote user agent aborted request or closed connection"
+const gatewayTimeoutTriggeredByDownstreamEvent = "gateway timeout triggered by downstream timeout"
 const gatewayTimeoutTriggeredByUpstreamEvent = "gateway timeout triggered by upstream attempt"
 const badGatewayTriggeredUnableToProcessUpstreamResponse = "bad gateway triggered. unable to process upstream response"
 
@@ -107,9 +120,12 @@ func handleHTTP(proxy *Proxy) {
 		if proxy.shouldRetryUpstreamAttempt() {
 			handleHTTP(proxy.nextAttempt())
 		} else {
-			//sends 504 for downstream timeout, 504 for upstream timeout, 502 in all other cases
-			if proxy.hasDownstreamAborted() {
+			//sends 504 for downstream timeout, 504 for upstream timeout, 499 for downstream remote hangup,
+			//502 in all other cases
+			if proxy.Dwn.TimeoutFlag == true {
 				sendStatusCodeAsJSON(proxy.respondWith(504, gatewayTimeoutTriggeredByDownstreamEvent))
+			} else if proxy.Dwn.AbortedFlag == true {
+				sendStatusCodeAsJSON(proxy.respondWith(499, connectionClosedByRemoteUserAgent))
 			} else if proxy.hasUpstreamAttemptAborted() {
 				sendStatusCodeAsJSON(proxy.respondWith(504, gatewayTimeoutTriggeredByUpstreamEvent))
 			} else {
@@ -176,10 +192,13 @@ func scaffoldUpstreamRequest(proxy *Proxy) *http.Request {
 }
 
 const upResHeaders = "upResHeaders"
-const upstreamResHeaderAborted = "aborting upstream response header processing. downstream connection read timeout fired or user cancelled request"
+const upstreamResHeaderAborted = "upstream response header processing aborted"
 const upstreamResHeadersProcessed = "upstream response headers processed"
 const upConReadTimeoutFired = "upstream connection read timeout fired, aborting upstream response header processing."
 const safeToIgnoreFailedHeaderChannelClosure = "safe to ignore. recovered internally from closed header success channel after request already handled."
+
+const downstreamRtFired = "downstream roundtrip timeout fired"
+const downstreamReqAborted = "downstream request aborted"
 
 func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
 	//get a reference to this before any race conditions may occur
@@ -219,9 +238,20 @@ func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
 		scaffoldUpAttemptLog(proxy).
 			Int(upReadTimeoutSecs, Runner.Connection.Upstream.ReadTimeoutSeconds).
 			Msg(upConReadTimeoutFired)
-	case <-proxy.Dwn.Aborted:
+	case <-proxy.Dwn.Timeout:
+		proxy.Dwn.TimeoutFlag = true
+		scaffoldUpAttemptLog(proxy).
+			Msg(downstreamRtFired)
+
 		proxy.abortAllUpstreamAttempts()
+		scaffoldUpAttemptLog(proxy).
+			Msg(upstreamResHeaderAborted)
+	case <-proxy.Dwn.Aborted:
 		proxy.Dwn.AbortedFlag = true
+		scaffoldUpAttemptLog(proxy).
+			Msg(downstreamReqAborted)
+
+		proxy.abortAllUpstreamAttempts()
 		scaffoldUpAttemptLog(proxy).
 			Msg(upstreamResHeaderAborted)
 	case <-proxy.Up.Atmpt.CompleteHeader:
@@ -238,7 +268,7 @@ const safeToIgnoreFailedBodyChannelClosure = "safe to ignore. recovered internal
 const upstreamConReadTimeoutFired = "upstream connection read timeout fired, aborting upstream response body processing"
 
 const upResBodyBytes = "upResBodyBytes"
-const upstreamResBodyAbort = "aborting upstream response body processing. downstream connection read timeout fired or user cancelled request"
+const upstreamResBodyAbort = "aborting upstream response body processing."
 const upstreamResBodyProcessed = "upstream response body processed"
 const emptyJSON = "{}"
 
@@ -291,9 +321,20 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 		scaffoldUpAttemptLog(proxy).
 			Int(upReadTimeoutSecs, Runner.Connection.Upstream.ReadTimeoutSeconds).
 			Msg(upstreamConReadTimeoutFired)
-	case <-proxy.Dwn.Aborted:
+	case <-proxy.Dwn.Timeout:
+		proxy.Dwn.TimeoutFlag = true
+		scaffoldUpAttemptLog(proxy).
+			Msg(downstreamRtFired)
+
 		proxy.abortAllUpstreamAttempts()
+		scaffoldUpAttemptLog(proxy).
+			Msg(upstreamResBodyAbort)
+	case <-proxy.Dwn.Aborted:
 		proxy.Dwn.AbortedFlag = true
+		scaffoldUpAttemptLog(proxy).
+			Msg(downstreamReqAborted)
+
+		proxy.abortAllUpstreamAttempts()
 		scaffoldUpAttemptLog(proxy).
 			Msg(upstreamResBodyAbort)
 	case <-proxy.Up.Atmpt.CompleteBody:
@@ -365,7 +406,7 @@ func isUpstreamClientError(proxy *Proxy) bool {
 }
 
 func shouldProxyUpstreamResponse(proxy *Proxy, bodyError error) bool {
-	return !proxy.hasDownstreamAborted() &&
+	return !proxy.hasDownstreamAbortedOrTimedout() &&
 		!proxy.hasUpstreamAttemptAborted() &&
 		bodyError == nil &&
 		proxy.Up.Atmpt.resp.StatusCode < 500

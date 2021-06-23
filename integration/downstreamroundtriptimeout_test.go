@@ -141,6 +141,7 @@ func TestServer3TLSDownstreamRoundTripTimeoutFireWithSlowHeader25S(t *testing.T)
 		true)
 }
 
+//works as expected on b164
 func TestServer2DownstreamRoundTripTimeoutFireWithSlowBody25S(t *testing.T) {
 	performJ8aTest(t,
 		"/slowbody",
