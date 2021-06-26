@@ -15,14 +15,12 @@
 ### v0.8.4 (26/06/2021)
 * introduced HTTP 499 responses for client aborts.
 
-
 ### v0.8.3 (10/06/2021)
 * fixed bug with upstream servers and unsupported brotli compression.
 
 ### v0.8.2 (06/06/2021)
 * upgraded to Alpine/Go@v1.16.5
 * bugfix for missing Content-Encoding header for internal responses.
-
 
 
 ## What is j8a?
