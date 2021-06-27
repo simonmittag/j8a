@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func TestServerHangsUpOnDownstreamIfReadTimeoutExceeded(t *testing.T) {
+func TestServerHangsUpOnDownstreamIfReadTimeoutExceededDuringHeaderRead(t *testing.T) {
 	//if this test fails, check the j8a configuration for connection.downstream.ReadTimeoutSeconds
 	grace := 1
 	serverReadTimeoutSeconds := 3
@@ -51,6 +51,53 @@ WriteLoop:
 	} else {
 		t.Logf("normal: j8a hung up as expected with error: %v", err2)
 	}
+}
+
+func TestServerHangsUpOnDownstreamIfReadTimeoutExceededDuringBodyRead(t *testing.T) {
+	//if this test fails, check the j8a configuration for connection.downstream.ReadTimeoutSeconds
+	grace := 1
+	serverReadTimeoutSeconds := 3
+	wait := serverReadTimeoutSeconds + grace
+
+	//step 1 make a connection
+	c, err := net.Dial("tcp", ":8081")
+	if err != nil {
+		t.Errorf("test failure. unable to connect to j8a server for integration test, cause: %v", err)
+	}
+
+	//step 2 we send headers and some of the body. this will cause j8a to wait for more data
+	checkWrite(t, c, "PUT /mse6/put HTTP/1.1\r\n")
+	checkWrite(t, c, "Host: localhost:8081\r\n")
+	checkWrite(t, c, "User-Agent: integration\r\n")
+	checkWrite(t, c, "Accept-Encoding: identity\r\n")
+	checkWrite(t, c, "Content-Type: application/json\r\n")
+	checkWrite(t, c, "Content-Encoding: identity\r\n")
+	checkWrite(t, c, "Content-Length: 38\r\n")
+	checkWrite(t, c, "\r\n")
+	checkWrite(t, c, "{\n\t\"key\": \"value\"\n}")
+
+	//step 3 we sleep locally until we hit downstream readtimeout
+	t.Logf("normal. going to sleep for %d seconds to trigger remote j8a read timeout", wait)
+	time.Sleep(time.Second * time.Duration(wait))
+	checkWrite(t, c, "{\n\t\"key\": \"value\"\n}")
+
+	//step 4 we try to read the server response. Warning this isn't a proper http client
+	//i.e. doesn't include parsing content length, nor reading response properly.
+	buf := make([]byte, 1024)
+	l, err := c.Read(buf)
+	t.Logf("normal. j8a responded with %v bytes and error code %v", l, err)
+	t.Logf("normal. j8a partial response: %v", string(buf))
+	if l == 0 {
+		t.Error("test failure. j8a did not respond, 0 bytes read")
+	}
+	response := string(buf)
+	if !strings.Contains(response, "Server: j8a") {
+		t.Error("test failure. j8a did not respond, server information not found on response.")
+	}
+	if !strings.Contains(response, "504") {
+		t.Error("test failure. j8a did not respond with 504, but should've read the body.")
+	}
+
 }
 
 func TestServerConnectsNormallyWithoutHangingUp(t *testing.T) {
