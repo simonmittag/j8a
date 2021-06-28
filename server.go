@@ -244,6 +244,9 @@ const contentType = "Content-Type"
 const applicationJSON = "application/json"
 const none = "none"
 
+const connectionS = "Connection"
+const closeS = "close"
+
 func sendStatusCodeAsJSON(proxy *Proxy) {
 	statusCodeResponse := StatusCodeResponse{
 		Code:    proxy.Dwn.Resp.StatusCode,
@@ -263,6 +266,10 @@ func sendStatusCodeAsJSON(proxy *Proxy) {
 	}
 
 	proxy.writeStandardResponseHeaders()
+	if proxy.Dwn.Resp.StatusCode >= 400 {
+		proxy.Dwn.Resp.Writer.Header().Set(connectionS, closeS)
+	}
+
 	proxy.Dwn.Resp.Writer.Header().Set(contentType, applicationJSON)
 	proxy.setContentLengthHeader()
 	proxy.writeContentEncodingHeader()
