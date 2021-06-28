@@ -103,10 +103,10 @@ func (runtime Runtime) startListening() {
 
 	httpConfig := &http.Server{
 		Addr:              ":" + strconv.Itoa(runtime.Connection.Downstream.Http.Port),
-		ReadHeaderTimeout: readTimeoutDuration,
-		ReadTimeout:       readTimeoutDuration,
-		WriteTimeout:      roundTripTimeoutDurationWithGrace,
-		IdleTimeout:       idleTimeoutDuration,
+		ReadHeaderTimeout: readTimeoutDuration,               //downstream connection deadline
+		ReadTimeout:       readTimeoutDuration,               //downstream connection deadline
+		WriteTimeout:      roundTripTimeoutDurationWithGrace, //downstream connection deadline
+		IdleTimeout:       idleTimeoutDuration,               //downstream connection deadline
 		ErrorLog:          golog.New(&zerologAdapter{}, "", 0),
 		Handler:           HandlerDelegate{},
 	}
@@ -269,9 +269,9 @@ func sendStatusCodeAsJSON(proxy *Proxy) {
 	proxy.writeStandardResponseHeaders()
 
 	//for http1.1 we send a connection:close for error responses.
-	if proxy.Dwn.Resp.StatusCode >= 500 && proxy.Dwn.HttpVer == s1d1 {
-		proxy.Dwn.Resp.Writer.Header().Set(connectionS, closeS)
-	}
+	//if proxy.Dwn.Resp.StatusCode >= 500 && proxy.Dwn.HttpVer == s1d1 {
+	//	proxy.Dwn.Resp.Writer.Header().Set(connectionS, closeS)
+	//}
 
 	proxy.Dwn.Resp.Writer.Header().Set(contentType, applicationJSON)
 	proxy.setContentLengthHeader()
