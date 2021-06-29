@@ -246,7 +246,8 @@ const none = "none"
 
 const connectionS = "Connection"
 const closeS = "close"
-const s1d1 = "1.1"
+const HTTP11 = "1.1"
+const clientError = 400
 
 func sendStatusCodeAsJSON(proxy *Proxy) {
 	statusCodeResponse := StatusCodeResponse{
@@ -269,9 +270,10 @@ func sendStatusCodeAsJSON(proxy *Proxy) {
 	proxy.writeStandardResponseHeaders()
 
 	//for http1.1 we send a connection:close for error responses.
-	//if proxy.Dwn.Resp.StatusCode >= 500 && proxy.Dwn.HttpVer == s1d1 {
-	//	proxy.Dwn.Resp.Writer.Header().Set(connectionS, closeS)
-	//}
+
+	if proxy.Dwn.Resp.StatusCode >= clientError && proxy.Dwn.HttpVer == HTTP11 {
+		proxy.Dwn.Resp.Writer.Header().Set(connectionS, closeS)
+	}
 
 	proxy.Dwn.Resp.Writer.Header().Set(contentType, applicationJSON)
 	proxy.setContentLengthHeader()
