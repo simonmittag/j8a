@@ -248,6 +248,7 @@ const connectionS = "Connection"
 const closeS = "close"
 const HTTP11 = "1.1"
 const clientError = 400
+const downstreamConnClose = "downstream connection close triggered for >=400 response code"
 
 func sendStatusCodeAsJSON(proxy *Proxy) {
 	statusCodeResponse := StatusCodeResponse{
@@ -269,10 +270,22 @@ func sendStatusCodeAsJSON(proxy *Proxy) {
 
 	proxy.writeStandardResponseHeaders()
 
-	//for http1.1 we send a connection:close for error responses.
+	//we close downstream connections for error responses
+	if proxy.Dwn.Resp.StatusCode >= clientError {
+		//for http1.1 we send a connection:close
+		if proxy.Dwn.HttpVer == HTTP11 {
+			proxy.Dwn.Resp.Writer.Header().Set(connectionS, closeS)
+		}
 
-	if proxy.Dwn.Resp.StatusCode >= clientError && proxy.Dwn.HttpVer == HTTP11 {
-		proxy.Dwn.Resp.Writer.Header().Set(connectionS, closeS)
+		//and we close the socket, this also works for HTTP/2 where the connection close header is illegal.
+		defer func() {
+			hj, _ := proxy.Dwn.Resp.Writer.(http.Hijacker)
+			conn, _, err := hj.Hijack()
+			if conn != nil && err == nil {
+				conn.Close()
+			}
+			infoOrTraceEv(proxy).Msg(downstreamConnClose)
+		}()
 	}
 
 	proxy.Dwn.Resp.Writer.Header().Set(contentType, applicationJSON)
