@@ -270,7 +270,6 @@ func sendStatusCodeAsJSON(proxy *Proxy) {
 
 	proxy.writeStandardResponseHeaders()
 
-	//we close downstream connections for error responses
 	if proxy.Dwn.Resp.StatusCode >= clientError {
 		//for http1.1 we send a connection:close
 		if proxy.Dwn.HttpVer == HTTP11 {
@@ -279,12 +278,14 @@ func sendStatusCodeAsJSON(proxy *Proxy) {
 
 		//and we close the socket, this also works for HTTP/2 where the connection close header is illegal.
 		defer func() {
-			hj, _ := proxy.Dwn.Resp.Writer.(http.Hijacker)
-			conn, _, err := hj.Hijack()
-			if conn != nil && err == nil {
-				conn.Close()
+			hj, ok := proxy.Dwn.Resp.Writer.(http.Hijacker)
+			if hj != nil && ok {
+				conn, _, err2 := hj.Hijack()
+				if conn != nil && err2 == nil {
+					conn.Close()
+					infoOrTraceEv(proxy).Msg(downstreamConnClose)
+				}
 			}
-			infoOrTraceEv(proxy).Msg(downstreamConnClose)
 		}()
 	}
 
