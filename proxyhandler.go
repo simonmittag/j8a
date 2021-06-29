@@ -218,7 +218,7 @@ func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
 
 		defer func() {
 			if err := recover(); err != nil {
-				log.Trace().
+				infoOrTraceEv(proxy).
 					//TODO can this be removed?
 					Str("error", fmt.Sprintf("error: %v", err)).
 					Str(XRequestID, proxy.XRequestID).
@@ -485,7 +485,7 @@ func logHandledDownstreamRoundtrip(proxy *Proxy) {
 }
 
 const upstreamAttemptSuccessful = "upstream attempt successful"
-const upstreamAttemptUnsuccessful = "upstream attempt unsuccessful"
+const upstreamAttemptUnsuccessful = "upstream attempt unsuccessful, cause: "
 
 func logSuccessfulUpstreamAttempt(proxy *Proxy, upstreamResponse *http.Response) {
 	scaffoldUpAttemptLog(proxy).
@@ -493,10 +493,17 @@ func logSuccessfulUpstreamAttempt(proxy *Proxy, upstreamResponse *http.Response)
 		Msg(upstreamAttemptSuccessful)
 }
 
+const undeterminedUpstreamError = "undetermined but raw error was: %v"
+const upstreamHangup = "upstream TCP socket hung up on us remotely"
+
 func logUnsuccessfulUpstreamAttempt(proxy *Proxy, upstreamResponse *http.Response, upstreamError error) {
 	ev := scaffoldUpAttemptLog(proxy)
 	if upstreamResponse != nil && upstreamResponse.StatusCode > 0 {
 		ev = ev.Int(upAtmptResCode, upstreamResponse.StatusCode)
 	}
-	ev.Msg(upstreamAttemptUnsuccessful)
+	if upstreamError != nil && strings.Contains(upstreamError.Error(), "EOF") {
+		ev.Msg(upstreamAttemptUnsuccessful + upstreamHangup)
+	} else {
+		ev.Msg(upstreamAttemptUnsuccessful + fmt.Sprintf(undeterminedUpstreamError, upstreamError))
+	}
 }
