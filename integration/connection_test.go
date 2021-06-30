@@ -93,10 +93,24 @@ func Test404ResponseClosesDownstreamConnection(t *testing.T) {
 		t.Logf("normal. server did respond with j8a header")
 	}
 
-	//step 4 we check the status of the connection which should be closed
+	//step 4 we check for the connection close header
 	if !strings.Contains(response, "Connection: close") {
 		t.Error("j8a did not send Connection: close for HTTP/1.1 GET 404")
 	} else {
 		t.Logf("normal. server did respond with Connection: close header")
+	}
+
+	//step 5 we check the status of the connection which should be closed
+	var e error
+	for i := 0; i < 10; i++ {
+		_, e = c.Write([]byte("test1234567890"))
+		if e != nil {
+			break
+		}
+	}
+	if e == nil {
+		t.Errorf("connection write should have failed after close")
+	} else {
+		t.Logf("normal. connection closed")
 	}
 }
