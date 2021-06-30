@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 )
 
 func Test100ConcurrentTCPConnectionsUsingHTTP11(t *testing.T) {
@@ -104,6 +105,7 @@ func Test404ResponseClosesDownstreamConnection(t *testing.T) {
 	var e error
 	for i := 0; i < 10; i++ {
 		_, e = c.Write([]byte("test1234567890"))
+		time.Sleep(time.Millisecond * 250)
 		if e != nil {
 			break
 		}
