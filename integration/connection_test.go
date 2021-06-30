@@ -63,7 +63,7 @@ func ConcurrentHTTP11ConnectionsSucceed(total int, t *testing.T) {
 }
 
 //this test covers all codes >=400 we just use 404 cause it's easy to evoke.
-func Test404ResponseClosesDownstreamConnection(t *testing.T) {
+func Test404ResponseClosesDownstreamConnectionUsingHTTP11(t *testing.T) {
 	//step 1 we connect to j8a with net.dial
 	c, err := net.Dial("tcp", ":8080")
 	if err != nil {
