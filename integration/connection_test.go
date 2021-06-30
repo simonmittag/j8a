@@ -62,6 +62,7 @@ func ConcurrentHTTP11ConnectionsSucceed(total int, t *testing.T) {
 	t.Logf("done! good HTTP response: %d, 200s: %d, non 200s: %d, connection errors: %d", good, R200, N200, bad)
 }
 
+//this test covers all codes >=400 we just use 404 cause it's easy to evoke.
 func Test404ResponseClosesDownstreamConnection(t *testing.T) {
 	//step 1 we connect to j8a with net.dial
 	c, err := net.Dial("tcp", ":8080")
