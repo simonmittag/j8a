@@ -28,7 +28,7 @@ var httpClient HTTPClient
 
 //httpHeadersNoRewrite contains a list of headers that are not copied in either direction. they must be set by the
 //server or are ignored.
-var httpHeadersNoRewrite []string = []string{date, contentLength, acceptEncoding, transferEncoding, server}
+var httpHeadersNoRewrite []string = []string{connectionS, date, contentLength, acceptEncoding, transferEncoding, server}
 
 //extract IPs for stdout. thread safe.
 var ipr iprex = iprex{}
@@ -137,6 +137,7 @@ func handleHTTP(proxy *Proxy) {
 
 const upstreamURIResolved = "upstream URI resolved"
 const gzipIdentity = gzipS + ", " + identity
+const keepAlive = "Keep-Alive"
 
 func scaffoldUpstreamRequest(proxy *Proxy) *http.Request {
 	//this context is used to time out the upstream request
@@ -186,6 +187,9 @@ func scaffoldUpstreamRequest(proxy *Proxy) *http.Request {
 			}
 		}
 	}
+
+	//this is redundant for HTTP/1.1, spec ref: https://datatracker.ietf.org/doc/html/rfc2616#section-8.1.3
+	//upstreamRequest.Header.Set(connectionS, keepAlive)
 	upstreamRequest.Header.Set(XRequestID, proxy.XRequestID)
 
 	return upstreamRequest
@@ -214,7 +218,7 @@ func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
 
 		defer func() {
 			if err := recover(); err != nil {
-				log.Trace().
+				infoOrTraceEv(proxy).
 					//TODO can this be removed?
 					Str("error", fmt.Sprintf("error: %v", err)).
 					Str(XRequestID, proxy.XRequestID).
@@ -481,7 +485,7 @@ func logHandledDownstreamRoundtrip(proxy *Proxy) {
 }
 
 const upstreamAttemptSuccessful = "upstream attempt successful"
-const upstreamAttemptUnsuccessful = "upstream attempt unsuccessful"
+const upstreamAttemptUnsuccessful = "upstream attempt unsuccessful, cause: "
 
 func logSuccessfulUpstreamAttempt(proxy *Proxy, upstreamResponse *http.Response) {
 	scaffoldUpAttemptLog(proxy).
@@ -489,10 +493,17 @@ func logSuccessfulUpstreamAttempt(proxy *Proxy, upstreamResponse *http.Response)
 		Msg(upstreamAttemptSuccessful)
 }
 
+const undeterminedUpstreamError = "undetermined but raw error was: %v"
+const upstreamHangup = "upstream TCP socket hung up on us remotely"
+
 func logUnsuccessfulUpstreamAttempt(proxy *Proxy, upstreamResponse *http.Response, upstreamError error) {
 	ev := scaffoldUpAttemptLog(proxy)
 	if upstreamResponse != nil && upstreamResponse.StatusCode > 0 {
 		ev = ev.Int(upAtmptResCode, upstreamResponse.StatusCode)
 	}
-	ev.Msg(upstreamAttemptUnsuccessful)
+	if upstreamError != nil && strings.Contains(upstreamError.Error(), "EOF") {
+		ev.Msg(upstreamAttemptUnsuccessful + upstreamHangup)
+	} else {
+		ev.Msg(upstreamAttemptUnsuccessful + fmt.Sprintf(undeterminedUpstreamError, upstreamError))
+	}
 }

@@ -103,10 +103,10 @@ func (runtime Runtime) startListening() {
 
 	httpConfig := &http.Server{
 		Addr:              ":" + strconv.Itoa(runtime.Connection.Downstream.Http.Port),
-		ReadHeaderTimeout: readTimeoutDuration,
-		ReadTimeout:       readTimeoutDuration,
-		WriteTimeout:      roundTripTimeoutDurationWithGrace,
-		IdleTimeout:       idleTimeoutDuration,
+		ReadHeaderTimeout: readTimeoutDuration,               //downstream connection deadline
+		ReadTimeout:       readTimeoutDuration,               //downstream connection deadline
+		WriteTimeout:      roundTripTimeoutDurationWithGrace, //downstream connection deadline
+		IdleTimeout:       idleTimeoutDuration,               //downstream connection deadline
 		ErrorLog:          golog.New(&zerologAdapter{}, "", 0),
 		Handler:           HandlerDelegate{},
 	}
@@ -244,6 +244,12 @@ const contentType = "Content-Type"
 const applicationJSON = "application/json"
 const none = "none"
 
+const connectionS = "Connection"
+const closeS = "close"
+const HTTP11 = "1.1"
+const clientError = 400
+const downstreamConnClose = "downstream connection close triggered for >=400 response code"
+
 func sendStatusCodeAsJSON(proxy *Proxy) {
 	statusCodeResponse := StatusCodeResponse{
 		Code:    proxy.Dwn.Resp.StatusCode,
@@ -263,6 +269,13 @@ func sendStatusCodeAsJSON(proxy *Proxy) {
 	}
 
 	proxy.writeStandardResponseHeaders()
+
+	if proxy.Dwn.Resp.StatusCode >= clientError {
+		//for http1.1 we send a connection:close. Go HTTP/2 server removes this header which is illegal in HTTP/2.
+		//but magically maps this to a GOAWAY frame for HTTP/2, see: https://go-review.googlesource.com/c/net/+/121415/
+		proxy.Dwn.Resp.Writer.Header().Set(connectionS, closeS)
+	}
+
 	proxy.Dwn.Resp.Writer.Header().Set(contentType, applicationJSON)
 	proxy.setContentLengthHeader()
 	proxy.writeContentEncodingHeader()
