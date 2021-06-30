@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"strings"
@@ -354,6 +355,35 @@ func TestStatusCode300SeriesRedirect(t *testing.T) {
 			t.Logf("normal. port %d, testMethod /send, up code %d, want dwn code %d, got %d", serverPort,
 				getUpstreamStatusCode, wantDownstreamStatusCode, gotDownstreamStatusCode)
 		}
+	}
+}
+
+func Test404ResponseBodyIsIncluded(t *testing.T) {
+	client := &http.Client{}
+	resp, err := client.Get("http://localhost:8080/mse6/xyzd")
+
+	if err != nil {
+		t.Errorf("error connecting to upstream server")
+	}
+	if resp != nil {
+		if resp.StatusCode != 404 {
+			t.Errorf("expected 404 but got %d", resp.StatusCode)
+		}
+		body, err := ioutil.ReadAll(resp.Body)
+		t.Logf("normal. body received %v", string(body))
+		t.Logf("error received %v", err)
+
+		var result map[string]interface{}
+		json.Unmarshal(body, &result)
+		rs := result["Code"].(float64)
+		if rs == 404 {
+			t.Logf("normal. response body received with Code: %v", rs)
+		} else {
+			t.Errorf("error. response body should have Code: %v", rs)
+		}
+		resp.Body.Close()
+	} else {
+		t.Error("response not received")
 	}
 }
 

@@ -3,7 +3,9 @@ package integration
 import (
 	"crypto/tls"
 	"fmt"
+	"net"
 	"net/http"
+	"strings"
 	"sync"
 	"testing"
 )
@@ -11,10 +13,6 @@ import (
 func Test100ConcurrentTCPConnectionsUsingHTTP11(t *testing.T) {
 	ConcurrentHTTP11ConnectionsSucceed(100, t)
 }
-
-//func Test4096ConcurrentTCPConnectionsUsingHTTP11(t *testing.T) {
-//	ConcurrentHTTP11ConnectionsSucceed(4096, t)
-//}
 
 func ConcurrentHTTP11ConnectionsSucceed(total int, t *testing.T) {
 	good := 0
@@ -61,4 +59,44 @@ func ConcurrentHTTP11ConnectionsSucceed(total int, t *testing.T) {
 
 	wg.Wait()
 	t.Logf("done! good HTTP response: %d, 200s: %d, non 200s: %d, connection errors: %d", good, R200, N200, bad)
+}
+
+func Test404ResponseClosesDownstreamConnection(t *testing.T) {
+	//step 1 we connect to j8a with net.dial
+	c, err := net.Dial("tcp", ":8080")
+	if err != nil {
+		t.Errorf("unable to connect to j8a server for integration test, cause: %v", err)
+		return
+	}
+	defer c.Close()
+
+	//step 2 we send headers and terminate HTTP message.
+	checkWrite(t, c, "GET /mse6/xyz HTTP/1.1\r\n")
+	checkWrite(t, c, "Host: localhost:8080\r\n")
+	checkWrite(t, c, "User-Agent: integration\r\n")
+	checkWrite(t, c, "Accept: */*\r\n")
+	checkWrite(t, c, "\r\n")
+
+	//step 3 we try to read the server response. Warning this isn't a proper http client
+	//i.e. doesn't include parsing content length, reading response properly.
+	buf := make([]byte, 1024)
+	l, err := c.Read(buf)
+	t.Logf("j8a responded with %v bytes and error code %v", l, err)
+	t.Logf("j8a partial response: %v", string(buf))
+	if l == 0 {
+		t.Error("j8a did not respond, 0 bytes read")
+	}
+	response := string(buf)
+	if !strings.Contains(response, "Server: j8a") {
+		t.Error("j8a did not respond, server information not found on response ")
+	} else {
+		t.Logf("normal. server did respond with j8a header")
+	}
+
+	//step 4 we check the status of the connection which should be closed
+	if !strings.Contains(response, "Connection: close") {
+		t.Error("j8a did not send Connection: close for HTTP/1.1 GET 404")
+	} else {
+		t.Logf("normal. server did respond with Connection: close header")
+	}
 }
