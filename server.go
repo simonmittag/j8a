@@ -271,22 +271,9 @@ func sendStatusCodeAsJSON(proxy *Proxy) {
 	proxy.writeStandardResponseHeaders()
 
 	if proxy.Dwn.Resp.StatusCode >= clientError {
-		//for http1.1 we send a connection:close
-		if proxy.Dwn.HttpVer == HTTP11 {
-			proxy.Dwn.Resp.Writer.Header().Set(connectionS, closeS)
-		}
-
-		//and we close the socket, this also works for HTTP/2 where the connection close header is illegal.
-		defer func() {
-			hj, ok := proxy.Dwn.Resp.Writer.(http.Hijacker)
-			if hj != nil && ok {
-				conn, _, err2 := hj.Hijack()
-				if conn != nil && err2 == nil {
-					conn.Close()
-					infoOrTraceEv(proxy).Msg(downstreamConnClose)
-				}
-			}
-		}()
+		//for http1.1 we send a connection:close. Go HTTP/2 server removes this header which is illegal in HTTP/2.
+		//but magically maps this to a GOAWAY frame for HTTP/2, see: https://go-review.googlesource.com/c/net/+/121415/
+		proxy.Dwn.Resp.Writer.Header().Set(connectionS, closeS)
 	}
 
 	proxy.Dwn.Resp.Writer.Header().Set(contentType, applicationJSON)
