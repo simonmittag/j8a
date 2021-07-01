@@ -366,7 +366,7 @@ jobs:
             export reqsshh=`cat performance/performance_results_http_high.json | jq .requestspersecond`
             echo "=> performance test results HTTP POST 2.5kb, concurrency ${TEST_CONCURRENCY_HIGH}, ${reqsshh} req/s"
             export reqsstl=`cat performance/performance_results_tls_low.json | jq .requestspersecond`
-            echo "=> performance test results TLS POST 2.5kb, concurrency ${TEST_CONCURRENCY_LOW}, ${reqssttl} req/s"
+            echo "=> performance test results TLS POST 2.5kb, concurrency ${TEST_CONCURRENCY_LOW}, ${reqsstl} req/s"
             export reqssth=`cat performance/performance_results_tls_high.json | jq .requestspersecond`
             echo "=> performance test results TLS POST 2.5kb, concurrency ${TEST_CONCURRENCY_HIGH}, ${reqssth} req/s"
 
