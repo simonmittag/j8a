@@ -283,9 +283,9 @@ jobs:
       J8A_THREE_PORT: 8443
       J8A_THREE_CFG: ./integration/j8a3.yml
       TEST_DURATION_SECONDS: 10
-      TEST_CONCURRENCY_LOW: 16
-      TEST_CONCURRENCY_JWT_LOW: 16
-      TEST_CONCURRENCY_HIGH: 32
+      TEST_CONCURRENCY_LOW: 12
+      TEST_CONCURRENCY_JWT_LOW: 12
+      TEST_CONCURRENCY_HIGH: 24
     steps:
       - checkout # check out source code to working directory
       - run:
@@ -361,14 +361,14 @@ jobs:
             echo "=> performance test results HTTP GET, concurrency ${TEST_CONCURRENCY_LOW}, ${reqssg} req/s"
             export reqssp=`cat performance/performance_results_http_low_post.json | jq .requestspersecond`
             echo "=> performance test results HTTP POST 2.5kb, concurrency ${TEST_CONCURRENCY_LOW}, ${reqssp} req/s"
-            export reqss=`cat performance/performance_results_jwt_http_low.json | jq .requestspersecond`
-            echo "=> performance test results HTTP POST 2.5kb (JWT), concurrency ${TEST_CONCURRENCY_JWT_LOW}, ${reqss} req/s"
-            export reqss=`cat performance/performance_results_http_high.json | jq .requestspersecond`
-            echo "=> performance test results HTTP POST 2.5kb, concurrency ${TEST_CONCURRENCY_HIGH}, ${reqss} req/s"
-            export reqss=`cat performance/performance_results_tls_low.json | jq .requestspersecond`
-            echo "=> performance test results TLS POST 2.5kb, concurrency ${TEST_CONCURRENCY_LOW}, ${reqss} req/s"
-            export reqss=`cat performance/performance_results_tls_high.json | jq .requestspersecond`
-            echo "=> performance test results TLS POST 2.5kb, concurrency ${TEST_CONCURRENCY_HIGH}, ${reqss} req/s"
+            export reqsshl=`cat performance/performance_results_jwt_http_low.json | jq .requestspersecond`
+            echo "=> performance test results HTTP POST 2.5kb (JWT), concurrency ${TEST_CONCURRENCY_JWT_LOW}, ${reqsshl} req/s"
+            export reqsshh=`cat performance/performance_results_http_high.json | jq .requestspersecond`
+            echo "=> performance test results HTTP POST 2.5kb, concurrency ${TEST_CONCURRENCY_HIGH}, ${reqsshh} req/s"
+            export reqsstl=`cat performance/performance_results_tls_low.json | jq .requestspersecond`
+            echo "=> performance test results TLS POST 2.5kb, concurrency ${TEST_CONCURRENCY_LOW}, ${reqssttl} req/s"
+            export reqssth=`cat performance/performance_results_tls_high.json | jq .requestspersecond`
+            echo "=> performance test results TLS POST 2.5kb, concurrency ${TEST_CONCURRENCY_HIGH}, ${reqssth} req/s"
 
 
 
@@ -389,11 +389,11 @@ jobs:
       J8A_THREE_PORT: 8443
       J8A_THREE_CFG: ./integration/j8a3.yml
       TEST_DURATION_SECONDS: 10
-      TEST_CONCURRENCY_LOW: 8
+      TEST_CONCURRENCY_LOW: 12
       TEST_CONCURRENCY_LOW_THRESHOLD: 2000
-      TEST_CONCURRENCY_JWT_LOW: 8
+      TEST_CONCURRENCY_JWT_LOW: 12
       TEST_CONCURRENCY_JWT_LOW_THRESHOLD: 1500
-      TEST_CONCURRENCY_HIGH: 16
+      TEST_CONCURRENCY_HIGH: 24
       TEST_CONCURRENCY_HIGH_THRESHOLD: 2000
     steps:
       - checkout
