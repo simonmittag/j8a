@@ -443,6 +443,8 @@ func scaffoldUpAttemptLog(proxy *Proxy) *zerolog.Event {
 const downstreamResponseServed = "downstream HTTP response served"
 const downstreamErrorResponseServed = "downstream HTTP error response served"
 
+const pdS = "%d"
+
 func logHandledDownstreamRoundtrip(proxy *Proxy) {
 	elapsed := time.Since(proxy.Dwn.startDate)
 	msg := downstreamResponseServed
@@ -465,7 +467,7 @@ func logHandledDownstreamRoundtrip(proxy *Proxy) {
 	}
 
 	ev = ev.Str(dwnReqListnr, proxy.Dwn.Listener).
-		Str(dwnReqPort, fmt.Sprintf("%d", proxy.Dwn.Port)).
+		Str(dwnReqPort, fmt.Sprintf(pdS, proxy.Dwn.Port)).
 		Str(dwnReqPath, proxy.Dwn.Path).
 		Str(dwnReqRemoteAddr, ipr.extractAddr(proxy.Dwn.Req.RemoteAddr)).
 		Str(dwnReqMethod, proxy.Dwn.Method).
@@ -495,13 +497,14 @@ func logSuccessfulUpstreamAttempt(proxy *Proxy, upstreamResponse *http.Response)
 
 const undeterminedUpstreamError = "undetermined but raw error was: %v"
 const upstreamHangup = "upstream TCP socket hung up on us remotely"
+const eofS = "EOF"
 
 func logUnsuccessfulUpstreamAttempt(proxy *Proxy, upstreamResponse *http.Response, upstreamError error) {
 	ev := scaffoldUpAttemptLog(proxy)
 	if upstreamResponse != nil && upstreamResponse.StatusCode > 0 {
 		ev = ev.Int(upAtmptResCode, upstreamResponse.StatusCode)
 	}
-	if upstreamError != nil && strings.Contains(upstreamError.Error(), "EOF") {
+	if upstreamError != nil && strings.Contains(upstreamError.Error(), eofS) {
 		ev.Msg(upstreamAttemptUnsuccessful + upstreamHangup)
 	} else {
 		ev.Msg(upstreamAttemptUnsuccessful + fmt.Sprintf(undeterminedUpstreamError, upstreamError))

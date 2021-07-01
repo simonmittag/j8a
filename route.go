@@ -33,12 +33,14 @@ type Route struct {
 	Jwt       string
 }
 
+const startS = "^"
+
 func (route Route) matchURI(request *http.Request) bool {
 	matched := false
 	if route.PathRegex != nil {
 		matched = route.PathRegex.MatchString(request.RequestURI)
 	} else {
-		matched, _ = regexp.MatchString("^"+route.Path, request.RequestURI)
+		matched, _ = regexp.MatchString(startS+route.Path, request.RequestURI)
 	}
 
 	return matched
@@ -65,7 +67,7 @@ func (route Route) mapURL(proxy *Proxy) (*URL, string, bool) {
 
 	resource := Runner.Resources[route.Resource]
 	if resource == nil {
-		return nil, "", false
+		return nil, emptyString, false
 	}
 	//if a policy exists, we match resources with a label. TODO: this should be an interface
 
@@ -92,7 +94,7 @@ func (route Route) mapURL(proxy *Proxy) (*URL, string, bool) {
 			}
 		}
 	} else {
-		log.Trace().
+		infoOrTraceEv(proxy).
 			Str(routeMsg, route.Path).
 			Str(policyMsg, defaultMsg).
 			Str(XRequestID, proxy.XRequestID).
