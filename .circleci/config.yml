@@ -447,7 +447,7 @@ jobs:
           command: pwt localhost:${J8A_THREE_PORT}
       - run:
           name: Execute concurrency ${TEST_CONCURRENCY_LOW} GET performance tests in HTTP mode
-          command: cd performance && wrk -t ${TEST_CONCURRENCY_LOW} -c ${TEST_CONCURRENCY_LOW} -d ${TEST_DURATION_SECONDS}s -s get.lua -- http://localhost:${J8A_ONE_PORT}/mse6/post performance_results_http_low_get.json
+          command: cd performance && wrk -t ${TEST_CONCURRENCY_LOW} -c ${TEST_CONCURRENCY_LOW} -d ${TEST_DURATION_SECONDS}s -s get.lua -- http://localhost:${J8A_ONE_PORT}/mse6/get performance_results_http_low_get.json
       - run:
           name: Check concurrency ${TEST_CONCURRENCY_LOW} GET performance tests in HTTP mode
           command: |
