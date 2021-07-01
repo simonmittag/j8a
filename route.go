@@ -1,8 +1,6 @@
 package j8a
 
 import (
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 	"net/http"
 	"regexp"
 	"time"
@@ -75,14 +73,7 @@ func (route Route) mapURL(proxy *Proxy) (*URL, string, bool) {
 		for _, resourceMapping := range resource {
 			for _, resourceLabel := range resourceMapping.Labels {
 				if policyLabel == resourceLabel {
-					var ev *zerolog.Event
-					if proxy.XRequestInfo {
-						ev = log.Info()
-					} else {
-						ev = log.Trace()
-					}
-
-					ev.Str(routeMsg, route.Path).
+					infoOrTraceEv(proxy).Str(routeMsg, route.Path).
 						Str(upResource, resourceMapping.URL.String()).
 						Str(labelMsg, resourceLabel).
 						Str(policyMsg, route.Policy).
@@ -103,7 +94,7 @@ func (route Route) mapURL(proxy *Proxy) (*URL, string, bool) {
 		return &resource[0].URL, defaultMsg, true
 	}
 
-	log.Trace().
+	infoOrTraceEv(proxy).
 		Str(routeMsg, route.Path).
 		Str(XRequestID, proxy.XRequestID).
 		Msg(routeNotMapped)

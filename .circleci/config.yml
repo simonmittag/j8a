@@ -324,38 +324,43 @@ jobs:
             go install github.com/simonmittag/j8a/cmd/j8a
       - run:
           name: Start j8a one
-          command: j8a -c ${J8A_ONE_CFG}
+          command: LOGLEVEL=WARN j8a -c ${J8A_ONE_CFG}
           background: true
       - run:
           name: Wait for j8a one
           command: pwt localhost:${J8A_ONE_PORT}
       - run:
           name: Start j8a three
-          command: j8a -c ${J8A_THREE_CFG}
+          command: LOGLEVEL=WARN j8a -c ${J8A_THREE_CFG}
           background: true
       - run:
           name: Wait for j8a three
           command: pwt localhost:${J8A_THREE_PORT}
       - run:
           name: Execute concurrency ${TEST_CONCURRENCY_LOW} performance tests in HTTP mode
-          command: cd performance && wrk -t ${TEST_CONCURRENCY_LOW} -c ${TEST_CONCURRENCY_LOW} -d ${TEST_DURATION_SECONDS}s -s test.lua -- http://localhost:${J8A_ONE_PORT}/mse6/post performance_results_http_low.json
+          command: cd performance && wrk -t ${TEST_CONCURRENCY_LOW} -c ${TEST_CONCURRENCY_LOW} -d ${TEST_DURATION_SECONDS}s -s get.lua -- http://localhost:${J8A_ONE_PORT}/mse6/get performance_results_http_low_get.json
+      - run:
+          name: Execute concurrency ${TEST_CONCURRENCY_LOW} performance tests in HTTP mode
+          command: cd performance && wrk -t ${TEST_CONCURRENCY_LOW} -c ${TEST_CONCURRENCY_LOW} -d ${TEST_DURATION_SECONDS}s -s post.lua -- http://localhost:${J8A_ONE_PORT}/mse6/post performance_results_http_low_post.json
       - run:
           name: Execute concurrency ${TEST_CONCURRENCY_JWT_LOW} JWT performance tests in HTTP mode
-          command: cd performance && wrk -t ${TEST_CONCURRENCY_JWT_LOW} -c ${TEST_CONCURRENCY_JWT_LOW} -d ${TEST_DURATION_SECONDS}s -s jwttest.lua -- http://localhost:${J8A_ONE_PORT}/jwtrs256/post performance_results_jwt_http_low.json
+          command: cd performance && wrk -t ${TEST_CONCURRENCY_JWT_LOW} -c ${TEST_CONCURRENCY_JWT_LOW} -d ${TEST_DURATION_SECONDS}s -s postJwt.lua -- http://localhost:${J8A_ONE_PORT}/jwtrs256/post performance_results_jwt_http_low.json
       - run:
           name: Execute concurrency ${TEST_CONCURRENCY_LOW} performance tests in TLS mode
-          command: cd performance && wrk -t ${TEST_CONCURRENCY_LOW} -c ${TEST_CONCURRENCY_LOW} -d ${TEST_DURATION_SECONDS}s -s test.lua -- https://localhost:${J8A_THREE_PORT}/mse6/post performance_results_tls_low.json
+          command: cd performance && wrk -t ${TEST_CONCURRENCY_LOW} -c ${TEST_CONCURRENCY_LOW} -d ${TEST_DURATION_SECONDS}s -s post.lua -- https://localhost:${J8A_THREE_PORT}/mse6/post performance_results_tls_low.json
       - run:
           name: Execute concurrency ${TEST_CONCURRENCY_HIGH} performance tests in HTTP mode
-          command: cd performance && wrk -t ${TEST_CONCURRENCY_HIGH} -c ${TEST_CONCURRENCY_HIGH} -d ${TEST_DURATION_SECONDS}s -s test.lua -- http://localhost:${J8A_ONE_PORT}/mse6/post performance_results_http_high.json
+          command: cd performance && wrk -t ${TEST_CONCURRENCY_HIGH} -c ${TEST_CONCURRENCY_HIGH} -d ${TEST_DURATION_SECONDS}s -s post.lua -- http://localhost:${J8A_ONE_PORT}/mse6/post performance_results_http_high.json
       - run:
           name: Execute concurrency ${TEST_CONCURRENCY_HIGH} performance tests in TLS mode
-          command: cd performance && wrk -t ${TEST_CONCURRENCY_HIGH} -c ${TEST_CONCURRENCY_HIGH} -d ${TEST_DURATION_SECONDS}s -s test.lua -- https://localhost:${J8A_THREE_PORT}/mse6/post performance_results_tls_high.json
+          command: cd performance && wrk -t ${TEST_CONCURRENCY_HIGH} -c ${TEST_CONCURRENCY_HIGH} -d ${TEST_DURATION_SECONDS}s -s post.lua -- https://localhost:${J8A_THREE_PORT}/mse6/post performance_results_tls_high.json
       - run:
           name: Display performance test results
           command: |
-            export reqss=`cat performance/performance_results_http_low.json | jq .requestspersecond`
-            echo "=> performance test results HTTP, concurrency ${TEST_CONCURRENCY_LOW}, ${reqss} req/s"
+            export reqssg=`cat performance/performance_results_http_low_get.json | jq .requestspersecond`
+            echo "=> performance test results HTTP GET, concurrency ${TEST_CONCURRENCY_LOW}, ${reqssg} req/s"
+            export reqssp=`cat performance/performance_results_http_low_post.json | jq .requestspersecond`
+            echo "=> performance test results HTTP POST, concurrency ${TEST_CONCURRENCY_LOW}, ${reqssp} req/s"
             export reqss=`cat performance/performance_results_jwt_http_low.json | jq .requestspersecond`
             echo "=> performance test results HTTP (JWT), concurrency ${TEST_CONCURRENCY_JWT_LOW}, ${reqss} req/s"
             export reqss=`cat performance/performance_results_http_high.json | jq .requestspersecond`
@@ -364,6 +369,7 @@ jobs:
             echo "=> performance test results TLS, concurrency ${TEST_CONCURRENCY_LOW}, ${reqss} req/s"
             export reqss=`cat performance/performance_results_tls_high.json | jq .requestspersecond`
             echo "=> performance test results TLS, concurrency ${TEST_CONCURRENCY_HIGH}, ${reqss} req/s"
+
 
   performance:
     docker:
@@ -440,7 +446,7 @@ jobs:
           command: pwt localhost:${J8A_THREE_PORT}
       - run:
           name: Execute concurrency ${TEST_CONCURRENCY_LOW} performance tests in HTTP mode
-          command: cd performance && wrk -t ${TEST_CONCURRENCY_LOW} -c ${TEST_CONCURRENCY_LOW} -d ${TEST_DURATION_SECONDS}s -s test.lua -- http://localhost:${J8A_ONE_PORT}/mse6/post performance_results_http_low.json
+          command: cd performance && wrk -t ${TEST_CONCURRENCY_LOW} -c ${TEST_CONCURRENCY_LOW} -d ${TEST_DURATION_SECONDS}s -s post.lua -- http://localhost:${J8A_ONE_PORT}/mse6/post performance_results_http_low.json
       - run:
           name: Display concurrency ${TEST_CONCURRENCY_LOW} performance test results in HTTP mode
           command: |
@@ -468,7 +474,7 @@ jobs:
             test ${errwrite} -eq 0 && (echo "performance test passed, ${errwrite} write errors";exit 0) || (echo "performance test failed, ${errwrite} write errors";pkill jq)
       - run:
           name: Execute concurrency ${TEST_CONCURRENCY_JWT_LOW} JWT performance tests in HTTP mode
-          command: cd performance && wrk -t ${TEST_CONCURRENCY_JWT_LOW} -c ${TEST_CONCURRENCY_JWT_LOW} -d ${TEST_DURATION_SECONDS}s -s jwttest.lua -- http://localhost:${J8A_ONE_PORT}/jwtrs256/post performance_results_jwt_http_low.json
+          command: cd performance && wrk -t ${TEST_CONCURRENCY_JWT_LOW} -c ${TEST_CONCURRENCY_JWT_LOW} -d ${TEST_DURATION_SECONDS}s -s postJwt.lua -- http://localhost:${J8A_ONE_PORT}/jwtrs256/post performance_results_jwt_http_low.json
       - run:
           name: Display concurrency ${TEST_CONCURRENCY_JWT_LOW} JWT performance test results in HTTP mode
           command: |
@@ -496,7 +502,7 @@ jobs:
             test ${errwrite} -eq 0 && (echo "performance test passed, ${errwrite} write errors";exit 0) || (echo "performance test failed, ${errwrite} write errors";pkill jq)
       - run:
           name: Execute concurrency ${TEST_CONCURRENCY_LOW} performance tests in TLS mode
-          command: cd performance && wrk -t ${TEST_CONCURRENCY_LOW} -c ${TEST_CONCURRENCY_LOW} -d ${TEST_DURATION_SECONDS}s -s test.lua -- https://localhost:${J8A_THREE_PORT}/mse6/post performance_results_tls_low.json
+          command: cd performance && wrk -t ${TEST_CONCURRENCY_LOW} -c ${TEST_CONCURRENCY_LOW} -d ${TEST_DURATION_SECONDS}s -s post.lua -- https://localhost:${J8A_THREE_PORT}/mse6/post performance_results_tls_low.json
       - run:
           name: Display concurrency ${TEST_CONCURRENCY_LOW} performance test results in TLS mode
           command: |
@@ -524,7 +530,7 @@ jobs:
             test ${errwrite} -eq 0 && (echo "performance test passed, ${errwrite} write errors";exit 0) || (echo "performance test failed, ${errwrite} write errors";pkill jq)
       - run:
           name: Execute concurrency ${TEST_CONCURRENCY_HIGH} performance tests in HTTP mode
-          command: cd performance && wrk -t ${TEST_CONCURRENCY_HIGH} -c ${TEST_CONCURRENCY_HIGH} -d ${TEST_DURATION_SECONDS}s -s test.lua -- http://localhost:${J8A_ONE_PORT}/mse6/post performance_results_http_high.json
+          command: cd performance && wrk -t ${TEST_CONCURRENCY_HIGH} -c ${TEST_CONCURRENCY_HIGH} -d ${TEST_DURATION_SECONDS}s -s post.lua -- http://localhost:${J8A_ONE_PORT}/mse6/post performance_results_http_high.json
       - run:
           name: Display concurrency ${TEST_CONCURRENCY_HIGH} performance test results in HTTP mode
           command: |
@@ -552,7 +558,7 @@ jobs:
             test ${errwrite} -eq 0 && (echo "performance test passed, ${errwrite} write errors";exit 0) || (echo "performance test failed, ${errwrite} write errors";pkill jq)
       - run:
           name: Execute concurrency ${TEST_CONCURRENCY_HIGH} performance tests in TLS mode
-          command: cd performance && wrk -t ${TEST_CONCURRENCY_HIGH} -c ${TEST_CONCURRENCY_HIGH} -d ${TEST_DURATION_SECONDS}s -s test.lua -- https://localhost:${J8A_THREE_PORT}/mse6/post performance_results_tls_high.json
+          command: cd performance && wrk -t ${TEST_CONCURRENCY_HIGH} -c ${TEST_CONCURRENCY_HIGH} -d ${TEST_DURATION_SECONDS}s -s post.lua -- https://localhost:${J8A_THREE_PORT}/mse6/post performance_results_tls_high.json
       - run:
           name: Display concurrency ${TEST_CONCURRENCY_HIGH} test results in TLS mode
           command: |
