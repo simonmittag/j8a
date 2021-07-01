@@ -186,8 +186,11 @@ func HTTP2GetOverTLSVersion(t *testing.T, tlsVersion uint16) {
 			},
 		},
 	}
+
+	//step 1: make request
 	response, err := client.Get(url)
 
+	//step 2: check tls version
 	wantTls := versions[tlsVersion]
 	gotTls := versions[conn.ConnectionState().Version]
 	if gotTls != wantTls {
@@ -196,6 +199,7 @@ func HTTP2GetOverTLSVersion(t *testing.T, tlsVersion uint16) {
 		t.Logf("normal. got TLS version %v", gotTls)
 	}
 
+	//step 3: read server response
 	if err == nil {
 		defer response.Body.Close()
 		body, _ := ioutil.ReadAll(response.Body)
@@ -204,5 +208,12 @@ func HTTP2GetOverTLSVersion(t *testing.T, tlsVersion uint16) {
 		}
 	} else {
 		t.Errorf("got unexpected error %v", err)
+	}
+
+	//step 4: check the response is HTTP/2.0
+	if response.Proto != "HTTP/2.0" {
+		t.Error("connection protocol was not HTTP/2.0")
+	} else {
+		t.Logf("normal. connection protocol is HTTP/2.0")
 	}
 }

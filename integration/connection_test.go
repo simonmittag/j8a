@@ -2,7 +2,10 @@ package integration
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
+	"golang.org/x/net/http2"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"strings"
@@ -10,6 +13,45 @@ import (
 	"testing"
 	"time"
 )
+
+type CloseListener struct {
+	net.Conn   // embed the original conn
+	ClosedFlag bool
+}
+
+func (c CloseListener) Read(b []byte) (n int, err error) {
+	return c.Conn.Read(b)
+}
+
+func (c CloseListener) Write(b []byte) (n int, err error) {
+	return c.Conn.Write(b)
+}
+
+func (c CloseListener) LocalAddr() net.Addr {
+	return c.Conn.LocalAddr()
+}
+
+func (c CloseListener) RemoteAddr() net.Addr {
+	return c.Conn.RemoteAddr()
+}
+
+func (c CloseListener) SetDeadline(t time.Time) error {
+	return c.Conn.SetDeadline(t)
+}
+
+func (c CloseListener) SetReadDeadline(t time.Time) error {
+	return c.Conn.SetReadDeadline(t)
+}
+
+func (c CloseListener) SetWriteDeadline(t time.Time) error {
+	return c.Conn.SetWriteDeadline(t)
+}
+
+func (c *CloseListener) Close() error {
+	err := c.Conn.Close()
+	c.ClosedFlag = true
+	return err
+}
 
 func Test100ConcurrentTCPConnectionsUsingHTTP11(t *testing.T) {
 	ConcurrentHTTP11ConnectionsSucceed(100, t)
@@ -115,5 +157,136 @@ func Test404ResponseClosesDownstreamConnectionUsingHTTP11(t *testing.T) {
 		t.Errorf("connection write should have failed after close")
 	} else {
 		t.Logf("normal. connection closed")
+	}
+}
+
+func Test404ResponseClosesDownstreamConnectionUsingHTTP2(t *testing.T) {
+	var conn *tls.Conn
+	var cl *CloseListener
+	var err error
+
+	cAPem := "-----BEGIN CERTIFICATE-----\nMIIE0zCCAzugAwIBAgIQB2bsiI7SUtxu+HwBxuNtpDANBgkqhkiG9w0BAQsFADCB\ngTEeMBwGA1UEChMVbWtjZXJ0IGRldmVsb3BtZW50IENBMSswKQYDVQQLDCJzaW1v\nbm1pdHRhZ0B0cm9vcGVyIChTaW1vbiBNaXR0YWcpMTIwMAYDVQQDDClta2NlcnQg\nc2ltb25taXR0YWdAdHJvb3BlciAoU2ltb24gTWl0dGFnKTAeFw0yMDA1MDEyMTE2\nNDNaFw0zMDA1MDEyMTE2NDNaMIGBMR4wHAYDVQQKExVta2NlcnQgZGV2ZWxvcG1l\nbnQgQ0ExKzApBgNVBAsMInNpbW9ubWl0dGFnQHRyb29wZXIgKFNpbW9uIE1pdHRh\nZykxMjAwBgNVBAMMKW1rY2VydCBzaW1vbm1pdHRhZ0B0cm9vcGVyIChTaW1vbiBN\naXR0YWcpMIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAzivKfp5OiWpT\n362cVgbw9DBqwMP0pO32aP79Y4UYeAxCfaWQDdqQEatBdraShtZcvUX8vZ9jvgHE\noGMGSJb/DIVRxIDfhdvhh4qGQgbbSLwDkfLJTkpGMdONa/5yDC54fNZjF095YZn7\niPmsFbvYUfTwpM8qrP+jZzobByrTO4rG3Ps080gIR08RCA0E+uLg58rTpnsdBKZ0\nK2uuE4B4lVAs2AeS4KPMrH/rnCjSZz4KRwnaGqh+wiAjO0PHAfrbrhNsFB6P1/Zk\nCqzclj3TXdkMDaXhSvt0qJPEpNIPQMkvj9GROom7hExZUT7t7LPOZwODtiR2VjM3\nDDehfLqpNPRrxU3aOR7b4lFVtEL1+9NXKc3rnR5T2xPVVvBxx8FqYAxFmQtkGqpA\nYlRxImBONBreIr5/fdkr5xqd/S0s1pb8ubuK7x5COfqf0Mv++j+UjMptBQ3kYvOh\ntNrbnEI1q/7kvHNB8ETtJ4hqXikl9EHMYWdOo4nyGd4P8jo9jmGVAgMBAAGjRTBD\nMA4GA1UdDwEB/wQEAwICBDASBgNVHRMBAf8ECDAGAQH/AgEAMB0GA1UdDgQWBBTD\nRHJaFeI4PnqJweaJrib0F4qokTANBgkqhkiG9w0BAQsFAAOCAYEAb+K3HO2AlDed\nS2yT7GnxD75Hcjnv1tMvMIlh1EOmRMHrzbsi7jv3Z7SDe2R5s1qRku3nxbVWj8i8\noRBi5GeRE+q/HkVloi4WPmgFGxUUbkWszAFSSGN5TAs72e5sCG/wMyEa0Gj8cOO1\ndK5SH3thP8+OjSpgQXToYfOimILlk7Hj7EgKE5Y8YX8UV+41LhGkzeK2UX9dBZn1\nof9qBc0dAQVlAA/O3dOgXorgiDbNT38cjignWEwVYzjeuJCYB91Ixf0CfHJZKHZR\nZCdIAHTJqW1tx7vsbrcl0PVAMgm+rkHLL0Dh9cp4fvONXWygVSjbqKM1s8UI9bFA\nbWU5Z3MhEn25wZCXLQDIq0uC+FwCxyS9e/exL4wmYpCLmRKVCp2gUa78Rlr/FJNa\nH9kfvP41Ya+fLzDWNKAlYQgizpZJmZuhPZu7O6n0UusaI+0WTKblCFUQJkx4aKEv\nio8QmLzoedmvVpO9Zp44Lyabmc7VnjoYTOcZczx4ECwEdKH/jswc\n-----END CERTIFICATE-----\n"
+	url := "https://localhost:8443/mse6/xyz"
+
+	certpool, _ := x509.SystemCertPool()
+	ok := certpool.AppendCertsFromPEM([]byte(cAPem))
+	if !ok {
+		t.Errorf("no certs appended using system certs only")
+	}
+
+	tlsConfig := &tls.Config{
+		MinVersion: tls.VersionTLS12,
+		MaxVersion: tls.VersionTLS12,
+		RootCAs:    certpool,
+	}
+
+	client := &http.Client{
+		Transport: &http2.Transport{
+			TLSClientConfig: tlsConfig,
+			DialTLS: func(network, addr string, cfg *tls.Config) (net.Conn, error) {
+				conn, err = tls.Dial(network, addr, cfg)
+				cl = &CloseListener{conn, false}
+				return cl, err
+			},
+		},
+	}
+
+	//step 1: make a get request over HTTP/2. it will result in a 404 and a GOAWAY frame being sent.
+	response, err := client.Get(url)
+
+	if err == nil {
+		defer response.Body.Close()
+
+		//step 2: read the first response
+		body, _ := ioutil.ReadAll(response.Body)
+		if !strings.Contains(string(body), "404") {
+			t.Errorf("unable to read server 404, body response was: %v", string(body))
+		}
+
+		//step 3: check the response is HTTP/2.0
+		if response.Proto != "HTTP/2.0" {
+			t.Error("connection protocol was not HTTP/2.0")
+		} else {
+			t.Logf("normal. connection protocol is HTTP/2.0")
+		}
+
+		//ugly wait for conn close. this has to be GOAWAY frame from server
+		//j8a3 has idletimeout of 30s which should not fire
+		time.Sleep(time.Second * 7)
+
+		//step 4: test connection is now closed
+		if cl.ClosedFlag == false {
+			t.Error("connection was not closed")
+		} else {
+			t.Log("normal. connection was closed")
+		}
+	} else {
+		t.Errorf("got unexpected error during first get request %v", err)
+	}
+}
+
+func Test200ResponseLeavesConnectionOptionUsingHTTP2(t *testing.T) {
+	var conn *tls.Conn
+	var cl *CloseListener
+	var err error
+
+	cAPem := "-----BEGIN CERTIFICATE-----\nMIIE0zCCAzugAwIBAgIQB2bsiI7SUtxu+HwBxuNtpDANBgkqhkiG9w0BAQsFADCB\ngTEeMBwGA1UEChMVbWtjZXJ0IGRldmVsb3BtZW50IENBMSswKQYDVQQLDCJzaW1v\nbm1pdHRhZ0B0cm9vcGVyIChTaW1vbiBNaXR0YWcpMTIwMAYDVQQDDClta2NlcnQg\nc2ltb25taXR0YWdAdHJvb3BlciAoU2ltb24gTWl0dGFnKTAeFw0yMDA1MDEyMTE2\nNDNaFw0zMDA1MDEyMTE2NDNaMIGBMR4wHAYDVQQKExVta2NlcnQgZGV2ZWxvcG1l\nbnQgQ0ExKzApBgNVBAsMInNpbW9ubWl0dGFnQHRyb29wZXIgKFNpbW9uIE1pdHRh\nZykxMjAwBgNVBAMMKW1rY2VydCBzaW1vbm1pdHRhZ0B0cm9vcGVyIChTaW1vbiBN\naXR0YWcpMIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAzivKfp5OiWpT\n362cVgbw9DBqwMP0pO32aP79Y4UYeAxCfaWQDdqQEatBdraShtZcvUX8vZ9jvgHE\noGMGSJb/DIVRxIDfhdvhh4qGQgbbSLwDkfLJTkpGMdONa/5yDC54fNZjF095YZn7\niPmsFbvYUfTwpM8qrP+jZzobByrTO4rG3Ps080gIR08RCA0E+uLg58rTpnsdBKZ0\nK2uuE4B4lVAs2AeS4KPMrH/rnCjSZz4KRwnaGqh+wiAjO0PHAfrbrhNsFB6P1/Zk\nCqzclj3TXdkMDaXhSvt0qJPEpNIPQMkvj9GROom7hExZUT7t7LPOZwODtiR2VjM3\nDDehfLqpNPRrxU3aOR7b4lFVtEL1+9NXKc3rnR5T2xPVVvBxx8FqYAxFmQtkGqpA\nYlRxImBONBreIr5/fdkr5xqd/S0s1pb8ubuK7x5COfqf0Mv++j+UjMptBQ3kYvOh\ntNrbnEI1q/7kvHNB8ETtJ4hqXikl9EHMYWdOo4nyGd4P8jo9jmGVAgMBAAGjRTBD\nMA4GA1UdDwEB/wQEAwICBDASBgNVHRMBAf8ECDAGAQH/AgEAMB0GA1UdDgQWBBTD\nRHJaFeI4PnqJweaJrib0F4qokTANBgkqhkiG9w0BAQsFAAOCAYEAb+K3HO2AlDed\nS2yT7GnxD75Hcjnv1tMvMIlh1EOmRMHrzbsi7jv3Z7SDe2R5s1qRku3nxbVWj8i8\noRBi5GeRE+q/HkVloi4WPmgFGxUUbkWszAFSSGN5TAs72e5sCG/wMyEa0Gj8cOO1\ndK5SH3thP8+OjSpgQXToYfOimILlk7Hj7EgKE5Y8YX8UV+41LhGkzeK2UX9dBZn1\nof9qBc0dAQVlAA/O3dOgXorgiDbNT38cjignWEwVYzjeuJCYB91Ixf0CfHJZKHZR\nZCdIAHTJqW1tx7vsbrcl0PVAMgm+rkHLL0Dh9cp4fvONXWygVSjbqKM1s8UI9bFA\nbWU5Z3MhEn25wZCXLQDIq0uC+FwCxyS9e/exL4wmYpCLmRKVCp2gUa78Rlr/FJNa\nH9kfvP41Ya+fLzDWNKAlYQgizpZJmZuhPZu7O6n0UusaI+0WTKblCFUQJkx4aKEv\nio8QmLzoedmvVpO9Zp44Lyabmc7VnjoYTOcZczx4ECwEdKH/jswc\n-----END CERTIFICATE-----\n"
+	url := "https://localhost:8443/mse6/get"
+
+	certpool, _ := x509.SystemCertPool()
+	ok := certpool.AppendCertsFromPEM([]byte(cAPem))
+	if !ok {
+		t.Errorf("no certs appended using system certs only")
+	}
+
+	tlsConfig := &tls.Config{
+		MinVersion: tls.VersionTLS12,
+		MaxVersion: tls.VersionTLS12,
+		RootCAs:    certpool,
+	}
+
+	client := &http.Client{
+		Transport: &http2.Transport{
+			TLSClientConfig: tlsConfig,
+			DialTLS: func(network, addr string, cfg *tls.Config) (net.Conn, error) {
+				conn, err = tls.Dial(network, addr, cfg)
+				cl = &CloseListener{conn, false}
+				return cl, err
+			},
+		},
+	}
+
+	//step 1: make a get request over HTTP/2. it will result in a 404 and a GOAWAY frame being sent.
+	response, err := client.Get(url)
+
+	if err == nil {
+		defer response.Body.Close()
+
+		//step 2: read the first response
+		body, _ := ioutil.ReadAll(response.Body)
+		if !strings.Contains(string(body), "get endpoint") {
+			t.Errorf("unable to read server 200, body response was: %v", string(body))
+		} else {
+			t.Logf("normal. 200 OK")
+		}
+
+		//step 3: check the response is HTTP/2.0
+		if response.Proto != "HTTP/2.0" {
+			t.Error("connection protocol was not HTTP/2.0")
+		} else {
+			t.Logf("normal. connection protocol is HTTP/2.0")
+		}
+
+		//ugly wait for conn. j8a3 has idletimeout of 30s which should not fire
+		time.Sleep(time.Second * 7)
+
+		//step 4: test connection remains open
+		if cl.ClosedFlag == false {
+			t.Log("normal. connection remains open")
+		} else {
+			t.Error("connection was closed")
+		}
+	} else {
+		t.Errorf("got unexpected error during first get request %v", err)
 	}
 }
