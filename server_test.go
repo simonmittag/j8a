@@ -2,6 +2,7 @@ package j8a
 
 import (
 	"crypto/tls"
+	"github.com/rs/zerolog"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -9,6 +10,31 @@ import (
 	"strings"
 	"testing"
 )
+
+func BenchmarkHandlerDelegate_ServeHTTP_Acme(b *testing.B) {
+	Runner = mockRuntime()
+	r := mockRequest()
+	Runner.AcmeChallengeActive = true
+	r.RequestURI = "/.well-known/acme-challenge/"
+	r.URL.Path = "/.well-known/acme-challenge/"
+	h := HandlerDelegate{}
+	w := httptest.NewRecorder()
+	zerolog.SetGlobalLevel(zerolog.WarnLevel)
+	for i := 0; i < b.N; i++ {
+		h.ServeHTTP(w, &r)
+	}
+}
+
+func BenchmarkHandlerDelegate_ServeHTTP_About(b *testing.B) {
+	Runner = mockRuntime()
+	r := mockRequest()
+	h := HandlerDelegate{}
+	w := httptest.NewRecorder()
+	zerolog.SetGlobalLevel(zerolog.WarnLevel)
+	for i := 0; i < b.N; i++ {
+		h.ServeHTTP(w, &r)
+	}
+}
 
 func TestHandlerDelegate_ServeHTTP_About(t *testing.T) {
 	Runner = mockRuntime()
