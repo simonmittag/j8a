@@ -6,6 +6,7 @@ require (
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/ghodss/yaml v1.0.0
+	github.com/go-acme/lego/v4 v4.4.0 // indirect
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/google/uuid v1.3.0
 	github.com/hako/durafmt v0.0.0-20200710122514-c0fb7b4da026

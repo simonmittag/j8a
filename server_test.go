@@ -2,9 +2,53 @@ package j8a
 
 import (
 	"crypto/tls"
+	"io"
 	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"strings"
 	"testing"
 )
+
+func TestHandlerDelegate_ServeHTTP_About(t *testing.T) {
+	Runner = mockRuntime()
+	r := mockRequest()
+	h := HandlerDelegate{}
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, &r)
+
+	resp := w.Result()
+	body, _ := io.ReadAll(resp.Body)
+
+	if resp.StatusCode != 200 {
+		t.Errorf("should have returned 200 ok")
+	}
+	if !strings.Contains(string(body), "Version") {
+		t.Errorf("should have returned about response but got this instead: %s", body)
+	}
+}
+
+func TestHandlerDelegate_ServeHTTP_Acme(t *testing.T) {
+	Runner = mockRuntime()
+	Runner.AcmeChallengeActive = true
+	r := mockRequest()
+	r.RequestURI = "/.well-known/acme-challenge/"
+	r.URL.Path = "/.well-known/acme-challenge/"
+	h := HandlerDelegate{}
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, &r)
+
+	resp := w.Result()
+	//_, _ := io.ReadAll(resp.Body)
+
+	if resp.StatusCode != 200 {
+		t.Errorf("should have returned 200 ok")
+	}
+
+	//if !strings.Contains(string(body), "") {
+	//	t.Errorf("should have returned acme challenage response but got this instead: %s", body)
+	//}
+}
 
 func TestServerBootStrap(t *testing.T) {
 	setupJ8a()
@@ -49,4 +93,25 @@ func setupJ8a() {
 	Boot.Add(1)
 	go BootStrap()
 	Boot.Wait()
+}
+
+func mockRequest() http.Request {
+	return http.Request{
+		Method: "GET",
+		URL: &url.URL{
+			Host: "localhost",
+			Path: "/about",
+		},
+		Proto:      "HTTP/1.1",
+		ProtoMajor: 1,
+		ProtoMinor: 1,
+		Header: http.Header{
+			"key": []string{"value"},
+		},
+		ContentLength: 0,
+		Close:         false,
+		Host:          "localhost",
+		RemoteAddr:    "10.1.1.1",
+		RequestURI:    "/about",
+	}
 }

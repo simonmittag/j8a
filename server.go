@@ -9,6 +9,7 @@ import (
 	golog "log"
 	"net/http"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -26,8 +27,9 @@ var ID string = "unknown"
 //Runtime struct defines runtime environment wrapper for a config.
 type Runtime struct {
 	Config
-	Start  time.Time
-	Memory []sample
+	Start               time.Time
+	Memory              []sample
+	AcmeChallengeActive bool
 }
 
 //Runner is the Live environment of the server
@@ -138,15 +140,22 @@ func (runtime Runtime) startListening() {
 
 type HandlerDelegate struct{}
 
+//TODO regex and perftest this function.
+var acmeRex, _ = regexp.Compile("/.well-known/acme-challenge/")
+var aboutRex, _ = regexp.Compile("^" + aboutPath + "$")
+
 func (hd HandlerDelegate) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if Runner.isHTTPOn() &&
+	if Runner.AcmeChallengeActive &&
+		acmeRex.MatchString(r.RequestURI) {
+		acmeHandler(w, r)
+	} else if Runner.isHTTPOn() &&
 		Runner.Connection.Downstream.Http.Redirecttls &&
 		r.TLS == nil {
 		redirectHandler(w, r)
 	} else if r.ProtoMajor == 1 && r.Header.Get(UpgradeHeader) == websocket {
 		websocketHandler(w, r)
 		//TODO: this does not resolve whether about was actually configured in routes.
-	} else if r.RequestURI == aboutPath {
+	} else if aboutRex.MatchString(r.RequestURI) {
 		aboutHandler(w, r)
 	} else {
 		httpHandler(w, r)
