@@ -14,7 +14,7 @@ import (
 func BenchmarkHandlerDelegate_ServeHTTP_Acme(b *testing.B) {
 	Runner = mockRuntime()
 	r := mockRequest()
-	Runner.AcmeChallengeActive = true
+	Runner.AcmeHandler.Active = true
 	r.RequestURI = "/.well-known/acme-challenge/"
 	r.URL.Path = "/.well-known/acme-challenge/"
 	h := HandlerDelegate{}
@@ -56,7 +56,7 @@ func TestHandlerDelegate_ServeHTTP_About(t *testing.T) {
 
 func TestHandlerDelegate_ServeHTTP_Acme(t *testing.T) {
 	Runner = mockRuntime()
-	Runner.AcmeChallengeActive = true
+	Runner.AcmeHandler.Active = true
 	r := mockRequest()
 	r.RequestURI = "/.well-known/acme-challenge/"
 	r.URL.Path = "/.well-known/acme-challenge/"

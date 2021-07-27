@@ -29,7 +29,7 @@ type Runtime struct {
 	Config
 	Start               time.Time
 	Memory              []sample
-	AcmeChallengeActive bool
+	AcmeHandler 		AcmeHandler
 }
 
 //Runner is the Live environment of the server
@@ -145,7 +145,7 @@ var acmeRex, _ = regexp.Compile("/.well-known/acme-challenge/")
 var aboutRex, _ = regexp.Compile("^" + aboutPath + "$")
 
 func (hd HandlerDelegate) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if Runner.AcmeChallengeActive &&
+	if Runner.AcmeHandler.Active &&
 		acmeRex.MatchString(r.RequestURI) {
 		acmeHandler(w, r)
 	} else if Runner.isHTTPOn() &&
