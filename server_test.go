@@ -65,15 +65,10 @@ func TestHandlerDelegate_ServeHTTP_Acme(t *testing.T) {
 	h.ServeHTTP(w, &r)
 
 	resp := w.Result()
-	//_, _ := io.ReadAll(resp.Body)
 
 	if resp.StatusCode != 200 {
 		t.Errorf("should have returned 200 ok")
 	}
-
-	//if !strings.Contains(string(body), "") {
-	//	t.Errorf("should have returned acme challenage response but got this instead: %s", body)
-	//}
 }
 
 func TestServerBootStrap(t *testing.T) {
