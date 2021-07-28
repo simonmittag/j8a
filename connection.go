@@ -48,6 +48,20 @@ type Tls struct {
 
 	// TLS secret key
 	Key string
+
+	// Acme config for TLS. Optional, but conflicts with Cert and Key
+	Acme Acme
+}
+
+type Acme struct {
+	// Acme Provider, currently supports letsencrypt
+	Provider string
+
+	// Domain
+	Domain string
+
+	// Email for registration. Auto generated from domain.
+	Email string
 }
 
 // Upstream connection params for remote servers that are being proxied

@@ -165,6 +165,14 @@ func (config Config) reApplyResourceSchemes() *Config {
 }
 
 func (config Config) validateHTTPConfig() *Config {
+	acmeProvider := len(config.Connection.Downstream.Tls.Acme.Provider) > 0
+	acmeDomain := len(config.Connection.Downstream.Tls.Acme.Domain) > 0
+	if config.isTLSOn() && (acmeProvider || acmeDomain) {
+		if config.Connection.Downstream.Http.Port != 80 {
+			config.panic("HTTP listener must be configured and set to port 80 for ACME challenge")
+		}
+	}
+
 	if !config.isTLSOn() &&
 		config.Connection.Downstream.Http.Redirecttls == true {
 		config.panic("cannot redirect to TLS if not properly configured.")
