@@ -3,7 +3,9 @@ package j8a
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/asaskevich/govalidator"
 	"github.com/ghodss/yaml"
+	"github.com/rs/zerolog"
 	"io/ioutil"
 	"os"
 	"regexp"
@@ -63,7 +65,7 @@ func (config Config) panic(msg string) {
 		msg = "error loading config."
 	}
 	msg = msg + " exiting..."
-	log.Fatal().Msg(msg)
+	log.WithLevel(zerolog.FatalLevel).Msg(msg)
 	panic(msg)
 }
 
@@ -176,6 +178,42 @@ func (config Config) validateHTTPConfig() *Config {
 	if !config.isTLSOn() &&
 		config.Connection.Downstream.Http.Redirecttls == true {
 		config.panic("cannot redirect to TLS if not properly configured.")
+	}
+
+	return &config
+}
+
+const wildcardDomainPrefix = "*."
+const noreply = "noreply@"
+
+func (config Config) validateAcmeConfig() *Config {
+	acmeProvider := len(config.Connection.Downstream.Tls.Acme.Provider) > 0
+	acmeDomain := len(config.Connection.Downstream.Tls.Acme.Domain) > 0
+
+	if acmeDomain && !acmeProvider {
+		config.panic("ACME provider must be specified with ACME domain")
+	}
+
+	if acmeProvider && !acmeDomain {
+		config.panic("ACME domain must be specified with ACME provider")
+	}
+
+	if acmeDomain {
+		if !govalidator.IsDNSName(config.Connection.Downstream.Tls.Acme.Domain) {
+			config.panic("ACME domain must be a valid DNS name")
+		}
+
+		if config.Connection.Downstream.Tls.Acme.Domain[0:1] == wildcardDomainPrefix {
+			config.panic("ACME HTTP domain validation does not support wildcard domain names, use fully qualified instead")
+		}
+
+		config.Connection.Downstream.Tls.Acme.Email = noreply + config.Connection.Downstream.Tls.Acme.Domain
+	}
+
+	if acmeProvider {
+		if _, supported := acmeProviders[config.Connection.Downstream.Tls.Acme.Provider]; !supported {
+			config.panic(fmt.Sprintf("ACME provider not supported: %s", config.Connection.Downstream.Tls.Acme.Provider))
+		}
 	}
 
 	return &config

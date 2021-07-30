@@ -27,9 +27,9 @@ var ID string = "unknown"
 //Runtime struct defines runtime environment wrapper for a config.
 type Runtime struct {
 	Config
-	Start               time.Time
-	Memory              []sample
-	AcmeHandler 		AcmeHandler
+	Start       time.Time
+	Memory      []sample
+	AcmeHandler AcmeHandler
 }
 
 //Runner is the Live environment of the server
@@ -79,7 +79,8 @@ func BootStrap() {
 		addDefaultPolicy().
 		setDefaultUpstreamParams().
 		setDefaultDownstreamParams().
-		validateHTTPConfig()
+		validateHTTPConfig().
+		validateAcmeConfig()
 
 	Runner = &Runtime{
 		Config: *config,
@@ -163,6 +164,13 @@ func (hd HandlerDelegate) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (runtime Runtime) startTls(server *http.Server, err chan<- error) {
+	p := Runner.Connection.Downstream.Tls.Acme.Provider
+	if len(p) > 0 {
+		acmeErr := fetchAcmeCertAndKey(acmeProviders[p])
+		if acmeErr != nil {
+			err <- acmeErr
+		}
+	}
 	server.TLSConfig = runtime.tlsConfig()
 	_, tlsErr := checkCertChain(server.TLSConfig.Certificates[0])
 	if tlsErr == nil {
