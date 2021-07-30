@@ -191,6 +191,16 @@ func (config Config) validateAcmeConfig() *Config {
 	acmeProvider := len(config.Connection.Downstream.Tls.Acme.Provider) > 0
 	acmeDomain := len(config.Connection.Downstream.Tls.Acme.Domain) > 0
 
+	if acmeProvider || acmeDomain {
+		if len(config.Connection.Downstream.Tls.Cert) > 0 {
+			config.panic("cannot specify TLS cert with ACME configuration, it would be overridden.")
+		}
+
+		if len(config.Connection.Downstream.Tls.Key) > 0 {
+			config.panic("cannot specify TLS private key with ACME configuration, it would be overridden.")
+		}
+	}
+
 	if acmeDomain && !acmeProvider {
 		config.panic("ACME provider must be specified with ACME domain")
 	}

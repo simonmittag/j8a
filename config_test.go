@@ -374,6 +374,58 @@ func TestValidateAcmeProviderLetsencrypt(t *testing.T) {
 	t.Logf("normal. no config panic for Acme provider letsencrypt")
 }
 
+//TestValidateAcmeProviderFailsWithCertSpecified
+func TestValidateAcmeProviderFailsWithCertSpecified(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Logf("normal. config panic for extra cert specified")
+		}
+	}()
+
+	config := &Config{
+		Connection: Connection{
+			Downstream: Downstream{
+				Tls: Tls{
+					Acme: Acme{
+						Domain:   "adyntest.com",
+						Provider: "letsencrypt",
+					},
+					Cert: "iwannabeacertwheni'mbig",
+				},
+			},
+		},
+	}
+
+	config = config.validateAcmeConfig()
+	t.Error("no config panic happened after superfluous cert specified but it should have")
+}
+
+//TestValidateAcmeProviderFailsWithKeySpecified
+func TestValidateAcmeProviderFailsWithKeySpecified(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Logf("normal. config panic for extra private key specified")
+		}
+	}()
+
+	config := &Config{
+		Connection: Connection{
+			Downstream: Downstream{
+				Tls: Tls{
+					Acme: Acme{
+						Domain:   "adyntest.com",
+						Provider: "letsencrypt",
+					},
+					Key: "wheni'mbigIwannabeaprivatekey",
+				},
+			},
+		},
+	}
+
+	config = config.validateAcmeConfig()
+	t.Error("no config panic occurred after extra private key specified next to acme")
+}
+
 //TestValidateAcmeUnsupportedProviderFails
 func TestValidateAcmeUnsupportedProviderFails(t *testing.T) {
 	defer func() {
