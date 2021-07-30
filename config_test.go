@@ -282,8 +282,57 @@ func TestValidateAcmeEmail(t *testing.T) {
 	}
 }
 
+//TestValidateAcmeDomainInvalidLeadingDotFails
+func TestValidateValidateAcmeDomainInvalidLeadingDotFails(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Logf("normal. config panic for invalid domain with supported provider")
+		}
+	}()
+
+	acmeConfigWith(".test.com").validateAcmeConfig()
+	t.Errorf("config did not panic for supported Acme provider but with missing domain")
+}
+
+//TestValidateAcmeDomainInvalidTrailingDotFails
+func TestValidateAcmeDomainInvalidTrailingDotFails(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Logf("normal. config panic for invalid domain with supported provider")
+		}
+	}()
+
+	acmeConfigWith("test.com.").validateAcmeConfig()
+	t.Errorf("config did not panic for supported Acme provider but with missing domain")
+}
+
+//TestValidateAcmeDomainInvalidTrailingDotFails
+//NOTE WE DO NOT SUPPORT WILDCART CERTS BECAUSE THEY CANNOT BE VERIFIED USING HTTP01 CHALLENGE ON LETSENCRYPT, SEE: https://letsencrypt.org/docs/faq/
+func TestValidateAcmeDomainInvalidWildcartCertFails(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Logf("normal. config panic for invalid domain with supported provider")
+		}
+	}()
+
+	acmeConfigWith("*.test.com").validateAcmeConfig()
+	t.Errorf("config did not panic for supported Acme provider but with missing domain")
+}
+
+//TestValidateAcmeDomainValidSubdomainPasses
+func TestValidateAcmeDomainValidSubdomainPasses(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Errorf("config did panic for valid subdomain and supported Acme provider")
+		}
+	}()
+
+	acmeConfigWith("subdomain.test.com").validateAcmeConfig()
+	t.Logf("normal. config did not panic for valid subdomain and supported Acme provider")
+}
+
 //TestValidateAcmeDomainMissingFails
-func TestValidateValidateAcmeDomainMissingFails(t *testing.T) {
+func TestValidateAcmeDomainMissingFails(t *testing.T) {
 	defer func() {
 		if r := recover(); r == nil {
 			t.Logf("normal. config panic for missing domain with supported provider")
@@ -307,7 +356,7 @@ func TestValidateValidateAcmeDomainMissingFails(t *testing.T) {
 }
 
 //TestValidateAcmeProviderLetsencrypt
-func TestValidateValidateAcmeProviderLetsencrypt(t *testing.T) {
+func TestValidateAcmeProviderLetsencrypt(t *testing.T) {
 	config := &Config{
 		Connection: Connection{
 			Downstream: Downstream{
@@ -475,4 +524,20 @@ func TestLoadConfig(t *testing.T) {
 	if config.Connection.Downstream.Tls.Port != 8443 {
 		t.Error("config not loaded from load() function")
 	}
+}
+
+func acmeConfigWith(domain string) *Config {
+	config := &Config{
+		Connection: Connection{
+			Downstream: Downstream{
+				Tls: Tls{
+					Acme: Acme{
+						Domain:   domain,
+						Provider: "letsencrypt",
+					},
+				},
+			},
+		},
+	}
+	return config
 }

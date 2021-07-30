@@ -184,6 +184,7 @@ func (config Config) validateHTTPConfig() *Config {
 }
 
 const wildcardDomainPrefix = "*."
+const dot = "."
 const noreply = "noreply@"
 
 func (config Config) validateAcmeConfig() *Config {
@@ -204,7 +205,15 @@ func (config Config) validateAcmeConfig() *Config {
 		}
 
 		if config.Connection.Downstream.Tls.Acme.Domain[0:1] == wildcardDomainPrefix {
-			config.panic("ACME HTTP domain validation does not support wildcard domain names, use fully qualified instead")
+			config.panic("ACME domain validation does not support wildcard domain names, use fully qualified DNS name instead")
+		}
+
+		if string(config.Connection.Downstream.Tls.Acme.Domain[0]) == dot {
+			config.panic("ACME domain validation does not support domains starting with '.'")
+		}
+
+		if strings.HasSuffix(config.Connection.Downstream.Tls.Acme.Domain, dot) {
+			config.panic("ACME domain validation does not support domains ending with '.'")
 		}
 
 		config.Connection.Downstream.Tls.Acme.Email = noreply + config.Connection.Downstream.Tls.Acme.Domain
