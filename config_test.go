@@ -266,6 +266,7 @@ func TestValidateAcmeEmail(t *testing.T) {
 	config := &Config{
 		Connection: Connection{
 			Downstream: Downstream{
+				Http: Http{Port: 80},
 				Tls: Tls{
 					Acme: Acme{
 						Domain:   "adyntest.com",
@@ -342,6 +343,7 @@ func TestValidateAcmeDomainMissingFails(t *testing.T) {
 	config := &Config{
 		Connection: Connection{
 			Downstream: Downstream{
+				Http: Http{Port: 80},
 				Tls: Tls{
 					Acme: Acme{
 						Provider: "letsencrypt",
@@ -360,6 +362,7 @@ func TestValidateAcmeProviderLetsencrypt(t *testing.T) {
 	config := &Config{
 		Connection: Connection{
 			Downstream: Downstream{
+				Http: Http{Port: 80},
 				Tls: Tls{
 					Acme: Acme{
 						Domain:   "adyntest.com",
@@ -374,6 +377,59 @@ func TestValidateAcmeProviderLetsencrypt(t *testing.T) {
 	t.Logf("normal. no config panic for Acme provider letsencrypt")
 }
 
+//TestValidateAcmeProviderLetsencrypt
+func TestValidateAcmeProviderPort80(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Error("config panic for correct config with port 80 for acme provider")
+		}
+	}()
+
+	config := &Config{
+		Connection: Connection{
+			Downstream: Downstream{
+				Http: Http{
+					Port: 80,
+				},
+				Tls: Tls{
+					Acme: Acme{
+						Domain:   "adyntest.com",
+						Provider: "letsencrypt",
+					},
+				},
+			},
+		},
+	}
+
+	config = config.validateAcmeConfig()
+	t.Logf("normal. no config panic for Acme provider letsencrypt with port 80")
+}
+
+//TestValidateAcmeProviderFailsWithMissingPort80
+func TestValidateAcmeProviderFailsWithMissingPort80(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Logf("normal. config panic for missing port 80 with acme provider")
+		}
+	}()
+
+	config := &Config{
+		Connection: Connection{
+			Downstream: Downstream{
+				Tls: Tls{
+					Acme: Acme{
+						Domain:   "adyntest.com",
+						Provider: "letsencrypt",
+					},
+				},
+			},
+		},
+	}
+
+	config = config.validateAcmeConfig()
+	t.Error("no config panic for Acme provider without port 80 specified. should have panicked")
+}
+
 //TestValidateAcmeProviderFailsWithCertSpecified
 func TestValidateAcmeProviderFailsWithCertSpecified(t *testing.T) {
 	defer func() {
@@ -385,6 +441,7 @@ func TestValidateAcmeProviderFailsWithCertSpecified(t *testing.T) {
 	config := &Config{
 		Connection: Connection{
 			Downstream: Downstream{
+				Http: Http{Port: 80},
 				Tls: Tls{
 					Acme: Acme{
 						Domain:   "adyntest.com",
@@ -411,6 +468,7 @@ func TestValidateAcmeProviderFailsWithKeySpecified(t *testing.T) {
 	config := &Config{
 		Connection: Connection{
 			Downstream: Downstream{
+				Http: Http{Port: 80},
 				Tls: Tls{
 					Acme: Acme{
 						Domain:   "adyntest.com",
@@ -426,31 +484,6 @@ func TestValidateAcmeProviderFailsWithKeySpecified(t *testing.T) {
 	t.Error("no config panic occurred after extra private key specified next to acme")
 }
 
-//TestValidateAcmeUnsupportedProviderFails
-func TestValidateAcmeUnsupportedProviderFails(t *testing.T) {
-	defer func() {
-		if r := recover(); r == nil {
-			t.Logf("normal. config panic for unsupported ACME provider")
-		}
-	}()
-
-	c := &Config{
-		Connection: Connection{
-			Downstream: Downstream{
-				Tls: Tls{
-					Acme: Acme{
-						Domain:   "adyntest.com",
-						Provider: "unsupported",
-					},
-				},
-			},
-		},
-	}
-
-	c.validateAcmeConfig()
-	t.Errorf("config did not panic for unsupported provider")
-}
-
 //TestValidateAcmeMissingProviderFails
 func TestValidateAcmeMissingProviderFails(t *testing.T) {
 	defer func() {
@@ -462,6 +495,7 @@ func TestValidateAcmeMissingProviderFails(t *testing.T) {
 	config := &Config{
 		Connection: Connection{
 			Downstream: Downstream{
+				Http: Http{Port: 80},
 				Tls: Tls{
 					Acme: Acme{
 						Domain: "adyntest.com",
@@ -582,6 +616,7 @@ func acmeConfigWith(domain string) *Config {
 	config := &Config{
 		Connection: Connection{
 			Downstream: Downstream{
+				Http: Http{Port: 80},
 				Tls: Tls{
 					Acme: Acme{
 						Domain:   domain,
