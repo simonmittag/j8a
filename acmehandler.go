@@ -77,7 +77,7 @@ func (u *AcmeUser) GetPrivateKey() crypto.PrivateKey {
 	return u.key
 }
 
-func fetchAcmeCertAndKey(url string) error {
+func (runtime *Runtime) fetchAcmeCertAndKey(url string) error {
 	defer func() {
 		if r := recover(); r != nil {
 			msg := fmt.Sprintf("TLS ACME certificate not fetched, cause: %s", r)
@@ -94,7 +94,7 @@ func fetchAcmeCertAndKey(url string) error {
 	}
 
 	myUser := AcmeUser{
-		Email: Runner.Connection.Downstream.Tls.Acme.Email,
+		Email: runtime.Connection.Downstream.Tls.Acme.Email,
 		key:   pk,
 	}
 
@@ -106,7 +106,7 @@ func fetchAcmeCertAndKey(url string) error {
 		return e
 	}
 
-	e = client.Challenge.SetHTTP01Provider(Runner.AcmeHandler)
+	e = client.Challenge.SetHTTP01Provider(runtime.AcmeHandler)
 	if e != nil {
 		return e
 	}
@@ -126,8 +126,8 @@ func fetchAcmeCertAndKey(url string) error {
 		return e
 	}
 
-	Runner.Connection.Downstream.Tls.Cert = string(c.Certificate)
-	Runner.Connection.Downstream.Tls.Key = string(c.PrivateKey)
+	runtime.Connection.Downstream.Tls.Cert = string(c.Certificate)
+	runtime.Connection.Downstream.Tls.Key = string(c.PrivateKey)
 	log.Debug().Msgf("ACME certificate successfully fetched from %s", url)
 
 	return e

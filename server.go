@@ -166,10 +166,10 @@ func (hd HandlerDelegate) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (runtime Runtime) startTls(server *http.Server, err chan<- error) {
-	p := Runner.Connection.Downstream.Tls.Acme.Provider
+func (runtime *Runtime) startTls(server *http.Server, err chan<- error) {
+	p := runtime.Connection.Downstream.Tls.Acme.Provider
 	if len(p) > 0 {
-		acmeErr := fetchAcmeCertAndKey(acmeProviders[p])
+		acmeErr := runtime.fetchAcmeCertAndKey(acmeProviders[p])
 		if acmeErr != nil {
 			err <- acmeErr
 		}
