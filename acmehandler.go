@@ -16,10 +16,10 @@ import (
 )
 
 var acmeProviders = map[string]string{
-	//"letsencrypt":"https://acme-v02.api.letsencrypt.org/directory",
-	//"let'sencrypt":"https://acme-v02.api.letsencrypt.org/directory",
-	"letsencrypt":  "https://acme-staging-v02.api.letsencrypt.org/directory",
-	"let'sencrypt": "https://acme-staging-v02.api.letsencrypt.org/directory",
+	"letsencrypt":"https://acme-v02.api.letsencrypt.org/directory",
+	"let'sencrypt":"https://acme-v02.api.letsencrypt.org/directory",
+	//"letsencrypt":  "https://acme-staging-v02.api.letsencrypt.org/directory",
+	//"let'sencrypt": "https://acme-staging-v02.api.letsencrypt.org/directory",
 }
 
 type AcmeHandler struct {
