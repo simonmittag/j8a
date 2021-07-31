@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"fmt"
 	"github.com/go-acme/lego/v4/certcrypto"
 	"github.com/go-acme/lego/v4/certificate"
 	"github.com/go-acme/lego/v4/challenge/http01"
@@ -28,7 +29,7 @@ type AcmeHandler struct {
 	KeyAuth []byte
 }
 
-func (a AcmeHandler) Present(domain, token, keyAuth string) error {
+func (a *AcmeHandler) Present(domain, token, keyAuth string) error {
 	a.Active = true
 	a.Domain = domain
 	a.Token = token
@@ -40,7 +41,7 @@ func (a AcmeHandler) Present(domain, token, keyAuth string) error {
 
 const notConfigured = "not configured"
 
-func (a AcmeHandler) CleanUp(domain, token, keyAuth string) error {
+func (a *AcmeHandler) CleanUp(domain, token, keyAuth string) error {
 	a.Active = false
 	a.Domain = notConfigured
 	a.Token = notConfigured
@@ -79,7 +80,8 @@ func (u *AcmeUser) GetPrivateKey() crypto.PrivateKey {
 func fetchAcmeCertAndKey(url string) error {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Debug().Msgf("TLS ACME certificate not fetched, cause: %s", r)
+			msg := fmt.Sprintf("TLS ACME certificate not fetched, cause: %s", r)
+			log.Debug().Msg(msg)
 		}
 	}()
 
@@ -104,7 +106,7 @@ func fetchAcmeCertAndKey(url string) error {
 		return e
 	}
 
-	e = client.Challenge.SetHTTP01Provider(AcmeHandler{
+	e = client.Challenge.SetHTTP01Provider(&AcmeHandler{
 		Active: false,
 	})
 	if e != nil {
