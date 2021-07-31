@@ -545,6 +545,7 @@ func mockRuntime() *Runtime {
 			},
 		},
 		Start: time.Now(),
+		AcmeHandler: &AcmeHandler{Active: false},
 	}
 }
 

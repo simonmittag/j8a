@@ -29,7 +29,7 @@ type Runtime struct {
 	Config
 	Start       time.Time
 	Memory      []sample
-	AcmeHandler AcmeHandler
+	AcmeHandler *AcmeHandler
 }
 
 //Runner is the Live environment of the server
@@ -85,6 +85,9 @@ func BootStrap() {
 	Runner = &Runtime{
 		Config: *config,
 		Start:  time.Now(),
+		AcmeHandler: &AcmeHandler{
+			Active: false,
+		},
 	}
 	Runner.initStats().
 		initUserAgent().

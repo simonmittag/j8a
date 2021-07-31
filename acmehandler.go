@@ -106,9 +106,7 @@ func fetchAcmeCertAndKey(url string) error {
 		return e
 	}
 
-	e = client.Challenge.SetHTTP01Provider(&AcmeHandler{
-		Active: false,
-	})
+	e = client.Challenge.SetHTTP01Provider(Runner.AcmeHandler)
 	if e != nil {
 		return e
 	}

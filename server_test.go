@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"github.com/rs/zerolog"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -56,19 +57,31 @@ func TestHandlerDelegate_ServeHTTP_About(t *testing.T) {
 
 func TestHandlerDelegate_ServeHTTP_Acme(t *testing.T) {
 	Runner = mockRuntime()
-	Runner.AcmeHandler.Active = true
+	Runner.AcmeHandler = &AcmeHandler{
+		Active: true,
+		Domain: "localhost.com",
+		Token: "tokentest",
+		KeyAuth: []byte("keyauthtest"),
+	}
 	r := mockRequest()
-	r.RequestURI = "/.well-known/acme-challenge/"
-	r.URL.Path = "/.well-known/acme-challenge/"
+	r.RequestURI = "/.well-known/acme-challenge/tokentest"
+	r.URL.Path = "/.well-known/acme-challenge/tokentest"
 	h := HandlerDelegate{}
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, &r)
 
 	resp := w.Result()
-
 	if resp.StatusCode != 200 {
 		t.Errorf("should have returned 200 ok")
 	}
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	if string(body)!="keyauthtest" {
+		t.Errorf("wanted keyauth response but got %s", string(body))
+	} else {
+		t.Logf("normal. key auth challenge responded with %s", string(body))
+	}
+	resp.Body.Close()
 }
 
 func TestServerBootStrap(t *testing.T) {
