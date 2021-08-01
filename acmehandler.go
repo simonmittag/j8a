@@ -6,18 +6,18 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"fmt"
-	"github.com/go-acme/lego/v4/certcrypto"
-	"github.com/go-acme/lego/v4/certificate"
-	"github.com/go-acme/lego/v4/challenge/http01"
-	"github.com/go-acme/lego/v4/lego"
-	"github.com/go-acme/lego/v4/registration"
 	"github.com/rs/zerolog/log"
+	"github.com/simonmittag/lego/v4/certcrypto"
+	"github.com/simonmittag/lego/v4/certificate"
+	"github.com/simonmittag/lego/v4/challenge/http01"
+	"github.com/simonmittag/lego/v4/lego"
+	"github.com/simonmittag/lego/v4/registration"
 	"net/http"
 )
 
 var acmeProviders = map[string]string{
-	"letsencrypt":"https://acme-v02.api.letsencrypt.org/directory",
-	"let'sencrypt":"https://acme-v02.api.letsencrypt.org/directory",
+	"letsencrypt":  "https://acme-v02.api.letsencrypt.org/directory",
+	"let'sencrypt": "https://acme-v02.api.letsencrypt.org/directory",
 	//"letsencrypt":  "https://acme-staging-v02.api.letsencrypt.org/directory",
 	//"let'sencrypt": "https://acme-staging-v02.api.letsencrypt.org/directory",
 }
