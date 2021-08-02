@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/asaskevich/govalidator"
 	"github.com/ghodss/yaml"
+	isd "github.com/jbenet/go-is-domain"
 	"github.com/rs/zerolog"
 	"io/ioutil"
 	"os"
@@ -209,6 +210,10 @@ func (config Config) validateAcmeConfig() *Config {
 		for _, domain := range config.Connection.Downstream.Tls.Acme.Domains {
 			if !govalidator.IsDNSName(domain) {
 				config.panic(fmt.Sprintf("ACME domain must be a valid DNS name, but was %s", domain))
+			}
+
+			if !isd.IsDomain(domain) {
+				config.panic(fmt.Sprintf("ACME domain must be a valid FQDN name, but was %s", domain))
 			}
 
 			if domain[0:1] == wildcardDomainPrefix {

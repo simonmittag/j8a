@@ -2,6 +2,7 @@ package j8a
 
 import (
 	"fmt"
+	isd "github.com/jbenet/go-is-domain"
 	"os"
 	"reflect"
 	"testing"
@@ -378,6 +379,51 @@ func TestValidateAcmeProviderLetsencrypt(t *testing.T) {
 	t.Logf("normal. no config panic for Acme provider letsencrypt")
 }
 
+//TestValidateAcmeProviderLetsencryptWithMultipleSubDomains
+func TestValidateAcmeProviderLetsencryptWithMultipleSubdomains(t *testing.T) {
+	config := &Config{
+		Connection: Connection{
+			Downstream: Downstream{
+				Http: Http{Port: 80},
+				Tls: Tls{
+					Acme: Acme{
+						Domains:  []string{"adyntest.com", "api.adyntest.com"},
+						Provider: "letsencrypt",
+					},
+				},
+			},
+		},
+	}
+
+	config = config.validateAcmeConfig()
+	t.Logf("normal. no config panic for Acme provider letsencrypt")
+}
+
+//TestValidateAcmeProviderLetsencryptFailsWithOneInvalidSubDomain
+func TestValidateAcmeProviderLetsencryptFailsWithOneInvalidSubDomain(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Logf("normal. config panic for illegal subdomain.")
+		}
+	}()
+	config := &Config{
+		Connection: Connection{
+			Downstream: Downstream{
+				Http: Http{Port: 80},
+				Tls: Tls{
+					Acme: Acme{
+						Domains:  []string{"adyntest.com", "Iwannabeadomain"},
+						Provider: "letsencrypt",
+					},
+				},
+			},
+		},
+	}
+
+	config = config.validateAcmeConfig()
+	t.Errorf("config did not panic for invalid subdomain")
+}
+
 //TestValidateAcmeProviderLetsencrypt
 func TestValidateAcmeProviderPort80(t *testing.T) {
 	defer func() {
@@ -628,4 +674,67 @@ func acmeConfigWith(domain string) *Config {
 		},
 	}
 	return config
+}
+
+func TestFqdnValidate(t *testing.T) {
+	//should pass
+	if !isd.IsDomain("adyntest.com") {
+		t.Error("adyntest.com should have fqdn validated")
+	}
+	if !isd.IsDomain("we.money") {
+		t.Error("we.moneyh should have fqdn validated")
+	}
+	if !isd.IsDomain("911.com.au") {
+		t.Error("911.com.au should have fqdn validated")
+	}
+	if !isd.IsDomain("mittag.biz") {
+		t.Error("mittag.biz should have fqdn validated")
+	}
+	if !isd.IsDomain("foo.studio") {
+		t.Error("mittag.biz should have fqdn validated")
+	}
+	if !isd.IsDomain("foo.life") {
+		t.Error("mittag.biz should have fqdn validated")
+	}
+	if !isd.IsDomain("foo.shop") {
+		t.Error("mittag.biz should have fqdn validated")
+	}
+	if !isd.IsDomain("foo.health") {
+		t.Error("mittag.biz should have fqdn validated")
+	}
+	if !isd.IsDomain("foo.de") {
+		t.Error("mittag.biz should have fqdn validated")
+	}
+	if !isd.IsDomain("foo.co.uk") {
+		t.Error("mittag.biz should have fqdn validated")
+	}
+	if !isd.IsDomain("foo.tattoo") {
+		t.Error("mittag.biz should have fqdn validated")
+	}
+	if !isd.IsDomain("foo.design") {
+		t.Error("mittag.biz should have fqdn validated")
+	}
+	if !isd.IsDomain("foo.sydney") {
+		t.Error("mittag.biz should have fqdn validated")
+	}
+	if !isd.IsDomain("foo.melbourne") {
+		t.Error("mittag.biz should have fqdn validated")
+	}
+
+	//must fail
+	if isd.IsDomain("-we.money") {
+		t.Error("-we.money should not have fqdn validated")
+	}
+	if isd.IsDomain("_we.money") {
+		t.Error("_we.money should not have fqdn validated")
+	}
+	if isd.IsDomain("foo.baz") {
+		t.Error("foo.baz should not have fqdn validated")
+	}
+	if isd.IsDomain("foo.zydney") {
+		t.Error("foo.baz should not have fqdn validated")
+	}
+	if isd.IsDomain("foo.nelbourne") {
+		t.Error("foo.baz should not have fqdn validated")
+	}
 }

@@ -10,6 +10,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/hako/durafmt v0.0.0-20200710122514-c0fb7b4da026
 	github.com/itchyny/gojq v0.12.4
+	github.com/jbenet/go-is-domain v1.0.5 // indirect
 	github.com/lestrrat-go/jwx v1.2.4
 	github.com/rs/zerolog v1.23.0
 	github.com/shirou/gopsutil v2.20.9+incompatible
