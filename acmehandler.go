@@ -16,10 +16,10 @@ import (
 )
 
 var acmeProviders = map[string]string{
-	"letsencrypt":  "https://acme-v02.api.letsencrypt.org/directory",
-	"let'sencrypt": "https://acme-v02.api.letsencrypt.org/directory",
-	//"letsencrypt":  "https://acme-staging-v02.api.letsencrypt.org/directory",
-	//"let'sencrypt": "https://acme-staging-v02.api.letsencrypt.org/directory",
+	//"letsencrypt":  "https://acme-v02.api.letsencrypt.org/directory",
+	//"let'sencrypt": "https://acme-v02.api.letsencrypt.org/directory",
+	"letsencrypt":  "https://acme-staging-v02.api.letsencrypt.org/directory",
+	"let'sencrypt": "https://acme-staging-v02.api.letsencrypt.org/directory",
 }
 
 type AcmeHandler struct {
@@ -35,7 +35,7 @@ func (a *AcmeHandler) Present(domain, token, keyAuth string) error {
 	a.Token = token
 	a.KeyAuth = []byte(keyAuth)
 
-	log.Debug().Msg("ACME handler activated")
+	log.Debug().Msg("ACME handler activated, ready to serve challenge response.")
 	return nil
 }
 
@@ -115,7 +115,7 @@ func (runtime *Runtime) fetchAcmeCertAndKey(url string) error {
 	myUser.Registration, e = client.Registration.Register(registration.RegisterOptions{TermsOfServiceAgreed: true})
 
 	request := certificate.ObtainRequest{
-		Domains: []string{Runner.Connection.Downstream.Tls.Acme.Domain},
+		Domains: Runner.Connection.Downstream.Tls.Acme.Domains,
 		Bundle:  true,
 	}
 

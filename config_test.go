@@ -3,6 +3,7 @@ package j8a
 import (
 	"fmt"
 	"os"
+	"reflect"
 	"testing"
 )
 
@@ -269,7 +270,7 @@ func TestValidateAcmeEmail(t *testing.T) {
 				Http: Http{Port: 80},
 				Tls: Tls{
 					Acme: Acme{
-						Domain:   "adyntest.com",
+						Domains:  []string{"adyntest.com"},
 						Provider: "letsencrypt"},
 				},
 			},
@@ -365,7 +366,7 @@ func TestValidateAcmeProviderLetsencrypt(t *testing.T) {
 				Http: Http{Port: 80},
 				Tls: Tls{
 					Acme: Acme{
-						Domain:   "adyntest.com",
+						Domains:  []string{"adyntest.com"},
 						Provider: "letsencrypt",
 					},
 				},
@@ -393,7 +394,7 @@ func TestValidateAcmeProviderPort80(t *testing.T) {
 				},
 				Tls: Tls{
 					Acme: Acme{
-						Domain:   "adyntest.com",
+						Domains:  []string{"adyntest.com"},
 						Provider: "letsencrypt",
 					},
 				},
@@ -418,7 +419,7 @@ func TestValidateAcmeProviderFailsWithMissingPort80(t *testing.T) {
 			Downstream: Downstream{
 				Tls: Tls{
 					Acme: Acme{
-						Domain:   "adyntest.com",
+						Domains:  []string{"adyntest.com"},
 						Provider: "letsencrypt",
 					},
 				},
@@ -444,7 +445,7 @@ func TestValidateAcmeProviderFailsWithCertSpecified(t *testing.T) {
 				Http: Http{Port: 80},
 				Tls: Tls{
 					Acme: Acme{
-						Domain:   "adyntest.com",
+						Domains:  []string{"adyntest.com"},
 						Provider: "letsencrypt",
 					},
 					Cert: "iwannabeacertwheni'mbig",
@@ -471,7 +472,7 @@ func TestValidateAcmeProviderFailsWithKeySpecified(t *testing.T) {
 				Http: Http{Port: 80},
 				Tls: Tls{
 					Acme: Acme{
-						Domain:   "adyntest.com",
+						Domains:  []string{"adyntest.com"},
 						Provider: "letsencrypt",
 					},
 					Key: "wheni'mbigIwannabeaprivatekey",
@@ -498,7 +499,7 @@ func TestValidateAcmeMissingProviderFails(t *testing.T) {
 				Http: Http{Port: 80},
 				Tls: Tls{
 					Acme: Acme{
-						Domain: "adyntest.com",
+						Domains: []string{"adyntest.com"},
 					},
 				},
 			},
@@ -566,7 +567,7 @@ func TestReadConfigFile(t *testing.T) {
 	if config.Policies == nil {
 		t.Error("incorrectly parsed policies in config file")
 	}
-	if config.Connection == *new(Connection) {
+	if reflect.DeepEqual(config.Connection, *new(Connection)) {
 		t.Error("incorrectly parsed connection in config file")
 	}
 	if config.Resources == nil {
@@ -619,7 +620,7 @@ func acmeConfigWith(domain string) *Config {
 				Http: Http{Port: 80},
 				Tls: Tls{
 					Acme: Acme{
-						Domain:   domain,
+						Domains:  []string{domain},
 						Provider: "letsencrypt",
 					},
 				},

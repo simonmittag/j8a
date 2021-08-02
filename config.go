@@ -181,7 +181,7 @@ const noreply = "noreply@"
 
 func (config Config) validateAcmeConfig() *Config {
 	acmeProvider := len(config.Connection.Downstream.Tls.Acme.Provider) > 0
-	acmeDomain := len(config.Connection.Downstream.Tls.Acme.Domain) > 0
+	acmeDomain := len(config.Connection.Downstream.Tls.Acme.Domains) > 0 && len(config.Connection.Downstream.Tls.Acme.Domains[0]) > 0
 
 	if acmeProvider || acmeDomain {
 		if len(config.Connection.Downstream.Tls.Cert) > 0 {
@@ -206,23 +206,25 @@ func (config Config) validateAcmeConfig() *Config {
 	}
 
 	if acmeDomain {
-		if !govalidator.IsDNSName(config.Connection.Downstream.Tls.Acme.Domain) {
-			config.panic("ACME domain must be a valid DNS name")
+		for _, domain := range config.Connection.Downstream.Tls.Acme.Domains {
+			if !govalidator.IsDNSName(domain) {
+				config.panic(fmt.Sprintf("ACME domain must be a valid DNS name, but was %s", domain))
+			}
+
+			if domain[0:1] == wildcardDomainPrefix {
+				config.panic(fmt.Sprintf("ACME domain validation does not support wildcard domain names, was %s", domain))
+			}
+
+			if string(domain[0]) == dot {
+				config.panic(fmt.Sprintf("ACME domain validation does not support domains starting with '.', was %s", domain))
+			}
+
+			if strings.HasSuffix(domain, dot) {
+				config.panic(fmt.Sprintf("ACME domain validation does not support domains ending with '.', was %s", domain))
+			}
 		}
 
-		if config.Connection.Downstream.Tls.Acme.Domain[0:1] == wildcardDomainPrefix {
-			config.panic("ACME domain validation does not support wildcard domain names, use fully qualified DNS name instead")
-		}
-
-		if string(config.Connection.Downstream.Tls.Acme.Domain[0]) == dot {
-			config.panic("ACME domain validation does not support domains starting with '.'")
-		}
-
-		if strings.HasSuffix(config.Connection.Downstream.Tls.Acme.Domain, dot) {
-			config.panic("ACME domain validation does not support domains ending with '.'")
-		}
-
-		config.Connection.Downstream.Tls.Acme.Email = noreply + config.Connection.Downstream.Tls.Acme.Domain
+		config.Connection.Downstream.Tls.Acme.Email = noreply + config.Connection.Downstream.Tls.Acme.Domains[0]
 	}
 
 	if acmeProvider {

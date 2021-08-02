@@ -11,7 +11,9 @@ connection:
       port: 443
       acme:
         provider: letsencrypt
-        domain: api.adyntest.com
+        domains:
+          - api.adyntest.com
+          - adyntest.com
   upstream:
     socketTimeoutSeconds: 10
     readTimeoutSeconds: 30

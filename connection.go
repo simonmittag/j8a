@@ -58,7 +58,7 @@ type Acme struct {
 	Provider string
 
 	// Domain
-	Domain string
+	Domains []string
 
 	// Email for registration. Auto generated from domain.
 	Email string
