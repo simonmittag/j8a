@@ -83,11 +83,9 @@ func BootStrap() {
 		validateAcmeConfig()
 
 	Runner = &Runtime{
-		Config: *config,
-		Start:  time.Now(),
-		AcmeHandler: &AcmeHandler{
-			Active: false,
-		},
+		Config:      *config,
+		Start:       time.Now(),
+		AcmeHandler: NewAcmeHandler(),
 	}
 	Runner.initStats().
 		initUserAgent().
@@ -149,7 +147,7 @@ var acmeRex, _ = regexp.Compile("/.well-known/acme-challenge/")
 var aboutRex, _ = regexp.Compile("^" + aboutPath + "$")
 
 func (hd HandlerDelegate) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if Runner.AcmeHandler.Active &&
+	if Runner.AcmeHandler.isActive() &&
 		acmeRex.MatchString(r.RequestURI) {
 		acmeHandler(w, r)
 	} else if Runner.isHTTPOn() &&

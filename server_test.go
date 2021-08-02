@@ -15,9 +15,11 @@ import (
 func BenchmarkHandlerDelegate_ServeHTTP_Acme(b *testing.B) {
 	Runner = mockRuntime()
 	r := mockRequest()
-	Runner.AcmeHandler.Active = true
-	r.RequestURI = "/.well-known/acme-challenge/"
-	r.URL.Path = "/.well-known/acme-challenge/"
+	Runner.AcmeHandler.Active["123"] = true
+	Runner.AcmeHandler.Domains["123"] = "123.com"
+	Runner.AcmeHandler.KeyAuths["123"] = []byte("response")
+	r.RequestURI = "/.well-known/acme-challenge/123"
+	r.URL.Path = "/.well-known/acme-challenge/123"
 	h := HandlerDelegate{}
 	w := httptest.NewRecorder()
 	zerolog.SetGlobalLevel(zerolog.WarnLevel)
@@ -57,12 +59,10 @@ func TestHandlerDelegate_ServeHTTP_About(t *testing.T) {
 
 func TestHandlerDelegate_ServeHTTP_Acme(t *testing.T) {
 	Runner = mockRuntime()
-	Runner.AcmeHandler = &AcmeHandler{
-		Active: true,
-		Domain: "localhost.com",
-		Token: "tokentest",
-		KeyAuth: []byte("keyauthtest"),
-	}
+	Runner.AcmeHandler.Active["tokentest"] = true
+	Runner.AcmeHandler.Domains["tokentest"] = "localhost.com"
+	Runner.AcmeHandler.KeyAuths["tokentest"] = []byte("keyauthtest")
+
 	r := mockRequest()
 	r.RequestURI = "/.well-known/acme-challenge/tokentest"
 	r.URL.Path = "/.well-known/acme-challenge/tokentest"
@@ -76,7 +76,7 @@ func TestHandlerDelegate_ServeHTTP_Acme(t *testing.T) {
 	}
 
 	body, _ := ioutil.ReadAll(resp.Body)
-	if string(body)!="keyauthtest" {
+	if string(body) != "keyauthtest" {
 		t.Errorf("wanted keyauth response but got %s", string(body))
 	} else {
 		t.Logf("normal. key auth challenge responded with %s", string(body))

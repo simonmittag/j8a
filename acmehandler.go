@@ -13,52 +13,75 @@ import (
 	"github.com/simonmittag/lego/v4/lego"
 	"github.com/simonmittag/lego/v4/registration"
 	"net/http"
+	"strings"
 )
 
+const acmeChallenge = "/.well-known/acme-challenge/"
+
 var acmeProviders = map[string]string{
-	//"letsencrypt":  "https://acme-v02.api.letsencrypt.org/directory",
-	//"let'sencrypt": "https://acme-v02.api.letsencrypt.org/directory",
-	"letsencrypt":  "https://acme-staging-v02.api.letsencrypt.org/directory",
-	"let'sencrypt": "https://acme-staging-v02.api.letsencrypt.org/directory",
+	"letsencrypt":  "https://acme-v02.api.letsencrypt.org/directory",
+	"let'sencrypt": "https://acme-v02.api.letsencrypt.org/directory",
+	//"letsencrypt":  "https://acme-staging-v02.api.letsencrypt.org/directory",
+	//"let'sencrypt": "https://acme-staging-v02.api.letsencrypt.org/directory",
 }
 
 type AcmeHandler struct {
-	Active  bool
-	Domain  string
-	Token   string
-	KeyAuth []byte
+	Active   map[string]bool
+	Domains  map[string]string
+	KeyAuths map[string][]byte
+}
+
+func NewAcmeHandler() *AcmeHandler {
+	return &AcmeHandler{
+		Active:   make(map[string]bool),
+		Domains:  make(map[string]string),
+		KeyAuths: make(map[string][]byte),
+	}
 }
 
 func (a *AcmeHandler) Present(domain, token, keyAuth string) error {
-	a.Active = true
-	a.Domain = domain
-	a.Token = token
-	a.KeyAuth = []byte(keyAuth)
+	a.Active[token] = true
+	a.Domains[token] = domain
+	a.KeyAuths[token] = []byte(keyAuth)
 
-	log.Debug().Msg("ACME handler activated, ready to serve challenge response.")
+	log.Debug().Msgf("ACME handler for domain %s activated, ready to serve challenge response for token %s.", domain, token)
 	return nil
 }
-
-const notConfigured = "not configured"
 
 func (a *AcmeHandler) CleanUp(domain, token, keyAuth string) error {
-	a.Active = false
-	a.Domain = notConfigured
-	a.Token = notConfigured
-	a.KeyAuth = []byte(notConfigured)
+	delete(a.Active, token)
+	delete(a.Domains, token)
+	delete(a.KeyAuths, token)
 
-	log.Debug().Msg("ACME handler deactivated")
+	log.Debug().Msgf("ACME handler for domain %s deactivated.", domain)
 	return nil
 }
 
-const acmeEvent = "responded to remote ACME challenge for %s, with %s"
+func (a *AcmeHandler) isActive() bool {
+	var c = false
+	for _, v := range a.Active {
+		c = c || v
+	}
+	return c
+}
+
+const acmeEvent = "responded to remote ACME challenge path %s, with %s for domain %s"
 
 func acmeHandler(w http.ResponseWriter, r *http.Request) {
+	defer func() {
+		if r1 := recover(); r1 != nil {
+			log.Debug().Msgf("unsuccessful response to remote ACME challenge, URI %s, cause: %v", r.RequestURI, r1)
+		}
+	}()
+
+	tokens := strings.Split(r.RequestURI, "/")
+	token := tokens[len(tokens)-1]
+
 	a := Runner.AcmeHandler
-	path := http01.ChallengePath(a.Token)
+	path := http01.ChallengePath(token)
 	w.WriteHeader(200)
-	w.Write([]byte(a.KeyAuth))
-	log.Debug().Msgf(acmeEvent, path, a.KeyAuth)
+	w.Write([]byte(a.KeyAuths[token]))
+	log.Debug().Msgf(acmeEvent, path, a.KeyAuths[token], a.Domains[token])
 }
 
 type AcmeUser struct {

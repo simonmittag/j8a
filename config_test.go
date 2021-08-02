@@ -691,34 +691,40 @@ func TestFqdnValidate(t *testing.T) {
 		t.Error("mittag.biz should have fqdn validated")
 	}
 	if !isd.IsDomain("foo.studio") {
-		t.Error("mittag.biz should have fqdn validated")
+		t.Error("foo.studio should have fqdn validated")
 	}
 	if !isd.IsDomain("foo.life") {
-		t.Error("mittag.biz should have fqdn validated")
+		t.Error("foo.life should have fqdn validated")
 	}
 	if !isd.IsDomain("foo.shop") {
-		t.Error("mittag.biz should have fqdn validated")
+		t.Error("foo.shop should have fqdn validated")
 	}
 	if !isd.IsDomain("foo.health") {
-		t.Error("mittag.biz should have fqdn validated")
+		t.Error("foo.health should have fqdn validated")
 	}
 	if !isd.IsDomain("foo.de") {
-		t.Error("mittag.biz should have fqdn validated")
+		t.Error("foo.de should have fqdn validated")
+	}
+	if !isd.IsDomain("api.foo.de") {
+		t.Error("api.foo.de should have fqdn validated")
+	}
+	if !isd.IsDomain("x.y.z.api.foo.de") {
+		t.Error("x.y.z.api.foo.de should have fqdn validated")
 	}
 	if !isd.IsDomain("foo.co.uk") {
-		t.Error("mittag.biz should have fqdn validated")
+		t.Error("foo.co.uk should have fqdn validated")
 	}
 	if !isd.IsDomain("foo.tattoo") {
-		t.Error("mittag.biz should have fqdn validated")
+		t.Error("foo.tattoo should have fqdn validated")
 	}
 	if !isd.IsDomain("foo.design") {
-		t.Error("mittag.biz should have fqdn validated")
+		t.Error("foo.design should have fqdn validated")
 	}
 	if !isd.IsDomain("foo.sydney") {
-		t.Error("mittag.biz should have fqdn validated")
+		t.Error("foo.sydney should have fqdn validated")
 	}
 	if !isd.IsDomain("foo.melbourne") {
-		t.Error("mittag.biz should have fqdn validated")
+		t.Error("foo.melbourne should have fqdn validated")
 	}
 
 	//must fail
@@ -732,9 +738,9 @@ func TestFqdnValidate(t *testing.T) {
 		t.Error("foo.baz should not have fqdn validated")
 	}
 	if isd.IsDomain("foo.zydney") {
-		t.Error("foo.baz should not have fqdn validated")
+		t.Error("foo.zydney should not have fqdn validated")
 	}
 	if isd.IsDomain("foo.nelbourne") {
-		t.Error("foo.baz should not have fqdn validated")
+		t.Error("foo.nelbourne should not have fqdn validated")
 	}
 }
