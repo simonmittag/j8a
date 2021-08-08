@@ -122,16 +122,15 @@ func (runtime Runtime) startListening() {
 
 	msg := fmt.Sprintf("j8a %s listener(s) init on", Version)
 	if runtime.isHTTPOn() {
-		msg = msg + fmt.Sprintf(" HTTP:%d", runtime.Connection.Downstream.Http.Port)
-		go runtime.startHTTP(httpConfig, err)
+		h := msg + fmt.Sprintf(" HTTP:%d...", runtime.Connection.Downstream.Http.Port)
+		go runtime.startHTTP(httpConfig, err, h)
 	}
 	if runtime.isTLSOn() {
-		msg = msg + fmt.Sprintf(" TLS:%d", runtime.Connection.Downstream.Tls.Port)
+		t := msg + fmt.Sprintf(" TLS:%d...", runtime.Connection.Downstream.Tls.Port)
 		tlsConfig := *httpConfig
 		tlsConfig.Addr = ":" + strconv.Itoa(runtime.Connection.Downstream.Tls.Port)
-		go runtime.startTls(&tlsConfig, err)
+		go runtime.startTls(&tlsConfig, err, t)
 	}
-	log.Info().Msg(msg + "...")
 
 	select {
 	case sig := <-err:
@@ -164,7 +163,7 @@ func (hd HandlerDelegate) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (runtime *Runtime) startTls(server *http.Server, err chan<- error) {
+func (runtime *Runtime) startTls(server *http.Server, err chan<- error, msg string) {
 	p := runtime.Connection.Downstream.Tls.Acme.Provider
 	if len(p) > 0 {
 		acmeErr := runtime.fetchAcmeCertAndKey(acmeProviders[p])
@@ -176,14 +175,16 @@ func (runtime *Runtime) startTls(server *http.Server, err chan<- error) {
 	_, tlsErr := checkCertChain(server.TLSConfig.Certificates[0])
 	if tlsErr == nil {
 		go tlsHealthCheck(server.TLSConfig, true)
+		log.Info().Msg(msg)
 		err <- server.ListenAndServeTLS("", "")
 	} else {
 		err <- tlsErr
 	}
 }
 
-func (runtime Runtime) startHTTP(server *http.Server, err chan<- error) {
+func (runtime Runtime) startHTTP(server *http.Server, err chan<- error, msg string) {
 	server.Addr = ":" + strconv.Itoa(runtime.Connection.Downstream.Http.Port)
+	log.Info().Msg(msg)
 	err <- server.ListenAndServe()
 }
 
