@@ -46,7 +46,7 @@ func TestAbortAllUpstreamAttempts(t *testing.T) {
 	atmpt := mockAtmpt()
 
 	proxy := Proxy{
-		XRequestID:    "",
+		XRequestID:   "",
 		XRequestInfo: false,
 		Up: Up{
 			Atmpts: []Atmpt{mockAtmpt()},
@@ -375,6 +375,7 @@ func TestUpstreamNobody(t *testing.T) {
 				},
 			},
 		},
+		ReloadableCert: &ReloadableCert{},
 	}
 
 	proxy := mockProxy([]byte(""), "0", "/path", "/path", "/get", "", "")
@@ -594,6 +595,7 @@ func mockJwtRuntime(jwtName string, alg string, key string, claims ...string) *R
 				jwtName: jwtConfig,
 			},
 		},
+		ReloadableCert: &ReloadableCert{},
 	}
 }
 

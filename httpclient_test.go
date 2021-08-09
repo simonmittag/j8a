@@ -21,7 +21,8 @@ func TestHttpClientSocketTimeout(t *testing.T) {
 				},
 			},
 		},
-		Start: time.Now(),
+		Start:          time.Now(),
+		ReloadableCert: &ReloadableCert{},
 	}
 
 	client := scaffoldHTTPClient(*Runner)
@@ -47,7 +48,8 @@ func TestGetTcpCntAndKeepAliveIntervalDuration(t *testing.T) {
 				},
 			},
 		},
-		Start: time.Now(),
+		Start:          time.Now(),
+		ReloadableCert: &ReloadableCert{},
 	}
 
 	os.Setenv("OS", "linux")

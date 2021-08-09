@@ -27,9 +27,37 @@ var ID string = "unknown"
 //Runtime struct defines runtime environment wrapper for a config.
 type Runtime struct {
 	Config
-	Start       time.Time
-	Memory      []sample
-	AcmeHandler *AcmeHandler
+	Start          time.Time
+	Memory         []sample
+	AcmeHandler    *AcmeHandler
+	ReloadableCert *ReloadableCert
+}
+
+type ReloadableCert struct {
+	Cert   *tls.Certificate
+	Reload bool
+}
+
+func (r *ReloadableCert) GetCertificateFunc(clientHello *tls.ClientHelloInfo) (*tls.Certificate, error) {
+	var err error
+	if r.Cert == nil || r.Reload {
+		c := []byte(Runner.Connection.Downstream.Tls.Cert)
+		k := []byte(Runner.Connection.Downstream.Tls.Key)
+		cert, err2 := tls.X509KeyPair(c, k)
+		if err2 != nil {
+			err = err2
+			log.Debug().Msgf("TLS certificate init unsuccessful, cause: %v", err2)
+		} else {
+			r.Cert = &cert
+			log.Debug().Msgf("TLS certificate init successful")
+		}
+		r.Reload = false
+	}
+	return r.Cert, err
+}
+
+func (r *ReloadableCert) triggerReload() {
+	r.Reload = true
 }
 
 //Runner is the Live environment of the server
@@ -83,9 +111,10 @@ func BootStrap() {
 		validateAcmeConfig()
 
 	Runner = &Runtime{
-		Config:      *config,
-		Start:       time.Now(),
-		AcmeHandler: NewAcmeHandler(),
+		Config:         *config,
+		Start:          time.Now(),
+		AcmeHandler:    NewAcmeHandler(),
+		ReloadableCert: &ReloadableCert{},
 	}
 	Runner.initStats().
 		initUserAgent().
@@ -172,14 +201,18 @@ func (runtime *Runtime) startTls(server *http.Server, err chan<- error, msg stri
 		}
 	}
 	server.TLSConfig = runtime.tlsConfig()
-	_, tlsErr := checkCertChain(server.TLSConfig.Certificates[0])
-	if tlsErr == nil {
-		go tlsHealthCheck(server.TLSConfig, true)
-		log.Info().Msg(msg)
-		err <- server.ListenAndServeTLS("", "")
-	} else {
-		err <- tlsErr
-	}
+
+	//TODO this relies on actual certs being a part of server.TLSConfig.
+	//_, tlsErr := checkCertChain(server.TLSConfig.Certificates[0])
+	//
+	//if tlsErr == nil {
+	//	//TODO this relies on actual certs being a part of server.TLSConfig.
+	//	go tlsHealthCheck(server.TLSConfig, true)
+	log.Info().Msg(msg)
+	err <- server.ListenAndServeTLS("", "")
+	//} else {
+	//	err <- tlsErr
+	//}
 }
 
 func (runtime Runtime) startHTTP(server *http.Server, err chan<- error, msg string) {
@@ -253,7 +286,7 @@ func (runtime Runtime) tlsConfig() *tls.Config {
 			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
 			tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
 		},
-		Certificates: []tls.Certificate{chain},
+		GetCertificate: Runner.ReloadableCert.GetCertificateFunc,
 	}
 
 	return config

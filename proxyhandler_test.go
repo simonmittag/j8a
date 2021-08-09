@@ -544,8 +544,9 @@ func mockRuntime() *Runtime {
 				},
 			},
 		},
-		Start:       time.Now(),
-		AcmeHandler: NewAcmeHandler(),
+		Start:          time.Now(),
+		AcmeHandler:    NewAcmeHandler(),
+		ReloadableCert: &ReloadableCert{},
 	}
 }
 
