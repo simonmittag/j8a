@@ -35,29 +35,41 @@ type Runtime struct {
 
 type ReloadableCert struct {
 	Cert   *tls.Certificate
-	Reload bool
+	Init bool
+	mu 	   sync.Mutex
+}
+
+func NewReloadableCert() *ReloadableCert {
+	r := &ReloadableCert{
+		Cert:   nil,
+		Init: false,
+		mu:     sync.Mutex{},
+	}
+	return r
 }
 
 func (r *ReloadableCert) GetCertificateFunc(clientHello *tls.ClientHelloInfo) (*tls.Certificate, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	var err error
-	if r.Cert == nil || r.Reload {
+	if r.Init == true || r.Cert == nil {
 		c := []byte(Runner.Connection.Downstream.Tls.Cert)
 		k := []byte(Runner.Connection.Downstream.Tls.Key)
 		cert, err2 := tls.X509KeyPair(c, k)
 		if err2 != nil {
 			err = err2
-			log.Debug().Msgf("TLS certificate init unsuccessful, cause: %v", err2)
 		} else {
 			r.Cert = &cert
 			log.Debug().Msgf("TLS certificate init successful")
 		}
-		r.Reload = false
+		r.Init = false
 	}
 	return r.Cert, err
 }
 
-func (r *ReloadableCert) triggerReload() {
-	r.Reload = true
+func (r *ReloadableCert) triggerInit() {
+	r.Init = true
 }
 
 //Runner is the Live environment of the server
@@ -114,7 +126,7 @@ func BootStrap() {
 		Config:         *config,
 		Start:          time.Now(),
 		AcmeHandler:    NewAcmeHandler(),
-		ReloadableCert: &ReloadableCert{},
+		ReloadableCert: NewReloadableCert(),
 	}
 	Runner.initStats().
 		initUserAgent().
@@ -261,6 +273,7 @@ func (runtime Runtime) tlsConfig() *tls.Config {
 		}
 	}()
 
+	//TODO: there is a LOT of state in here
 	//here we create a keypair from the PEM string in the config file
 	var cert []byte = []byte(runtime.Connection.Downstream.Tls.Cert)
 	var key []byte = []byte(runtime.Connection.Downstream.Tls.Key)
@@ -286,7 +299,7 @@ func (runtime Runtime) tlsConfig() *tls.Config {
 			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
 			tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
 		},
-		GetCertificate: Runner.ReloadableCert.GetCertificateFunc,
+		GetCertificate: runtime.ReloadableCert.GetCertificateFunc,
 	}
 
 	return config
