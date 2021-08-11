@@ -34,18 +34,11 @@ type Runtime struct {
 }
 
 type ReloadableCert struct {
-	Cert   *tls.Certificate
+	Cert *tls.Certificate
 	Init bool
-	mu 	   sync.Mutex
-}
-
-func NewReloadableCert() *ReloadableCert {
-	r := &ReloadableCert{
-		Cert:   nil,
-		Init: false,
-		mu:     sync.Mutex{},
-	}
-	return r
+	mu   sync.Mutex
+	//required to use runtime internally without global pointer for testing.
+	runtime *Runtime
 }
 
 func (r *ReloadableCert) GetCertificateFunc(clientHello *tls.ClientHelloInfo) (*tls.Certificate, error) {
@@ -54,8 +47,8 @@ func (r *ReloadableCert) GetCertificateFunc(clientHello *tls.ClientHelloInfo) (*
 
 	var err error
 	if r.Init == true || r.Cert == nil {
-		c := []byte(Runner.Connection.Downstream.Tls.Cert)
-		k := []byte(Runner.Connection.Downstream.Tls.Key)
+		c := []byte(r.runtime.Connection.Downstream.Tls.Cert)
+		k := []byte(r.runtime.Connection.Downstream.Tls.Key)
 		cert, err2 := tls.X509KeyPair(c, k)
 		if err2 != nil {
 			err = err2
@@ -123,14 +116,24 @@ func BootStrap() {
 		validateAcmeConfig()
 
 	Runner = &Runtime{
-		Config:         *config,
-		Start:          time.Now(),
-		AcmeHandler:    NewAcmeHandler(),
-		ReloadableCert: NewReloadableCert(),
+		Config:      *config,
+		Start:       time.Now(),
+		AcmeHandler: NewAcmeHandler(),
 	}
-	Runner.initStats().
+	Runner.initReloadableCert().
+		initStats().
 		initUserAgent().
 		startListening()
+}
+
+func (r *Runtime) initReloadableCert() *Runtime {
+	r.ReloadableCert = &ReloadableCert{
+		Cert:    nil,
+		Init:    false,
+		mu:      sync.Mutex{},
+		runtime: r,
+	}
+	return r
 }
 
 func (runtime Runtime) startListening() {
@@ -214,17 +217,14 @@ func (runtime *Runtime) startTls(server *http.Server, err chan<- error, msg stri
 	}
 	server.TLSConfig = runtime.tlsConfig()
 
-	//TODO this relies on actual certs being a part of server.TLSConfig.
-	//_, tlsErr := checkCertChain(server.TLSConfig.Certificates[0])
-	//
-	//if tlsErr == nil {
-	//	//TODO this relies on actual certs being a part of server.TLSConfig.
-	//	go tlsHealthCheck(server.TLSConfig, true)
-	log.Info().Msg(msg)
-	err <- server.ListenAndServeTLS("", "")
-	//} else {
-	//	err <- tlsErr
-	//}
+	_, tlsErr := checkCertChain(*runtime.ReloadableCert.Cert)
+	if tlsErr == nil {
+		go runtime.tlsHealthCheck(true)
+		log.Info().Msg(msg)
+		err <- server.ListenAndServeTLS("", "")
+	} else {
+		err <- tlsErr
+	}
 }
 
 func (runtime Runtime) startHTTP(server *http.Server, err chan<- error, msg string) {
@@ -265,7 +265,7 @@ func serverVersion() string {
 	return fmt.Sprintf("%s %s %s", j8a, Version, ID)
 }
 
-func (runtime Runtime) tlsConfig() *tls.Config {
+func (runtime *Runtime) tlsConfig() *tls.Config {
 	defer func() {
 		if err := recover(); err != nil {
 			log.Fatal().Msg("unable to parse TLS configuration, check your certificate and/or private key. j8a is exiting ...")
@@ -273,8 +273,8 @@ func (runtime Runtime) tlsConfig() *tls.Config {
 		}
 	}()
 
-	//TODO: there is a LOT of state in here
-	//here we create a keypair from the PEM string in the config file
+	//here we create a keypair from the runtime params. They may have originated from the config file or ACME
+	//in both instances the certificate now sits as reloadable in GetCertificateFunc which also uses Runner.
 	var cert []byte = []byte(runtime.Connection.Downstream.Tls.Cert)
 	var key []byte = []byte(runtime.Connection.Downstream.Tls.Key)
 	chain, _ := tls.X509KeyPair(cert, key)
@@ -301,6 +301,9 @@ func (runtime Runtime) tlsConfig() *tls.Config {
 		},
 		GetCertificate: runtime.ReloadableCert.GetCertificateFunc,
 	}
+
+	//to init the cert.
+	runtime.ReloadableCert.GetCertificateFunc(nil)
 
 	return config
 }

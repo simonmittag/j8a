@@ -375,8 +375,8 @@ func TestUpstreamNobody(t *testing.T) {
 				},
 			},
 		},
-		ReloadableCert: NewReloadableCert(),
 	}
+	Runner.initReloadableCert()
 
 	proxy := mockProxy([]byte(""), "0", "/path", "/path", "/get", "", "")
 	proxy.encodeUpstreamResponseBody()
@@ -589,14 +589,14 @@ func mockJwtRuntime(jwtName string, alg string, key string, claims ...string) *R
 	jwtConfig.parseKey(jwaAlg)
 	jwtConfig.Validate()
 
-	return &Runtime{
+	r := &Runtime{
 		Config: Config{
 			Jwt: map[string]*Jwt{
 				jwtName: jwtConfig,
 			},
 		},
-		ReloadableCert: NewReloadableCert(),
 	}
+	return r.initReloadableCert()
 }
 
 func mockProxy(upBody []byte, cl string, path string, transform string, requestUri string, bearer string, jwtName string) Proxy {

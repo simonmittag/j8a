@@ -51,7 +51,7 @@ func (t TlsLink) printRemainingValidity() string {
 	return rv
 }
 
-func tlsHealthCheck(conf *tls.Config, daemon bool) {
+func (r *Runtime) tlsHealthCheck(daemon bool) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Trace().Msgf("TLS cert logProcStats not analysed, root cause: %s", r)
@@ -59,11 +59,11 @@ func tlsHealthCheck(conf *tls.Config, daemon bool) {
 	}()
 
 	//safety first
-	if conf != nil && len(conf.Certificates) > 0 {
+	if r.ReloadableCert.Cert != nil {
 	Daemon:
 		for {
 			//Andeka is checking our certificate chains forever.
-			andeka, _ := checkCertChain(conf.Certificates[0])
+			andeka, _ := checkCertChain(*r.ReloadableCert.Cert)
 			logCertStats(andeka)
 			if daemon {
 				time.Sleep(time.Hour * 24)
