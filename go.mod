@@ -11,7 +11,7 @@ require (
 	github.com/hako/durafmt v0.0.0-20200710122514-c0fb7b4da026
 	github.com/itchyny/gojq v0.12.4
 	github.com/kr/pretty v0.1.0 // indirect
-	github.com/lestrrat-go/jwx v1.2.4
+	github.com/lestrrat-go/jwx v1.2.6
 	github.com/rs/zerolog v1.23.0
 	github.com/shirou/gopsutil v2.20.9+incompatible
 	github.com/simonmittag/ws v1.0.42
