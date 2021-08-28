@@ -9,6 +9,7 @@ import (
 	golog "log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -120,10 +121,37 @@ func BootStrap() {
 		Start:       time.Now(),
 		AcmeHandler: NewAcmeHandler(),
 	}
-	Runner.initReloadableCert().
+	Runner.
+		initDotDir().
+		initReloadableCert().
 		initStats().
 		initUserAgent().
 		startListening()
+}
+
+const dotDir = ".j8a"
+
+func (r *Runtime) initDotDir() *Runtime {
+	msg := "cannot access user home dir, j8a exiting..."
+	home, e1 := os.UserHomeDir()
+	if e1 != nil {
+		log.Fatal().Err(e1).Msg(msg)
+		panic(msg)
+	}
+	myDotDir := filepath.FromSlash(home + "/" + dotDir)
+	if _, e3 := os.Stat(myDotDir); os.IsNotExist(e3) {
+		e2 := os.Mkdir(myDotDir, 0600)
+		if e2 != nil {
+			log.Fatal().Err(e2).Msg(msg)
+			panic(msg)
+		} else {
+			log.Debug().Msg("init .j8a in user home")
+		}
+	} else {
+		log.Debug().Msg("found .j8a in user home")
+	}
+
+	return r
 }
 
 func (r *Runtime) initReloadableCert() *Runtime {
@@ -210,6 +238,7 @@ func (hd HandlerDelegate) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (runtime *Runtime) startTls(server *http.Server, err chan<- error, msg string) {
 	p := runtime.Connection.Downstream.Tls.Acme.Provider
 	if len(p) > 0 {
+
 		acmeErr := runtime.fetchAcmeCertAndKey(acmeProviders[p])
 		if acmeErr != nil {
 			err <- acmeErr

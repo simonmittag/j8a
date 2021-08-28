@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -134,6 +136,20 @@ func TestZerologAdapter_Write(t *testing.T) {
 	zla := zerologAdapter{}
 	//this shouldn't crash
 	zla.Write([]byte("i'm a log line from 127.0.0.1 there's no place like it"))
+}
+
+//test this on windows. Go doco says it should work:
+func TestServerInitDotDir(t *testing.T) {
+	Runner := mockRuntime()
+	Runner.initDotDir()
+
+	home, e1 := os.UserHomeDir()
+	if e1 != nil {
+		t.Errorf("cannot access user home? cause: %v", e1)
+	}
+	if _, e2 := os.Stat(filepath.FromSlash(home + "/.j8a")); os.IsNotExist(e2) {
+		t.Errorf("cannot create .j8a dir in user home? cause: %v", e2)
+	}
 }
 
 func setupJ8a() {
