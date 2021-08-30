@@ -32,6 +32,7 @@ type Runtime struct {
 	Memory         []sample
 	AcmeHandler    *AcmeHandler
 	ReloadableCert *ReloadableCert
+	cacheDir       string
 }
 
 type ReloadableCert struct {
@@ -122,36 +123,35 @@ func BootStrap() {
 		AcmeHandler: NewAcmeHandler(),
 	}
 	Runner.
-		initDotDir().
+		initCacheDir().
 		initReloadableCert().
 		initStats().
 		initUserAgent().
 		startListening()
 }
 
-const dotDir = ".j8a"
+const cacheDir = ".j8a"
 
-func (r *Runtime) initDotDir() *Runtime {
-	msg := "cannot access user home dir, j8a exiting..."
+func (r *Runtime) initCacheDir() *Runtime {
 	home, e1 := os.UserHomeDir()
-	if e1 != nil {
-		log.Fatal().Err(e1).Msg(msg)
-		panic(msg)
-	}
-	myDotDir := filepath.FromSlash(home + "/" + dotDir)
-	if _, e3 := os.Stat(myDotDir); os.IsNotExist(e3) {
-		e2 := os.Mkdir(myDotDir, 0600)
-		if e2 != nil {
-			log.Fatal().Err(e2).Msg(msg)
-			panic(msg)
+	if e1 == nil {
+		myCacheDir := filepath.FromSlash(home + "/" + cacheDir)
+		if _, e3 := os.Stat(myCacheDir); os.IsNotExist(e3) {
+			e2 := os.Mkdir(myCacheDir, 0600)
+			if e2 == nil {
+				r.cacheDir = myCacheDir
+				log.Debug().Msg("init cache dir in user home")
+			}
 		} else {
-			log.Debug().Msg("init .j8a in user home")
+			r.cacheDir = myCacheDir
+			log.Debug().Msg("found cache dir in user home")
 		}
-	} else {
-		log.Debug().Msg("found .j8a in user home")
 	}
-
 	return r
+}
+
+func (r *Runtime) cacheDirIsActive() bool {
+	return len(r.cacheDir) > 0
 }
 
 func (r *Runtime) initReloadableCert() *Runtime {

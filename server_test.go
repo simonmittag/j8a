@@ -141,7 +141,19 @@ func TestZerologAdapter_Write(t *testing.T) {
 //test this on windows. Go doco says it should work:
 func TestServerInitDotDir(t *testing.T) {
 	Runner := mockRuntime()
-	Runner.initDotDir()
+	Runner.initCacheDir()
+
+	if !Runner.cacheDirIsActive() {
+		t.Error("cache dir not set")
+	} else {
+		t.Logf("cache dir is: %v", Runner.cacheDir)
+	}
+
+	if len(Runner.cacheDir) == 0 {
+		t.Error("cache dir not set")
+	} else {
+		t.Logf("cache dir is: %v", Runner.cacheDir)
+	}
 
 	home, e1 := os.UserHomeDir()
 	if e1 != nil {
