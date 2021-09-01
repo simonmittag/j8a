@@ -36,34 +36,34 @@ type Runtime struct {
 
 type ReloadableCert struct {
 	Cert *tls.Certificate
+	mu	sync.Mutex
 	Init bool
-	mu   sync.Mutex
 	//required to use runtime internally without global pointer for testing.
 	runtime *Runtime
 }
 
 func (r *ReloadableCert) GetCertificateFunc(clientHello *tls.ClientHelloInfo) (*tls.Certificate, error) {
+	return r.Cert, nil
+}
+
+func (r *ReloadableCert) triggerInit() error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	var err error
-	if r.Init == true || r.Cert == nil {
-		c := []byte(r.runtime.Connection.Downstream.Tls.Cert)
-		k := []byte(r.runtime.Connection.Downstream.Tls.Key)
-		cert, err2 := tls.X509KeyPair(c, k)
-		if err2 != nil {
-			err = err2
-		} else {
-			r.Cert = &cert
-			log.Debug().Msgf("TLS certificate init successful")
-		}
-		r.Init = false
-	}
-	return r.Cert, err
-}
-
-func (r *ReloadableCert) triggerInit() {
 	r.Init = true
+	var err error
+
+	c := []byte(r.runtime.Connection.Downstream.Tls.Cert)
+	k := []byte(r.runtime.Connection.Downstream.Tls.Key)
+	cert, err2 := tls.X509KeyPair(c, k)
+	if err2 != nil {
+		err = err2
+	} else {
+		r.Cert = &cert
+		log.Debug().Msgf("TLS certificate loaded successful")
+	}
+	r.Init = false
+	return err
 }
 
 //Runner is the Live environment of the server
@@ -316,6 +316,10 @@ func (runtime *Runtime) tlsConfig() *tls.Config {
 		panic(err)
 	}
 
+	if err := runtime.ReloadableCert.triggerInit(); err != nil {
+		panic(err)
+	}
+
 	//now create the TLS config.
 	config := &tls.Config{
 		MinVersion:               tls.VersionTLS12,
@@ -332,9 +336,6 @@ func (runtime *Runtime) tlsConfig() *tls.Config {
 		},
 		GetCertificate: runtime.ReloadableCert.GetCertificateFunc,
 	}
-
-	//to init the cert.
-	runtime.ReloadableCert.GetCertificateFunc(nil)
 
 	return config
 }

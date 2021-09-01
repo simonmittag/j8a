@@ -123,7 +123,7 @@ func TestServerTlsConfig(t *testing.T) {
 	Runner.Connection.Downstream.Tls.Port = 8443
 
 	//this fugly code loads the cert for the first time.
-	Runner.ReloadableCert.GetCertificateFunc(nil)
+	Runner.ReloadableCert.triggerInit()
 
 	cert := *Runner.ReloadableCert.Cert
 

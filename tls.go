@@ -90,6 +90,7 @@ func checkForKeyAndCertificateErrors(cert []byte, key []byte) error {
 	if e2 != nil {
 		e = e2
 	}
+
 	return e
 }
 
