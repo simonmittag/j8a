@@ -2,7 +2,6 @@ package j8a
 
 import (
 	"crypto/tls"
-	"crypto/x509"
 	"fmt"
 	"github.com/rs/zerolog/log"
 	"github.com/shirou/gopsutil/process"
@@ -238,15 +237,20 @@ func (hd HandlerDelegate) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (runtime *Runtime) startTls(server *http.Server, err chan<- error, msg string) {
 	p := runtime.Connection.Downstream.Tls.Acme.Provider
 	if len(p) > 0 {
-
-		acmeErr := runtime.fetchAcmeCertAndKey(acmeProviders[p])
-		if acmeErr != nil {
-			err <- acmeErr
+		cacheErr := runtime.loadAcmeCertAndKeyFromCache(p)
+		if cacheErr != nil {
+			//so caching didn't work let's go to acmeProvider
+			acmeErr := runtime.fetchAcmeCertAndKey(acmeProviders[p])
+			if acmeErr != nil {
+				err <- acmeErr
+			} else {
+				runtime.cacheAcmeCertAndKey(p)
+			}
 		}
 	}
 	server.TLSConfig = runtime.tlsConfig()
 
-	_, tlsErr := checkCertChain(*runtime.ReloadableCert.Cert)
+	_, tlsErr := checkFullCertChain(*runtime.ReloadableCert.Cert)
 	if tlsErr == nil {
 		go runtime.tlsHealthCheck(true)
 		log.Info().Msg(msg)
@@ -302,16 +306,14 @@ func (runtime *Runtime) tlsConfig() *tls.Config {
 		}
 	}()
 
-	//here we create a keypair from the runtime params. They may have originated from the config file or ACME
+	//keypair and cert from the runtime params. They may have originated from the config file or ACME
 	//in both instances the certificate now sits as reloadable in GetCertificateFunc which also uses Runner.
 	var cert []byte = []byte(runtime.Connection.Downstream.Tls.Cert)
 	var key []byte = []byte(runtime.Connection.Downstream.Tls.Key)
-	chain, _ := tls.X509KeyPair(cert, key)
 
-	var nocert error
-	chain.Leaf, nocert = x509.ParseCertificate(chain.Certificate[0])
-	if nocert != nil {
-		panic("unable to parse malformed or missing x509 certificate.")
+	//only check if it's valid and panic if not
+	if err := checkForKeyAndCertificateErrors(cert, key); err != nil {
+		panic(err)
 	}
 
 	//now create the TLS config.

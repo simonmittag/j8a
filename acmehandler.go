@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"github.com/rs/zerolog/log"
 	"github.com/simonmittag/lego/v4/certcrypto"
@@ -12,7 +13,11 @@ import (
 	"github.com/simonmittag/lego/v4/challenge/http01"
 	"github.com/simonmittag/lego/v4/lego"
 	"github.com/simonmittag/lego/v4/registration"
+	"io/fs"
+	"io/ioutil"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -100,15 +105,84 @@ func (u *AcmeUser) GetPrivateKey() crypto.PrivateKey {
 	return u.key
 }
 
+const acmeKeyFile = "tls.pk"
+const acmeCertFile = "tls.cert"
+
+func (runtime *Runtime) loadAcmeCertAndKeyFromCache(provider string) error {
+	var e error
+
+	if !runtime.cacheDirIsActive() {
+		return errors.New("cache directory not active, cannot load TLS from cache")
+	}
+
+	keyFile := filepath.FromSlash(Runner.cacheDir + "/" + provider + "/" + acmeKeyFile)
+	key, e1 := ioutil.ReadFile(keyFile)
+	if e1 != nil {
+		return e1
+	}
+
+	certFile := filepath.FromSlash(Runner.cacheDir + "/" + provider + "/" + acmeCertFile)
+	cert, e2 := ioutil.ReadFile(certFile)
+	if e2 != nil {
+		return e2
+	}
+
+	//if cache data is no good, delete cache and try something else
+	if checkForKeyAndCertificateErrors(cert, key) == nil {
+		runtime.Connection.Downstream.Tls.Key = string(key)
+		runtime.Connection.Downstream.Tls.Cert = string(cert)
+		log.Debug().Msgf("TLS cert and key for ACME provider %s loaded from cache", provider)
+	} else {
+		//if delete doesn't work ignore this it may already be gone (partially).
+		os.Remove(keyFile)
+		os.Remove(certFile)
+		log.Debug().Msgf("clearing TLS cache for ACME provider %s", provider)
+	}
+
+	return e
+}
+
+func (runtime *Runtime) cacheAcmeCertAndKey(provider string) error {
+	var e error
+	const rw fs.FileMode = 0600
+	if !runtime.cacheDirIsActive() {
+		return errors.New("cache directory not active, cannot cache keys")
+	} else {
+		//it doesn't matter if this fails because dir already exists
+		os.Mkdir(Runner.cacheDir+"/"+provider, rw)
+	}
+
+	e1 := ioutil.WriteFile(
+		filepath.FromSlash(Runner.cacheDir+"/"+provider+"/"+acmeKeyFile),
+		[]byte(Runner.Connection.Downstream.Tls.Key),
+		rw)
+	if e1 != nil {
+		return e1
+	}
+
+	e2 := ioutil.WriteFile(
+		filepath.FromSlash(Runner.cacheDir+"/"+provider+"/"+acmeCertFile),
+		[]byte(Runner.Connection.Downstream.Tls.Cert),
+		rw)
+	if e2 != nil {
+		return e2
+	}
+
+	log.Debug().Msgf("stored TLS cert and key for ACME provider %s in cache", provider)
+	return e
+}
+
 func (runtime *Runtime) fetchAcmeCertAndKey(url string) error {
+	var e error
+
 	defer func() {
 		if r := recover(); r != nil {
 			msg := fmt.Sprintf("TLS ACME certificate not fetched, cause: %s", r)
 			log.Debug().Msg(msg)
+			e = errors.New(msg)
 		}
 	}()
 
-	var e error
 	var pk *ecdsa.PrivateKey
 
 	pk, e = ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
@@ -134,7 +208,7 @@ func (runtime *Runtime) fetchAcmeCertAndKey(url string) error {
 		return e
 	}
 
-	//we always register because there is no way to save state.
+	//we always register because it's safer than to cache credentials
 	myUser.Registration, e = client.Registration.Register(registration.RegisterOptions{TermsOfServiceAgreed: true})
 
 	request := certificate.ObtainRequest{
@@ -151,6 +225,7 @@ func (runtime *Runtime) fetchAcmeCertAndKey(url string) error {
 
 	runtime.Connection.Downstream.Tls.Cert = string(c.Certificate)
 	runtime.Connection.Downstream.Tls.Key = string(c.PrivateKey)
+
 	log.Debug().Msgf("ACME certificate successfully fetched from %s", url)
 
 	return e

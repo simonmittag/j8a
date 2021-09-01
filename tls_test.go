@@ -58,7 +58,7 @@ func TestParseTlsLinks(t *testing.T) {
 func TestCheckCertChain(t *testing.T) {
 	//this implicitly creates a Runner without returning it because it's well...global.
 	mockTlsConfig()
-	verified, err := checkCertChain(*Runner.ReloadableCert.Cert)
+	verified, err := checkFullCertChain(*Runner.ReloadableCert.Cert)
 	if err != nil {
 		t.Errorf("certificate chain with 1 TLS cert, 1 root cert not validated, cause: %s", err)
 	}
@@ -83,7 +83,7 @@ func TestCertChainC_I_R_Invalid(t *testing.T) {
 	mockXTTlsConfig(certPem, keyPem, interCAPem, rootCAPem)
 
 	//test the global Runner
-	verified, err := checkCertChain(*Runner.ReloadableCert.Cert)
+	verified, err := checkFullCertChain(*Runner.ReloadableCert.Cert)
 	logCertStats(verified)
 	if err == nil {
 		t.Errorf("certificate chain with 1 TLS cert, 1 intermediate, bad root cert validated, this shouldn't happen.")
@@ -101,7 +101,7 @@ func TestCertChainC_I_R_DNSValid(t *testing.T) {
 	mockXTTlsConfig(certPem, keyPem, interCAPem, rootCAPem)
 
 	//test the global Runner
-	verified, err := checkCertChain(*Runner.ReloadableCert.Cert)
+	verified, err := checkFullCertChain(*Runner.ReloadableCert.Cert)
 
 	logCertStats(verified)
 	if verified[0].cert.DNSNames[0] != "cert.com" {
@@ -128,7 +128,7 @@ func TestCertChainC_I_R_NoDNSInvalid(t *testing.T) {
 	mockXTTlsConfig(certPem, keyPem, interCAPem, rootCAPem)
 
 	//test the global Runner
-	verified, err := checkCertChain(*Runner.ReloadableCert.Cert)
+	verified, err := checkFullCertChain(*Runner.ReloadableCert.Cert)
 	logCertStats(verified)
 	if err == nil {
 		t.Errorf("certificate chain should not validate, no DNS name was specified in cert")
@@ -148,7 +148,7 @@ func TestCertChainC_I_Invalid(t *testing.T) {
 	mockXTTlsConfig(certPem, keyPem, interCAPem, rootCAPem)
 
 	//test the global Runner
-	verified, err := checkCertChain(*Runner.ReloadableCert.Cert)
+	verified, err := checkFullCertChain(*Runner.ReloadableCert.Cert)
 	logCertStats(verified)
 	if err == nil {
 		t.Errorf("certificate chain with 1 TLS cert, 1 intermediate, unknown root cert incorrectly validated")
@@ -165,7 +165,7 @@ func TestCertChainC_Invalid(t *testing.T) {
 	mockXTTlsConfig(certPem, keyPem, interCAPem, rootCAPem)
 
 	//test the global Runner
-	verified, err := checkCertChain(*Runner.ReloadableCert.Cert)
+	verified, err := checkFullCertChain(*Runner.ReloadableCert.Cert)
 	logCertStats(verified)
 	if err == nil {
 		t.Errorf("certificate chain with 1 TLS cert, 0 intermediate, 0 root cert incorrectly validated")

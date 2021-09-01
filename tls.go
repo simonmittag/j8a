@@ -63,7 +63,7 @@ func (r *Runtime) tlsHealthCheck(daemon bool) {
 	Daemon:
 		for {
 			//Andeka is checking our certificate chains forever.
-			andeka, _ := checkCertChain(*r.ReloadableCert.Cert)
+			andeka, _ := checkFullCertChain(*r.ReloadableCert.Cert)
 			logCertStats(andeka)
 			if daemon {
 				time.Sleep(time.Hour * 24)
@@ -74,7 +74,26 @@ func (r *Runtime) tlsHealthCheck(daemon bool) {
 	}
 }
 
-func checkCertChain(chain tls.Certificate) ([]TlsLink, error) {
+func checkForKeyAndCertificateErrors(cert []byte, key []byte) error {
+	var chain tls.Certificate
+	var e, e1, e2 error
+	chain, e1 = tls.X509KeyPair(cert, key)
+	if e1 != nil {
+		e = e1
+	}
+
+	if len(chain.Certificate) == 0 {
+		return errors.New("no certificate data found")
+	}
+
+	chain.Leaf, e2 = x509.ParseCertificate(chain.Certificate[0])
+	if e2 != nil {
+		e = e2
+	}
+	return e
+}
+
+func checkFullCertChain(chain tls.Certificate) ([]TlsLink, error) {
 	var tlsLinks []TlsLink
 	var err error
 	cert, e1 := x509.ParseCertificate(chain.Certificate[0])
