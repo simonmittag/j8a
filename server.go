@@ -36,7 +36,7 @@ type Runtime struct {
 
 type ReloadableCert struct {
 	Cert *tls.Certificate
-	mu	sync.Mutex
+	mu   sync.Mutex
 	Init bool
 	//required to use runtime internally without global pointer for testing.
 	runtime *Runtime
@@ -205,7 +205,7 @@ func (runtime Runtime) startListening() {
 
 	select {
 	case sig := <-err:
-		log.Fatal().Err(sig).Msgf("... j8a exiting with ")
+		log.Fatal().Err(sig).Msg("... j8a exiting")
 		panic(sig.Error())
 	}
 }
@@ -248,7 +248,13 @@ func (runtime *Runtime) startTls(server *http.Server, err chan<- error, msg stri
 			}
 		}
 	}
-	server.TLSConfig = runtime.tlsConfig()
+
+	cfg, tlsCfgErr := runtime.tlsConfig()
+	if tlsCfgErr == nil {
+		server.TLSConfig = cfg
+	} else {
+		err <- tlsCfgErr
+	}
 
 	_, tlsErr := checkFullCertChain(*runtime.ReloadableCert.Cert)
 	if tlsErr == nil {
@@ -298,26 +304,19 @@ func serverVersion() string {
 	return fmt.Sprintf("%s %s %s", j8a, Version, ID)
 }
 
-func (runtime *Runtime) tlsConfig() *tls.Config {
-	defer func() {
-		if err := recover(); err != nil {
-			log.Fatal().Msg("unable to parse TLS configuration, check your certificate and/or private key. j8a is exiting ...")
-			os.Exit(-1)
-		}
-	}()
-
+func (runtime *Runtime) tlsConfig() (*tls.Config, error) {
 	//keypair and cert from the runtime params. They may have originated from the config file or ACME
 	//in both instances the certificate now sits as reloadable in GetCertificateFunc which also uses Runner.
 	var cert []byte = []byte(runtime.Connection.Downstream.Tls.Cert)
 	var key []byte = []byte(runtime.Connection.Downstream.Tls.Key)
 
-	//only check if it's valid and panic if not
+	//tls config validation
 	if err := checkForKeyAndCertificateErrors(cert, key); err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	if err := runtime.ReloadableCert.triggerInit(); err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	//now create the TLS config.
@@ -337,7 +336,7 @@ func (runtime *Runtime) tlsConfig() *tls.Config {
 		GetCertificate: runtime.ReloadableCert.GetCertificateFunc,
 	}
 
-	return config
+	return config, nil
 }
 
 const contentType = "Content-Type"
