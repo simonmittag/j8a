@@ -396,40 +396,40 @@ jobs:
             export errtimeout2=`cat performance/performance_results_tls_low.json | jq .errors.timeout`
             echo "tls low performance test ${errtimeout2} timeout errors"
             export errconnect2=`cat performance/performance_results_tls_low.json | jq .errors.connect`
-            echo "tls low performance test passed, ${errconnect2} connect errors"
+            echo "tls low performance test ${errconnect2} connect errors"
             export errread2=`cat performance/performance_results_tls_low.json | jq .errors.read`
             echo "tls low performance test ${errread2} read errors"
             export errwrite2=`cat performance/performance_results_tls_low.json | jq .errors.write`
-            echo "tls low performance test passed, ${errwrite2} write errors"
+            echo "tls low performance test ${errwrite2} write errors"
 
             echo "\n"
             echo "-------------------------"
             echo "| errors http high post |"
             echo "-------------------------"
             export errstatus3=`cat performance/performance_results_http_high.json | jq .errors.status`
-            echo "http high performance test passed, ${errstatus3} status errors"
+            echo "http high performance test ${errstatus3} status errors"
             export errtimeout3=`cat performance/performance_results_http_high.json | jq .errors.timeout`
-            echo "http high performance test passed, ${errtimeout3} timeout errors"
+            echo "http high performance test ${errtimeout3} timeout errors"
             export errconnect3=`cat performance/performance_results_http_high.json | jq .errors.connect`
-            echo "http high performance test passed, ${errconnect3} connect errors"
+            echo "http high performance test ${errconnect3} connect errors"
             export errread3=`cat performance/performance_results_http_high.json | jq .errors.read`
-            echo "http high performance test passed, ${errread3} read errors"
+            echo "http high performance test ${errread3} read errors"
             export errwrite3=`cat performance/performance_results_http_high.json | jq .errors.write`
-            echo "http high performance test passed, ${errwrite3} write errors"
+            echo "http high performance test ${errwrite3} write errors"
 
             echo "-------------------------"
             echo "| errors tls high post |"
             echo "-------------------------"
             export errstatus4=`cat performance/performance_results_tls_high.json | jq .errors.status`
-            echo "tls high performance test passed, ${errstatus4} status errors"
+            echo "tls high performance test ${errstatus4} status errors"
             export errtimeout4=`cat performance/performance_results_tls_high.json | jq .errors.timeout`
-            echo "tls high performance test passed, ${errtimeout4} timeout errors"
+            echo "tls high performance test ${errtimeout4} timeout errors"
             export errconnect4=`cat performance/performance_results_tls_high.json | jq .errors.connect`
-            echo "tls high performance test passed, ${errconnect4} connect errors"
+            echo "tls high performance test ${errconnect4} connect errors"
             export errread4=`cat performance/performance_results_tls_high.json | jq .errors.read`
-            echo "tls high performance test passed, ${errread4} read errors"
+            echo "tls high performance test ${errread4} read errors"
             export errwrite4=`cat performance/performance_results_tls_high.json | jq .errors.write`
-            echo "tls high performance test passed, ${errwrite4} write errors"
+            echo "tls high performance test ${errwrite4} write errors"
 
   performance:
     docker:
