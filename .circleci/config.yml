@@ -372,62 +372,64 @@ jobs:
             export reqssth=`cat performance/performance_results_tls_high.json | jq .requestspersecond`
             echo "=> performance test results TLS POST 2.5kb, concurrency ${TEST_CONCURRENCY_HIGH}, ${reqssth} req/s"
 
+            echo "\n"
             echo "-----------------------"
             echo "| errors http low get |"
             echo "-----------------------"
             export errstatus=`cat performance/performance_results_http_low_get.json | jq .errors.status`
-            test ${errstatus} -eq 0 && (echo "http low get performance test passed, ${errstatus} status errors") || (echo "http low get performance test failed, ${errstatus} status errors";pkill jq)
+            echo "http low get performance test ${errstatus} status errors"
             export errtimeout=`cat performance/performance_results_http_low_get.json | jq .errors.timeout`
-            test ${errtimeout} -eq 0 && (echo "http low get performance test passed, ${errtimeout} timeout errors") || (echo "http low get performance test failed, ${errtimeout} timeout errors";pkill jq)
+            echo "http low get performance test ${errtimeout} timeout errors"
             export errconnect=`cat performance/performance_results_http_low_get.json | jq .errors.connect`
-            test ${errconnect} -eq 0 && (echo "http low get performance test passed, ${errconnect} connect errors") || (echo "http low get performance test failed, ${errconnect} connect errors";pkill jq)
+            echo "http low get performance test ${errconnect} connect errors"
             export errread=`cat performance/performance_results_http_low_get.json | jq .errors.read`
-            test ${errread} -eq 0 && (echo "http low get performance test passed, ${errread} read errors") || (echo "http low get performance test failed, ${errread} read errors";pkill jq)
+            echo "http low get performance test ${errread} read errors"
             export errwrite=`cat performance/performance_results_http_low_get.json | jq .errors.write`
-            test ${errwrite} -eq 0 && (echo "http low get performance test passed, ${errwrite} write errors") || (echo "http low get performance test failed, ${errwrite} write errors";pkill jq)
+            echo "http low get performance test ${errwrite} write errors"
 
+            echo "\n"
             echo "-----------------------"
             echo "| errors tls low post |"
             echo "-----------------------"
             export errstatus2=`cat performance/performance_results_tls_low.json | jq .errors.status`
-            test ${errstatus2} -eq 0 && (echo "tls low performance test passed, ${errstatus} status errors") || (echo "tls low performance test failed, ${errstatus2} status errors";pkill jq)
+            echo "tls low performance test ${errstatus2} status errors"
             export errtimeout2=`cat performance/performance_results_tls_low.json | jq .errors.timeout`
-            test ${errtimeout2} -eq 0 && (echo "tls low performance test passed, ${errtimeout} timeout errors") || (echo "tls low performance test failed, ${errtimeout2} timeout errors";pkill jq)
+            echo "tls low performance test ${errtimeout2} timeout errors"
             export errconnect2=`cat performance/performance_results_tls_low.json | jq .errors.connect`
-            test ${errconnect2} -eq 0 && (echo "tls low performance test passed, ${errconnect} connect errors") || (echo "tls low performance test failed, ${errconnect2} connect errors";pkill jq)
+            echo "tls low performance test passed, ${errconnect2} connect errors"
             export errread2=`cat performance/performance_results_tls_low.json | jq .errors.read`
-            test ${errread2} -eq 0 && (echo "tls low performance test passed, ${errread} read errors") || (echo "tls low performance test failed, ${errread2} read errors";pkill jq)
+            echo "tls low performance test ${errread2} read errors"
             export errwrite2=`cat performance/performance_results_tls_low.json | jq .errors.write`
-            test ${errwrite2} -eq 0 && (echo "tls low performance test passed, ${errwrite} write errors") || (echo "tls low performance test failed, ${errwrite2} write errors";pkill jq)
+            echo "tls low performance test passed, ${errwrite2} write errors"
 
-
+            echo "\n"
             echo "-------------------------"
             echo "| errors http high post |"
             echo "-------------------------"
             export errstatus3=`cat performance/performance_results_http_high.json | jq .errors.status`
-            test ${errstatus3} -eq 0 && (echo "http high performance test passed, ${errstatus} status errors") || (echo "http high performance test failed, ${errstatus3} status errors";pkill jq)
+            echo "http high performance test passed, ${errstatus3} status errors"
             export errtimeout3=`cat performance/performance_results_http_high.json | jq .errors.timeout`
-            test ${errtimeout3} -eq 0 && (echo "http high performance test passed, ${errtimeout} timeout errors") || (echo "http high performance test failed, ${errtimeout3} timeout errors";pkill jq)
+            echo "http high performance test passed, ${errtimeout3} timeout errors"
             export errconnect3=`cat performance/performance_results_http_high.json | jq .errors.connect`
-            test ${errconnect3} -eq 0 && (echo "http high performance test passed, ${errconnect} connect errors") || (echo "http high performance test failed, ${errconnect3} connect errors";pkill jq)
+            echo "http high performance test passed, ${errconnect3} connect errors"
             export errread3=`cat performance/performance_results_http_high.json | jq .errors.read`
-            test ${errread3} -eq 0 && (echo "http high performance test passed, ${errread} read errors") || (echo "http high performance test failed, ${errread3} read errors";pkill jq)
+            echo "http high performance test passed, ${errread3} read errors"
             export errwrite3=`cat performance/performance_results_http_high.json | jq .errors.write`
-            test ${errwrite3} -eq 0 && (echo "http high performance test passed, ${errwrite} write errors") || (echo "http high performance test failed, ${errwrite3} write errors";pkill jq)
+            echo "http high performance test passed, ${errwrite3} write errors"
 
             echo "-------------------------"
             echo "| errors tls high post |"
             echo "-------------------------"
             export errstatus4=`cat performance/performance_results_tls_high.json | jq .errors.status`
-            test ${errstatus4} -eq 0 && (echo "tls high performance test passed, ${errstatus} status errors") || (echo "tls high performance test failed, ${errstatus4} status errors";pkill jq)
+            echo "tls high performance test passed, ${errstatus4} status errors"
             export errtimeout4=`cat performance/performance_results_tls_high.json | jq .errors.timeout`
-            test ${errtimeout4} -eq 0 && (echo "tls high performance test passed, ${errtimeout} timeout errors") || (echo "tls high performance test failed, ${errtimeout4} timeout errors";pkill jq)
+            echo "tls high performance test passed, ${errtimeout4} timeout errors"
             export errconnect4=`cat performance/performance_results_tls_high.json | jq .errors.connect`
-            test ${errconnect4} -eq 0 && (echo "tls high performance test passed, ${errconnect} connect errors") || (echo "tls high performance test failed, ${errconnect4} connect errors";pkill jq)
+            echo "tls high performance test passed, ${errconnect4} connect errors"
             export errread4=`cat performance/performance_results_tls_high.json | jq .errors.read`
-            test ${errread4} -eq 0 && (echo "tls high performance test passed, ${errread} read errors") || (echo "tls high performance test failed, ${errread4} read errors";pkill jq)
+            echo "tls high performance test passed, ${errread4} read errors"
             export errwrite4=`cat performance/performance_results_tls_high.json | jq .errors.write`
-            test ${errwrite4} -eq 0 && (echo "tls high performance test passed, ${errwrite} write errors") || (echo "tls high performance test failed, ${errwrite4} write errors";pkill jq)
+            echo "tls high performance test passed, ${errwrite4} write errors"
 
   performance:
     docker:
