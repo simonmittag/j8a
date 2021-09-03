@@ -60,7 +60,7 @@ func (r *ReloadableCert) triggerInit() error {
 		err = err2
 	} else {
 		r.Cert = &cert
-		log.Debug().Msgf("TLS certificate loaded successful")
+		log.Debug().Msgf("TLS certificate loaded successful, now live")
 	}
 	r.Init = false
 	return err
@@ -311,7 +311,7 @@ func (runtime *Runtime) tlsConfig() (*tls.Config, error) {
 	var key []byte = []byte(runtime.Connection.Downstream.Tls.Key)
 
 	//tls config validation
-	if err := checkForKeyAndCertificateErrors(cert, key); err != nil {
+	if _, err := checkFullCertChainFromBytes(cert, key); err != nil {
 		return nil, err
 	}
 

@@ -128,7 +128,7 @@ func (runtime *Runtime) loadAcmeCertAndKeyFromCache(provider string) error {
 	}
 
 	//if cache data is no good, delete cache and try something else
-	if checkForKeyAndCertificateErrors(cert, key) == nil {
+	if _, e3 := checkFullCertChainFromBytes(cert, key); e3 == nil {
 		runtime.Connection.Downstream.Tls.Key = string(key)
 		runtime.Connection.Downstream.Tls.Cert = string(cert)
 		log.Debug().Msgf("TLS cert and key for ACME provider %s loaded from cache", provider)

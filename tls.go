@@ -10,7 +10,6 @@ import (
 	"github.com/rs/zerolog/log"
 	"math"
 	"math/big"
-	"os"
 	"strings"
 	"time"
 )
@@ -74,44 +73,43 @@ func (r *Runtime) tlsHealthCheck(daemon bool) {
 	}
 }
 
-func checkForKeyAndCertificateErrors(cert []byte, key []byte) error {
+func checkFullCertChainFromBytes(cert []byte, key []byte) ([]TlsLink, error) {
 	var chain tls.Certificate
-	var e, e1, e2 error
+
+	var e1 error
 	chain, e1 = tls.X509KeyPair(cert, key)
 	if e1 != nil {
-		e = e1
+		return nil, e1
 	}
-
-	if len(chain.Certificate) == 0 {
-		return errors.New("no certificate data found")
-	}
-
-	chain.Leaf, e2 = x509.ParseCertificate(chain.Certificate[0])
-	if e2 != nil {
-		e = e2
-	}
-
-	return e
+	return checkFullCertChain(chain)
 }
 
 func checkFullCertChain(chain tls.Certificate) ([]TlsLink, error) {
-	var tlsLinks []TlsLink
-	var err error
-	cert, e1 := x509.ParseCertificate(chain.Certificate[0])
-	if e1 != nil {
-		err = e1
+	if len(chain.Certificate) == 0 {
+		return nil, errors.New("no certificate data found")
 	}
-	if cert.DNSNames == nil || len(cert.DNSNames) == 0 {
-		err = errors.New("no DNS name specified")
-	}
-	verified, e2 := cert.Verify(verifyOptions(splitCertPools(chain)))
+
+	var e2 error
+	chain.Leaf, e2 = x509.ParseCertificate(chain.Certificate[0])
 	if e2 != nil {
-		err = e2
+		return nil, e2
 	}
-	if err == nil {
-		tlsLinks = parseTlsLinks(verified[0])
+
+	if chain.Leaf.DNSNames == nil || len(chain.Leaf.DNSNames) == 0 {
+		return nil, errors.New("no DNS name specified")
 	}
-	return tlsLinks, err
+
+	inter, root, e3 := splitCertPools(chain)
+	if e3!=nil {
+		return nil, e3
+	}
+
+	verified, e4 := chain.Leaf.Verify(verifyOptions(inter, root))
+	if e4 != nil {
+		return nil, e4
+	}
+
+	return parseTlsLinks(verified[0]), nil
 }
 
 func verifyOptions(inter *x509.CertPool, root *x509.CertPool) x509.VerifyOptions {
@@ -227,23 +225,15 @@ func parseTlsLinks(chain []*x509.Certificate) []TlsLink {
 	return tlsLinks
 }
 
-func splitCertPools(chain tls.Certificate) (*x509.CertPool, *x509.CertPool) {
-	errMsg := "unable to parse TLS certificate chain, cause: %v, exiting ..."
-	//safety in case anything else goes wrong. we're now in a goroutine
-	defer func() {
-		if r := recover(); r != nil {
-			log.Fatal().Msgf(errMsg, r)
-			os.Exit(-1)
-		}
-	}()
+func splitCertPools(chain tls.Certificate) (*x509.CertPool, *x509.CertPool, error) {
+	var err error
 
 	root := x509.NewCertPool()
 	inter := x509.NewCertPool()
 	for _, c := range chain.Certificate {
 		c1, caerr := x509.ParseCertificate(c)
 		if caerr != nil {
-			log.Fatal().Msgf(errMsg, caerr)
-			os.Exit(-1)
+			err = caerr
 		}
 		//for CA's we treat you as intermediate unless you signed yourself
 		if c1.IsCA {
@@ -255,10 +245,9 @@ func splitCertPools(chain tls.Certificate) (*x509.CertPool, *x509.CertPool) {
 			}
 		}
 	}
-	return inter, root
+	return inter, root, err
 }
 
 func isRoot(c *x509.Certificate) bool {
-	//TODO: this seems to work but should we really check signature instead?
 	return c.IsCA && c.Issuer.CommonName == c.Subject.CommonName
 }
