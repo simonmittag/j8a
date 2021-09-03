@@ -357,8 +357,10 @@ jobs:
       - run:
           name: Display performance test results
           command: |
-            echo "requests per second"
-            echo "--"
+            echo "\n"
+            echo "-----------------------"
+            echo "| requests per second |"
+            echo "-----------------------"
             export reqssg=`cat performance/performance_results_http_low_get.json | jq .requestspersecond`
             echo "=> performance test results HTTP GET, concurrency ${TEST_CONCURRENCY_LOW}, ${reqssg} req/s"
             export reqssp=`cat performance/performance_results_http_low_post.json | jq .requestspersecond`
