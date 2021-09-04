@@ -136,7 +136,9 @@ func (runtime *Runtime) loadAcmeCertAndKeyFromCache(provider string) error {
 		//if delete doesn't work ignore this it may already be gone (partially).
 		os.Remove(keyFile)
 		os.Remove(certFile)
-		log.Debug().Msgf("clearing TLS cache for ACME provider %s", provider)
+		msg := fmt.Sprintf("clearing TLS cache for ACME provider %s", provider)
+		log.Debug().Msg(msg)
+		return errors.New(msg)
 	}
 
 	return e
