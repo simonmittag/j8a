@@ -142,20 +142,21 @@ func (runtime *Runtime) loadAcmeCertAndKeyFromCache(provider string) error {
 	return e
 }
 
+const acmeRwx fs.FileMode = 0700
 func (runtime *Runtime) cacheAcmeCertAndKey(provider string) error {
 	var e error
-	const rw fs.FileMode = 0600
+
 	if !runtime.cacheDirIsActive() {
 		return errors.New("cache directory not active, cannot cache keys")
 	} else {
 		//it doesn't matter if this fails because dir already exists
-		os.Mkdir(Runner.cacheDir+"/"+provider, rw)
+		os.Mkdir(Runner.cacheDir+"/"+provider, acmeRwx)
 	}
 
 	e1 := ioutil.WriteFile(
 		filepath.FromSlash(Runner.cacheDir+"/"+provider+"/"+acmeKeyFile),
 		[]byte(Runner.Connection.Downstream.Tls.Key),
-		rw)
+		acmeRwx)
 	if e1 != nil {
 		return e1
 	}
@@ -163,7 +164,7 @@ func (runtime *Runtime) cacheAcmeCertAndKey(provider string) error {
 	e2 := ioutil.WriteFile(
 		filepath.FromSlash(Runner.cacheDir+"/"+provider+"/"+acmeCertFile),
 		[]byte(Runner.Connection.Downstream.Tls.Cert),
-		rw)
+		acmeRwx)
 	if e2 != nil {
 		return e2
 	}

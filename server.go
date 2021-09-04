@@ -136,7 +136,7 @@ func (r *Runtime) initCacheDir() *Runtime {
 	if e1 == nil {
 		myCacheDir := filepath.FromSlash(home + "/" + cacheDir)
 		if _, e3 := os.Stat(myCacheDir); os.IsNotExist(e3) {
-			e2 := os.Mkdir(myCacheDir, 0600)
+			e2 := os.Mkdir(myCacheDir, acmeRwx)
 			if e2 == nil {
 				r.cacheDir = myCacheDir
 				log.Debug().Msg("init cache dir in user home")
