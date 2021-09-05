@@ -254,6 +254,8 @@ func (runtime *Runtime) startTls(server *http.Server, err chan<- error, msg stri
 		server.TLSConfig = cfg
 	} else {
 		err <- tlsCfgErr
+		log.Warn().Err(tlsCfgErr).Msgf("TLS configuration error, cause: %v", err)
+		return
 	}
 
 	_, tlsErr := checkFullCertChain(*runtime.ReloadableCert.Cert)
