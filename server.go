@@ -60,7 +60,7 @@ func (r *ReloadableCert) triggerInit() error {
 		err = err2
 	} else {
 		r.Cert = &cert
-		log.Debug().Msgf("TLS certificate loaded successful, now live")
+		log.Debug().Msgf("TLS certificate loaded")
 	}
 	r.Init = false
 	return err
@@ -243,6 +243,7 @@ func (runtime *Runtime) startTls(server *http.Server, err chan<- error, msg stri
 			acmeErr := runtime.fetchAcmeCertAndKey(acmeProviders[p])
 			if acmeErr != nil {
 				err <- acmeErr
+				return
 			} else {
 				runtime.cacheAcmeCertAndKey(p)
 			}

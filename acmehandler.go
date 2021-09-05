@@ -127,7 +127,6 @@ func (runtime *Runtime) loadAcmeCertAndKeyFromCache(provider string) error {
 		return e2
 	}
 
-	//if cache data is no good, delete cache and try something else
 	if _, e3 := checkFullCertChainFromBytes(cert, key); e3 == nil {
 		runtime.Connection.Downstream.Tls.Key = string(key)
 		runtime.Connection.Downstream.Tls.Cert = string(cert)
@@ -152,12 +151,12 @@ func (runtime *Runtime) cacheAcmeCertAndKey(provider string) error {
 		return errors.New("cache directory not active, cannot cache keys")
 	} else {
 		//it doesn't matter if this fails because dir already exists
-		os.Mkdir(Runner.cacheDir+"/"+provider, acmeRwx)
+		os.Mkdir(runtime.cacheDir+"/"+provider, acmeRwx)
 	}
 
 	e1 := ioutil.WriteFile(
 		filepath.FromSlash(Runner.cacheDir+"/"+provider+"/"+acmeKeyFile),
-		[]byte(Runner.Connection.Downstream.Tls.Key),
+		[]byte(runtime.Connection.Downstream.Tls.Key),
 		acmeRwx)
 	if e1 != nil {
 		return e1
@@ -165,7 +164,7 @@ func (runtime *Runtime) cacheAcmeCertAndKey(provider string) error {
 
 	e2 := ioutil.WriteFile(
 		filepath.FromSlash(Runner.cacheDir+"/"+provider+"/"+acmeCertFile),
-		[]byte(Runner.Connection.Downstream.Tls.Cert),
+		[]byte(runtime.Connection.Downstream.Tls.Cert),
 		acmeRwx)
 	if e2 != nil {
 		return e2
