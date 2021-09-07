@@ -53,7 +53,7 @@ func (t TlsLink) printRemainingValidity() string {
 func (r *Runtime) tlsHealthCheck(daemon bool) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Trace().Msgf("TLS cert logProcStats not analysed, root cause: %s", r)
+			log.Trace().Msgf("TLS cert not analysed, cause: %s", r)
 		}
 	}()
 
@@ -100,7 +100,7 @@ func checkFullCertChain(chain tls.Certificate) ([]TlsLink, error) {
 	}
 
 	inter, root, e3 := splitCertPools(chain)
-	if e3!=nil {
+	if e3 != nil {
 		return nil, e3
 	}
 
@@ -124,15 +124,23 @@ func verifyOptions(inter *x509.CertPool, root *x509.CertPool) x509.VerifyOptions
 }
 
 func formatSerial(serial *big.Int) string {
+	serial = serial.Abs(serial)
 	hex := fmt.Sprintf("%X", serial)
-	if len(hex) == 1 || len(hex) == 31 {
+	if len(hex)%2 != 0 {
 		hex = "0" + hex
 	}
 	if len(hex) > 2 {
 		frm := strings.Builder{}
 		for i := 0; i < len(hex); i += 2 {
-			frm.WriteString(hex[i : i+2])
-			if i != len(hex)-2 {
+			var j = 0
+			if i+2 <= len(hex) {
+				j = i + 2
+			} else {
+				j = len(hex)
+			}
+			w := hex[i:j]
+			frm.WriteString(w)
+			if i < len(hex)-2 {
 				frm.WriteString("-")
 			}
 		}

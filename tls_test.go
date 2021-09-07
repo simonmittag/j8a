@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"github.com/hako/durafmt"
+	"math/big"
 	"testing"
 	"time"
 )
@@ -119,7 +120,7 @@ func TestCertChainC_I_R_Invalid(t *testing.T) {
 
 	c, e := mockTlsConfigWith(certPem, keyPem, interCAPem, rootCAPem)
 
-	if c!=nil || e == nil {
+	if c != nil || e == nil {
 		t.Errorf("certificate chain with 1 TLS cert, 1 intermediate, bad root cert validated, this shouldn't happen.")
 	}
 }
@@ -148,6 +149,53 @@ func TestCertChainC_I_R_DNSValid(t *testing.T) {
 	if verified == nil || len(verified) != 3 {
 		t.Logf("normal. certificate chain with 1 TLS cert, 1 intermediate, 1 root cert should be length 3, but was: %d", len(verified))
 	}
+}
+
+func TestFormalSerial(t *testing.T) {
+	m := big.NewInt(1)
+	for i := 0; i < 100; i++ {
+		m = m.Lsh(m, uint(i))
+		q := formatSerial(m)
+		l := len(q) - 1
+		if q[l:] == "-" {
+			t.Errorf("error. should not end with -")
+		} else {
+			t.Logf("normal. serial %s", q)
+		}
+	}
+
+	m1 := big.NewInt(0)
+	t.Logf("normal. serial %s", formatSerial(m1))
+
+	m2 := big.NewInt(2347239999924234320)
+	t.Logf("normal. serial %s", formatSerial(m2))
+	w2 := "20-93-12-57-FE-12-68-50"
+	if w2 != formatSerial(m2) {
+		t.Errorf("error. not formatted correctly, wanted %s, got %s", w2, formatSerial(m2))
+	}
+
+	m3 := big.NewInt(-1)
+	t.Logf("normal. serial %s", formatSerial(m3))
+
+	m4 := big.NewInt(-2347239999924234320)
+	t.Logf("normal. serial %s", formatSerial(m4))
+
+	m5 := big.NewInt(255)
+	w5 := "FF"
+	if w5 != formatSerial(m5) {
+		t.Errorf("error. not formatted correctly, wanted %s, got %s", w5, formatSerial(m5))
+	} else {
+		t.Logf("normal. serial %s", formatSerial(m5))
+	}
+
+	m6 := big.NewInt(256)
+	w6 := "01-00"
+	if w6 != formatSerial(m6) {
+		t.Errorf("not formatted correctly, wanted %s, got %s", w6, formatSerial(m6))
+	} else {
+		t.Logf("normal. serial %s", formatSerial(m6))
+	}
+
 }
 
 //this test provides a cert without DNS names which is invalid.
