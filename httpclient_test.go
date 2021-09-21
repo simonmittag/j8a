@@ -25,7 +25,7 @@ func TestHttpClientSocketTimeout(t *testing.T) {
 	}
 	Runner.initReloadableCert()
 
-	client := scaffoldHTTPClient(*Runner)
+	client := scaffoldHTTPClient(Runner)
 	start := time.Now()
 	_, err := client.Get("http://10.73.124.255:8089/uri")
 	elapsed := time.Since(start)

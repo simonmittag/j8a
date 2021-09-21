@@ -163,7 +163,7 @@ func (r *Runtime) initReloadableCert() *Runtime {
 	return r
 }
 
-func (runtime Runtime) startListening() {
+func (runtime *Runtime) startListening() {
 	readTimeoutDuration := time.Second * time.Duration(runtime.Connection.Downstream.ReadTimeoutSeconds)
 	roundTripTimeoutDuration := time.Second * time.Duration(runtime.Connection.Downstream.RoundTripTimeoutSeconds)
 	roundTripTimeoutDurationWithGrace := roundTripTimeoutDuration + (time.Second * 1)
@@ -268,20 +268,20 @@ func (runtime *Runtime) startTls(server *http.Server, err chan<- error, msg stri
 	}
 }
 
-func (runtime Runtime) startHTTP(server *http.Server, err chan<- error, msg string) {
+func (runtime *Runtime) startHTTP(server *http.Server, err chan<- error, msg string) {
 	server.Addr = ":" + strconv.Itoa(runtime.Connection.Downstream.Http.Port)
 	log.Info().Msg(msg)
 	err <- server.ListenAndServe()
 }
 
-func (runtime Runtime) initUserAgent() Runtime {
+func (runtime *Runtime) initUserAgent() *Runtime {
 	if httpClient == nil {
 		httpClient = scaffoldHTTPClient(runtime)
 	}
 	return runtime
 }
 
-func (runtime Runtime) initStats() Runtime {
+func (runtime *Runtime) initStats() *Runtime {
 	proc, _ := process.NewProcess(int32(os.Getpid()))
 	logProcStats(proc)
 	logUptime()
