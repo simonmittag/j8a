@@ -1,10 +1,12 @@
 package j8a
 
 import (
+	"bytes"
 	"crypto"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"github.com/rs/zerolog/log"
@@ -107,6 +109,7 @@ func (u *AcmeUser) GetPrivateKey() crypto.PrivateKey {
 
 const acmeKeyFile = "tls.pk"
 const acmeCertFile = "tls.cert"
+const acmeHashFile = "confighash"
 
 func (runtime *Runtime) loadAcmeCertAndKeyFromCache(provider string) error {
 	var e error
@@ -127,16 +130,33 @@ func (runtime *Runtime) loadAcmeCertAndKeyFromCache(provider string) error {
 		return e2
 	}
 
+	hashFile := filepath.FromSlash(Runner.cacheDir + "/" + provider + "/" + acmeHashFile)
+	hash, e3 := ioutil.ReadFile(hashFile)
+	if e3 != nil {
+		return e3
+	}
+
+	clearCache := func(msg string) {
+		os.Remove(keyFile)
+		os.Remove(certFile)
+		os.Remove(hashFile)
+		log.Debug().Msg(msg)
+	}
+
+	if c := bytes.Compare(hash, runtime.acmeProviderHashAsBytes()); c != 0 {
+		msg := fmt.Sprintf("active TLS configuration does not match cached cert and key, clearing cache for ACME provider %s", provider)
+		clearCache(msg)
+		return errors.New(msg)
+	}
+
 	if _, e3 := checkFullCertChainFromBytes(cert, key); e3 == nil {
 		runtime.Connection.Downstream.Tls.Key = string(key)
 		runtime.Connection.Downstream.Tls.Cert = string(cert)
 		log.Debug().Msgf("TLS cert and key for ACME provider %s loaded from cache", provider)
 	} else {
 		//if delete doesn't work ignore this it may already be gone (partially).
-		os.Remove(keyFile)
-		os.Remove(certFile)
-		msg := fmt.Sprintf("clearing TLS cache for ACME provider %s", provider)
-		log.Debug().Msg(msg)
+		msg := fmt.Sprintf("unable to load data, clearing TLS cache for ACME provider %s", provider)
+		clearCache(msg)
 		return errors.New(msg)
 	}
 
@@ -144,6 +164,7 @@ func (runtime *Runtime) loadAcmeCertAndKeyFromCache(provider string) error {
 }
 
 const acmeRwx fs.FileMode = 0700
+
 func (runtime *Runtime) cacheAcmeCertAndKey(provider string) error {
 	var e error
 
@@ -170,8 +191,27 @@ func (runtime *Runtime) cacheAcmeCertAndKey(provider string) error {
 		return e2
 	}
 
+	e3 := ioutil.WriteFile(
+		filepath.FromSlash(Runner.cacheDir+"/"+provider+"/"+acmeHashFile),
+		runtime.acmeProviderHashAsBytes(),
+		acmeRwx)
+	if e3 != nil {
+		return e3
+	}
+
 	log.Debug().Msgf("stored TLS cert and key for ACME provider %s in cache", provider)
 	return e
+}
+
+func asSha256(o interface{}) string {
+	h := sha256.New()
+	h.Write([]byte(fmt.Sprintf("%v", o)))
+
+	return fmt.Sprintf("%x", h.Sum(nil))
+}
+
+func (runtime *Runtime) acmeProviderHashAsBytes() []byte {
+	return []byte(asSha256(runtime.Connection.Downstream.Tls.Acme))
 }
 
 func (runtime *Runtime) fetchAcmeCertAndKey(url string) error {
