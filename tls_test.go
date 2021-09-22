@@ -96,7 +96,7 @@ func TestCheckForKeyAndCertificateErrorsFailsWithCorruptCert(t *testing.T) {
 func TestCheckCertChain(t *testing.T) {
 	//this implicitly creates a Runner without returning it because it's well...global.
 	mockTlsConfig()
-	verified, err := checkFullCertChain(*Runner.ReloadableCert.Cert)
+	verified, err := checkFullCertChain(Runner.ReloadableCert.Cert)
 	if err != nil {
 		t.Errorf("certificate chain with 1 TLS cert, 1 root cert not validated, cause: %s", err)
 	}

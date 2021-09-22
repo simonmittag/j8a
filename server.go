@@ -2,6 +2,7 @@ package j8a
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"github.com/rs/zerolog/log"
 	"github.com/shirou/gopsutil/process"
@@ -49,18 +50,21 @@ func (r *ReloadableCert) GetCertificateFunc(clientHello *tls.ClientHelloInfo) (*
 func (r *ReloadableCert) triggerInit() error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-
 	r.Init = true
+
+	var cert tls.Certificate
 	var err error
 
 	c := []byte(r.runtime.Connection.Downstream.Tls.Cert)
 	k := []byte(r.runtime.Connection.Downstream.Tls.Key)
-	cert, err2 := tls.X509KeyPair(c, k)
-	if err2 != nil {
-		err = err2
-	} else {
+
+	cert, err = tls.X509KeyPair(c, k)
+	if err == nil {
 		r.Cert = &cert
-		log.Debug().Msgf("TLS certificate loaded")
+		r.Cert.Leaf, err = x509.ParseCertificate(cert.Certificate[0])
+	}
+	if err == nil {
+		log.Debug().Msgf("TLS certificate #%v initialized", formatSerial(cert.Leaf.SerialNumber))
 	}
 	r.Init = false
 	return err
@@ -258,7 +262,7 @@ func (runtime *Runtime) startTls(server *http.Server, err chan<- error, msg stri
 		return
 	}
 
-	_, tlsErr := checkFullCertChain(*runtime.ReloadableCert.Cert)
+	_, tlsErr := checkFullCertChain(runtime.ReloadableCert.Cert)
 	if tlsErr == nil {
 		go runtime.tlsHealthCheck(true)
 		log.Info().Msg(msg)
