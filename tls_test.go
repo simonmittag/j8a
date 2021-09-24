@@ -248,7 +248,7 @@ func TestCertChainC_Invalid(t *testing.T) {
 }
 
 func TestSha1Sum(t *testing.T) {
-	want := "BE:B8:11:71:AB:9F:0F:0B:9E:65:40:A8:C3:2D:F0:96:C0:DB:78:16"
+	want := "#BE:B8:11:71:AB:9F:0F:0B:9E:65:40:A8:C3:2D:F0:96:C0:DB:78:16"
 	got := sha1Fingerprint(parseTestCert())
 	if got != want {
 		t.Errorf("sha1sum got %s, want %s", got, want)
@@ -258,7 +258,7 @@ func TestSha1Sum(t *testing.T) {
 }
 
 func TestSha256Sum(t *testing.T) {
-	want := "FA:EC:D7:A1:22:84:7B:92:91:EE:08:3D:C4:35:20:6B:7E:3F:6F:8B:BD:BD:0D:96:4C:D4:ED:E7:53:47:3F:58"
+	want := "#FA:EC:D7:A1:22:84:7B:92:91:EE:08:3D:C4:35:20:6B:7E:3F:6F:8B:BD:BD:0D:96:4C:D4:ED:E7:53:47:3F:58"
 	got := sha256Fingerprint(parseTestCert())
 	if got != want {
 		t.Errorf("sha256sum got %s, want %s", got, want)
@@ -268,7 +268,7 @@ func TestSha256Sum(t *testing.T) {
 }
 
 func TestMd5Sum(t *testing.T) {
-	want := "EF:F8:6C:76:9F:12:F4:EC:B5:04:C1:BD:AF:C2:E4:80"
+	want := "#EF:F8:6C:76:9F:12:F4:EC:B5:04:C1:BD:AF:C2:E4:80"
 	got := md5Fingerprint(parseTestCert())
 	if got != want {
 		t.Errorf("md5sum got %s, want %s", got, want)
