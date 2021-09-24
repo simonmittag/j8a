@@ -1,8 +1,12 @@
 package j8a
 
 import (
+	"crypto/md5"
+	"crypto/sha1"
+	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"github.com/hako/durafmt"
@@ -141,12 +145,49 @@ func formatSerial(serial *big.Int) string {
 			w := hex[i:j]
 			frm.WriteString(w)
 			if i < len(hex)-2 {
-				frm.WriteString("-")
+				frm.WriteString(":")
 			}
 		}
 		hex = frm.String()
 	}
 	return hex
+}
+
+func sha1Fingerprint(cert *x509.Certificate) string {
+	sha1 := sha1.Sum(cert.Raw)
+	return "#" + JoinHashString(sha1[:])
+}
+
+func sha256Fingerprint(cert *x509.Certificate) string {
+	sha256 := sha256.Sum256(cert.Raw)
+	return "#" + JoinHashString(sha256[:])
+}
+
+func md5Fingerprint(cert *x509.Certificate) string {
+	md5 := md5.Sum(cert.Raw)
+	return "#" + JoinHashString(md5[:])
+}
+
+func JoinHashString(hash []byte) string {
+	return strings.Join(ChunkString(strings.ToUpper(hex.EncodeToString(hash[:])), 2), ":")
+}
+
+func ChunkString(s string, chunkSize int) []string {
+	var chunks []string
+	runes := []rune(s)
+
+	if len(runes) == 0 {
+		return []string{s}
+	}
+
+	for i := 0; i < len(runes); i += chunkSize {
+		nn := i + chunkSize
+		if nn > len(runes) {
+			nn = len(runes)
+		}
+		chunks = append(chunks, string(runes[i:nn]))
+	}
+	return chunks
 }
 
 func logCertStats(tlsLinks []TlsLink) {
@@ -156,10 +197,13 @@ func logCertStats(tlsLinks []TlsLink) {
 	sb.WriteString(fmt.Sprintf("Snapshot of your cert chain size %d explained. ", len(tlsLinks)))
 	for i, link := range tlsLinks {
 		if !link.isCA {
-			sb.WriteString(fmt.Sprintf("[%d/%d] TLS cert #%s for DNS names %s, valid from %s, signed by [%s], expires in %s. ",
+			sb.WriteString(fmt.Sprintf("[%d/%d] TLS cert serial #%s, fingerprints sha1 %s, sha256 %s, md5 %s for DNS names %s, valid from %s, signed by [%s], expires in %s. ",
 				i+1,
 				len(tlsLinks),
 				formatSerial(link.cert.SerialNumber),
+				sha1Fingerprint(link.cert),
+				sha256Fingerprint(link.cert),
+				md5Fingerprint(link.cert),
 				link.cert.DNSNames,
 				link.issued.Format("2006-01-02"),
 				link.cert.Issuer.CommonName,
