@@ -157,7 +157,7 @@ func TestFormalSerial(t *testing.T) {
 		m = m.Lsh(m, uint(i))
 		q := formatSerial(m)
 		l := len(q) - 1
-		if q[l:] == "-" {
+		if q[l:] == ":" {
 			t.Errorf("error. should not end with -")
 		} else {
 			t.Logf("normal. serial %s", q)
@@ -169,7 +169,7 @@ func TestFormalSerial(t *testing.T) {
 
 	m2 := big.NewInt(2347239999924234320)
 	t.Logf("normal. serial %s", formatSerial(m2))
-	w2 := "20-93-12-57-FE-12-68-50"
+	w2 := "20:93:12:57:FE:12:68:50"
 	if w2 != formatSerial(m2) {
 		t.Errorf("error. not formatted correctly, wanted %s, got %s", w2, formatSerial(m2))
 	}
@@ -189,7 +189,7 @@ func TestFormalSerial(t *testing.T) {
 	}
 
 	m6 := big.NewInt(256)
-	w6 := "01-00"
+	w6 := "01:00"
 	if w6 != formatSerial(m6) {
 		t.Errorf("not formatted correctly, wanted %s, got %s", w6, formatSerial(m6))
 	} else {
