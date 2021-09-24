@@ -170,11 +170,11 @@ func logCertStats(tlsLinks []TlsLink) {
 					int(link.totalValidity.AsDays()),
 					int(link.browserExpiry().AsDays())))
 			}
-			if link.browserValidity > 0 && link.browserValidity < link.remainingValidity {
-				sb.WriteString(fmt.Sprintf("You may experience disruption in %s. ",
-					link.browserValidity.AsString()))
-			} else {
+			if link.browserValidity < 0 {
 				sb.WriteString(fmt.Sprintf("Validity grace period expired %s ago, update this certificate now to avoid disruption. ",
+					link.browserValidity.AsString()))
+			} else if link.browserValidity < link.remainingValidity {
+				sb.WriteString(fmt.Sprintf("You may experience disruption in %s. ",
 					link.browserValidity.AsString()))
 			}
 		} else {
