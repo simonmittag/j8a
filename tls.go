@@ -156,7 +156,7 @@ func logCertStats(tlsLinks []TlsLink) {
 	sb.WriteString(fmt.Sprintf("Snapshot of your cert chain size %d explained. ", len(tlsLinks)))
 	for i, link := range tlsLinks {
 		if !link.isCA {
-			sb.WriteString(fmt.Sprintf("[%d/%d] TLS cert #%s for DNS names %s, issued on %s, signed by [%s], expires in %s. ",
+			sb.WriteString(fmt.Sprintf("[%d/%d] TLS cert #%s for DNS names %s, valid from %s, signed by [%s], expires in %s. ",
 				i+1,
 				len(tlsLinks),
 				formatSerial(link.cert.SerialNumber),
@@ -166,15 +166,15 @@ func logCertStats(tlsLinks []TlsLink) {
 				link.printRemainingValidity(),
 			))
 			if link.totalValidity > link.browserExpiry() {
-				sb.WriteString(fmt.Sprintf("Total validity period of %d days is above legal browser max %d. ",
+				sb.WriteString(fmt.Sprintf("Total validity period of %d days is above legal browser maximum of %d days. ",
 					int(link.totalValidity.AsDays()),
 					int(link.browserExpiry().AsDays())))
 			}
-			if link.browserValidity > 0 {
+			if link.browserValidity > 0 && link.browserValidity < link.remainingValidity {
 				sb.WriteString(fmt.Sprintf("You may experience disruption in %s. ",
 					link.browserValidity.AsString()))
 			} else {
-				sb.WriteString(fmt.Sprintf("Validity grace period expired %s ago, update now. ",
+				sb.WriteString(fmt.Sprintf("Validity grace period expired %s ago, update this certificate now to avoid disruption. ",
 					link.browserValidity.AsString()))
 			}
 		} else {
