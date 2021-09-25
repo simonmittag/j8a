@@ -18,6 +18,20 @@ func TestPDurationAsString(t *testing.T) {
 	}
 }
 
+func TestTlsLinkRemainingValidity29DaysTooCloseForComfort(t *testing.T) {
+	t1 := TlsLink{remainingValidity: PDuration(time.Hour * 24 * 29)}
+	if !t1.expiresTooCloseForComfort() {
+		t.Errorf("did not fire too close for comfort, but 29 days is")
+	}
+}
+
+func TestTlsLinkRemainingValidity31DaysNotTooCloseForComfort(t *testing.T) {
+	t1 := TlsLink{remainingValidity: PDuration(time.Hour * 24 * 31)}
+	if t1.expiresTooCloseForComfort() {
+		t.Errorf("did fire too close for comfort but 31 days is not")
+	}
+}
+
 func TestPDuration_AsDays(t *testing.T) {
 	pd399 := PDuration(time.Hour * 24 * 399)
 	got := pd399.AsDays()

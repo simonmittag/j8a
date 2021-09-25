@@ -20,6 +20,8 @@ import (
 
 type PDuration time.Duration
 
+const Days30 = time.Duration(time.Hour * 24 * 30)
+
 func (p PDuration) AsString() string {
 	return durafmt.Parse(time.Duration(p)).LimitFirstN(2).String()
 }
@@ -44,6 +46,10 @@ type TlsLink struct {
 
 func (t TlsLink) browserExpiry() PDuration {
 	return PDuration(time.Hour * 24 * 398)
+}
+
+func (t TlsLink) expiresTooCloseForComfort() bool{
+	return time.Duration(t.remainingValidity) <= Days30
 }
 
 func (t TlsLink) printRemainingValidity() string {
