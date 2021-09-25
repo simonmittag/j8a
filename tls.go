@@ -78,6 +78,7 @@ func (r *Runtime) tlsHealthCheck(daemon bool) {
 		for {
 			//Andeka is checking our certificate chains forever.
 			andeka, _ := checkFullCertChain(r.ReloadableCert.Cert)
+			//if (andeka[0].)
 			logCertStats(andeka)
 			if daemon {
 				time.Sleep(time.Hour * 24)
@@ -252,8 +253,8 @@ func logCertStats(tlsLinks []TlsLink) {
 	for _, t := range tlsLinks {
 		if t.earliestExpiry {
 			var ev *zerolog.Event
-			//if the certificate expires in less than 30 days we send this as a log.Warn event instead.
-			if t.expiresTooCloseForComfort() {
+			//if the certificate shows signs of problems but is valid, log.warn instead
+			if t.expiresTooCloseForComfort() || t.legalBrowserValidityPeriodPassed() {
 				ev = log.Warn()
 			} else {
 				ev = log.Debug()
