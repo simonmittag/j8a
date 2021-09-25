@@ -78,8 +78,11 @@ func (r *Runtime) tlsHealthCheck(daemon bool) {
 		for {
 			//Andeka is checking our certificate chains forever.
 			andeka, _ := checkFullCertChain(r.ReloadableCert.Cert)
-			//if (andeka[0].)
 			logCertStats(andeka)
+			if andeka[0].expiresTooCloseForComfort() {
+				r.renewAcmeCertAndKey()
+			}
+
 			if daemon {
 				time.Sleep(time.Hour * 24)
 			} else {
@@ -87,6 +90,37 @@ func (r *Runtime) tlsHealthCheck(daemon bool) {
 			}
 		}
 	}
+}
+
+const acmeRetry24h = "unable to renew ACME certificate from provider %s, cause: %s, will retry in 24h"
+func (r *Runtime) renewAcmeCertAndKey() error {
+	p := r.Connection.Downstream.Tls.Acme.Provider
+	log.Debug().Msgf("triggering renewal of ACME certificate from provider %s ", p)
+
+	e1 := r.fetchAcmeCertAndKey(acmeProviders[p])
+	if e1==nil {
+		c := []byte(r.Connection.Downstream.Tls.Cert)
+		k := []byte(r.Connection.Downstream.Tls.Key)
+
+		if newCerts, e2 := checkFullCertChainFromBytes(c, k); e2 != nil {
+			log.Warn().Msgf(acmeRetry24h, p, e2)
+			return e2
+		} else {
+			//if no issues, cache the cert and key. we don't assert whether this works it only matters when loading.
+			r.cacheAcmeCertAndKey(acmeProviders[p])
+
+			//now trigger a re-init of TLS cert for the cert we just downloaded.
+			e3 := r.ReloadableCert.triggerInit()
+			if e3 ==nil {
+				logCertStats(newCerts)
+				log.Debug().Msgf("successful renewal of ACME certificate from provider %s complete", p)
+			} else {
+				log.Warn().Msgf(acmeRetry24h, p, e3)
+				return e3
+			}
+		}
+	}
+	return nil
 }
 
 func checkFullCertChainFromBytes(cert []byte, key []byte) ([]TlsLink, error) {
