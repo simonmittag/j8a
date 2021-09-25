@@ -32,6 +32,26 @@ func TestTlsLinkRemainingValidity31DaysNotTooCloseForComfort(t *testing.T) {
 	}
 }
 
+func TestTlsLinkTotalValidity397DaysWithinLegalBrowserPeriod(t *testing.T) {
+	t1 := TlsLink{
+		remainingValidity: PDuration(time.Hour * 24 * 397),
+		browserValidity:   PDuration(time.Hour * 24 * 398),
+	}
+	if t1.expiryLongerThanLegalBrowserMaximum() {
+		t.Errorf("397 days is not longer than browser validity but did fire")
+	}
+}
+
+func TestTlsLinkTotalValidity399DaysNotWithinLegalBrowserPeriod(t *testing.T) {
+	t1 := TlsLink{
+		remainingValidity: PDuration(time.Hour * 24 * 399),
+		browserValidity:   PDuration(time.Hour * 24 * 398),
+	}
+	if !t1.expiryLongerThanLegalBrowserMaximum() {
+		t.Errorf("399 days is longer than browser validity but did not fire")
+	}
+}
+
 func TestPDuration_AsDays(t *testing.T) {
 	pd399 := PDuration(time.Hour * 24 * 399)
 	got := pd399.AsDays()
@@ -42,7 +62,7 @@ func TestPDuration_AsDays(t *testing.T) {
 }
 
 func TestBrowserExpiry_AsDays(t *testing.T) {
-	got := new(TlsLink).browserExpiry().AsDays()
+	got := Days398.AsDays()
 	want := 398
 	if got != want {
 		t.Errorf("wrong browser expiry days, want %d, got %d", want, got)

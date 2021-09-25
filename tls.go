@@ -21,6 +21,7 @@ import (
 type PDuration time.Duration
 
 const Days30 = time.Duration(time.Hour * 24 * 30)
+const Days398 = PDuration(time.Hour * 24 * 398)
 
 func (p PDuration) AsString() string {
 	return durafmt.Parse(time.Duration(p)).LimitFirstN(2).String()
@@ -44,12 +45,16 @@ type TlsLink struct {
 	isCA              bool
 }
 
-func (t TlsLink) browserExpiry() PDuration {
-	return PDuration(time.Hour * 24 * 398)
+func (t TlsLink) expiresTooCloseForComfort() bool {
+	return time.Duration(t.remainingValidity) <= Days30
 }
 
-func (t TlsLink) expiresTooCloseForComfort() bool{
-	return time.Duration(t.remainingValidity) <= Days30
+func (t TlsLink) expiryLongerThanLegalBrowserMaximum() bool {
+	return t.browserValidity < t.remainingValidity
+}
+
+func (t TlsLink) legalBrowserValidityPeriodPassed() bool {
+	return t.browserValidity < 0
 }
 
 func (t TlsLink) printRemainingValidity() string {
@@ -197,11 +202,10 @@ func ChunkString(s string, chunkSize int) []string {
 }
 
 func logCertStats(tlsLinks []TlsLink) {
-	month := PDuration(time.Hour * 24 * 30)
-
 	var sb strings.Builder
 	sb.WriteString(fmt.Sprintf("Snapshot of your cert chain size %d explained. ", len(tlsLinks)))
 	for i, link := range tlsLinks {
+		//we only want to know the below for certs, not CAs
 		if !link.isCA {
 			sb.WriteString(fmt.Sprintf("[%d/%d] TLS cert serial #%s, sha1 fingerprint %s for DNS names %s, valid from %s, signed by [%s], expires in %s. ",
 				i+1,
@@ -213,16 +217,19 @@ func logCertStats(tlsLinks []TlsLink) {
 				link.cert.Issuer.CommonName,
 				link.printRemainingValidity(),
 			))
-			if link.totalValidity > link.browserExpiry() {
-				sb.WriteString(fmt.Sprintf("Total validity period of %d days is above legal browser maximum of %d days. ",
+			//is this cert valid longer than 398d? tell the admin
+			if link.expiryLongerThanLegalBrowserMaximum() {
+				sb.WriteString(fmt.Sprintf("Total validity period of %d days is above legal browser period of %d days. ",
 					int(link.totalValidity.AsDays()),
-					int(link.browserExpiry().AsDays())))
+					int(Days398.AsDays())))
 			}
-			if link.browserValidity < 0 {
-				sb.WriteString(fmt.Sprintf("Validity grace period expired %s ago, update this certificate now to avoid disruption. ",
+			//has browser validity passed?
+			if link.legalBrowserValidityPeriodPassed() {
+				sb.WriteString(fmt.Sprintf("Legal browser period already expired %s ago, update this certificate now. ",
 					link.browserValidity.AsString()))
-			} else if link.browserValidity < link.remainingValidity {
-				sb.WriteString(fmt.Sprintf("You may experience disruption in %s. ",
+				//if it hasn't warn the user if it's a long-lived cert.
+			} else if link.expiryLongerThanLegalBrowserMaximum() {
+				sb.WriteString(fmt.Sprintf("Despite valid certificate, You may experience disruption in %s. ",
 					link.browserValidity.AsString()))
 			}
 		} else {
@@ -246,7 +253,7 @@ func logCertStats(tlsLinks []TlsLink) {
 		if t.earliestExpiry {
 			var ev *zerolog.Event
 			//if the certificate expires in less than 30 days we send this as a log.Warn event instead.
-			if t.remainingValidity < month {
+			if t.expiresTooCloseForComfort() {
 				ev = log.Warn()
 			} else {
 				ev = log.Debug()
@@ -258,7 +265,6 @@ func logCertStats(tlsLinks []TlsLink) {
 
 func parseTlsLinks(chain []*x509.Certificate) []TlsLink {
 	earliestExpiry := PDuration(math.MaxInt64)
-	browserExpiry := TlsLink{}.browserExpiry().AsDuration()
 	var tlsLinks []TlsLink
 	si := 0
 	for i, cert := range chain {
@@ -267,7 +273,7 @@ func parseTlsLinks(chain []*x509.Certificate) []TlsLink {
 			issued:            cert.NotBefore,
 			remainingValidity: PDuration(time.Until(cert.NotAfter)),
 			totalValidity:     PDuration(cert.NotAfter.Sub(cert.NotBefore)),
-			browserValidity:   PDuration(time.Until(cert.NotBefore.Add(browserExpiry))),
+			browserValidity:   PDuration(time.Until(cert.NotBefore.Add(Days398.AsDuration()))),
 			earliestExpiry:    false,
 			isCA:              cert.IsCA,
 		}
