@@ -197,13 +197,11 @@ func logCertStats(tlsLinks []TlsLink) {
 	sb.WriteString(fmt.Sprintf("Snapshot of your cert chain size %d explained. ", len(tlsLinks)))
 	for i, link := range tlsLinks {
 		if !link.isCA {
-			sb.WriteString(fmt.Sprintf("[%d/%d] TLS cert serial #%s, fingerprints sha1 %s, sha256 %s, md5 %s for DNS names %s, valid from %s, signed by [%s], expires in %s. ",
+			sb.WriteString(fmt.Sprintf("[%d/%d] TLS cert serial #%s, sha1 fingerprint %s for DNS names %s, valid from %s, signed by [%s], expires in %s. ",
 				i+1,
 				len(tlsLinks),
 				formatSerial(link.cert.SerialNumber),
 				sha1Fingerprint(link.cert),
-				sha256Fingerprint(link.cert),
-				md5Fingerprint(link.cert),
 				link.cert.DNSNames,
 				link.issued.Format("2006-01-02"),
 				link.cert.Issuer.CommonName,

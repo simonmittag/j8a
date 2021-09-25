@@ -436,7 +436,6 @@ jobs:
   performance:
     docker:
       - image: simonmittag/wrk:go1.16
-    resource_class: xlarge
     environment:
       LOGLEVEL: WARN
       LOGCOLOR: FALSE
