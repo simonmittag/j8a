@@ -13,6 +13,7 @@ workflows:
 
 jobs:
   unit:
+    resource_class: xlarge
     docker:
       - image: circleci/golang:1.16 #
     environment:
@@ -25,6 +26,7 @@ jobs:
       - run: go test -v
 
   metrics:
+    resource_class: xlarge
     docker:
       - image: circleci/golang:1.16
     environment:
@@ -73,6 +75,7 @@ jobs:
           path: /tmp/test-results
 
   integration:
+    resource_class: xlarge
     docker:
       - image: circleci/golang:1.16
     environment:
