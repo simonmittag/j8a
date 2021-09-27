@@ -4,7 +4,7 @@ workflows:
     jobs:
       - unit
       - testsum
-      - metrics
+      - codeclimate
   integrationtest:
     jobs:
       - integrationConnection
@@ -58,7 +58,7 @@ jobs:
       - store_test_results:
           path: /tmp/test-results
 
-  metrics:
+  codeclimate:
     resource_class: medium
     docker:
       - image: circleci/golang:1.16
@@ -73,10 +73,6 @@ jobs:
           name: Create a temp directory for artifacts
           command: |
             mkdir -p /tmp/artifacts
-      - run:
-          name: Create a temp directory for tests
-          command: |
-            mkdir -p /tmp/test-results
       - run:
           name: Setup Code Climate test-reporter
           command: |
@@ -98,14 +94,6 @@ jobs:
 
       - store_artifacts:
           path: /tmp/artifacts
-
-      - run:
-          name: Test Summary for CircleCI
-          command: |
-            gotestsum --junitfile /tmp/test-results/unit-tests.xml .
-
-      - store_test_results:
-          path: /tmp/test-results
 
   integrationConnection:
     resource_class: medium
