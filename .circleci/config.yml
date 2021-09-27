@@ -26,7 +26,7 @@ jobs:
       LOGCOLOR: TRUE
       LOGLEVEL: TRACE
     steps:
-      - checkout # check out source code to working directory
+      - checkout # check out source code to working directory.
       - run: go build github.com/simonmittag/j8a
       - run: go install github.com/simonmittag/j8a/cmd/j8a
       - run: go test -v
