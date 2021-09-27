@@ -2,9 +2,9 @@ workflows:
   version: 2
   unittest:
     jobs:
-      - unit
+      - gotest
       - gotestsum
-      - metrics
+      - codeclimate
   integrationtest:
     jobs:
       - integration
@@ -18,7 +18,7 @@ workflows:
       - performanceTlsHighPost
 
 jobs:
-  unit:
+  gotest:
     resource_class: medium
     docker:
       - image: circleci/golang:1.16 #
@@ -55,7 +55,7 @@ jobs:
       - store_test_results:
           path: /tmp/test-results
 
-  metrics:
+  codeclimate:
     resource_class: medium
     docker:
       - image: circleci/golang:1.16
