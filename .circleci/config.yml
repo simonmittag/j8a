@@ -697,8 +697,8 @@ jobs:
       - run:
           name: Display performance test results
           command: |
+            export reqsshjl=`cat performance/performance_results_jwt_http_low.json | jq .requestspersecond`
             echo "=> performance test results HTTP POST 2.5kb (JWT), concurrency ${TEST_CONCURRENCY_JWT_LOW}, ${reqsshjl} req/s"
-            export reqsshh=`cat performance/performance_results_http_high.json | jq .requestspersecond`
       - store_artifacts:
           path: performance/performance_results_jwt_http_low.json
           destination: performance_results_jwt_http_low.json
