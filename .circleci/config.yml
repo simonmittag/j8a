@@ -3,6 +3,7 @@ workflows:
   unittest:
     jobs:
       - unit
+      - gotestsum
       - metrics
   integrationtest:
     jobs:
@@ -29,6 +30,30 @@ jobs:
       - run: go build github.com/simonmittag/j8a
       - run: go install github.com/simonmittag/j8a/cmd/j8a
       - run: go test -v
+
+  circletests:
+    resource_class: medium
+    docker:
+      - image: circleci/golang:1.16
+    environment:
+      TEST_RESULTS: /tmp/test-results
+      LOGLEVEL: TRACE
+      LOGCOLOR: TRUE
+      CC_TEST_REPORTER_ID: a45fccea925702bc9483bdead24976073cf3e3807b22ce566d2858a700e5472c
+    steps:
+      - checkout # check out source code to working directory
+      - run:
+          name: Create a temp directory for tests
+          command: |
+            mkdir -p /tmp/test-results
+
+      - run:
+          name: Test Summary for CircleCI
+          command: |
+            gotestsum --junitfile /tmp/test-results/unit-tests.xml .
+
+      - store_test_results:
+          path: /tmp/test-results
 
   metrics:
     resource_class: medium
@@ -70,14 +95,6 @@ jobs:
 
       - store_artifacts:
           path: /tmp/artifacts
-
-      - run:
-          name: Test Summary for CircleCI
-          command: |
-            gotestsum --junitfile /tmp/test-results/unit-tests.xml .
-
-      - store_test_results:
-          path: /tmp/test-results
 
   integration:
     resource_class: medium
@@ -440,6 +457,7 @@ jobs:
             echo "tls high performance test ${errread4} read errors"
             export errwrite4=`cat performance/performance_results_tls_high.json | jq .errors.write`
             echo "tls high performance test ${errwrite4} write errors"
+
 
 
   performanceHttpLowGet:
