@@ -14,6 +14,7 @@ workflows:
       - performanceHttpLowPostJwt
       - performanceTlsLowPost
       - performanceHttpHighPost
+      - performanceTlsHighPost
 
 jobs:
   unit:
@@ -814,7 +815,7 @@ jobs:
       TEST_DURATION_SECONDS: 10
       TEST_CONCURRENCY_HIGH: 24
       TEST_CONCURRENCY_HIGH_THRESHOLD: 1000
-      TEST_STATUS_ERRORS_THRESHOLD: 100
+      TEST_STATUS_ERRORS_THRESHOLD: 25
     steps:
       - checkout
       - run:
@@ -887,7 +888,7 @@ jobs:
           path: performance/performance_results_http_high.json
           destination: performance_results_http_high.json
 
-  performance:
+  performanceTlsHighPost:
     docker:
       - image: simonmittag/wrk:go1.16
     resource_class: xlarge
@@ -900,18 +901,12 @@ jobs:
       UPSTREAM_TWO_SLUG: /mse6
       UPSTREAM_THREE_PORT: 60085
       UPSTREAM_THREE_SLUG: /s1
-      J8A_ONE_PORT: 8080
-      J8A_ONE_CFG: ./integration/j8a1.yml
       J8A_THREE_PORT: 8443
       J8A_THREE_CFG: ./integration/j8a3.yml
       TEST_DURATION_SECONDS: 10
-      TEST_CONCURRENCY_LOW: 12
-      TEST_CONCURRENCY_LOW_THRESHOLD: 1400
-      TEST_CONCURRENCY_JWT_LOW: 12
-      TEST_CONCURRENCY_JWT_LOW_THRESHOLD: 1000
       TEST_CONCURRENCY_HIGH: 24
       TEST_CONCURRENCY_HIGH_THRESHOLD: 1000
-      TEST_STATUS_ERRORS_THRESHOLD: 10
+      TEST_STATUS_ERRORS_THRESHOLD: 25
     steps:
       - checkout
       - run:
@@ -949,109 +944,12 @@ jobs:
             go build github.com/simonmittag/j8a
             go install github.com/simonmittag/j8a/cmd/j8a
       - run:
-          name: Start j8a one
-          command: LOGLEVEL=WARN j8a -c ${J8A_ONE_CFG}
-          background: true
-      - run:
-          name: Wait for j8a one
-          command: pwt localhost:${J8A_ONE_PORT}
-      - run:
           name: Start j8a three
           command: LOGLEVEL=WARN j8a -c ${J8A_THREE_CFG}
           background: true
       - run:
           name: Wait for j8a three
           command: pwt localhost:${J8A_THREE_PORT}
-      - run:
-          name: Execute concurrency ${TEST_CONCURRENCY_LOW} GET performance tests in HTTP mode
-          command: cd performance && wrk -t ${TEST_CONCURRENCY_LOW} -c ${TEST_CONCURRENCY_LOW} -d ${TEST_DURATION_SECONDS}s -s get.lua -- http://localhost:${J8A_ONE_PORT}/mse6/get performance_results_http_low_get.json
-      - run:
-          name: Check concurrency ${TEST_CONCURRENCY_LOW} GET performance tests in HTTP mode
-          command: |
-            export reqss=`cat performance/performance_results_http_low_get.json | jq .requestspersecond`
-            test ${reqss} -gt ${TEST_CONCURRENCY_LOW_THRESHOLD} && (echo "performance test passed, ${reqss} req/s > ${TEST_CONCURRENCY_LOW_THRESHOLD} req/s";exit 0) || (echo "performance test failed, ${reqss} req/s < ${TEST_CONCURRENCY_LOW_THRESHOLD} req/s";pkill jq)
-            export errstatus=`cat performance/performance_results_http_low_get.json | jq .errors.status`
-            test ${errstatus} -lt ${TEST_STATUS_ERRORS_THRESHOLD} && (echo "performance test passed, ${errstatus} status errors";exit 0) || (echo "performance test failed, ${errstatus} status errors";pkill jq)
-            export errtimeout=`cat performance/performance_results_http_low_get.json | jq .errors.timeout`
-            test ${errtimeout} -lt ${TEST_STATUS_ERRORS_THRESHOLD} && (echo "performance test passed, ${errtimeout} timeout errors";exit 0) || (echo "performance test failed, ${errtimeout} timeout errors";pkill jq)
-            export errconnect=`cat performance/performance_results_http_low_get.json | jq .errors.connect`
-            test ${errconnect} -lt ${TEST_STATUS_ERRORS_THRESHOLD} && (echo "performance test passed, ${errconnect} connect errors";exit 0) || (echo "performance test failed, ${errconnect} connect errors";pkill jq)
-            export errread=`cat performance/performance_results_http_low_get.json | jq .errors.read`
-            test ${errread} -lt ${TEST_STATUS_ERRORS_THRESHOLD} && (echo "performance test passed, ${errread} read errors";exit 0) || (echo "performance test failed, ${errread} read errors";pkill jq)
-            export errwrite=`cat performance/performance_results_http_low_get.json | jq .errors.write`
-            test ${errwrite} -lt ${TEST_STATUS_ERRORS_THRESHOLD} && (echo "performance test passed, ${errwrite} write errors";exit 0) || (echo "performance test failed, ${errwrite} write errors";pkill jq)
-      - run:
-          name: Execute concurrency ${TEST_CONCURRENCY_LOW} POST performance tests in HTTP mode
-          command: cd performance && wrk -t ${TEST_CONCURRENCY_LOW} -c ${TEST_CONCURRENCY_LOW} -d ${TEST_DURATION_SECONDS}s -s post.lua -- http://localhost:${J8A_ONE_PORT}/mse6/post performance_results_http_low_post.json
-      - run:
-          name: Check concurrency ${TEST_CONCURRENCY_LOW} POST performance tests in HTTP mode
-          command: |
-            export reqss=`cat performance/performance_results_http_low_post.json | jq .requestspersecond`
-            test ${reqss} -gt ${TEST_CONCURRENCY_LOW_THRESHOLD} && (echo "performance test passed, ${reqss} req/s > ${TEST_CONCURRENCY_LOW_THRESHOLD} req/s";exit 0) || (echo "performance test failed, ${reqss} req/s < ${TEST_CONCURRENCY_LOW_THRESHOLD} req/s";pkill jq)
-            export errstatus=`cat performance/performance_results_http_low_post.json | jq .errors.status`
-            test ${errstatus} -lt ${TEST_STATUS_ERRORS_THRESHOLD} && (echo "performance test passed, ${errstatus} status errors";exit 0) || (echo "performance test failed, ${errstatus} status errors";pkill jq)
-            export errtimeout=`cat performance/performance_results_http_low_post.json | jq .errors.timeout`
-            test ${errtimeout} -lt ${TEST_STATUS_ERRORS_THRESHOLD} && (echo "performance test passed, ${errtimeout} timeout errors";exit 0) || (echo "performance test failed, ${errtimeout} timeout errors";pkill jq)
-            export errconnect=`cat performance/performance_results_http_low_post.json | jq .errors.connect`
-            test ${errconnect} -lt ${TEST_STATUS_ERRORS_THRESHOLD} && (echo "performance test passed, ${errconnect} connect errors";exit 0) || (echo "performance test failed, ${errconnect} connect errors";pkill jq)
-            export errread=`cat performance/performance_results_http_low_post.json | jq .errors.read`
-            test ${errread} -lt ${TEST_STATUS_ERRORS_THRESHOLD} && (echo "performance test passed, ${errread} read errors";exit 0) || (echo "performance test failed, ${errread} read errors";pkill jq)
-            export errwrite=`cat performance/performance_results_http_low_post.json | jq .errors.write`
-            test ${errwrite} -lt ${TEST_STATUS_ERRORS_THRESHOLD} && (echo "performance test passed, ${errwrite} write errors";exit 0) || (echo "performance test failed, ${errwrite} write errors";pkill jq)
-      - run:
-          name: Execute concurrency ${TEST_CONCURRENCY_JWT_LOW} JWT performance tests in HTTP mode
-          command: cd performance && wrk -t ${TEST_CONCURRENCY_JWT_LOW} -c ${TEST_CONCURRENCY_JWT_LOW} -d ${TEST_DURATION_SECONDS}s -s postJwt.lua -- http://localhost:${J8A_ONE_PORT}/jwtrs256/post performance_results_jwt_http_low.json
-      - run:
-          name: Check concurrency ${TEST_CONCURRENCY_JWT_LOW} JWT performance tests in HTTP mode
-          command: |
-            export reqss=`cat performance/performance_results_jwt_http_low.json | jq .requestspersecond`
-            test ${reqss} -gt ${TEST_CONCURRENCY_JWT_LOW_THRESHOLD} && (echo "performance test passed, ${reqss} req/s > ${TEST_CONCURRENCY_JWT_LOW_THRESHOLD} req/s";exit 0) || (echo "performance test failed, ${reqss} req/s < ${TEST_CONCURRENCY_JWT_LOW_THRESHOLD} req/s";pkill jq)
-            export errstatus=`cat performance/performance_results_jwt_http_low.json | jq .errors.status`
-            test ${errstatus} -lt ${TEST_STATUS_ERRORS_THRESHOLD} && (echo "performance test passed, ${errstatus} status errors";exit 0) || (echo "performance test failed, ${errstatus} status errors";pkill jq)
-            export errtimeout=`cat performance/performance_results_jwt_http_low.json | jq .errors.timeout`
-            test ${errtimeout} -lt ${TEST_STATUS_ERRORS_THRESHOLD} && (echo "performance test passed, ${errtimeout} timeout errors";exit 0) || (echo "performance test failed, ${errtimeout} timeout errors";pkill jq)
-            export errconnect=`cat performance/performance_results_jwt_http_low.json | jq .errors.connect`
-            test ${errconnect} -lt ${TEST_STATUS_ERRORS_THRESHOLD} && (echo "performance test passed, ${errconnect} connect errors";exit 0) || (echo "performance test failed, ${errconnect} connect errors";pkill jq)
-            export errread=`cat performance/performance_results_jwt_http_low.json | jq .errors.read`
-            test ${errread} -lt ${TEST_STATUS_ERRORS_THRESHOLD} && (echo "performance test passed, ${errread} read errors";exit 0) || (echo "performance test failed, ${errread} read errors";pkill jq)
-            export errwrite=`cat performance/performance_results_jwt_http_low.json | jq .errors.write`
-            test ${errwrite} -lt ${TEST_STATUS_ERRORS_THRESHOLD} && (echo "performance test passed, ${errwrite} write errors";exit 0) || (echo "performance test failed, ${errwrite} write errors";pkill jq)
-      - run:
-          name: Execute concurrency ${TEST_CONCURRENCY_LOW} performance tests in TLS mode
-          command: cd performance && wrk -t ${TEST_CONCURRENCY_LOW} -c ${TEST_CONCURRENCY_LOW} -d ${TEST_DURATION_SECONDS}s -s post.lua -- https://localhost:${J8A_THREE_PORT}/mse6/post performance_results_tls_low.json
-      - run:
-          name: Check concurrency ${TEST_CONCURRENCY_LOW} performance tests in TLS mode
-          command: |
-            export reqss=`cat performance/performance_results_tls_low.json | jq .requestspersecond`
-            test ${reqss} -gt ${TEST_CONCURRENCY_LOW_THRESHOLD} && (echo "performance test passed, ${reqss} req/s > ${TEST_CONCURRENCY_LOW_THRESHOLD} req/s";exit 0) || (echo "performance test failed, ${reqss} req/s < ${TEST_CONCURRENCY_LOW_THRESHOLD} req/s";pkill jq)
-            export errstatus=`cat performance/performance_results_tls_low.json | jq .errors.status`
-            test ${errstatus} -lt ${TEST_STATUS_ERRORS_THRESHOLD} && (echo "performance test passed, ${errstatus} status errors";exit 0) || (echo "performance test failed, ${errstatus} status errors";pkill jq)
-            export errtimeout=`cat performance/performance_results_tls_low.json | jq .errors.timeout`
-            test ${errtimeout} -lt ${TEST_STATUS_ERRORS_THRESHOLD} && (echo "performance test passed, ${errtimeout} timeout errors";exit 0) || (echo "performance test failed, ${errtimeout} timeout errors";pkill jq)
-            export errconnect=`cat performance/performance_results_tls_low.json | jq .errors.connect`
-            test ${errconnect} -lt ${TEST_STATUS_ERRORS_THRESHOLD} && (echo "performance test passed, ${errconnect} connect errors";exit 0) || (echo "performance test failed, ${errconnect} connect errors";pkill jq)
-            export errread=`cat performance/performance_results_tls_low.json | jq .errors.read`
-            test ${errread} -lt ${TEST_STATUS_ERRORS_THRESHOLD} && (echo "performance test passed, ${errread} read errors";exit 0) || (echo "performance test failed, ${errread} read errors";pkill jq)
-            export errwrite=`cat performance/performance_results_tls_low.json | jq .errors.write`
-            test ${errwrite} -lt ${TEST_STATUS_ERRORS_THRESHOLD} && (echo "performance test passed, ${errwrite} write errors";exit 0) || (echo "performance test failed, ${errwrite} write errors";pkill jq)
-      - run:
-          name: Execute concurrency ${TEST_CONCURRENCY_HIGH} performance tests in HTTP mode
-          command: cd performance && wrk -t ${TEST_CONCURRENCY_HIGH} -c ${TEST_CONCURRENCY_HIGH} -d ${TEST_DURATION_SECONDS}s -s post.lua -- http://localhost:${J8A_ONE_PORT}/mse6/post performance_results_http_high.json
-      - run:
-          name: Check concurrency ${TEST_CONCURRENCY_HIGH} performance tests in HTTP mode
-          command: |
-            export reqss=`cat performance/performance_results_http_high.json | jq .requestspersecond`
-            test ${reqss} -gt ${TEST_CONCURRENCY_HIGH_THRESHOLD} && (echo "performance test passed, ${reqss} req/s > ${TEST_CONCURRENCY_HIGH_THRESHOLD} req/s";exit 0) || (echo "performance test failed, ${reqss} req/s < ${TEST_CONCURRENCY_HIGH_THRESHOLD} req/s";pkill jq)
-            export errstatus=`cat performance/performance_results_http_high.json | jq .errors.status`
-            test ${errstatus} -lt ${TEST_STATUS_ERRORS_THRESHOLD} && (echo "performance test passed, ${errstatus} status errors";exit 0) || (echo "performance test failed, ${errstatus} status errors";pkill jq)
-            export errtimeout=`cat performance/performance_results_http_high.json | jq .errors.timeout`
-            test ${errtimeout} -lt ${TEST_STATUS_ERRORS_THRESHOLD} && (echo "performance test passed, ${errtimeout} timeout errors";exit 0) || (echo "performance test failed, ${errtimeout} timeout errors";pkill jq)
-            export errconnect=`cat performance/performance_results_http_high.json | jq .errors.connect`
-            test ${errconnect} -lt ${TEST_STATUS_ERRORS_THRESHOLD} && (echo "performance test passed, ${errconnect} connect errors";exit 0) || (echo "performance test failed, ${errconnect} connect errors";pkill jq)
-            export errread=`cat performance/performance_results_http_high.json | jq .errors.read`
-            test ${errread} -lt ${TEST_STATUS_ERRORS_THRESHOLD} && (echo "performance test passed, ${errread} read errors";exit 0) || (echo "performance test failed, ${errread} read errors";pkill jq)
-            export errwrite=`cat performance/performance_results_http_high.json | jq .errors.write`
-            test ${errwrite} -lt ${TEST_STATUS_ERRORS_THRESHOLD} && (echo "performance test passed, ${errwrite} write errors";exit 0) || (echo "performance test failed, ${errwrite} write errors";pkill jq)
       - run:
           name: Execute concurrency ${TEST_CONCURRENCY_HIGH} performance tests in TLS mode
           command: cd performance && wrk -t ${TEST_CONCURRENCY_HIGH} -c ${TEST_CONCURRENCY_HIGH} -d ${TEST_DURATION_SECONDS}s -s post.lua -- https://localhost:${J8A_THREE_PORT}/mse6/post performance_results_tls_high.json
@@ -1073,33 +971,8 @@ jobs:
       - run:
           name: Display performance test results
           command: |
-            export reqsshlg=`cat performance/performance_results_http_low_get.json | jq .requestspersecond`
-            echo "=> performance test results HTTP GET, concurrency ${TEST_CONCURRENCY_LOW}, ${reqsshlg} req/s"
-            export reqsshlp=`cat performance/performance_results_http_low_post.json | jq .requestspersecond`
-            echo "=> performance test results HTTP POST 2.5kb, concurrency ${TEST_CONCURRENCY_LOW}, ${reqsshlp} req/s"
-            export reqsshjl=`cat performance/performance_results_jwt_http_low.json | jq .requestspersecond`
-            echo "=> performance test results HTTP POST 2.5kb (JWT), concurrency ${TEST_CONCURRENCY_JWT_LOW}, ${reqsshjl} req/s"
-            export reqsshh=`cat performance/performance_results_http_high.json | jq .requestspersecond`
-            echo "=> performance test results HTTP POST 2.5kb, concurrency ${TEST_CONCURRENCY_HIGH}, ${reqsshh} req/s"
-            export reqsstl=`cat performance/performance_results_tls_low.json | jq .requestspersecond`
-            echo "=> performance test results TLS POST 2.5kb, concurrency ${TEST_CONCURRENCY_LOW}, ${reqsstl} req/s"
             export reqssth=`cat performance/performance_results_tls_high.json | jq .requestspersecond`
             echo "=> performance test results TLS POST 2.5kb, concurrency ${TEST_CONCURRENCY_HIGH}, ${reqssth} req/s"
-      - store_artifacts:
-          path: performance/performance_results_http_low_get.json
-          destination: performance_results_http_low_get.json
-      - store_artifacts:
-          path: performance/performance_results_http_low_post.json
-          destination: performance_results_http_low_post.json
-      - store_artifacts:
-          path: performance/performance_results_jwt_http_low.json
-          destination: performance_results_jwt_http_low.json
-      - store_artifacts:
-          path: performance/performance_results_tls_low.json
-          destination: performance_results_tls_low.json
-      - store_artifacts:
-          path: performance/performance_results_http_high.json
-          destination: performance_results_http_high.json
       - store_artifacts:
           path: performance/performance_results_tls_high.json
           destination: performance_results_tls_high.json
