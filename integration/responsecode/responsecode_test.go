@@ -1,4 +1,4 @@
-package integration
+package responsecode
 
 import (
 	"bytes"
@@ -444,5 +444,14 @@ func performJ8aResponseCodeTest(wg *sync.WaitGroup, t *testing.T, getUpstreamSta
 	} else {
 		t.Logf("normal. port %d, testMethod /send, up code %d, want dwn code %d, got %d", serverPort,
 			getUpstreamStatusCode, wantDownstreamStatusCode, gotDownstreamStatusCode)
+	}
+}
+
+func checkWrite(t *testing.T, c net.Conn, msg string) {
+	j, err2 := c.Write([]byte(msg))
+	if j == 0 || err2 != nil {
+		t.Errorf("test failure. uh oh, unable to send data to j8a for integration test. bytes %v, err: %v", j, err2)
+	} else {
+		fmt.Printf("normal. sent %v bytes to j8a, content %v", j, msg)
 	}
 }

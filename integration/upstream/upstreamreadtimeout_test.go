@@ -1,4 +1,4 @@
-package integration
+package upstream
 
 import (
 	"crypto/tls"

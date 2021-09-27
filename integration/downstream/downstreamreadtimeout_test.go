@@ -1,4 +1,4 @@
-package integration
+package downstream
 
 import (
 	"fmt"

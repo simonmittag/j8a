@@ -1,4 +1,4 @@
-package integration
+package websocket
 
 import (
 	"bytes"
@@ -590,4 +590,13 @@ func echoMessage(t *testing.T, con net.Conn, echo string) bool {
 		t.Logf("normal. sent and received message: %v", string(msg))
 	}
 	return true
+}
+
+func checkWrite(t *testing.T, c net.Conn, msg string) {
+	j, err2 := c.Write([]byte(msg))
+	if j == 0 || err2 != nil {
+		t.Errorf("test failure. uh oh, unable to send data to j8a for integration test. bytes %v, err: %v", j, err2)
+	} else {
+		fmt.Printf("normal. sent %v bytes to j8a, content %v", j, msg)
+	}
 }
