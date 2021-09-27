@@ -479,13 +479,6 @@ jobs:
           name: Wait for upstream server two
           command: pwt localhost:${UPSTREAM_TWO_PORT}
       - run:
-          name: Start upstream server three
-          command: mse6 -p ${UPSTREAM_THREE_PORT} -u ${UPSTREAM_THREE_SLUG}
-          background: true
-      - run:
-          name: Wait for upstream server three
-          command: pwt localhost:${UPSTREAM_THREE_PORT}
-      - run:
           name: Install j8a
           command: |
             go build github.com/simonmittag/j8a
