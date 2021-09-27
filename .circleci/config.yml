@@ -679,7 +679,7 @@ jobs:
             sudo apt-get install lsof -y
       - run:
           name: Run integration tests
-          command: go test -v github.com/simonmittag/j8a/integration/downstream
+          command: go test -v github.com/simonmittag/j8a/integration/downstreamHttp
 
   integrationDownstreamTls:
     resource_class: medium
@@ -874,7 +874,7 @@ jobs:
             sudo apt-get install lsof -y
       - run:
           name: Run integration tests
-          command: go test -v github.com/simonmittag/j8a/integration/downstream
+          command: go test -v github.com/simonmittag/j8a/integration/downstreamTls
 
   integrationHeaders:
     resource_class: medium
