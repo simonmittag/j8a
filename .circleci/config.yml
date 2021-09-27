@@ -2214,10 +2214,11 @@ jobs:
             echo "tls high performance test ${errwrite4} write errors"
 
 
+
   performanceHttpLowGet:
     docker:
       - image: simonmittag/wrk:go1.16
-    resource_class: xlarge
+    resource_class: large
     environment:
       LOGLEVEL: WARN
       LOGCOLOR: FALSE
@@ -2299,7 +2300,7 @@ jobs:
   performanceHttpLowPost:
     docker:
       - image: simonmittag/wrk:go1.16
-    resource_class: xlarge
+    resource_class: large
     environment:
       LOGLEVEL: WARN
       LOGCOLOR: FALSE
@@ -2390,7 +2391,7 @@ jobs:
   performanceHttpLowPostJwt:
     docker:
       - image: simonmittag/wrk:go1.16
-    resource_class: xlarge
+    resource_class: large
     environment:
       LOGLEVEL: WARN
       LOGCOLOR: FALSE
@@ -2481,7 +2482,7 @@ jobs:
   performanceTlsLowPost:
     docker:
       - image: simonmittag/wrk:go1.16
-    resource_class: xlarge
+    resource_class: large
     environment:
       LOGLEVEL: WARN
       LOGCOLOR: FALSE
@@ -2572,7 +2573,7 @@ jobs:
   performanceHttpHighPost:
     docker:
       - image: simonmittag/wrk:go1.16
-    resource_class: xlarge
+    resource_class: large
     environment:
       LOGLEVEL: WARN
       LOGCOLOR: FALSE
@@ -2663,7 +2664,7 @@ jobs:
   performanceTlsHighPost:
     docker:
       - image: simonmittag/wrk:go1.16
-    resource_class: xlarge
+    resource_class: large
     environment:
       LOGLEVEL: WARN
       LOGCOLOR: FALSE
