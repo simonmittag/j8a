@@ -31,9 +31,9 @@ func TestSamplesAppendDoNotExceedCapacity(t *testing.T) {
 	proc, _ := process.NewProcess(int32(pid))
 	var history samples = make(samples, historyMaxSamples)
 
+	//now using same sample for append test, it makes the test so much faster
+	sample := getSample(proc)
 	for i := 0; i < 50; i++ {
-		sample := getSample(proc)
-		time.Sleep(time.Millisecond * 50)
 		t.Logf("appending %d sample", i)
 		history.append(sample)
 	}
