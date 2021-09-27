@@ -94,7 +94,6 @@ func TestServer1UpstreamReadTimeoutNotFireWithSlowBody2S(t *testing.T) {
 func performJ8aTest(t *testing.T, testMethod string, wantUpstreamWaitSeconds int, wantTotalWaitSeconds int, wantStatusCode int, serverPort int, tlsMode bool) {
 	start := time.Now()
 	scheme := "http"
-	t.Parallel()
 
 	var client *http.Client
 	if tlsMode {
