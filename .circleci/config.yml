@@ -12,6 +12,7 @@ workflows:
       - performanceHttpLowGet
       - performanceHttpLowPost
       - performanceHttpLowPostJwt
+      - performanceTlsLowPost
 
 jobs:
   unit:
@@ -702,6 +703,97 @@ jobs:
       - store_artifacts:
           path: performance/performance_results_jwt_http_low.json
           destination: performance_results_jwt_http_low.json
+
+  performanceTlsLowPost:
+    docker:
+      - image: simonmittag/wrk:go1.16
+    resource_class: xlarge
+    environment:
+      LOGLEVEL: WARN
+      LOGCOLOR: FALSE
+      UPSTREAM_ONE_PORT: 60083
+      UPSTREAM_ONE_SLUG: /mse6
+      UPSTREAM_TWO_PORT: 60084
+      UPSTREAM_TWO_SLUG: /mse6
+      UPSTREAM_THREE_PORT: 60085
+      UPSTREAM_THREE_SLUG: /s1
+      J8A_THREE_PORT: 8443
+      J8A_THREE_CFG: ./integration/j8a3.yml
+      TEST_DURATION_SECONDS: 10
+      TEST_CONCURRENCY_LOW: 12
+      TEST_CONCURRENCY_LOW_THRESHOLD: 1400
+      TEST_STATUS_ERRORS_THRESHOLD: 10
+    steps:
+      - checkout
+      - run:
+          name: Install deps
+          command: |
+            sudo apt-get install jq
+            go get github.com/simonmittag/pwt
+            go install github.com/simonmittag/pwt/cmd/pwt
+            go get github.com/simonmittag/mse6
+            go install github.com/simonmittag/mse6/cmd/mse6
+      - run:
+          name: Start upstream server one
+          command: mse6 -p ${UPSTREAM_ONE_PORT}
+          background: true
+      - run:
+          name: Wait for upstream server one
+          command: pwt localhost:${UPSTREAM_ONE_PORT}
+      - run:
+          name: Start upstream server two
+          command: mse6 -p ${UPSTREAM_TWO_PORT}
+          background: true
+      - run:
+          name: Wait for upstream server two
+          command: pwt localhost:${UPSTREAM_TWO_PORT}
+      - run:
+          name: Start upstream server three
+          command: mse6 -p ${UPSTREAM_THREE_PORT} -u ${UPSTREAM_THREE_SLUG}
+          background: true
+      - run:
+          name: Wait for upstream server three
+          command: pwt localhost:${UPSTREAM_THREE_PORT}
+      - run:
+          name: Install j8a
+          command: |
+            go build github.com/simonmittag/j8a
+            go install github.com/simonmittag/j8a/cmd/j8a
+      - run:
+          name: Start j8a three
+          command: LOGLEVEL=WARN j8a -c ${J8A_THREE_CFG}
+          background: true
+      - run:
+          name: Wait for j8a three
+          command: pwt localhost:${J8A_THREE_PORT}
+
+      - run:
+          name: Execute concurrency ${TEST_CONCURRENCY_LOW} performance tests in TLS mode
+          command: cd performance && wrk -t ${TEST_CONCURRENCY_LOW} -c ${TEST_CONCURRENCY_LOW} -d ${TEST_DURATION_SECONDS}s -s post.lua -- https://localhost:${J8A_THREE_PORT}/mse6/post performance_results_tls_low.json
+      - run:
+          name: Check concurrency ${TEST_CONCURRENCY_LOW} performance tests in TLS mode
+          command: |
+            export reqss=`cat performance/performance_results_tls_low.json | jq .requestspersecond`
+            test ${reqss} -gt ${TEST_CONCURRENCY_LOW_THRESHOLD} && (echo "performance test passed, ${reqss} req/s > ${TEST_CONCURRENCY_LOW_THRESHOLD} req/s";exit 0) || (echo "performance test failed, ${reqss} req/s < ${TEST_CONCURRENCY_LOW_THRESHOLD} req/s";pkill jq)
+            export errstatus=`cat performance/performance_results_tls_low.json | jq .errors.status`
+            test ${errstatus} -lt ${TEST_STATUS_ERRORS_THRESHOLD} && (echo "performance test passed, ${errstatus} status errors";exit 0) || (echo "performance test failed, ${errstatus} status errors";pkill jq)
+            export errtimeout=`cat performance/performance_results_tls_low.json | jq .errors.timeout`
+            test ${errtimeout} -lt ${TEST_STATUS_ERRORS_THRESHOLD} && (echo "performance test passed, ${errtimeout} timeout errors";exit 0) || (echo "performance test failed, ${errtimeout} timeout errors";pkill jq)
+            export errconnect=`cat performance/performance_results_tls_low.json | jq .errors.connect`
+            test ${errconnect} -lt ${TEST_STATUS_ERRORS_THRESHOLD} && (echo "performance test passed, ${errconnect} connect errors";exit 0) || (echo "performance test failed, ${errconnect} connect errors";pkill jq)
+            export errread=`cat performance/performance_results_tls_low.json | jq .errors.read`
+            test ${errread} -lt ${TEST_STATUS_ERRORS_THRESHOLD} && (echo "performance test passed, ${errread} read errors";exit 0) || (echo "performance test failed, ${errread} read errors";pkill jq)
+            export errwrite=`cat performance/performance_results_tls_low.json | jq .errors.write`
+            test ${errwrite} -lt ${TEST_STATUS_ERRORS_THRESHOLD} && (echo "performance test passed, ${errwrite} write errors";exit 0) || (echo "performance test failed, ${errwrite} write errors";pkill jq)
+
+      - run:
+          name: Display performance test results
+          command: |
+            export reqsstl=`cat performance/performance_results_tls_low.json | jq .requestspersecond`
+            echo "=> performance test results TLS POST 2.5kb, concurrency ${TEST_CONCURRENCY_LOW}, ${reqsstl} req/s"
+      - store_artifacts:
+          path: performance/performance_results_tls_low.json
+          destination: performance_results_tls_low.json
 
   performance:
     docker:
