@@ -2218,7 +2218,7 @@ jobs:
   performanceHttpLowGet:
     docker:
       - image: simonmittag/wrk:go1.16
-    resource_class: large
+    resource_class: medium
     environment:
       LOGLEVEL: WARN
       LOGCOLOR: FALSE
@@ -2300,7 +2300,7 @@ jobs:
   performanceHttpLowPost:
     docker:
       - image: simonmittag/wrk:go1.16
-    resource_class: large
+    resource_class: medium
     environment:
       LOGLEVEL: WARN
       LOGCOLOR: FALSE
@@ -2391,7 +2391,7 @@ jobs:
   performanceHttpLowPostJwt:
     docker:
       - image: simonmittag/wrk:go1.16
-    resource_class: large
+    resource_class: medium
     environment:
       LOGLEVEL: WARN
       LOGCOLOR: FALSE
@@ -2482,7 +2482,7 @@ jobs:
   performanceTlsLowPost:
     docker:
       - image: simonmittag/wrk:go1.16
-    resource_class: large
+    resource_class: medium
     environment:
       LOGLEVEL: WARN
       LOGCOLOR: FALSE
@@ -2573,7 +2573,7 @@ jobs:
   performanceHttpHighPost:
     docker:
       - image: simonmittag/wrk:go1.16
-    resource_class: large
+    resource_class: medium
     environment:
       LOGLEVEL: WARN
       LOGCOLOR: FALSE
@@ -2664,7 +2664,7 @@ jobs:
   performanceTlsHighPost:
     docker:
       - image: simonmittag/wrk:go1.16
-    resource_class: large
+    resource_class: medium
     environment:
       LOGLEVEL: WARN
       LOGCOLOR: FALSE
