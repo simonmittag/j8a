@@ -3,6 +3,7 @@ workflows:
   unittest:
     jobs:
       - unit
+      - testsum
       - metrics
   integrationtest:
     jobs:
@@ -30,14 +31,30 @@ jobs:
       - run: go install github.com/simonmittag/j8a/cmd/j8a
       - run: go test -v
 
-  metrics:
+  testsum:
     resource_class: medium
     docker:
       - image: circleci/golang:1.16
     environment:
       TEST_RESULTS: /tmp/test-results
-      LOGLEVEL: TRACE
-      LOGCOLOR: TRUE
+    steps:
+      - checkout # check out source code to working directory
+      - run:
+          name: Create a temp directory for tests
+          command: |
+            mkdir -p /tmp/test-results
+      - run:
+          name: Test Summary for CircleCI
+          command: |
+            gotestsum --junitfile /tmp/test-results/unit-tests.xml .
+      - store_test_results:
+          path: /tmp/test-results
+
+  metrics:
+    resource_class: medium
+    docker:
+      - image: circleci/golang:1.16
+    environment:
       CC_TEST_REPORTER_ID: a45fccea925702bc9483bdead24976073cf3e3807b22ce566d2858a700e5472c
     steps:
       - checkout # check out source code to working directory
@@ -45,10 +62,6 @@ jobs:
           name: Create a temp directory for artifacts
           command: |
             mkdir -p /tmp/artifacts
-      - run:
-          name: Create a temp directory for tests
-          command: |
-            mkdir -p /tmp/test-results
       - run:
           name: Setup Code Climate test-reporter
           command: |
