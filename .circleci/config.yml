@@ -3,8 +3,7 @@ workflows:
   unittest:
     jobs:
       - unit
-      - unitsum
-      - codeclimate
+      - metrics
   integrationtest:
     jobs:
       - integration
@@ -31,31 +30,7 @@ jobs:
       - run: go install github.com/simonmittag/j8a/cmd/j8a
       - run: go test -v
 
-  unitsum:
-    resource_class: medium
-    docker:
-      - image: circleci/golang:1.16
-    environment:
-      TEST_RESULTS: /tmp/test-results
-      LOGLEVEL: TRACE
-      LOGCOLOR: TRUE
-      CC_TEST_REPORTER_ID: a45fccea925702bc9483bdead24976073cf3e3807b22ce566d2858a700e5472c
-    steps:
-      - checkout # check out source code to working directory
-      - run:
-          name: Create a temp directory for tests
-          command: |
-            mkdir -p /tmp/test-results
-
-      - run:
-          name: Test Summary for CircleCI
-          command: |
-            gotestsum --junitfile /tmp/test-results/unit-tests.xml .
-
-      - store_test_results:
-          path: /tmp/test-results
-
-  codeclimate:
+   metrics:
     resource_class: medium
     docker:
       - image: circleci/golang:1.16
@@ -289,7 +264,7 @@ jobs:
             sudo apt-get install lsof -y
       - run:
           name: Run integration tests
-          command: go test -v github.com/simonmittag/j8a/integration/connection_test.go
+          command: go test -v github.com/simonmittag/j8a/integration
 
   localperformance:
     docker:
