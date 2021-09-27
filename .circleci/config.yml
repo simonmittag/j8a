@@ -1,12 +1,12 @@
 workflows:
   version: 2
-#  unittest:
-#    jobs:
-#      - unit
-#      - metrics
-#  integrationtest:
-#    jobs:
-#      - integration
+  unittest:
+    jobs:
+      - unit
+      - metrics
+  integrationtest:
+    jobs:
+      - integration
   performancetest:
     jobs:
       - performanceHttpLowGet
