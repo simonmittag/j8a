@@ -31,7 +31,7 @@ jobs:
       - run: go install github.com/simonmittag/j8a/cmd/j8a
       - run: go test -v
 
-  circletests:
+  gotestsum:
     resource_class: medium
     docker:
       - image: circleci/golang:1.16
