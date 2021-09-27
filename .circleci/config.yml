@@ -2,8 +2,8 @@ workflows:
   version: 2
   unittest:
     jobs:
-      - gotest
-      - gotestsum
+      - unit
+      - unitsum
       - codeclimate
   integrationtest:
     jobs:
@@ -18,7 +18,7 @@ workflows:
       - performanceTlsHighPost
 
 jobs:
-  gotest:
+  unit:
     resource_class: medium
     docker:
       - image: circleci/golang:1.16 #
@@ -31,7 +31,7 @@ jobs:
       - run: go install github.com/simonmittag/j8a/cmd/j8a
       - run: go test -v
 
-  gotestsum:
+  unitsum:
     resource_class: medium
     docker:
       - image: circleci/golang:1.16
