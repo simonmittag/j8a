@@ -1,12 +1,12 @@
 workflows:
   version: 2
-  unittest:
-    jobs:
-      - unit
-      - metrics
-  integrationtest:
-    jobs:
-      - integration
+#  unittest:
+#    jobs:
+#      - unit
+#      - metrics
+#  integrationtest:
+#    jobs:
+#      - integration
   performancetest:
     jobs:
       - performanceHttpLowGet
@@ -293,7 +293,7 @@ jobs:
       TEST_DURATION_SECONDS: 10
       TEST_CONCURRENCY_LOW: 12
       TEST_CONCURRENCY_JWT_LOW: 12
-      TEST_CONCURRENCY_HIGH: 24
+      TEST_CONCURRENCY_HIGH: 18
     steps:
       - checkout # check out source code to working directory
       - run:
@@ -458,7 +458,7 @@ jobs:
       TEST_DURATION_SECONDS: 10
       TEST_CONCURRENCY_LOW: 12
       TEST_CONCURRENCY_LOW_THRESHOLD: 1400
-      TEST_STATUS_ERRORS_THRESHOLD: 10
+      TEST_STATUS_ERRORS_THRESHOLD: 1
     steps:
       - checkout
       - run:
@@ -542,7 +542,7 @@ jobs:
       TEST_DURATION_SECONDS: 10
       TEST_CONCURRENCY_LOW: 12
       TEST_CONCURRENCY_LOW_THRESHOLD: 1400
-      TEST_STATUS_ERRORS_THRESHOLD: 10
+      TEST_STATUS_ERRORS_THRESHOLD: 1
     steps:
       - checkout
       - run:
@@ -633,7 +633,7 @@ jobs:
       TEST_DURATION_SECONDS: 10
       TEST_CONCURRENCY_JWT_LOW: 12
       TEST_CONCURRENCY_JWT_LOW_THRESHOLD: 1000
-      TEST_STATUS_ERRORS_THRESHOLD: 10
+      TEST_STATUS_ERRORS_THRESHOLD: 1
     steps:
       - checkout
       - run:
@@ -724,7 +724,7 @@ jobs:
       TEST_DURATION_SECONDS: 10
       TEST_CONCURRENCY_LOW: 12
       TEST_CONCURRENCY_LOW_THRESHOLD: 1400
-      TEST_STATUS_ERRORS_THRESHOLD: 10
+      TEST_STATUS_ERRORS_THRESHOLD: 1
     steps:
       - checkout
       - run:
@@ -813,9 +813,9 @@ jobs:
       J8A_ONE_PORT: 8080
       J8A_ONE_CFG: ./integration/j8a1.yml
       TEST_DURATION_SECONDS: 10
-      TEST_CONCURRENCY_HIGH: 24
+      TEST_CONCURRENCY_HIGH: 18
       TEST_CONCURRENCY_HIGH_THRESHOLD: 1000
-      TEST_STATUS_ERRORS_THRESHOLD: 25
+      TEST_STATUS_ERRORS_THRESHOLD: 1
     steps:
       - checkout
       - run:
@@ -904,9 +904,9 @@ jobs:
       J8A_THREE_PORT: 8443
       J8A_THREE_CFG: ./integration/j8a3.yml
       TEST_DURATION_SECONDS: 10
-      TEST_CONCURRENCY_HIGH: 24
+      TEST_CONCURRENCY_HIGH: 18
       TEST_CONCURRENCY_HIGH_THRESHOLD: 1000
-      TEST_STATUS_ERRORS_THRESHOLD: 25
+      TEST_STATUS_ERRORS_THRESHOLD: 1
     steps:
       - checkout
       - run:
