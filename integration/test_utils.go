@@ -21,7 +21,7 @@ func CheckWrite(t *testing.T, c net.Conn, msg string) {
 
 func OkayTimeDrift(elapsed time.Duration, waitSeconds int) bool {
 	fmin := 1.0
-	fmax := 1.1
+	fmax := 1.3
 	elapsedSeconds := elapsed.Seconds()
 
 	if elapsedSeconds > fmax*float64(waitSeconds) {
