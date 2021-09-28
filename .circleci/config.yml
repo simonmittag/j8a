@@ -4,218 +4,218 @@ commands:
       tests:
         type: string
     steps:
-        - checkout # check out source code to working directory
-        - run:
-            name: Install upstream server helpers
-            command: |
-              go get github.com/simonmittag/pwt
-              go install github.com/simonmittag/pwt/cmd/pwt
-              go get github.com/simonmittag/mse6
-              go install github.com/simonmittag/mse6/cmd/mse6
-        - run:
-            name: Start upstream server 01
-            command: |
-              UPSTREAM_01_PORT=60083
-              UPSTREAM_01_SLUG=/mse6
-              mse6 -p ${UPSTREAM_01_PORT} -u ${UPSTREAM_01_SLUG}
-            background: true
-        - run:
-            name: Start upstream server 02
-            command: |
-              UPSTREAM_02_PORT=60084
-              UPSTREAM_02_SLUG=/mse6
-              mse6 -p ${UPSTREAM_02_PORT} -u ${UPSTREAM_02_SLUG}
-            background: true
-        - run:
-            name: Start upstream server 03
-            command: |
-              UPSTREAM_03_PORT=60085
-              UPSTREAM_03_SLUG=/s01
-              mse6 -p ${UPSTREAM_03_PORT} -u ${UPSTREAM_03_SLUG}
-            background: true
-        - run:
-            name: Start upstream server 04
-            command: |
-              UPSTREAM_04_PORT=60086
-              UPSTREAM_04_SLUG=/s02
-              mse6 -p ${UPSTREAM_04_PORT} -u ${UPSTREAM_04_SLUG}
-            background: true
-        - run:
-            name: Start upstream server 05
-            command: |
-              UPSTREAM_05_PORT=60087
-              UPSTREAM_05_SLUG=/s03
-              mse6 -p ${UPSTREAM_05_PORT} -u ${UPSTREAM_05_SLUG}
-            background: true
-        - run:
-            name: Start upstream server 06
-            command: |
-              UPSTREAM_06_PORT=60088
-              UPSTREAM_06_SLUG=/s04
-              mse6 -p ${UPSTREAM_06_PORT} -u ${UPSTREAM_06_SLUG}
-            background: true
-        - run:
-            name: Start upstream server 07
-            command: |
-              UPSTREAM_07_PORT=60089
-              UPSTREAM_07_SLUG=/s05
-              mse6 -p ${UPSTREAM_07_PORT} -u ${UPSTREAM_07_SLUG}
-            background: true
-        - run:
-            name: Start upstream server 08
-            command: |
-              UPSTREAM_08_PORT=60090
-              UPSTREAM_08_SLUG=/s06
-              mse6 -p ${UPSTREAM_08_PORT} -u ${UPSTREAM_08_SLUG}
-            background: true
-        - run:
-            name: Start upstream server 09
-            command: |
-              UPSTREAM_09_PORT=60091
-              UPSTREAM_09_SLUG=/s07
-              mse6 -p ${UPSTREAM_09_PORT} -u ${UPSTREAM_09_SLUG}
-            background: true
-        - run:
-            name: Start upstream server 10
-            command: |
-              UPSTREAM_10_PORT=60092
-              UPSTREAM_10_SLUG=/s08
-              mse6 -p ${UPSTREAM_10_PORT} -u ${UPSTREAM_10_SLUG}
-            background: true
-        - run:
-            name: Start upstream server 11
-            command: |
-              UPSTREAM_11_PORT=60093
-              UPSTREAM_11_SLUG=/s09
-              mse6 -p ${UPSTREAM_11_PORT} -u ${UPSTREAM_11_SLUG}
-            background: true
-        - run:
-            name: Start upstream server 12
-            command: |
-              UPSTREAM_12_PORT=60094
-              UPSTREAM_12_SLUG=/s10
-              mse6 -p ${UPSTREAM_12_PORT} -u ${UPSTREAM_12_SLUG}
-            background: true
-        - run:
-            name: Start upstream server 13
-            command: |
-              UPSTREAM_13_PORT=60095
-              UPSTREAM_13_SLUG=/s11
-              mse6 -p ${UPSTREAM_13_PORT} -u ${UPSTREAM_13_SLUG}
-            background: true
-        - run:
-            name: Start upstream server 14
-            command: |
-              UPSTREAM_14_PORT=60096
-              UPSTREAM_14_SLUG=/s12
-              mse6 -p ${UPSTREAM_14_PORT} -u ${UPSTREAM_14_SLUG}
-            background: true
-        - run:
-            name: Start upstream server 15
-            command: |
-              UPSTREAM_15_PORT=60097
-              UPSTREAM_15_SLUG=/s13
-              mse6 -p ${UPSTREAM_15_PORT} -u ${UPSTREAM_15_SLUG}
-            background: true
-        - run:
-            name: Start upstream server 16
-            command: |
-              UPSTREAM_16_PORT=60098
-              UPSTREAM_16_SLUG=/s14
-              mse6 -p ${UPSTREAM_16_PORT} -u ${UPSTREAM_16_SLUG}
-            background: true
-        - run:
-            name: Start upstream server 17
-            command: |
-              UPSTREAM_17_PORT=60099
-              UPSTREAM_17_SLUG=/s15
-              mse6 -p ${UPSTREAM_17_PORT} -u ${UPSTREAM_17_SLUG}
-            background: true
-        - run:
-            name: Start upstream server 18
-            command: |
-              UPSTREAM_18_PORT=60100
-              UPSTREAM_18_SLUG=/s16
-              mse6 -p ${UPSTREAM_18_PORT} -u ${UPSTREAM_18_SLUG}
-            background: true
-        - run:
-            name: Start upstream server 19 (TLS)
-            command: |
-              UPSTREAM_19_PORT=60101
-              UPSTREAM_19_SLUG=/badssl
-              mse6 -p ${UPSTREAM_19_PORT} -u ${UPSTREAM_19_SLUG}
-            background: true
+      - checkout # check out source code to working directory
+      - run:
+          name: Install upstream server helpers
+          command: |
+            go get github.com/simonmittag/pwt
+            go install github.com/simonmittag/pwt/cmd/pwt
+            go get github.com/simonmittag/mse6
+            go install github.com/simonmittag/mse6/cmd/mse6
+      - run:
+          name: Start upstream server 01
+          command: |
+            UPSTREAM_01_PORT=60083
+            UPSTREAM_01_SLUG=/mse6
+            mse6 -p ${UPSTREAM_01_PORT} -u ${UPSTREAM_01_SLUG}
+          background: true
+      - run:
+          name: Start upstream server 02
+          command: |
+            UPSTREAM_02_PORT=60084
+            UPSTREAM_02_SLUG=/mse6
+            mse6 -p ${UPSTREAM_02_PORT} -u ${UPSTREAM_02_SLUG}
+          background: true
+      - run:
+          name: Start upstream server 03
+          command: |
+            UPSTREAM_03_PORT=60085
+            UPSTREAM_03_SLUG=/s01
+            mse6 -p ${UPSTREAM_03_PORT} -u ${UPSTREAM_03_SLUG}
+          background: true
+      - run:
+          name: Start upstream server 04
+          command: |
+            UPSTREAM_04_PORT=60086
+            UPSTREAM_04_SLUG=/s02
+            mse6 -p ${UPSTREAM_04_PORT} -u ${UPSTREAM_04_SLUG}
+          background: true
+      - run:
+          name: Start upstream server 05
+          command: |
+            UPSTREAM_05_PORT=60087
+            UPSTREAM_05_SLUG=/s03
+            mse6 -p ${UPSTREAM_05_PORT} -u ${UPSTREAM_05_SLUG}
+          background: true
+      - run:
+          name: Start upstream server 06
+          command: |
+            UPSTREAM_06_PORT=60088
+            UPSTREAM_06_SLUG=/s04
+            mse6 -p ${UPSTREAM_06_PORT} -u ${UPSTREAM_06_SLUG}
+          background: true
+      - run:
+          name: Start upstream server 07
+          command: |
+            UPSTREAM_07_PORT=60089
+            UPSTREAM_07_SLUG=/s05
+            mse6 -p ${UPSTREAM_07_PORT} -u ${UPSTREAM_07_SLUG}
+          background: true
+      - run:
+          name: Start upstream server 08
+          command: |
+            UPSTREAM_08_PORT=60090
+            UPSTREAM_08_SLUG=/s06
+            mse6 -p ${UPSTREAM_08_PORT} -u ${UPSTREAM_08_SLUG}
+          background: true
+      - run:
+          name: Start upstream server 09
+          command: |
+            UPSTREAM_09_PORT=60091
+            UPSTREAM_09_SLUG=/s07
+            mse6 -p ${UPSTREAM_09_PORT} -u ${UPSTREAM_09_SLUG}
+          background: true
+      - run:
+          name: Start upstream server 10
+          command: |
+            UPSTREAM_10_PORT=60092
+            UPSTREAM_10_SLUG=/s08
+            mse6 -p ${UPSTREAM_10_PORT} -u ${UPSTREAM_10_SLUG}
+          background: true
+      - run:
+          name: Start upstream server 11
+          command: |
+            UPSTREAM_11_PORT=60093
+            UPSTREAM_11_SLUG=/s09
+            mse6 -p ${UPSTREAM_11_PORT} -u ${UPSTREAM_11_SLUG}
+          background: true
+      - run:
+          name: Start upstream server 12
+          command: |
+            UPSTREAM_12_PORT=60094
+            UPSTREAM_12_SLUG=/s10
+            mse6 -p ${UPSTREAM_12_PORT} -u ${UPSTREAM_12_SLUG}
+          background: true
+      - run:
+          name: Start upstream server 13
+          command: |
+            UPSTREAM_13_PORT=60095
+            UPSTREAM_13_SLUG=/s11
+            mse6 -p ${UPSTREAM_13_PORT} -u ${UPSTREAM_13_SLUG}
+          background: true
+      - run:
+          name: Start upstream server 14
+          command: |
+            UPSTREAM_14_PORT=60096
+            UPSTREAM_14_SLUG=/s12
+            mse6 -p ${UPSTREAM_14_PORT} -u ${UPSTREAM_14_SLUG}
+          background: true
+      - run:
+          name: Start upstream server 15
+          command: |
+            UPSTREAM_15_PORT=60097
+            UPSTREAM_15_SLUG=/s13
+            mse6 -p ${UPSTREAM_15_PORT} -u ${UPSTREAM_15_SLUG}
+          background: true
+      - run:
+          name: Start upstream server 16
+          command: |
+            UPSTREAM_16_PORT=60098
+            UPSTREAM_16_SLUG=/s14
+            mse6 -p ${UPSTREAM_16_PORT} -u ${UPSTREAM_16_SLUG}
+          background: true
+      - run:
+          name: Start upstream server 17
+          command: |
+            UPSTREAM_17_PORT=60099
+            UPSTREAM_17_SLUG=/s15
+            mse6 -p ${UPSTREAM_17_PORT} -u ${UPSTREAM_17_SLUG}
+          background: true
+      - run:
+          name: Start upstream server 18
+          command: |
+            UPSTREAM_18_PORT=60100
+            UPSTREAM_18_SLUG=/s16
+            mse6 -p ${UPSTREAM_18_PORT} -u ${UPSTREAM_18_SLUG}
+          background: true
+      - run:
+          name: Start upstream server 19 (TLS)
+          command: |
+            UPSTREAM_19_PORT=60101
+            UPSTREAM_19_SLUG=/badssl
+            mse6 -p ${UPSTREAM_19_PORT} -u ${UPSTREAM_19_SLUG}
+          background: true
 
-        - run:
-            name: Wait for upstream servers
-            command: |
-              #ports have to be inline in command, cannot share env.
-              pwt localhost:60083
-              pwt localhost:60084
-              pwt localhost:60085
-              pwt localhost:60086
-              pwt localhost:60087
-              pwt localhost:60088
-              pwt localhost:60089
-              pwt localhost:60090
-              pwt localhost:60091
-              pwt localhost:60092
-              pwt localhost:60093
-              pwt localhost:60094
-              pwt localhost:60095
-              pwt localhost:60096
-              pwt localhost:60097
-              pwt localhost:60098
-              pwt localhost:60099
-              pwt localhost:60100
-              pwt localhost:60101
+      - run:
+          name: Wait for upstream servers
+          command: |
+            #ports have to be inline in command, cannot share env.
+            pwt localhost:60083
+            pwt localhost:60084
+            pwt localhost:60085
+            pwt localhost:60086
+            pwt localhost:60087
+            pwt localhost:60088
+            pwt localhost:60089
+            pwt localhost:60090
+            pwt localhost:60091
+            pwt localhost:60092
+            pwt localhost:60093
+            pwt localhost:60094
+            pwt localhost:60095
+            pwt localhost:60096
+            pwt localhost:60097
+            pwt localhost:60098
+            pwt localhost:60099
+            pwt localhost:60100
+            pwt localhost:60101
 
-        - run:
-            name: Install j8a
-            command: |
-              go build github.com/simonmittag/j8a
-              go install github.com/simonmittag/j8a/cmd/j8a
-        - run:
-            name: Start j8a one
-            command: |
-              J8A_ONE_CFG=./integration/j8a1.yml
-              j8a -c ${J8A_ONE_CFG}
-            background: true
-        - run:
-            name: Wait for j8a one
-            command: |
-              J8A_ONE_PORT=8080
-              pwt localhost:${J8A_ONE_PORT}
-        - run:
-            name: Start j8a two
-            command: |
-              J8A_ONE_CFG=./integration/j8a2.yml
-              j8a -c ${J8A_TWO_CFG}
-            background: true
-        - run:
-            name: Wait for j8a two
-            command: |
-              J8A_TWO_PORT=8081
-              pwt localhost:${J8A_TWO_PORT}
-        - run:
-            name: Start j8a three
-            command: |
-              J8A_THREE_CFG=./integration/j8a3.yml
-              j8a -c ${J8A_THREE_CFG}
-            background: true
-        - run:
-            name: Wait for j8a three
-            command: |
-              J8A_THREE_PORT=8443
-              pwt localhost:${J8A_THREE_PORT}
-        - run:
-            name: Install Test dependencies
-            command: |
-              sudo apt-get install ack -y
-              sudo apt-get install lsof -y
-        - run:
-            name: Run integration tests
-            command: go test -v <<parameters.tests>>
+      - run:
+          name: Install j8a
+          command: |
+            go build github.com/simonmittag/j8a
+            go install github.com/simonmittag/j8a/cmd/j8a
+      - run:
+          name: Start j8a one
+          command: |
+            J8A_ONE_CFG=./integration/j8a1.yml
+            j8a -c ${J8A_ONE_CFG}
+          background: true
+      - run:
+          name: Wait for j8a one
+          command: |
+            J8A_ONE_PORT=8080
+            pwt localhost:${J8A_ONE_PORT}
+      - run:
+          name: Start j8a two
+          command: |
+            J8A_ONE_CFG=./integration/j8a2.yml
+            j8a -c ${J8A_TWO_CFG}
+          background: true
+      - run:
+          name: Wait for j8a two
+          command: |
+            J8A_TWO_PORT=8081
+            pwt localhost:${J8A_TWO_PORT}
+      - run:
+          name: Start j8a three
+          command: |
+            J8A_THREE_CFG=./integration/j8a3.yml
+            j8a -c ${J8A_THREE_CFG}
+          background: true
+      - run:
+          name: Wait for j8a three
+          command: |
+            J8A_THREE_PORT=8443
+            pwt localhost:${J8A_THREE_PORT}
+      - run:
+          name: Install Test dependencies
+          command: |
+            sudo apt-get install ack -y
+            sudo apt-get install lsof -y
+      - run:
+          name: Run integration tests
+          command: go test -v <<parameters.tests>>
 
 workflows:
   version: 2
