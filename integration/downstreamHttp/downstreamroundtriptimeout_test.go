@@ -82,72 +82,91 @@ func TestServer2HangsUpOnDownstreamIfRoundTripTimeoutExceeded(t *testing.T) {
 	}
 }
 
-func TestServer2DownstreamRoundTripTimeoutFireWithSlowHeader31S(t *testing.T) {
-	integration.PerformJ8aTest(t,
-		"/slowheader",
-		31,
-		20,
-		504,
-		8081,
-		false)
-}
-
-func TestServer2DownstreamRoundTripTimeoutFireWithSlowBody31S(t *testing.T) {
-	integration.PerformJ8aTest(t,
-		"/slowbody",
-		31,
-		20,
-		504,
-		8081,
-		false)
-}
-
-func TestServer2DownstreamRoundTripTimeoutFireWithSlowHeader25S(t *testing.T) {
-	integration.PerformJ8aTest(t,
-		"/slowheader",
-		25,
-		20,
-		504,
-		8081,
-		false)
-}
-
-func TestServer2DownstreamRoundTripTimeoutNotFireWithSlowHeader4S(t *testing.T) {
-	integration.PerformJ8aTest(t,
-		"/slowheader",
-		4,
-		4,
-		200,
-		8081,
-		false)
-}
-
-func TestServer2DownstreamRoundTripTimeoutNotFireWithSlowBody4S(t *testing.T) {
-	integration.PerformJ8aTest(t,
-		"/slowbody",
-		4,
-		4,
-		200,
-		8081,
-		false)
-}
-
-func TestServer2DownstreamRoundTripTimeoutNotFireWithSlowHeader2S(t *testing.T) {
-	integration.PerformJ8aTest(t,
-		"/slowheader",
-		2,
-		2,
-		200,
-		8081,
-		false)
-}
-
-func TestServer2DownstreamRoundTripTimeoutNotFireWithSlowBody2S(t *testing.T) {
-	integration.PerformJ8aTest(t,
-		"/slowbody",
-		2,
-		2,
-		200,
-		8081,
-		false)
+func TestServer2DownstreamRoundTripTimeout(t *testing.T) {
+	var tcs = []struct {
+		Name                    string
+		TestMethod              string
+		WantUpstreamWaitSeconds int
+		WantTotalWaitSeconds    int
+		WantStatusCode          int
+		ServerPort              int
+		TlsMode                 bool
+	}{
+		{
+			Name:                    "FireWithSlowHeader31s",
+			TestMethod:              "/slowheader",
+			WantUpstreamWaitSeconds: 31,
+			WantTotalWaitSeconds:    20,
+			WantStatusCode:          504,
+			ServerPort:              8081,
+			TlsMode:                 false,
+		},
+		{
+			Name:                    "FireWithSlowBody31s",
+			TestMethod:              "/slowbody",
+			WantUpstreamWaitSeconds: 31,
+			WantTotalWaitSeconds:    20,
+			WantStatusCode:          504,
+			ServerPort:              8081,
+			TlsMode:                 false,
+		},
+		{
+			Name:                    "FireWithSlowHeader25S",
+			TestMethod:              "/slowheader",
+			WantUpstreamWaitSeconds: 25,
+			WantTotalWaitSeconds:    20,
+			WantStatusCode:          504,
+			ServerPort:              8081,
+			TlsMode:                 false,
+		},
+		{
+			Name:                    "NotFireWithSlowHeader4S",
+			TestMethod:              "/slowheader",
+			WantUpstreamWaitSeconds: 4,
+			WantTotalWaitSeconds:    4,
+			WantStatusCode:          200,
+			ServerPort:              8081,
+			TlsMode:                 false,
+		},
+		{
+			Name:                    "NotFireWithSlowBody4S",
+			TestMethod:              "/slowbody",
+			WantUpstreamWaitSeconds: 4,
+			WantTotalWaitSeconds:    4,
+			WantStatusCode:          200,
+			ServerPort:              8081,
+			TlsMode:                 false,
+		},
+		{
+			Name:                    "NotFireWithSlowHeader2S",
+			TestMethod:              "/slowheader",
+			WantUpstreamWaitSeconds: 2,
+			WantTotalWaitSeconds:    2,
+			WantStatusCode:          200,
+			ServerPort:              8081,
+			TlsMode:                 false,
+		},
+		{
+			Name:                    "NotFireWithSlowBody2S",
+			TestMethod:              "/slowbody",
+			WantUpstreamWaitSeconds: 2,
+			WantTotalWaitSeconds:    2,
+			WantStatusCode:          200,
+			ServerPort:              8081,
+			TlsMode:                 false,
+		},
+	}
+	for _, tc := range tcs {
+		tc := tc
+		t.Run(tc.Name, func(t *testing.T) {
+			t.Parallel()
+			integration.PerformJ8aTest(t,
+				tc.TestMethod,
+				tc.WantUpstreamWaitSeconds,
+				tc.WantTotalWaitSeconds,
+				tc.WantStatusCode,
+				tc.ServerPort,
+				tc.TlsMode)
+		})
+	}
 }
