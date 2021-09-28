@@ -1,6 +1,6 @@
 version: 2.1
 commands:
-  intJob:
+  intjob:
     parameters:
       test:
         type: string
@@ -321,7 +321,7 @@ jobs:
     docker:
       - image: circleci/golang:1.16
     steps:
-      - intJob:
+      - intjob:
           test: github.com/simonmittag/j8a/integration/connection
 
   integrationContent:
@@ -329,39 +329,39 @@ jobs:
     docker:
       - image: circleci/golang:1.16
     steps:
-      - intJob:
+      - intjob:
           test: github.com/simonmittag/j8a/integration/content
 
   integrationDownstreamHttp:
     resource_class: medium
     docker:
-        - image: circleci/golang:1.16
+      - image: circleci/golang:1.16
     steps:
-      - intJob:
+      - intjob:
           test: github.com/simonmittag/j8a/integration/downstreamHttp
 
   integrationDownstreamTls:
     resource_class: medium
     docker:
-        - image: circleci/golang:1.16
+      - image: circleci/golang:1.16
     steps:
-      - intJob:
+      - intjob:
           test: github.com/simonmittag/j8a/integration/downstreamTls
 
   integrationHeaders:
     resource_class: medium
     docker:
-        - image: circleci/golang:1.16
+      - image: circleci/golang:1.16
     steps:
-      - intJob:
+      - intjob:
           test: github.com/simonmittag/j8a/integration/headers
 
   integrationJwt:
     resource_class: medium
     docker:
-        - image: circleci/golang:1.16
+      - image: circleci/golang:1.16
     steps:
-      - intJob:
+      - intjob:
           test: github.com/simonmittag/j8a/integration/jwt
 
   integrationProtocol:
@@ -369,15 +369,15 @@ jobs:
     docker:
       - image: circleci/golang:1.16
     steps:
-      - intJob:
+      - intjob:
           test: github.com/simonmittag/j8a/integration/protocol
 
   integrationResponsecode:
     resource_class: medium
     docker:
-        - image: circleci/golang:1.16
+      - image: circleci/golang:1.16
     steps:
-      - intJob:
+      - intjob:
           test: github.com/simonmittag/j8a/integration/responsecode
 
   integrationUpstream:
@@ -385,15 +385,15 @@ jobs:
     docker:
       - image: circleci/golang:1.16
     steps:
-      - intJob:
+      - intjob:
           test: github.com/simonmittag/j8a/integration/upstream
 
   integrationWebsocket:
     resource_class: medium
     docker:
-        - image: circleci/golang:1.16
+      - image: circleci/golang:1.16
     steps:
-      - intJob:
+      - intjob:
           test: github.com/simonmittag/j8a/integration/websocket
 
   localperformance:
