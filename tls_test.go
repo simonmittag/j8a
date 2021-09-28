@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"github.com/hako/durafmt"
+	"math/big"
 	"testing"
 	"time"
 )
@@ -17,6 +18,40 @@ func TestPDurationAsString(t *testing.T) {
 	}
 }
 
+func TestTlsLinkRemainingValidity29DaysTooCloseForComfort(t *testing.T) {
+	t1 := TlsLink{remainingValidity: PDuration(time.Hour * 24 * 29)}
+	if !t1.expiresTooCloseForComfort() {
+		t.Errorf("did not fire too close for comfort, but 29 days is")
+	}
+}
+
+func TestTlsLinkRemainingValidity31DaysNotTooCloseForComfort(t *testing.T) {
+	t1 := TlsLink{remainingValidity: PDuration(time.Hour * 24 * 31)}
+	if t1.expiresTooCloseForComfort() {
+		t.Errorf("did fire too close for comfort but 31 days is not")
+	}
+}
+
+func TestTlsLinkTotalValidity397DaysWithinLegalBrowserPeriod(t *testing.T) {
+	t1 := TlsLink{
+		remainingValidity: PDuration(time.Hour * 24 * 397),
+		browserValidity:   PDuration(time.Hour * 24 * 398),
+	}
+	if t1.expiryLongerThanLegalBrowserMaximum() {
+		t.Errorf("397 days is not longer than browser validity but did fire")
+	}
+}
+
+func TestTlsLinkTotalValidity399DaysNotWithinLegalBrowserPeriod(t *testing.T) {
+	t1 := TlsLink{
+		remainingValidity: PDuration(time.Hour * 24 * 399),
+		browserValidity:   PDuration(time.Hour * 24 * 398),
+	}
+	if !t1.expiryLongerThanLegalBrowserMaximum() {
+		t.Errorf("399 days is longer than browser validity but did not fire")
+	}
+}
+
 func TestPDuration_AsDays(t *testing.T) {
 	pd399 := PDuration(time.Hour * 24 * 399)
 	got := pd399.AsDays()
@@ -27,7 +62,7 @@ func TestPDuration_AsDays(t *testing.T) {
 }
 
 func TestBrowserExpiry_AsDays(t *testing.T) {
-	got := new(TlsLink).browserExpiry().AsDays()
+	got := Days398.AsDays()
 	want := 398
 	if got != want {
 		t.Errorf("wrong browser expiry days, want %d, got %d", want, got)
@@ -35,8 +70,10 @@ func TestBrowserExpiry_AsDays(t *testing.T) {
 }
 
 func TestParseTlsLinks(t *testing.T) {
-	tlsConfig := mockTlsConfig()
-	c, _ := x509.ParseCertificate(tlsConfig.Certificates[0].Certificate[0])
+	//this implicitly creates a Runner without returning it because it's well...global.
+	mockTlsConfig()
+
+	c, _ := x509.ParseCertificate(Runner.ReloadableCert.Cert.Certificate[0])
 	tlsLinks := parseTlsLinks([]*x509.Certificate{c})
 
 	logCertStats(tlsLinks)
@@ -53,9 +90,47 @@ func TestParseTlsLinks(t *testing.T) {
 	}
 }
 
+func TestCheckForKeyAndCertificateErrorsPass(t *testing.T) {
+	certPem := "-----BEGIN CERTIFICATE-----\nMIIEkzCCAvugAwIBAgIRANiwkh9AuRgrvYh7Y5DtWIUwDQYJKoZIhvcNAQELBQAw\ngYExHjAcBgNVBAoTFW1rY2VydCBkZXZlbG9wbWVudCBDQTErMCkGA1UECwwic2lt\nb25taXR0YWdAdHJvb3BlciAoU2ltb24gTWl0dGFnKTEyMDAGA1UEAwwpbWtjZXJ0\nIHNpbW9ubWl0dGFnQHRyb29wZXIgKFNpbW9uIE1pdHRhZykwHhcNMTkwNjAxMDAw\nMDAwWhcNMzAwNzMwMDExNDU5WjBjMScwJQYDVQQKEx5ta2NlcnQgZGV2ZWxvcG1l\nbnQgY2VydGlmaWNhdGUxODA2BgNVBAsML3NpbW9ubWl0dGFnQE1hY0Jvb2stUHJv\nLTE2LmxvY2FsIChTaW1vbiBNaXR0YWcpMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A\nMIIBCgKCAQEAsCTQ9rLTQYjIlGF7EOrTJux8E514TUoAuQ0xo1NOSssptjmDyGhb\n8K7+A/TgdU/xlPMcJf22nNDQ2MpqpgHGlDcuXt3SmVrcsTeby1Pa81gxKp23a51B\n8xAoHoHwXVSWdiMWk3H/Jjv/dtYL1L180neewcWvK26ANUwlzWG6BW1QVUXXNdRo\ndmxQ1eg2S/qMBASFj6QjCsWWJiEfmz4PQpsP8q5IqCcX85BUqGO919JlE/eXEAgk\n9Yuh61/50n39B/sPC0mU5s6vH0SPCBvz1g8SiXa8jj3jCXxa/0ZsYtAVqPe5BoRP\nvK2q1sbKbJVr7EpmiOdKxKPHonRHasweGwIDAQABo4GiMIGfMA4GA1UdDwEB/wQE\nAwIFoDATBgNVHSUEDDAKBggrBgEFBQcDATAMBgNVHRMBAf8EAjAAMB8GA1UdIwQY\nMBaAFMNEcloV4jg+eonB5omuJvQXiqiRMEkGA1UdEQRCMECCDyouamFiYmF0ZXN0\nLmNvbYIKamFiYmEudGVzdIIJbG9jYWxob3N0hwR/AAABhxAAAAAAAAAAAAAAAAAA\nAAABMA0GCSqGSIb3DQEBCwUAA4IBgQDGI3EUWPKsEOqLCpnwSlFihu8n9+g4pV3/\njItYhUqMBz1v8TqV2zykkJUtlfNoxrp5OAg4CG0Xr1zhqjub3teKbsNKlRpV+h04\n4ncltpe66u4gg9RW+ww/f+J3C2yZRIX+brhDcTpdEMyfVoCV/5jeCxWf29MdFcLU\nBfgFdEp1oe3bK/dyZc8SbUlmizyumaDOaZACihz/DKsJ+lzRdy6c3UPQgC3r72oN\nLx/ccpnwdeumWFs+qYOjYfrCGFXaabokdtyit4XURFngxpnPUB9jHDvkI5+/eTaB\nSpdjJxE6x4mciyZSvshhu1v8j52+d9zUANs9+Y/v6EoCZ6byaaS4NAmTXdAWlnYb\nhIuRRsI4gIDhJWLrACBu1Osh7ZknaLNVMt5xo3TemCkVKud3NHGbycHTUoFBuHz/\nJOTQJ/Z1Ym3enpTAESZVcZTzS9gL62wfIfLcFvq+tVjoJZVJCcolP2fYn3U5lEiN\nvZvs72xp4sYEOa9zhvEs/yte9c6rkU0=\n-----END CERTIFICATE-----\n"
+	keyPem := "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCwJND2stNBiMiU\nYXsQ6tMm7HwTnXhNSgC5DTGjU05Kyym2OYPIaFvwrv4D9OB1T/GU8xwl/bac0NDY\nymqmAcaUNy5e3dKZWtyxN5vLU9rzWDEqnbdrnUHzECgegfBdVJZ2IxaTcf8mO/92\n1gvUvXzSd57Bxa8rboA1TCXNYboFbVBVRdc11Gh2bFDV6DZL+owEBIWPpCMKxZYm\nIR+bPg9Cmw/yrkioJxfzkFSoY73X0mUT95cQCCT1i6HrX/nSff0H+w8LSZTmzq8f\nRI8IG/PWDxKJdryOPeMJfFr/Rmxi0BWo97kGhE+8rarWxspslWvsSmaI50rEo8ei\ndEdqzB4bAgMBAAECggEAc9nDFn7HM3MjeXQj3RyVhCRF9yC63xqtHwjufN1twQOe\ni5uIcWcyETsHFtMYThAmdDDxcotMcBdnRS7cthK06QbiGMMMoJCCVoyciz674xE+\nRSk2WjE0DwmxWV9dGAVqcIjjcFap2hvcCez+Gw4F6ueCIzBB5e7npCZRNqPwFWCY\n/og06ypz/4LHXFNatvRJC3qhWFwFo1bVC1ycZmc5RQ4IHeQHzi6oCJhSRdCbM7Q9\n7fQhmjtcw0pxvJTVV+XP7tTf9iDDwgi/Le2iEqNQ1D6c4+nYAGYj2D3919oUYnyv\ntnznZ2GTibIyP6kl4L79ChRz0JGBzraKH7aJh9H1AQKBgQDS0xd8RNLJ5hkwPitt\nx/4RNlobGGZqqvQiCKkaDvnc1E1eKR3rVlxH17/ccA/qs0vcoFDPbGyRa/OgD7p5\nRo3R+EPDFoFq1KMP4SRoGcDgrNKHQ3o06sUngmtUUP28G+DUQm46xW7cnQrvvNiK\nf9MMfeNH+tAPtssZh0HNKJa9fwKBgQDV40peDqh9b4Ag+mfiHIJGuwTN8LMvKRqr\nN5dVirl2BDYMwF6JflIwIwjBZq7ah3NsT5/Yd+nuY+ux/pO4iU5jMbTtoAOv2dc7\nVKpqNTaQdJhta5OlOdBSP5iXj4siVCMIFL1jz8JtWuXX4hUtbliG6ICZTH2/5ivG\nfaPiOhAlZQKBgQCp941jnojiRSPhhP22UBpA/jS+y3kmXhTcq2bJn3FJ289ULon0\nhXd4ZDRGIAJ1EYADqyv7TkppI0MStBt+UqdbtG/NBIPqAOxFjRmw47JgcHR6oKgR\nqYSxSbAGFhW6Zi9ocPY1Y57xNZrvlKxvXIZl98gY69h6EsDDIAyoviRpOQKBgC0g\nRjlv+EZ2tt6+VhqTjzzjClF03ikuD+1dzjUDDrwCiXDJSWjS2P5E9fzv8CY0+7o3\nVm8yZY2hUUH9hycg+QPeoeCcqQp5+HoRE99SmM+DegFj+AOdHgGsX0Jiy6UTgUyc\nK5UaaVfvHJ0emv85z72u4ir1w3YwVr4LFf+N5ogtAoGAHODQpVC7sg+nlbeSKsPf\nRbULfOG4YD5pHszNM+nCjNWs00ofJoZOFA64qXwTIc4Vrh8JLiwAkXiTGYM2guv5\nQnp+HbFi/tAc+rQu4SGBaVIglnIj7jFNdgJOb68Vw/L9v2jW1Y8VoAC0eCRWpHud\nGsMkN4GFOfQKoBI/aCXn4DM=\n-----END PRIVATE KEY-----\n"
+	cAPem := "-----BEGIN CERTIFICATE-----\nMIIE0zCCAzugAwIBAgIQB2bsiI7SUtxu+HwBxuNtpDANBgkqhkiG9w0BAQsFADCB\ngTEeMBwGA1UEChMVbWtjZXJ0IGRldmVsb3BtZW50IENBMSswKQYDVQQLDCJzaW1v\nbm1pdHRhZ0B0cm9vcGVyIChTaW1vbiBNaXR0YWcpMTIwMAYDVQQDDClta2NlcnQg\nc2ltb25taXR0YWdAdHJvb3BlciAoU2ltb24gTWl0dGFnKTAeFw0yMDA1MDEyMTE2\nNDNaFw0zMDA1MDEyMTE2NDNaMIGBMR4wHAYDVQQKExVta2NlcnQgZGV2ZWxvcG1l\nbnQgQ0ExKzApBgNVBAsMInNpbW9ubWl0dGFnQHRyb29wZXIgKFNpbW9uIE1pdHRh\nZykxMjAwBgNVBAMMKW1rY2VydCBzaW1vbm1pdHRhZ0B0cm9vcGVyIChTaW1vbiBN\naXR0YWcpMIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAzivKfp5OiWpT\n362cVgbw9DBqwMP0pO32aP79Y4UYeAxCfaWQDdqQEatBdraShtZcvUX8vZ9jvgHE\noGMGSJb/DIVRxIDfhdvhh4qGQgbbSLwDkfLJTkpGMdONa/5yDC54fNZjF095YZn7\niPmsFbvYUfTwpM8qrP+jZzobByrTO4rG3Ps080gIR08RCA0E+uLg58rTpnsdBKZ0\nK2uuE4B4lVAs2AeS4KPMrH/rnCjSZz4KRwnaGqh+wiAjO0PHAfrbrhNsFB6P1/Zk\nCqzclj3TXdkMDaXhSvt0qJPEpNIPQMkvj9GROom7hExZUT7t7LPOZwODtiR2VjM3\nDDehfLqpNPRrxU3aOR7b4lFVtEL1+9NXKc3rnR5T2xPVVvBxx8FqYAxFmQtkGqpA\nYlRxImBONBreIr5/fdkr5xqd/S0s1pb8ubuK7x5COfqf0Mv++j+UjMptBQ3kYvOh\ntNrbnEI1q/7kvHNB8ETtJ4hqXikl9EHMYWdOo4nyGd4P8jo9jmGVAgMBAAGjRTBD\nMA4GA1UdDwEB/wQEAwICBDASBgNVHRMBAf8ECDAGAQH/AgEAMB0GA1UdDgQWBBTD\nRHJaFeI4PnqJweaJrib0F4qokTANBgkqhkiG9w0BAQsFAAOCAYEAb+K3HO2AlDed\nS2yT7GnxD75Hcjnv1tMvMIlh1EOmRMHrzbsi7jv3Z7SDe2R5s1qRku3nxbVWj8i8\noRBi5GeRE+q/HkVloi4WPmgFGxUUbkWszAFSSGN5TAs72e5sCG/wMyEa0Gj8cOO1\ndK5SH3thP8+OjSpgQXToYfOimILlk7Hj7EgKE5Y8YX8UV+41LhGkzeK2UX9dBZn1\nof9qBc0dAQVlAA/O3dOgXorgiDbNT38cjignWEwVYzjeuJCYB91Ixf0CfHJZKHZR\nZCdIAHTJqW1tx7vsbrcl0PVAMgm+rkHLL0Dh9cp4fvONXWygVSjbqKM1s8UI9bFA\nbWU5Z3MhEn25wZCXLQDIq0uC+FwCxyS9e/exL4wmYpCLmRKVCp2gUa78Rlr/FJNa\nH9kfvP41Ya+fLzDWNKAlYQgizpZJmZuhPZu7O6n0UusaI+0WTKblCFUQJkx4aKEv\nio8QmLzoedmvVpO9Zp44Lyabmc7VnjoYTOcZczx4ECwEdKH/jswc\n-----END CERTIFICATE-----\n"
+
+	_, e := checkFullCertChainFromBytes([]byte(certPem+cAPem), []byte(keyPem))
+	if e != nil {
+		t.Errorf("cert check should have passed by but returned %v", e)
+	}
+}
+
+func TestCheckForKeyAndCertificateErrorsFailsWithCorruptKey(t *testing.T) {
+	certPem := "-----BEGIN CERTIFICATE-----\nMIIEkzCCAvugAwIBAgIRANiwkh9AuRgrvYh7Y5DtWIUwDQYJKoZIhvcNAQELBQAw\ngYExHjAcBgNVBAoTFW1rY2VydCBkZXZlbG9wbWVudCBDQTErMCkGA1UECwwic2lt\nb25taXR0YWdAdHJvb3BlciAoU2ltb24gTWl0dGFnKTEyMDAGA1UEAwwpbWtjZXJ0\nIHNpbW9ubWl0dGFnQHRyb29wZXIgKFNpbW9uIE1pdHRhZykwHhcNMTkwNjAxMDAw\nMDAwWhcNMzAwNzMwMDExNDU5WjBjMScwJQYDVQQKEx5ta2NlcnQgZGV2ZWxvcG1l\nbnQgY2VydGlmaWNhdGUxODA2BgNVBAsML3NpbW9ubWl0dGFnQE1hY0Jvb2stUHJv\nLTE2LmxvY2FsIChTaW1vbiBNaXR0YWcpMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A\nMIIBCgKCAQEAsCTQ9rLTQYjIlGF7EOrTJux8E514TUoAuQ0xo1NOSssptjmDyGhb\n8K7+A/TgdU/xlPMcJf22nNDQ2MpqpgHGlDcuXt3SmVrcsTeby1Pa81gxKp23a51B\n8xAoHoHwXVSWdiMWk3H/Jjv/dtYL1L180neewcWvK26ANUwlzWG6BW1QVUXXNdRo\ndmxQ1eg2S/qMBASFj6QjCsWWJiEfmz4PQpsP8q5IqCcX85BUqGO919JlE/eXEAgk\n9Yuh61/50n39B/sPC0mU5s6vH0SPCBvz1g8SiXa8jj3jCXxa/0ZsYtAVqPe5BoRP\nvK2q1sbKbJVr7EpmiOdKxKPHonRHasweGwIDAQABo4GiMIGfMA4GA1UdDwEB/wQE\nAwIFoDATBgNVHSUEDDAKBggrBgEFBQcDATAMBgNVHRMBAf8EAjAAMB8GA1UdIwQY\nMBaAFMNEcloV4jg+eonB5omuJvQXiqiRMEkGA1UdEQRCMECCDyouamFiYmF0ZXN0\nLmNvbYIKamFiYmEudGVzdIIJbG9jYWxob3N0hwR/AAABhxAAAAAAAAAAAAAAAAAA\nAAABMA0GCSqGSIb3DQEBCwUAA4IBgQDGI3EUWPKsEOqLCpnwSlFihu8n9+g4pV3/\njItYhUqMBz1v8TqV2zykkJUtlfNoxrp5OAg4CG0Xr1zhqjub3teKbsNKlRpV+h04\n4ncltpe66u4gg9RW+ww/f+J3C2yZRIX+brhDcTpdEMyfVoCV/5jeCxWf29MdFcLU\nBfgFdEp1oe3bK/dyZc8SbUlmizyumaDOaZACihz/DKsJ+lzRdy6c3UPQgC3r72oN\nLx/ccpnwdeumWFs+qYOjYfrCGFXaabokdtyit4XURFngxpnPUB9jHDvkI5+/eTaB\nSpdjJxE6x4mciyZSvshhu1v8j52+d9zUANs9+Y/v6EoCZ6byaaS4NAmTXdAWlnYb\nhIuRRsI4gIDhJWLrACBu1Osh7ZknaLNVMt5xo3TemCkVKud3NHGbycHTUoFBuHz/\nJOTQJ/Z1Ym3enpTAESZVcZTzS9gL62wfIfLcFvq+tVjoJZVJCcolP2fYn3U5lEiN\nvZvs72xp4sYEOa9zhvEs/yte9c6rkU0=\n-----END CERTIFICATE-----\n"
+	keyPem := "notakey"
+	cAPem := "-----BEGIN CERTIFICATE-----\nMIIE0zCCAzugAwIBAgIQB2bsiI7SUtxu+HwBxuNtpDANBgkqhkiG9w0BAQsFADCB\ngTEeMBwGA1UEChMVbWtjZXJ0IGRldmVsb3BtZW50IENBMSswKQYDVQQLDCJzaW1v\nbm1pdHRhZ0B0cm9vcGVyIChTaW1vbiBNaXR0YWcpMTIwMAYDVQQDDClta2NlcnQg\nc2ltb25taXR0YWdAdHJvb3BlciAoU2ltb24gTWl0dGFnKTAeFw0yMDA1MDEyMTE2\nNDNaFw0zMDA1MDEyMTE2NDNaMIGBMR4wHAYDVQQKExVta2NlcnQgZGV2ZWxvcG1l\nbnQgQ0ExKzApBgNVBAsMInNpbW9ubWl0dGFnQHRyb29wZXIgKFNpbW9uIE1pdHRh\nZykxMjAwBgNVBAMMKW1rY2VydCBzaW1vbm1pdHRhZ0B0cm9vcGVyIChTaW1vbiBN\naXR0YWcpMIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAzivKfp5OiWpT\n362cVgbw9DBqwMP0pO32aP79Y4UYeAxCfaWQDdqQEatBdraShtZcvUX8vZ9jvgHE\noGMGSJb/DIVRxIDfhdvhh4qGQgbbSLwDkfLJTkpGMdONa/5yDC54fNZjF095YZn7\niPmsFbvYUfTwpM8qrP+jZzobByrTO4rG3Ps080gIR08RCA0E+uLg58rTpnsdBKZ0\nK2uuE4B4lVAs2AeS4KPMrH/rnCjSZz4KRwnaGqh+wiAjO0PHAfrbrhNsFB6P1/Zk\nCqzclj3TXdkMDaXhSvt0qJPEpNIPQMkvj9GROom7hExZUT7t7LPOZwODtiR2VjM3\nDDehfLqpNPRrxU3aOR7b4lFVtEL1+9NXKc3rnR5T2xPVVvBxx8FqYAxFmQtkGqpA\nYlRxImBONBreIr5/fdkr5xqd/S0s1pb8ubuK7x5COfqf0Mv++j+UjMptBQ3kYvOh\ntNrbnEI1q/7kvHNB8ETtJ4hqXikl9EHMYWdOo4nyGd4P8jo9jmGVAgMBAAGjRTBD\nMA4GA1UdDwEB/wQEAwICBDASBgNVHRMBAf8ECDAGAQH/AgEAMB0GA1UdDgQWBBTD\nRHJaFeI4PnqJweaJrib0F4qokTANBgkqhkiG9w0BAQsFAAOCAYEAb+K3HO2AlDed\nS2yT7GnxD75Hcjnv1tMvMIlh1EOmRMHrzbsi7jv3Z7SDe2R5s1qRku3nxbVWj8i8\noRBi5GeRE+q/HkVloi4WPmgFGxUUbkWszAFSSGN5TAs72e5sCG/wMyEa0Gj8cOO1\ndK5SH3thP8+OjSpgQXToYfOimILlk7Hj7EgKE5Y8YX8UV+41LhGkzeK2UX9dBZn1\nof9qBc0dAQVlAA/O3dOgXorgiDbNT38cjignWEwVYzjeuJCYB91Ixf0CfHJZKHZR\nZCdIAHTJqW1tx7vsbrcl0PVAMgm+rkHLL0Dh9cp4fvONXWygVSjbqKM1s8UI9bFA\nbWU5Z3MhEn25wZCXLQDIq0uC+FwCxyS9e/exL4wmYpCLmRKVCp2gUa78Rlr/FJNa\nH9kfvP41Ya+fLzDWNKAlYQgizpZJmZuhPZu7O6n0UusaI+0WTKblCFUQJkx4aKEv\nio8QmLzoedmvVpO9Zp44Lyabmc7VnjoYTOcZczx4ECwEdKH/jswc\n-----END CERTIFICATE-----\n"
+
+	_, e := checkFullCertChainFromBytes([]byte(certPem+cAPem), []byte(keyPem))
+	if e == nil {
+		t.Errorf("cert check should have passed by but returned %v", e)
+	} else {
+		t.Logf("normal. key validation failed with %v", e)
+	}
+}
+
+func TestCheckForKeyAndCertificateErrorsFailsWithCorruptCert(t *testing.T) {
+	certPem := "notacert"
+	keyPem := "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCwJND2stNBiMiU\nYXsQ6tMm7HwTnXhNSgC5DTGjU05Kyym2OYPIaFvwrv4D9OB1T/GU8xwl/bac0NDY\nymqmAcaUNy5e3dKZWtyxN5vLU9rzWDEqnbdrnUHzECgegfBdVJZ2IxaTcf8mO/92\n1gvUvXzSd57Bxa8rboA1TCXNYboFbVBVRdc11Gh2bFDV6DZL+owEBIWPpCMKxZYm\nIR+bPg9Cmw/yrkioJxfzkFSoY73X0mUT95cQCCT1i6HrX/nSff0H+w8LSZTmzq8f\nRI8IG/PWDxKJdryOPeMJfFr/Rmxi0BWo97kGhE+8rarWxspslWvsSmaI50rEo8ei\ndEdqzB4bAgMBAAECggEAc9nDFn7HM3MjeXQj3RyVhCRF9yC63xqtHwjufN1twQOe\ni5uIcWcyETsHFtMYThAmdDDxcotMcBdnRS7cthK06QbiGMMMoJCCVoyciz674xE+\nRSk2WjE0DwmxWV9dGAVqcIjjcFap2hvcCez+Gw4F6ueCIzBB5e7npCZRNqPwFWCY\n/og06ypz/4LHXFNatvRJC3qhWFwFo1bVC1ycZmc5RQ4IHeQHzi6oCJhSRdCbM7Q9\n7fQhmjtcw0pxvJTVV+XP7tTf9iDDwgi/Le2iEqNQ1D6c4+nYAGYj2D3919oUYnyv\ntnznZ2GTibIyP6kl4L79ChRz0JGBzraKH7aJh9H1AQKBgQDS0xd8RNLJ5hkwPitt\nx/4RNlobGGZqqvQiCKkaDvnc1E1eKR3rVlxH17/ccA/qs0vcoFDPbGyRa/OgD7p5\nRo3R+EPDFoFq1KMP4SRoGcDgrNKHQ3o06sUngmtUUP28G+DUQm46xW7cnQrvvNiK\nf9MMfeNH+tAPtssZh0HNKJa9fwKBgQDV40peDqh9b4Ag+mfiHIJGuwTN8LMvKRqr\nN5dVirl2BDYMwF6JflIwIwjBZq7ah3NsT5/Yd+nuY+ux/pO4iU5jMbTtoAOv2dc7\nVKpqNTaQdJhta5OlOdBSP5iXj4siVCMIFL1jz8JtWuXX4hUtbliG6ICZTH2/5ivG\nfaPiOhAlZQKBgQCp941jnojiRSPhhP22UBpA/jS+y3kmXhTcq2bJn3FJ289ULon0\nhXd4ZDRGIAJ1EYADqyv7TkppI0MStBt+UqdbtG/NBIPqAOxFjRmw47JgcHR6oKgR\nqYSxSbAGFhW6Zi9ocPY1Y57xNZrvlKxvXIZl98gY69h6EsDDIAyoviRpOQKBgC0g\nRjlv+EZ2tt6+VhqTjzzjClF03ikuD+1dzjUDDrwCiXDJSWjS2P5E9fzv8CY0+7o3\nVm8yZY2hUUH9hycg+QPeoeCcqQp5+HoRE99SmM+DegFj+AOdHgGsX0Jiy6UTgUyc\nK5UaaVfvHJ0emv85z72u4ir1w3YwVr4LFf+N5ogtAoGAHODQpVC7sg+nlbeSKsPf\nRbULfOG4YD5pHszNM+nCjNWs00ofJoZOFA64qXwTIc4Vrh8JLiwAkXiTGYM2guv5\nQnp+HbFi/tAc+rQu4SGBaVIglnIj7jFNdgJOb68Vw/L9v2jW1Y8VoAC0eCRWpHud\nGsMkN4GFOfQKoBI/aCXn4DM=\n-----END PRIVATE KEY-----\n"
+	cAPem := "-----BEGIN CERTIFICATE-----\nMIIE0zCCAzugAwIBAgIQB2bsiI7SUtxu+HwBxuNtpDANBgkqhkiG9w0BAQsFADCB\ngTEeMBwGA1UEChMVbWtjZXJ0IGRldmVsb3BtZW50IENBMSswKQYDVQQLDCJzaW1v\nbm1pdHRhZ0B0cm9vcGVyIChTaW1vbiBNaXR0YWcpMTIwMAYDVQQDDClta2NlcnQg\nc2ltb25taXR0YWdAdHJvb3BlciAoU2ltb24gTWl0dGFnKTAeFw0yMDA1MDEyMTE2\nNDNaFw0zMDA1MDEyMTE2NDNaMIGBMR4wHAYDVQQKExVta2NlcnQgZGV2ZWxvcG1l\nbnQgQ0ExKzApBgNVBAsMInNpbW9ubWl0dGFnQHRyb29wZXIgKFNpbW9uIE1pdHRh\nZykxMjAwBgNVBAMMKW1rY2VydCBzaW1vbm1pdHRhZ0B0cm9vcGVyIChTaW1vbiBN\naXR0YWcpMIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAzivKfp5OiWpT\n362cVgbw9DBqwMP0pO32aP79Y4UYeAxCfaWQDdqQEatBdraShtZcvUX8vZ9jvgHE\noGMGSJb/DIVRxIDfhdvhh4qGQgbbSLwDkfLJTkpGMdONa/5yDC54fNZjF095YZn7\niPmsFbvYUfTwpM8qrP+jZzobByrTO4rG3Ps080gIR08RCA0E+uLg58rTpnsdBKZ0\nK2uuE4B4lVAs2AeS4KPMrH/rnCjSZz4KRwnaGqh+wiAjO0PHAfrbrhNsFB6P1/Zk\nCqzclj3TXdkMDaXhSvt0qJPEpNIPQMkvj9GROom7hExZUT7t7LPOZwODtiR2VjM3\nDDehfLqpNPRrxU3aOR7b4lFVtEL1+9NXKc3rnR5T2xPVVvBxx8FqYAxFmQtkGqpA\nYlRxImBONBreIr5/fdkr5xqd/S0s1pb8ubuK7x5COfqf0Mv++j+UjMptBQ3kYvOh\ntNrbnEI1q/7kvHNB8ETtJ4hqXikl9EHMYWdOo4nyGd4P8jo9jmGVAgMBAAGjRTBD\nMA4GA1UdDwEB/wQEAwICBDASBgNVHRMBAf8ECDAGAQH/AgEAMB0GA1UdDgQWBBTD\nRHJaFeI4PnqJweaJrib0F4qokTANBgkqhkiG9w0BAQsFAAOCAYEAb+K3HO2AlDed\nS2yT7GnxD75Hcjnv1tMvMIlh1EOmRMHrzbsi7jv3Z7SDe2R5s1qRku3nxbVWj8i8\noRBi5GeRE+q/HkVloi4WPmgFGxUUbkWszAFSSGN5TAs72e5sCG/wMyEa0Gj8cOO1\ndK5SH3thP8+OjSpgQXToYfOimILlk7Hj7EgKE5Y8YX8UV+41LhGkzeK2UX9dBZn1\nof9qBc0dAQVlAA/O3dOgXorgiDbNT38cjignWEwVYzjeuJCYB91Ixf0CfHJZKHZR\nZCdIAHTJqW1tx7vsbrcl0PVAMgm+rkHLL0Dh9cp4fvONXWygVSjbqKM1s8UI9bFA\nbWU5Z3MhEn25wZCXLQDIq0uC+FwCxyS9e/exL4wmYpCLmRKVCp2gUa78Rlr/FJNa\nH9kfvP41Ya+fLzDWNKAlYQgizpZJmZuhPZu7O6n0UusaI+0WTKblCFUQJkx4aKEv\nio8QmLzoedmvVpO9Zp44Lyabmc7VnjoYTOcZczx4ECwEdKH/jswc\n-----END CERTIFICATE-----\n"
+
+	_, e := checkFullCertChainFromBytes([]byte(certPem+cAPem), []byte(keyPem))
+	if e == nil {
+		t.Errorf("cert check should have passed by but returned %v", e)
+	} else {
+		t.Logf("normal. cert validation failed with %v", e)
+	}
+}
+
 func TestCheckCertChain(t *testing.T) {
-	tlsConfig := mockTlsConfig()
-	verified, err := checkCertChain(tlsConfig.Certificates[0])
+	//this implicitly creates a Runner without returning it because it's well...global.
+	mockTlsConfig()
+	verified, err := checkFullCertChain(Runner.ReloadableCert.Cert)
 	if err != nil {
 		t.Errorf("certificate chain with 1 TLS cert, 1 root cert not validated, cause: %s", err)
 	}
@@ -66,7 +141,8 @@ func TestCheckCertChain(t *testing.T) {
 
 func TestTlsHealthCheck(t *testing.T) {
 	//this only needs to be covered for no runtime exceptions as it logs to console. no assertions.
-	tlsHealthCheck(mockTlsConfig(), false)
+	mockTlsConfig()
+	Runner.tlsHealthCheck(false)
 }
 
 //this test uses a BAD self-signed root CA but supplies it as part of the chain. should NOT validate.
@@ -76,10 +152,9 @@ func TestCertChainC_I_R_Invalid(t *testing.T) {
 	interCAPem := "-----BEGIN CERTIFICATE-----\nMIIFzDCCA7SgAwIBAgICEAAwDQYJKoZIhvcNAQELBQAwcjELMAkGA1UEBhMCQVUx\nDDAKBgNVBAgMA05TVzEPMA0GA1UEBwwGU3lkbmV5MQ0wCwYDVQQKDARteWNhMRIw\nEAYDVQQLDAlteWNhIHJvb3QxITAfBgNVBAMMGG15IGNlcnRpZmljYXRlIGF1dGhv\ncml0eTAgFw0yMDA5MTcyMTE3MjdaGA8yMjM5MDkzMDIxMTcyN1owdjELMAkGA1UE\nBhMCQVUxDDAKBgNVBAgMA05TVzENMAsGA1UECgwEbXljYTEaMBgGA1UECwwRbXlj\nYSBpbnRlcm1lZGlhdGUxLjAsBgNVBAMMJW15IGNlcnRpZmljYXRlIGF1dGhvcml0\neSBpbnRlcm1lZGlhdGUwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQCm\n1qRLG0twxwbxBdt/nDeUr0Ia8LtLDtvPjdVVUDTpCp4gnlkEEzHu8JXPPsIami2C\nt5vo35JW1AI223FD5eef54wZG2rXlJbzwlB+yyE5+/V/6WSKe42rePvZDCD+Ym/Q\nyYeqzObViXGnmIvta2aEYZzLeTJPzppvQws/bM+d5IhRa43JuJOVYmjPdp1cjaOm\ntmW3zQSj/00a3i/97SHoyqaJX+y2bPQIJ+yScdBSn9W+Ke3o7/WnuP0HO/ST1fZM\nyzorGbso6aGnTswFbOdWMDUpauE97SL1M6ztoaI4a0HHD8Z8dPhtAmXWbs/5hmQr\njZqBj5W4oUik9iIjUhC2l1aYUf934Om62JjMn9if/mIIA5UTorddj/wKtIsd0n4X\nq5nhJ+X4yVXi3YjqW8iegenaq6UGuvNsm6m/JRAf+5n3FuspHH4WrCgAaIrYg0ZY\nDDu5ro6zHxTcHF6j01CXlJTDEJlStoZ6N9cIKVT94pUPM+EZBq3DGlhBDKipZWk7\n+sEu7sZoQ51WoV4haMY+4Wd7ea8o4sE50eoW+DN2o9lIPHMyxY5uFD7CluUt/b37\ntCcOYAV86JWBN5htTPYAH3wXsDBU/KFSJPLRPF96cuHL6Dq++Gvlqw0rKDKQ/gKh\nDma8lZ9SjVTskqk3l5wzHyNjy7nYFSIRItGIhVbp0wIDAQABo2YwZDAdBgNVHQ4E\nFgQU6VWn4HVZKHA1C5IBW5AC8J7+15kwHwYDVR0jBBgwFoAUD+ANepMk0O9Poxxx\nMpCnxxVyHNMwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAYYwDQYJ\nKoZIhvcNAQELBQADggIBAAQKj6FLBiy23kqHB7iUrl3dSXjJEsPm03zApRhWhr3e\nuxGVYO/YM6RlcJlc7RiKrQAO7XMuOfGbV/TedKPYz+SAeoHCdAVmT21o9HqgwRJ2\nkbJulqIF7oRmmqFOUDIUNg+ZC68QvR9cfuhzcLsEdmfEhXvI5j6CvrhOUN3UHw8A\nO7b4kiymBVT88uXUC0i3bGeEI3h6Fz/RZLbShcvTz2BwcuqoWdInyKi+8mKNfc1O\n+HGBMjnPahNAiovaEuUGErloETdjhmSOkbPBG8h9KpkndCwclEhsBN1+skKiDzKa\nMk53cXXKjqPvPEG9dfQQu0NEnOeY3ZtyVpMqnbo+G0MtyzkozvAB5WjWlpaWZYV2\nnw/wnyCi57ruYI7UjUp+NvFDiIRlOysLC7K6xia+8m7mP8MaFJibQh0tA2UDmdXs\nwy/Z87c6KUCyDB8Hl//rLWbWg6JpHTcH+81yDkVeq2TvJkB6P8jThv51Pz1z4b6U\ndHWAMK5kLmHv+P6sw0JkE5fwszoFOaqSxABq02Pkt5+Hv2EvwxpJZvySkdp7s+Xn\nGUwXhduMscVL/Yd62ES5dYSQ+vbmZIEK3PIttcIyleif6DLFZijJnywf5etYxvrK\nY9wgX6D9PwShl32sf3nzHXh3npLdbio3XwJQUcO6c/lm49rKD7L9L5RM6FNShl8R\n-----END CERTIFICATE-----\n"
 	rootCAPem := "-----BEGIN CERTIFICATE-----\nMIIFzDCXXXXXXX______XXXXXXX_______CA7SgAwIBAgIJAKdYQFPloO6RMA0GCSqGSIb3DQEBCwUAMHIxCzAJBgNV\nBAYTAkFVMQwwCgYDVQQIDANOU1cxDzANBgNVBAcMBlN5ZG5leTENMAsGA1UECgwE\nbXljYTESMBAGA1UECwwJbXljYSByb290MSEwHwYDVQQDDBhteSBjZXJ0aWZpY2F0\nZSBhdXRob3JpdHkwIBcNMjAwOTE3MjA1MTM1WhgPMjI5NDA3MDMyMDUxMzVaMHIx\nCzAJBgNVBAYTAkFVMQwwCgYDVQQIDANOU1cxDzANBgNVBAcMBlN5ZG5leTENMAsG\nA1UECgwEbXljYTESMBAGA1UECwwJbXljYSByb290MSEwHwYDVQQDDBhteSBjZXJ0\naWZpY2F0ZSBhdXRob3JpdHkwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoIC\nAQDgvRdI24Rv9XBnirlB1LwS32MYyVM2mksTF52E0qrg1OKcMs1D2737BrgaUD6C\nB1I2lMAKR25Q3+x9fSutyww8KZ7yQkFcX2lhwsyYll0j1rvkjek0M1K4787ZFrXS\ncRihE6BSvP5886O+v7a30HxtKbI9oFHdbzgpLpTzvVAn53tokRgAJNtQZWpyJ5Qq\nIG7c96dG9zsXE5+tYT0E0p3ec1z/Ucdx6SKOFjCR8bVLX+Y97mxypOMaPEhGJ4D3\nBlxlCvwDo5sF46e/ntie3Fqghk3jRZTUXedB0IjN8iJCKODPMO1j1cESqVg21xGZ\nyZxIn/ra1iqx9VDCP8egfUOmmMF8flGV08qOGDLGEc/dpVe/yHvG3lmld3MBsW+3\nu6O2l7GIKdLHKibe3uGHhmuPbHq2vlc6IIlRtpsZtK3IXt+bpvlKdI3rxbl4MbT7\n8Z09IUpTsT5jDPEVRnX0zV78Gs4TyKqJKxJJaINx9n0AuXJ8b3jmth/Bb6OkoPgv\nsbFS2QER2Yp8whE1W2PMwtJ06u20YX0RSwuKD+CsnTVmtQwWLBXescCNRH372HwS\nLHO8dvyFWfekLaB2LfciJWYBd8thO5Y4O65FnKLGDvEUh6Ew2OOnhOpy4flWAng6\n39r5uuDQqmWrPFjDNR5HvQjQu1Bv0j81cFY4qZqSIskR9wIDAQABo2MwYTAdBgNV\nHQ4EFgQUD+ANepMk0O9PoxxxMpCnxxVyHNMwHwYDVR0jBBgwFoAUD+ANepMk0O9P\noxxxMpCnxxVyHNMwDwYDVR0TAQH/BAUwAwEB/zAOBgNVHQ8BAf8EBAMCAYYwDQYJ\nKoZIhvcNAQELBQADggIBAFdMzocjv6RojMXft1TnwYKb8H0ce6qcsBHZmd/M7IXf\nhyedRkcm7RuN7ayNjFA+44pwAr4jMMNklBQDpGD5yYt1jsltiYoYX5bwZdn2I/rr\nwNQ/FfNSp8rJWqtBhaEt0VI+snHuy0Gdx1eQGf4bJNzvsDLjjJuQ32VUjaCOzsd1\n7d8jR/yjR3Sq20oFEu3HqFSC9OCH2QORTqf6i2IkaUeJbkVTa8+uVceDDbRs3CwY\nVgk/4WcOzcrz0F2BJPpFQ4knrSuHgUbElPHPVuZcn3XZ0n1KBXZdNVCIyLVRowdr\nI+gNEgWE3670Osx55QWg7depP7hU30nQlC1cm2ej2MxM48ddbAL4Zqs8/W1gm+Xb\nDkTsfh81QZQaw6qFVGHJNRIyfMT68ekFB8AgqntulIFR2RJTr/3QJBMhGHKQkmcT\nsa0z0ZrmS/ieurRUjaCsud10Y5VbY5Y8ll5kPsuRWuyijftjcPFqHBzLSSdLacO9\nlVIGkTA3ARCGgym3v5+ZZJ4DeLOJRz9c9OCIASlCkNFFEm1aJ8oagynh2tYqe5TK\nCva1MX8QW5OjHbrm1xvQ8uZOSj55yuBQWKH47GF4QxiojzKikLv4Cpv2Tk5SR9qv\nq3C4t8B26KurNb4z99eo5XhW5XXvQdKZTQC9BqZDN7xhQlwm5lbRSuhZMBJJaQOS\n-----END CERTIFICATE-----\n"
 
-	tlsConfig := mockXTTlsConfig(certPem, keyPem, interCAPem, rootCAPem)
-	verified, err := checkCertChain(tlsConfig.Certificates[0])
-	logCertStats(verified)
-	if err == nil {
+	c, e := mockTlsConfigWith(certPem, keyPem, interCAPem, rootCAPem)
+
+	if c != nil || e == nil {
 		t.Errorf("certificate chain with 1 TLS cert, 1 intermediate, bad root cert validated, this shouldn't happen.")
 	}
 }
@@ -92,8 +167,9 @@ func TestCertChainC_I_R_DNSValid(t *testing.T) {
 	interCAPem := "-----BEGIN CERTIFICATE-----\nMIIFzDCCA7SgAwIBAgICEAAwDQYJKoZIhvcNAQELBQAwcjELMAkGA1UEBhMCQVUx\nDDAKBgNVBAgMA05TVzEPMA0GA1UEBwwGU3lkbmV5MQ0wCwYDVQQKDARteWNhMRIw\nEAYDVQQLDAlteWNhIHJvb3QxITAfBgNVBAMMGG15IGNlcnRpZmljYXRlIGF1dGhv\ncml0eTAgFw0yMDA5MTcyMTE3MjdaGA8yMjM5MDkzMDIxMTcyN1owdjELMAkGA1UE\nBhMCQVUxDDAKBgNVBAgMA05TVzENMAsGA1UECgwEbXljYTEaMBgGA1UECwwRbXlj\nYSBpbnRlcm1lZGlhdGUxLjAsBgNVBAMMJW15IGNlcnRpZmljYXRlIGF1dGhvcml0\neSBpbnRlcm1lZGlhdGUwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQCm\n1qRLG0twxwbxBdt/nDeUr0Ia8LtLDtvPjdVVUDTpCp4gnlkEEzHu8JXPPsIami2C\nt5vo35JW1AI223FD5eef54wZG2rXlJbzwlB+yyE5+/V/6WSKe42rePvZDCD+Ym/Q\nyYeqzObViXGnmIvta2aEYZzLeTJPzppvQws/bM+d5IhRa43JuJOVYmjPdp1cjaOm\ntmW3zQSj/00a3i/97SHoyqaJX+y2bPQIJ+yScdBSn9W+Ke3o7/WnuP0HO/ST1fZM\nyzorGbso6aGnTswFbOdWMDUpauE97SL1M6ztoaI4a0HHD8Z8dPhtAmXWbs/5hmQr\njZqBj5W4oUik9iIjUhC2l1aYUf934Om62JjMn9if/mIIA5UTorddj/wKtIsd0n4X\nq5nhJ+X4yVXi3YjqW8iegenaq6UGuvNsm6m/JRAf+5n3FuspHH4WrCgAaIrYg0ZY\nDDu5ro6zHxTcHF6j01CXlJTDEJlStoZ6N9cIKVT94pUPM+EZBq3DGlhBDKipZWk7\n+sEu7sZoQ51WoV4haMY+4Wd7ea8o4sE50eoW+DN2o9lIPHMyxY5uFD7CluUt/b37\ntCcOYAV86JWBN5htTPYAH3wXsDBU/KFSJPLRPF96cuHL6Dq++Gvlqw0rKDKQ/gKh\nDma8lZ9SjVTskqk3l5wzHyNjy7nYFSIRItGIhVbp0wIDAQABo2YwZDAdBgNVHQ4E\nFgQU6VWn4HVZKHA1C5IBW5AC8J7+15kwHwYDVR0jBBgwFoAUD+ANepMk0O9Poxxx\nMpCnxxVyHNMwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAYYwDQYJ\nKoZIhvcNAQELBQADggIBAAQKj6FLBiy23kqHB7iUrl3dSXjJEsPm03zApRhWhr3e\nuxGVYO/YM6RlcJlc7RiKrQAO7XMuOfGbV/TedKPYz+SAeoHCdAVmT21o9HqgwRJ2\nkbJulqIF7oRmmqFOUDIUNg+ZC68QvR9cfuhzcLsEdmfEhXvI5j6CvrhOUN3UHw8A\nO7b4kiymBVT88uXUC0i3bGeEI3h6Fz/RZLbShcvTz2BwcuqoWdInyKi+8mKNfc1O\n+HGBMjnPahNAiovaEuUGErloETdjhmSOkbPBG8h9KpkndCwclEhsBN1+skKiDzKa\nMk53cXXKjqPvPEG9dfQQu0NEnOeY3ZtyVpMqnbo+G0MtyzkozvAB5WjWlpaWZYV2\nnw/wnyCi57ruYI7UjUp+NvFDiIRlOysLC7K6xia+8m7mP8MaFJibQh0tA2UDmdXs\nwy/Z87c6KUCyDB8Hl//rLWbWg6JpHTcH+81yDkVeq2TvJkB6P8jThv51Pz1z4b6U\ndHWAMK5kLmHv+P6sw0JkE5fwszoFOaqSxABq02Pkt5+Hv2EvwxpJZvySkdp7s+Xn\nGUwXhduMscVL/Yd62ES5dYSQ+vbmZIEK3PIttcIyleif6DLFZijJnywf5etYxvrK\nY9wgX6D9PwShl32sf3nzHXh3npLdbio3XwJQUcO6c/lm49rKD7L9L5RM6FNShl8R\n-----END CERTIFICATE-----\n"
 	rootCAPem := "-----BEGIN CERTIFICATE-----\nMIIFzDCCA7SgAwIBAgIJAKdYQFPloO6RMA0GCSqGSIb3DQEBCwUAMHIxCzAJBgNV\nBAYTAkFVMQwwCgYDVQQIDANOU1cxDzANBgNVBAcMBlN5ZG5leTENMAsGA1UECgwE\nbXljYTESMBAGA1UECwwJbXljYSByb290MSEwHwYDVQQDDBhteSBjZXJ0aWZpY2F0\nZSBhdXRob3JpdHkwIBcNMjAwOTE3MjA1MTM1WhgPMjI5NDA3MDMyMDUxMzVaMHIx\nCzAJBgNVBAYTAkFVMQwwCgYDVQQIDANOU1cxDzANBgNVBAcMBlN5ZG5leTENMAsG\nA1UECgwEbXljYTESMBAGA1UECwwJbXljYSByb290MSEwHwYDVQQDDBhteSBjZXJ0\naWZpY2F0ZSBhdXRob3JpdHkwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoIC\nAQDgvRdI24Rv9XBnirlB1LwS32MYyVM2mksTF52E0qrg1OKcMs1D2737BrgaUD6C\nB1I2lMAKR25Q3+x9fSutyww8KZ7yQkFcX2lhwsyYll0j1rvkjek0M1K4787ZFrXS\ncRihE6BSvP5886O+v7a30HxtKbI9oFHdbzgpLpTzvVAn53tokRgAJNtQZWpyJ5Qq\nIG7c96dG9zsXE5+tYT0E0p3ec1z/Ucdx6SKOFjCR8bVLX+Y97mxypOMaPEhGJ4D3\nBlxlCvwDo5sF46e/ntie3Fqghk3jRZTUXedB0IjN8iJCKODPMO1j1cESqVg21xGZ\nyZxIn/ra1iqx9VDCP8egfUOmmMF8flGV08qOGDLGEc/dpVe/yHvG3lmld3MBsW+3\nu6O2l7GIKdLHKibe3uGHhmuPbHq2vlc6IIlRtpsZtK3IXt+bpvlKdI3rxbl4MbT7\n8Z09IUpTsT5jDPEVRnX0zV78Gs4TyKqJKxJJaINx9n0AuXJ8b3jmth/Bb6OkoPgv\nsbFS2QER2Yp8whE1W2PMwtJ06u20YX0RSwuKD+CsnTVmtQwWLBXescCNRH372HwS\nLHO8dvyFWfekLaB2LfciJWYBd8thO5Y4O65FnKLGDvEUh6Ew2OOnhOpy4flWAng6\n39r5uuDQqmWrPFjDNR5HvQjQu1Bv0j81cFY4qZqSIskR9wIDAQABo2MwYTAdBgNV\nHQ4EFgQUD+ANepMk0O9PoxxxMpCnxxVyHNMwHwYDVR0jBBgwFoAUD+ANepMk0O9P\noxxxMpCnxxVyHNMwDwYDVR0TAQH/BAUwAwEB/zAOBgNVHQ8BAf8EBAMCAYYwDQYJ\nKoZIhvcNAQELBQADggIBAFdMzocjv6RojMXft1TnwYKb8H0ce6qcsBHZmd/M7IXf\nhyedRkcm7RuN7ayNjFA+44pwAr4jMMNklBQDpGD5yYt1jsltiYoYX5bwZdn2I/rr\nwNQ/FfNSp8rJWqtBhaEt0VI+snHuy0Gdx1eQGf4bJNzvsDLjjJuQ32VUjaCOzsd1\n7d8jR/yjR3Sq20oFEu3HqFSC9OCH2QORTqf6i2IkaUeJbkVTa8+uVceDDbRs3CwY\nVgk/4WcOzcrz0F2BJPpFQ4knrSuHgUbElPHPVuZcn3XZ0n1KBXZdNVCIyLVRowdr\nI+gNEgWE3670Osx55QWg7depP7hU30nQlC1cm2ej2MxM48ddbAL4Zqs8/W1gm+Xb\nDkTsfh81QZQaw6qFVGHJNRIyfMT68ekFB8AgqntulIFR2RJTr/3QJBMhGHKQkmcT\nsa0z0ZrmS/ieurRUjaCsud10Y5VbY5Y8ll5kPsuRWuyijftjcPFqHBzLSSdLacO9\nlVIGkTA3ARCGgym3v5+ZZJ4DeLOJRz9c9OCIASlCkNFFEm1aJ8oagynh2tYqe5TK\nCva1MX8QW5OjHbrm1xvQ8uZOSj55yuBQWKH47GF4QxiojzKikLv4Cpv2Tk5SR9qv\nq3C4t8B26KurNb4z99eo5XhW5XXvQdKZTQC9BqZDN7xhQlwm5lbRSuhZMBJJaQOS\n-----END CERTIFICATE-----\n"
 
-	tlsConfig := mockXTTlsConfig(certPem, keyPem, interCAPem, rootCAPem)
-	verified, err := checkCertChain(tlsConfig.Certificates[0])
+	//test the global Runner
+	verified, err := checkFullCertChainFromBytes([]byte(certPem+interCAPem+rootCAPem), []byte(keyPem))
+
 	logCertStats(verified)
 	if verified[0].cert.DNSNames[0] != "cert.com" {
 		t.Errorf("certificate should have DNS name of cert.com")
@@ -109,6 +185,53 @@ func TestCertChainC_I_R_DNSValid(t *testing.T) {
 	}
 }
 
+func TestFormalSerial(t *testing.T) {
+	m := big.NewInt(1)
+	for i := 0; i < 100; i++ {
+		m = m.Lsh(m, uint(i))
+		q := formatSerial(m)
+		l := len(q) - 1
+		if q[l:] == ":" {
+			t.Errorf("error. should not end with -")
+		} else {
+			t.Logf("normal. serial %s", q)
+		}
+	}
+
+	m1 := big.NewInt(0)
+	t.Logf("normal. serial %s", formatSerial(m1))
+
+	m2 := big.NewInt(2347239999924234320)
+	t.Logf("normal. serial %s", formatSerial(m2))
+	w2 := "20:93:12:57:FE:12:68:50"
+	if w2 != formatSerial(m2) {
+		t.Errorf("error. not formatted correctly, wanted %s, got %s", w2, formatSerial(m2))
+	}
+
+	m3 := big.NewInt(-1)
+	t.Logf("normal. serial %s", formatSerial(m3))
+
+	m4 := big.NewInt(-2347239999924234320)
+	t.Logf("normal. serial %s", formatSerial(m4))
+
+	m5 := big.NewInt(255)
+	w5 := "FF"
+	if w5 != formatSerial(m5) {
+		t.Errorf("error. not formatted correctly, wanted %s, got %s", w5, formatSerial(m5))
+	} else {
+		t.Logf("normal. serial %s", formatSerial(m5))
+	}
+
+	m6 := big.NewInt(256)
+	w6 := "01:00"
+	if w6 != formatSerial(m6) {
+		t.Errorf("not formatted correctly, wanted %s, got %s", w6, formatSerial(m6))
+	} else {
+		t.Logf("normal. serial %s", formatSerial(m6))
+	}
+
+}
+
 //this test provides a cert without DNS names which is invalid.
 func TestCertChainC_I_R_NoDNSInvalid(t *testing.T) {
 	certPem := "-----BEGIN CERTIFICATE-----\nMIIFkDCCA3igAwIBAgICEAAwDQYJKoZIhvcNAQELBQAwdjELMAkGA1UEBhMCQVUx\nDDAKBgNVBAgMA05TVzENMAsGA1UECgwEbXljYTEaMBgGA1UECwwRbXljYSBpbnRl\ncm1lZGlhdGUxLjAsBgNVBAMMJW15IGNlcnRpZmljYXRlIGF1dGhvcml0eSBpbnRl\ncm1lZGlhdGUwIBcNMjAwOTE3MjEzMTQ5WhgPMjEwMjExMDcyMTMxNDlaMF8xCzAJ\nBgNVBAYTAkFVMQwwCgYDVQQIDANOU1cxDzANBgNVBAcMBlN5ZG5leTENMAsGA1UE\nCgwEY2VydDEQMA4GA1UECwwHY2VydCBvdTEQMA4GA1UEAwwHY2VydCBjbjCCASIw\nDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAN3FFHDc3fWIyxukMDRriEbYtVA4\n1EeiQiwf7RLdDxh+N2VAazUbbxUJ06nKAslX2+6ZmJrMlS+ionX1BvPhPy3snuZI\n1movXcvH6ZV5yUGZyJDocjOTHHqNwPSDOAQX87tLjQbCa8Rw//B488GoPbaZlWYD\nvZQ0Mw5rasiu0B+OI6PL8+Vnc2jXdPlc3tiNoIVXRZ14TNei7bUDA3O1y593ift2\ntQ/TZxlY7fylZWhTV4sUm/9yk/zob+dyzro795Jy8vThlePAN//tZGLWFzG7a8o9\nMx36BPncSZ0v+EfEvP24ZffIDFRtysBewu2+33IVpISlbaHgj6nsuv8GFM0CAwEA\nAaOCATswggE3MAkGA1UdEwQCMAAwEQYJYIZIAYb4QgEBBAQDAgZAMDMGCWCGSAGG\n+EIBDQQmFiRPcGVuU1NMIEdlbmVyYXRlZCBTZXJ2ZXIgQ2VydGlmaWNhdGUwHQYD\nVR0OBBYEFEEFnOmrROOjNNQrLRoXPXsJLPkeMIGdBgNVHSMEgZUwgZKAFOlVp+B1\nWShwNQuSAVuQAvCe/teZoXakdDByMQswCQYDVQQGEwJBVTEMMAoGA1UECAwDTlNX\nMQ8wDQYDVQQHDAZTeWRuZXkxDTALBgNVBAoMBG15Y2ExEjAQBgNVBAsMCW15Y2Eg\ncm9vdDEhMB8GA1UEAwwYbXkgY2VydGlmaWNhdGUgYXV0aG9yaXR5ggIQADAOBgNV\nHQ8BAf8EBAMCBaAwEwYDVR0lBAwwCgYIKwYBBQUHAwEwDQYJKoZIhvcNAQELBQAD\nggIBABmHgp3VwBiQ+viw9exwx8tgTkPhCu36qkDIlSnaPlKTCmlcc+Cs399ra4as\nyVuLPiTGQZ1HsNtmZ3DxaRWbtfdxKty13mZi1+x1UKr/MrGiUTtpYsptJSUYppWa\n7leA1nO/5Kz8i2WCFuk+K3HNVRdjIYmhB3pG3IEXukmaZHSVJ5fCi1ED4l9gzkPv\nTS4olPOU37RPsTgH2ibQUxqhSt0wfu/X6dgqYf3JYtEl4Ddw1XcQeKDI/08D+XP/\nuzNBciMtcAxmTDM+daTBZ8KZnHnPDeuPCj0yLxMi4/HlzuCUXmnO7TAabVyZDvoA\nTpPhkIxj4BuYjCIX9Czd+1fqIu+22tovWg54o+2vuMKyeRpbw3lwTfX3mBuzPaoc\nFu2wFSQEsSQVrpnyD3wMhvF9X2S9YlrzuwQZRJkuYpO83VMHtWIasn6q1al57V0+\nx9TQpCkT6hqv26VxyDhUumAlBkoqEEVXfk/zSa63JHck9LLEIuVt6se6muNj7pLF\nSM+JQe41CQsnxNABs4FqOxp+RhYhOPIKlpgdhBtob89y6OPlR9Sa/4Wchf7FbDPW\nj1ZCzwScOlYDVamud+/wSOsvZhjnkYv8YW13z6GQPqmyMcu0QstIBHkModoZIKOG\nK3FXY7kDCcrj6luxalsD7GbQ7gCpDIdlRe9JPfOBo342mFKR\n-----END CERTIFICATE-----\n"
@@ -116,8 +239,9 @@ func TestCertChainC_I_R_NoDNSInvalid(t *testing.T) {
 	interCAPem := "-----BEGIN CERTIFICATE-----\nMIIFzDCCA7SgAwIBAgICEAAwDQYJKoZIhvcNAQELBQAwcjELMAkGA1UEBhMCQVUx\nDDAKBgNVBAgMA05TVzEPMA0GA1UEBwwGU3lkbmV5MQ0wCwYDVQQKDARteWNhMRIw\nEAYDVQQLDAlteWNhIHJvb3QxITAfBgNVBAMMGG15IGNlcnRpZmljYXRlIGF1dGhv\ncml0eTAgFw0yMDA5MTcyMTE3MjdaGA8yMjM5MDkzMDIxMTcyN1owdjELMAkGA1UE\nBhMCQVUxDDAKBgNVBAgMA05TVzENMAsGA1UECgwEbXljYTEaMBgGA1UECwwRbXlj\nYSBpbnRlcm1lZGlhdGUxLjAsBgNVBAMMJW15IGNlcnRpZmljYXRlIGF1dGhvcml0\neSBpbnRlcm1lZGlhdGUwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQCm\n1qRLG0twxwbxBdt/nDeUr0Ia8LtLDtvPjdVVUDTpCp4gnlkEEzHu8JXPPsIami2C\nt5vo35JW1AI223FD5eef54wZG2rXlJbzwlB+yyE5+/V/6WSKe42rePvZDCD+Ym/Q\nyYeqzObViXGnmIvta2aEYZzLeTJPzppvQws/bM+d5IhRa43JuJOVYmjPdp1cjaOm\ntmW3zQSj/00a3i/97SHoyqaJX+y2bPQIJ+yScdBSn9W+Ke3o7/WnuP0HO/ST1fZM\nyzorGbso6aGnTswFbOdWMDUpauE97SL1M6ztoaI4a0HHD8Z8dPhtAmXWbs/5hmQr\njZqBj5W4oUik9iIjUhC2l1aYUf934Om62JjMn9if/mIIA5UTorddj/wKtIsd0n4X\nq5nhJ+X4yVXi3YjqW8iegenaq6UGuvNsm6m/JRAf+5n3FuspHH4WrCgAaIrYg0ZY\nDDu5ro6zHxTcHF6j01CXlJTDEJlStoZ6N9cIKVT94pUPM+EZBq3DGlhBDKipZWk7\n+sEu7sZoQ51WoV4haMY+4Wd7ea8o4sE50eoW+DN2o9lIPHMyxY5uFD7CluUt/b37\ntCcOYAV86JWBN5htTPYAH3wXsDBU/KFSJPLRPF96cuHL6Dq++Gvlqw0rKDKQ/gKh\nDma8lZ9SjVTskqk3l5wzHyNjy7nYFSIRItGIhVbp0wIDAQABo2YwZDAdBgNVHQ4E\nFgQU6VWn4HVZKHA1C5IBW5AC8J7+15kwHwYDVR0jBBgwFoAUD+ANepMk0O9Poxxx\nMpCnxxVyHNMwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAYYwDQYJ\nKoZIhvcNAQELBQADggIBAAQKj6FLBiy23kqHB7iUrl3dSXjJEsPm03zApRhWhr3e\nuxGVYO/YM6RlcJlc7RiKrQAO7XMuOfGbV/TedKPYz+SAeoHCdAVmT21o9HqgwRJ2\nkbJulqIF7oRmmqFOUDIUNg+ZC68QvR9cfuhzcLsEdmfEhXvI5j6CvrhOUN3UHw8A\nO7b4kiymBVT88uXUC0i3bGeEI3h6Fz/RZLbShcvTz2BwcuqoWdInyKi+8mKNfc1O\n+HGBMjnPahNAiovaEuUGErloETdjhmSOkbPBG8h9KpkndCwclEhsBN1+skKiDzKa\nMk53cXXKjqPvPEG9dfQQu0NEnOeY3ZtyVpMqnbo+G0MtyzkozvAB5WjWlpaWZYV2\nnw/wnyCi57ruYI7UjUp+NvFDiIRlOysLC7K6xia+8m7mP8MaFJibQh0tA2UDmdXs\nwy/Z87c6KUCyDB8Hl//rLWbWg6JpHTcH+81yDkVeq2TvJkB6P8jThv51Pz1z4b6U\ndHWAMK5kLmHv+P6sw0JkE5fwszoFOaqSxABq02Pkt5+Hv2EvwxpJZvySkdp7s+Xn\nGUwXhduMscVL/Yd62ES5dYSQ+vbmZIEK3PIttcIyleif6DLFZijJnywf5etYxvrK\nY9wgX6D9PwShl32sf3nzHXh3npLdbio3XwJQUcO6c/lm49rKD7L9L5RM6FNShl8R\n-----END CERTIFICATE-----\n"
 	rootCAPem := "-----BEGIN CERTIFICATE-----\nMIIFzDCCA7SgAwIBAgIJAKdYQFPloO6RMA0GCSqGSIb3DQEBCwUAMHIxCzAJBgNV\nBAYTAkFVMQwwCgYDVQQIDANOU1cxDzANBgNVBAcMBlN5ZG5leTENMAsGA1UECgwE\nbXljYTESMBAGA1UECwwJbXljYSByb290MSEwHwYDVQQDDBhteSBjZXJ0aWZpY2F0\nZSBhdXRob3JpdHkwIBcNMjAwOTE3MjA1MTM1WhgPMjI5NDA3MDMyMDUxMzVaMHIx\nCzAJBgNVBAYTAkFVMQwwCgYDVQQIDANOU1cxDzANBgNVBAcMBlN5ZG5leTENMAsG\nA1UECgwEbXljYTESMBAGA1UECwwJbXljYSByb290MSEwHwYDVQQDDBhteSBjZXJ0\naWZpY2F0ZSBhdXRob3JpdHkwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoIC\nAQDgvRdI24Rv9XBnirlB1LwS32MYyVM2mksTF52E0qrg1OKcMs1D2737BrgaUD6C\nB1I2lMAKR25Q3+x9fSutyww8KZ7yQkFcX2lhwsyYll0j1rvkjek0M1K4787ZFrXS\ncRihE6BSvP5886O+v7a30HxtKbI9oFHdbzgpLpTzvVAn53tokRgAJNtQZWpyJ5Qq\nIG7c96dG9zsXE5+tYT0E0p3ec1z/Ucdx6SKOFjCR8bVLX+Y97mxypOMaPEhGJ4D3\nBlxlCvwDo5sF46e/ntie3Fqghk3jRZTUXedB0IjN8iJCKODPMO1j1cESqVg21xGZ\nyZxIn/ra1iqx9VDCP8egfUOmmMF8flGV08qOGDLGEc/dpVe/yHvG3lmld3MBsW+3\nu6O2l7GIKdLHKibe3uGHhmuPbHq2vlc6IIlRtpsZtK3IXt+bpvlKdI3rxbl4MbT7\n8Z09IUpTsT5jDPEVRnX0zV78Gs4TyKqJKxJJaINx9n0AuXJ8b3jmth/Bb6OkoPgv\nsbFS2QER2Yp8whE1W2PMwtJ06u20YX0RSwuKD+CsnTVmtQwWLBXescCNRH372HwS\nLHO8dvyFWfekLaB2LfciJWYBd8thO5Y4O65FnKLGDvEUh6Ew2OOnhOpy4flWAng6\n39r5uuDQqmWrPFjDNR5HvQjQu1Bv0j81cFY4qZqSIskR9wIDAQABo2MwYTAdBgNV\nHQ4EFgQUD+ANepMk0O9PoxxxMpCnxxVyHNMwHwYDVR0jBBgwFoAUD+ANepMk0O9P\noxxxMpCnxxVyHNMwDwYDVR0TAQH/BAUwAwEB/zAOBgNVHQ8BAf8EBAMCAYYwDQYJ\nKoZIhvcNAQELBQADggIBAFdMzocjv6RojMXft1TnwYKb8H0ce6qcsBHZmd/M7IXf\nhyedRkcm7RuN7ayNjFA+44pwAr4jMMNklBQDpGD5yYt1jsltiYoYX5bwZdn2I/rr\nwNQ/FfNSp8rJWqtBhaEt0VI+snHuy0Gdx1eQGf4bJNzvsDLjjJuQ32VUjaCOzsd1\n7d8jR/yjR3Sq20oFEu3HqFSC9OCH2QORTqf6i2IkaUeJbkVTa8+uVceDDbRs3CwY\nVgk/4WcOzcrz0F2BJPpFQ4knrSuHgUbElPHPVuZcn3XZ0n1KBXZdNVCIyLVRowdr\nI+gNEgWE3670Osx55QWg7depP7hU30nQlC1cm2ej2MxM48ddbAL4Zqs8/W1gm+Xb\nDkTsfh81QZQaw6qFVGHJNRIyfMT68ekFB8AgqntulIFR2RJTr/3QJBMhGHKQkmcT\nsa0z0ZrmS/ieurRUjaCsud10Y5VbY5Y8ll5kPsuRWuyijftjcPFqHBzLSSdLacO9\nlVIGkTA3ARCGgym3v5+ZZJ4DeLOJRz9c9OCIASlCkNFFEm1aJ8oagynh2tYqe5TK\nCva1MX8QW5OjHbrm1xvQ8uZOSj55yuBQWKH47GF4QxiojzKikLv4Cpv2Tk5SR9qv\nq3C4t8B26KurNb4z99eo5XhW5XXvQdKZTQC9BqZDN7xhQlwm5lbRSuhZMBJJaQOS\n-----END CERTIFICATE-----\n"
 
-	tlsConfig := mockXTTlsConfig(certPem, keyPem, interCAPem, rootCAPem)
-	verified, err := checkCertChain(tlsConfig.Certificates[0])
+	//test the global Runner
+	verified, err := checkFullCertChainFromBytes([]byte(certPem+interCAPem+rootCAPem), []byte(keyPem))
+
 	logCertStats(verified)
 	if err == nil {
 		t.Errorf("certificate chain should not validate, no DNS name was specified in cert")
@@ -134,8 +258,8 @@ func TestCertChainC_I_Invalid(t *testing.T) {
 	interCAPem := "-----BEGIN CERTIFICATE-----\nMIIFzDCCA7SgAwIBAgICEAAwDQYJKoZIhvcNAQELBQAwcjELMAkGA1UEBhMCQVUx\nDDAKBgNVBAgMA05TVzEPMA0GA1UEBwwGU3lkbmV5MQ0wCwYDVQQKDARteWNhMRIw\nEAYDVQQLDAlteWNhIHJvb3QxITAfBgNVBAMMGG15IGNlcnRpZmljYXRlIGF1dGhv\ncml0eTAgFw0yMDA5MTcyMTE3MjdaGA8yMjM5MDkzMDIxMTcyN1owdjELMAkGA1UE\nBhMCQVUxDDAKBgNVBAgMA05TVzENMAsGA1UECgwEbXljYTEaMBgGA1UECwwRbXlj\nYSBpbnRlcm1lZGlhdGUxLjAsBgNVBAMMJW15IGNlcnRpZmljYXRlIGF1dGhvcml0\neSBpbnRlcm1lZGlhdGUwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQCm\n1qRLG0twxwbxBdt/nDeUr0Ia8LtLDtvPjdVVUDTpCp4gnlkEEzHu8JXPPsIami2C\nt5vo35JW1AI223FD5eef54wZG2rXlJbzwlB+yyE5+/V/6WSKe42rePvZDCD+Ym/Q\nyYeqzObViXGnmIvta2aEYZzLeTJPzppvQws/bM+d5IhRa43JuJOVYmjPdp1cjaOm\ntmW3zQSj/00a3i/97SHoyqaJX+y2bPQIJ+yScdBSn9W+Ke3o7/WnuP0HO/ST1fZM\nyzorGbso6aGnTswFbOdWMDUpauE97SL1M6ztoaI4a0HHD8Z8dPhtAmXWbs/5hmQr\njZqBj5W4oUik9iIjUhC2l1aYUf934Om62JjMn9if/mIIA5UTorddj/wKtIsd0n4X\nq5nhJ+X4yVXi3YjqW8iegenaq6UGuvNsm6m/JRAf+5n3FuspHH4WrCgAaIrYg0ZY\nDDu5ro6zHxTcHF6j01CXlJTDEJlStoZ6N9cIKVT94pUPM+EZBq3DGlhBDKipZWk7\n+sEu7sZoQ51WoV4haMY+4Wd7ea8o4sE50eoW+DN2o9lIPHMyxY5uFD7CluUt/b37\ntCcOYAV86JWBN5htTPYAH3wXsDBU/KFSJPLRPF96cuHL6Dq++Gvlqw0rKDKQ/gKh\nDma8lZ9SjVTskqk3l5wzHyNjy7nYFSIRItGIhVbp0wIDAQABo2YwZDAdBgNVHQ4E\nFgQU6VWn4HVZKHA1C5IBW5AC8J7+15kwHwYDVR0jBBgwFoAUD+ANepMk0O9Poxxx\nMpCnxxVyHNMwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAYYwDQYJ\nKoZIhvcNAQELBQADggIBAAQKj6FLBiy23kqHB7iUrl3dSXjJEsPm03zApRhWhr3e\nuxGVYO/YM6RlcJlc7RiKrQAO7XMuOfGbV/TedKPYz+SAeoHCdAVmT21o9HqgwRJ2\nkbJulqIF7oRmmqFOUDIUNg+ZC68QvR9cfuhzcLsEdmfEhXvI5j6CvrhOUN3UHw8A\nO7b4kiymBVT88uXUC0i3bGeEI3h6Fz/RZLbShcvTz2BwcuqoWdInyKi+8mKNfc1O\n+HGBMjnPahNAiovaEuUGErloETdjhmSOkbPBG8h9KpkndCwclEhsBN1+skKiDzKa\nMk53cXXKjqPvPEG9dfQQu0NEnOeY3ZtyVpMqnbo+G0MtyzkozvAB5WjWlpaWZYV2\nnw/wnyCi57ruYI7UjUp+NvFDiIRlOysLC7K6xia+8m7mP8MaFJibQh0tA2UDmdXs\nwy/Z87c6KUCyDB8Hl//rLWbWg6JpHTcH+81yDkVeq2TvJkB6P8jThv51Pz1z4b6U\ndHWAMK5kLmHv+P6sw0JkE5fwszoFOaqSxABq02Pkt5+Hv2EvwxpJZvySkdp7s+Xn\nGUwXhduMscVL/Yd62ES5dYSQ+vbmZIEK3PIttcIyleif6DLFZijJnywf5etYxvrK\nY9wgX6D9PwShl32sf3nzHXh3npLdbio3XwJQUcO6c/lm49rKD7L9L5RM6FNShl8R\n-----END CERTIFICATE-----\n"
 	rootCAPem := ""
 
-	tlsConfig := mockXTTlsConfig(certPem, keyPem, interCAPem, rootCAPem)
-	verified, err := checkCertChain(tlsConfig.Certificates[0])
+	//test the global Runner
+	verified, err := checkFullCertChainFromBytes([]byte(certPem+interCAPem+rootCAPem), []byte(keyPem))
 	logCertStats(verified)
 	if err == nil {
 		t.Errorf("certificate chain with 1 TLS cert, 1 intermediate, unknown root cert incorrectly validated")
@@ -149,20 +273,67 @@ func TestCertChainC_Invalid(t *testing.T) {
 	interCAPem := ""
 	rootCAPem := ""
 
-	tlsConfig := mockXTTlsConfig(certPem, keyPem, interCAPem, rootCAPem)
-	verified, err := checkCertChain(tlsConfig.Certificates[0])
+	//test the global Runner
+	verified, err := checkFullCertChainFromBytes([]byte(certPem+interCAPem+rootCAPem), []byte(keyPem))
 	logCertStats(verified)
 	if err == nil {
 		t.Errorf("certificate chain with 1 TLS cert, 0 intermediate, 0 root cert incorrectly validated")
 	}
 }
 
-func mockXTTlsConfig(certPem string, keyPem string, intercAPem string, rootcAPem string) *tls.Config {
-	r := mockRuntime()
-	r.Connection.Downstream.Tls.Cert = certPem + intercAPem + rootcAPem
-	r.Connection.Downstream.Tls.Key = keyPem
-	r.Connection.Downstream.Tls.Port = 8443
+func TestSha1Sum(t *testing.T) {
+	want := "#BE:B8:11:71:AB:9F:0F:0B:9E:65:40:A8:C3:2D:F0:96:C0:DB:78:16"
+	got := sha1Fingerprint(parseTestCert())
+	if got != want {
+		t.Errorf("sha1sum got %s, want %s", got, want)
+	} else {
+		t.Logf("sha1 fingerprint: %s", got)
+	}
+}
 
-	tlsConfig := r.tlsConfig()
-	return tlsConfig
+func TestSha256Sum(t *testing.T) {
+	want := "#FA:EC:D7:A1:22:84:7B:92:91:EE:08:3D:C4:35:20:6B:7E:3F:6F:8B:BD:BD:0D:96:4C:D4:ED:E7:53:47:3F:58"
+	got := sha256Fingerprint(parseTestCert())
+	if got != want {
+		t.Errorf("sha256sum got %s, want %s", got, want)
+	} else {
+		t.Logf("sha256 fingerprint: %s", got)
+	}
+}
+
+func TestMd5Sum(t *testing.T) {
+	want := "#EF:F8:6C:76:9F:12:F4:EC:B5:04:C1:BD:AF:C2:E4:80"
+	got := md5Fingerprint(parseTestCert())
+	if got != want {
+		t.Errorf("md5sum got %s, want %s", got, want)
+	} else {
+		t.Logf("md5 fingerprint: %s", got)
+	}
+}
+
+func parseTestCert() *x509.Certificate {
+	certPem := "-----BEGIN CERTIFICATE-----\nMIIEkzCCAvugAwIBAgIRANiwkh9AuRgrvYh7Y5DtWIUwDQYJKoZIhvcNAQELBQAw\ngYExHjAcBgNVBAoTFW1rY2VydCBkZXZlbG9wbWVudCBDQTErMCkGA1UECwwic2lt\nb25taXR0YWdAdHJvb3BlciAoU2ltb24gTWl0dGFnKTEyMDAGA1UEAwwpbWtjZXJ0\nIHNpbW9ubWl0dGFnQHRyb29wZXIgKFNpbW9uIE1pdHRhZykwHhcNMTkwNjAxMDAw\nMDAwWhcNMzAwNzMwMDExNDU5WjBjMScwJQYDVQQKEx5ta2NlcnQgZGV2ZWxvcG1l\nbnQgY2VydGlmaWNhdGUxODA2BgNVBAsML3NpbW9ubWl0dGFnQE1hY0Jvb2stUHJv\nLTE2LmxvY2FsIChTaW1vbiBNaXR0YWcpMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A\nMIIBCgKCAQEAsCTQ9rLTQYjIlGF7EOrTJux8E514TUoAuQ0xo1NOSssptjmDyGhb\n8K7+A/TgdU/xlPMcJf22nNDQ2MpqpgHGlDcuXt3SmVrcsTeby1Pa81gxKp23a51B\n8xAoHoHwXVSWdiMWk3H/Jjv/dtYL1L180neewcWvK26ANUwlzWG6BW1QVUXXNdRo\ndmxQ1eg2S/qMBASFj6QjCsWWJiEfmz4PQpsP8q5IqCcX85BUqGO919JlE/eXEAgk\n9Yuh61/50n39B/sPC0mU5s6vH0SPCBvz1g8SiXa8jj3jCXxa/0ZsYtAVqPe5BoRP\nvK2q1sbKbJVr7EpmiOdKxKPHonRHasweGwIDAQABo4GiMIGfMA4GA1UdDwEB/wQE\nAwIFoDATBgNVHSUEDDAKBggrBgEFBQcDATAMBgNVHRMBAf8EAjAAMB8GA1UdIwQY\nMBaAFMNEcloV4jg+eonB5omuJvQXiqiRMEkGA1UdEQRCMECCDyouamFiYmF0ZXN0\nLmNvbYIKamFiYmEudGVzdIIJbG9jYWxob3N0hwR/AAABhxAAAAAAAAAAAAAAAAAA\nAAABMA0GCSqGSIb3DQEBCwUAA4IBgQDGI3EUWPKsEOqLCpnwSlFihu8n9+g4pV3/\njItYhUqMBz1v8TqV2zykkJUtlfNoxrp5OAg4CG0Xr1zhqjub3teKbsNKlRpV+h04\n4ncltpe66u4gg9RW+ww/f+J3C2yZRIX+brhDcTpdEMyfVoCV/5jeCxWf29MdFcLU\nBfgFdEp1oe3bK/dyZc8SbUlmizyumaDOaZACihz/DKsJ+lzRdy6c3UPQgC3r72oN\nLx/ccpnwdeumWFs+qYOjYfrCGFXaabokdtyit4XURFngxpnPUB9jHDvkI5+/eTaB\nSpdjJxE6x4mciyZSvshhu1v8j52+d9zUANs9+Y/v6EoCZ6byaaS4NAmTXdAWlnYb\nhIuRRsI4gIDhJWLrACBu1Osh7ZknaLNVMt5xo3TemCkVKud3NHGbycHTUoFBuHz/\nJOTQJ/Z1Ym3enpTAESZVcZTzS9gL62wfIfLcFvq+tVjoJZVJCcolP2fYn3U5lEiN\nvZvs72xp4sYEOa9zhvEs/yte9c6rkU0=\n-----END CERTIFICATE-----\n"
+	keyPem := "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCwJND2stNBiMiU\nYXsQ6tMm7HwTnXhNSgC5DTGjU05Kyym2OYPIaFvwrv4D9OB1T/GU8xwl/bac0NDY\nymqmAcaUNy5e3dKZWtyxN5vLU9rzWDEqnbdrnUHzECgegfBdVJZ2IxaTcf8mO/92\n1gvUvXzSd57Bxa8rboA1TCXNYboFbVBVRdc11Gh2bFDV6DZL+owEBIWPpCMKxZYm\nIR+bPg9Cmw/yrkioJxfzkFSoY73X0mUT95cQCCT1i6HrX/nSff0H+w8LSZTmzq8f\nRI8IG/PWDxKJdryOPeMJfFr/Rmxi0BWo97kGhE+8rarWxspslWvsSmaI50rEo8ei\ndEdqzB4bAgMBAAECggEAc9nDFn7HM3MjeXQj3RyVhCRF9yC63xqtHwjufN1twQOe\ni5uIcWcyETsHFtMYThAmdDDxcotMcBdnRS7cthK06QbiGMMMoJCCVoyciz674xE+\nRSk2WjE0DwmxWV9dGAVqcIjjcFap2hvcCez+Gw4F6ueCIzBB5e7npCZRNqPwFWCY\n/og06ypz/4LHXFNatvRJC3qhWFwFo1bVC1ycZmc5RQ4IHeQHzi6oCJhSRdCbM7Q9\n7fQhmjtcw0pxvJTVV+XP7tTf9iDDwgi/Le2iEqNQ1D6c4+nYAGYj2D3919oUYnyv\ntnznZ2GTibIyP6kl4L79ChRz0JGBzraKH7aJh9H1AQKBgQDS0xd8RNLJ5hkwPitt\nx/4RNlobGGZqqvQiCKkaDvnc1E1eKR3rVlxH17/ccA/qs0vcoFDPbGyRa/OgD7p5\nRo3R+EPDFoFq1KMP4SRoGcDgrNKHQ3o06sUngmtUUP28G+DUQm46xW7cnQrvvNiK\nf9MMfeNH+tAPtssZh0HNKJa9fwKBgQDV40peDqh9b4Ag+mfiHIJGuwTN8LMvKRqr\nN5dVirl2BDYMwF6JflIwIwjBZq7ah3NsT5/Yd+nuY+ux/pO4iU5jMbTtoAOv2dc7\nVKpqNTaQdJhta5OlOdBSP5iXj4siVCMIFL1jz8JtWuXX4hUtbliG6ICZTH2/5ivG\nfaPiOhAlZQKBgQCp941jnojiRSPhhP22UBpA/jS+y3kmXhTcq2bJn3FJ289ULon0\nhXd4ZDRGIAJ1EYADqyv7TkppI0MStBt+UqdbtG/NBIPqAOxFjRmw47JgcHR6oKgR\nqYSxSbAGFhW6Zi9ocPY1Y57xNZrvlKxvXIZl98gY69h6EsDDIAyoviRpOQKBgC0g\nRjlv+EZ2tt6+VhqTjzzjClF03ikuD+1dzjUDDrwCiXDJSWjS2P5E9fzv8CY0+7o3\nVm8yZY2hUUH9hycg+QPeoeCcqQp5+HoRE99SmM+DegFj+AOdHgGsX0Jiy6UTgUyc\nK5UaaVfvHJ0emv85z72u4ir1w3YwVr4LFf+N5ogtAoGAHODQpVC7sg+nlbeSKsPf\nRbULfOG4YD5pHszNM+nCjNWs00ofJoZOFA64qXwTIc4Vrh8JLiwAkXiTGYM2guv5\nQnp+HbFi/tAc+rQu4SGBaVIglnIj7jFNdgJOb68Vw/L9v2jW1Y8VoAC0eCRWpHud\nGsMkN4GFOfQKoBI/aCXn4DM=\n-----END PRIVATE KEY-----\n"
+
+	chain, _ := tls.X509KeyPair([]byte(certPem), []byte(keyPem))
+	chain.Leaf, _ = x509.ParseCertificate(chain.Certificate[0])
+
+	return chain.Leaf
+}
+
+func mockTlsConfig() (*tls.Config, error) {
+	certPem := "-----BEGIN CERTIFICATE-----\nMIIEkzCCAvugAwIBAgIRANiwkh9AuRgrvYh7Y5DtWIUwDQYJKoZIhvcNAQELBQAw\ngYExHjAcBgNVBAoTFW1rY2VydCBkZXZlbG9wbWVudCBDQTErMCkGA1UECwwic2lt\nb25taXR0YWdAdHJvb3BlciAoU2ltb24gTWl0dGFnKTEyMDAGA1UEAwwpbWtjZXJ0\nIHNpbW9ubWl0dGFnQHRyb29wZXIgKFNpbW9uIE1pdHRhZykwHhcNMTkwNjAxMDAw\nMDAwWhcNMzAwNzMwMDExNDU5WjBjMScwJQYDVQQKEx5ta2NlcnQgZGV2ZWxvcG1l\nbnQgY2VydGlmaWNhdGUxODA2BgNVBAsML3NpbW9ubWl0dGFnQE1hY0Jvb2stUHJv\nLTE2LmxvY2FsIChTaW1vbiBNaXR0YWcpMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A\nMIIBCgKCAQEAsCTQ9rLTQYjIlGF7EOrTJux8E514TUoAuQ0xo1NOSssptjmDyGhb\n8K7+A/TgdU/xlPMcJf22nNDQ2MpqpgHGlDcuXt3SmVrcsTeby1Pa81gxKp23a51B\n8xAoHoHwXVSWdiMWk3H/Jjv/dtYL1L180neewcWvK26ANUwlzWG6BW1QVUXXNdRo\ndmxQ1eg2S/qMBASFj6QjCsWWJiEfmz4PQpsP8q5IqCcX85BUqGO919JlE/eXEAgk\n9Yuh61/50n39B/sPC0mU5s6vH0SPCBvz1g8SiXa8jj3jCXxa/0ZsYtAVqPe5BoRP\nvK2q1sbKbJVr7EpmiOdKxKPHonRHasweGwIDAQABo4GiMIGfMA4GA1UdDwEB/wQE\nAwIFoDATBgNVHSUEDDAKBggrBgEFBQcDATAMBgNVHRMBAf8EAjAAMB8GA1UdIwQY\nMBaAFMNEcloV4jg+eonB5omuJvQXiqiRMEkGA1UdEQRCMECCDyouamFiYmF0ZXN0\nLmNvbYIKamFiYmEudGVzdIIJbG9jYWxob3N0hwR/AAABhxAAAAAAAAAAAAAAAAAA\nAAABMA0GCSqGSIb3DQEBCwUAA4IBgQDGI3EUWPKsEOqLCpnwSlFihu8n9+g4pV3/\njItYhUqMBz1v8TqV2zykkJUtlfNoxrp5OAg4CG0Xr1zhqjub3teKbsNKlRpV+h04\n4ncltpe66u4gg9RW+ww/f+J3C2yZRIX+brhDcTpdEMyfVoCV/5jeCxWf29MdFcLU\nBfgFdEp1oe3bK/dyZc8SbUlmizyumaDOaZACihz/DKsJ+lzRdy6c3UPQgC3r72oN\nLx/ccpnwdeumWFs+qYOjYfrCGFXaabokdtyit4XURFngxpnPUB9jHDvkI5+/eTaB\nSpdjJxE6x4mciyZSvshhu1v8j52+d9zUANs9+Y/v6EoCZ6byaaS4NAmTXdAWlnYb\nhIuRRsI4gIDhJWLrACBu1Osh7ZknaLNVMt5xo3TemCkVKud3NHGbycHTUoFBuHz/\nJOTQJ/Z1Ym3enpTAESZVcZTzS9gL62wfIfLcFvq+tVjoJZVJCcolP2fYn3U5lEiN\nvZvs72xp4sYEOa9zhvEs/yte9c6rkU0=\n-----END CERTIFICATE-----\n"
+	keyPem := "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCwJND2stNBiMiU\nYXsQ6tMm7HwTnXhNSgC5DTGjU05Kyym2OYPIaFvwrv4D9OB1T/GU8xwl/bac0NDY\nymqmAcaUNy5e3dKZWtyxN5vLU9rzWDEqnbdrnUHzECgegfBdVJZ2IxaTcf8mO/92\n1gvUvXzSd57Bxa8rboA1TCXNYboFbVBVRdc11Gh2bFDV6DZL+owEBIWPpCMKxZYm\nIR+bPg9Cmw/yrkioJxfzkFSoY73X0mUT95cQCCT1i6HrX/nSff0H+w8LSZTmzq8f\nRI8IG/PWDxKJdryOPeMJfFr/Rmxi0BWo97kGhE+8rarWxspslWvsSmaI50rEo8ei\ndEdqzB4bAgMBAAECggEAc9nDFn7HM3MjeXQj3RyVhCRF9yC63xqtHwjufN1twQOe\ni5uIcWcyETsHFtMYThAmdDDxcotMcBdnRS7cthK06QbiGMMMoJCCVoyciz674xE+\nRSk2WjE0DwmxWV9dGAVqcIjjcFap2hvcCez+Gw4F6ueCIzBB5e7npCZRNqPwFWCY\n/og06ypz/4LHXFNatvRJC3qhWFwFo1bVC1ycZmc5RQ4IHeQHzi6oCJhSRdCbM7Q9\n7fQhmjtcw0pxvJTVV+XP7tTf9iDDwgi/Le2iEqNQ1D6c4+nYAGYj2D3919oUYnyv\ntnznZ2GTibIyP6kl4L79ChRz0JGBzraKH7aJh9H1AQKBgQDS0xd8RNLJ5hkwPitt\nx/4RNlobGGZqqvQiCKkaDvnc1E1eKR3rVlxH17/ccA/qs0vcoFDPbGyRa/OgD7p5\nRo3R+EPDFoFq1KMP4SRoGcDgrNKHQ3o06sUngmtUUP28G+DUQm46xW7cnQrvvNiK\nf9MMfeNH+tAPtssZh0HNKJa9fwKBgQDV40peDqh9b4Ag+mfiHIJGuwTN8LMvKRqr\nN5dVirl2BDYMwF6JflIwIwjBZq7ah3NsT5/Yd+nuY+ux/pO4iU5jMbTtoAOv2dc7\nVKpqNTaQdJhta5OlOdBSP5iXj4siVCMIFL1jz8JtWuXX4hUtbliG6ICZTH2/5ivG\nfaPiOhAlZQKBgQCp941jnojiRSPhhP22UBpA/jS+y3kmXhTcq2bJn3FJ289ULon0\nhXd4ZDRGIAJ1EYADqyv7TkppI0MStBt+UqdbtG/NBIPqAOxFjRmw47JgcHR6oKgR\nqYSxSbAGFhW6Zi9ocPY1Y57xNZrvlKxvXIZl98gY69h6EsDDIAyoviRpOQKBgC0g\nRjlv+EZ2tt6+VhqTjzzjClF03ikuD+1dzjUDDrwCiXDJSWjS2P5E9fzv8CY0+7o3\nVm8yZY2hUUH9hycg+QPeoeCcqQp5+HoRE99SmM+DegFj+AOdHgGsX0Jiy6UTgUyc\nK5UaaVfvHJ0emv85z72u4ir1w3YwVr4LFf+N5ogtAoGAHODQpVC7sg+nlbeSKsPf\nRbULfOG4YD5pHszNM+nCjNWs00ofJoZOFA64qXwTIc4Vrh8JLiwAkXiTGYM2guv5\nQnp+HbFi/tAc+rQu4SGBaVIglnIj7jFNdgJOb68Vw/L9v2jW1Y8VoAC0eCRWpHud\nGsMkN4GFOfQKoBI/aCXn4DM=\n-----END PRIVATE KEY-----\n"
+	cAPem := "-----BEGIN CERTIFICATE-----\nMIIE0zCCAzugAwIBAgIQB2bsiI7SUtxu+HwBxuNtpDANBgkqhkiG9w0BAQsFADCB\ngTEeMBwGA1UEChMVbWtjZXJ0IGRldmVsb3BtZW50IENBMSswKQYDVQQLDCJzaW1v\nbm1pdHRhZ0B0cm9vcGVyIChTaW1vbiBNaXR0YWcpMTIwMAYDVQQDDClta2NlcnQg\nc2ltb25taXR0YWdAdHJvb3BlciAoU2ltb24gTWl0dGFnKTAeFw0yMDA1MDEyMTE2\nNDNaFw0zMDA1MDEyMTE2NDNaMIGBMR4wHAYDVQQKExVta2NlcnQgZGV2ZWxvcG1l\nbnQgQ0ExKzApBgNVBAsMInNpbW9ubWl0dGFnQHRyb29wZXIgKFNpbW9uIE1pdHRh\nZykxMjAwBgNVBAMMKW1rY2VydCBzaW1vbm1pdHRhZ0B0cm9vcGVyIChTaW1vbiBN\naXR0YWcpMIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAzivKfp5OiWpT\n362cVgbw9DBqwMP0pO32aP79Y4UYeAxCfaWQDdqQEatBdraShtZcvUX8vZ9jvgHE\noGMGSJb/DIVRxIDfhdvhh4qGQgbbSLwDkfLJTkpGMdONa/5yDC54fNZjF095YZn7\niPmsFbvYUfTwpM8qrP+jZzobByrTO4rG3Ps080gIR08RCA0E+uLg58rTpnsdBKZ0\nK2uuE4B4lVAs2AeS4KPMrH/rnCjSZz4KRwnaGqh+wiAjO0PHAfrbrhNsFB6P1/Zk\nCqzclj3TXdkMDaXhSvt0qJPEpNIPQMkvj9GROom7hExZUT7t7LPOZwODtiR2VjM3\nDDehfLqpNPRrxU3aOR7b4lFVtEL1+9NXKc3rnR5T2xPVVvBxx8FqYAxFmQtkGqpA\nYlRxImBONBreIr5/fdkr5xqd/S0s1pb8ubuK7x5COfqf0Mv++j+UjMptBQ3kYvOh\ntNrbnEI1q/7kvHNB8ETtJ4hqXikl9EHMYWdOo4nyGd4P8jo9jmGVAgMBAAGjRTBD\nMA4GA1UdDwEB/wQEAwICBDASBgNVHRMBAf8ECDAGAQH/AgEAMB0GA1UdDgQWBBTD\nRHJaFeI4PnqJweaJrib0F4qokTANBgkqhkiG9w0BAQsFAAOCAYEAb+K3HO2AlDed\nS2yT7GnxD75Hcjnv1tMvMIlh1EOmRMHrzbsi7jv3Z7SDe2R5s1qRku3nxbVWj8i8\noRBi5GeRE+q/HkVloi4WPmgFGxUUbkWszAFSSGN5TAs72e5sCG/wMyEa0Gj8cOO1\ndK5SH3thP8+OjSpgQXToYfOimILlk7Hj7EgKE5Y8YX8UV+41LhGkzeK2UX9dBZn1\nof9qBc0dAQVlAA/O3dOgXorgiDbNT38cjignWEwVYzjeuJCYB91Ixf0CfHJZKHZR\nZCdIAHTJqW1tx7vsbrcl0PVAMgm+rkHLL0Dh9cp4fvONXWygVSjbqKM1s8UI9bFA\nbWU5Z3MhEn25wZCXLQDIq0uC+FwCxyS9e/exL4wmYpCLmRKVCp2gUa78Rlr/FJNa\nH9kfvP41Ya+fLzDWNKAlYQgizpZJmZuhPZu7O6n0UusaI+0WTKblCFUQJkx4aKEv\nio8QmLzoedmvVpO9Zp44Lyabmc7VnjoYTOcZczx4ECwEdKH/jswc\n-----END CERTIFICATE-----\n"
+
+	return mockTlsConfigWith(certPem, keyPem, "", cAPem)
+}
+
+func mockTlsConfigWith(certPem string, keyPem string, intercAPem string, rootcAPem string) (*tls.Config, error) {
+	mockRunner()
+	Runner.Connection.Downstream.Tls.Cert = certPem + intercAPem + rootcAPem
+	Runner.Connection.Downstream.Tls.Key = keyPem
+	Runner.Connection.Downstream.Tls.Port = 8443
+
+	return Runner.tlsConfig()
 }

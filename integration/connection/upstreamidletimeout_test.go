@@ -1,4 +1,4 @@
-package integration
+package connection
 
 import (
 	"fmt"

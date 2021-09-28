@@ -477,8 +477,12 @@ func TestProxyHeaderRewrite(t *testing.T) {
 	}
 }
 
+func mockRunner() {
+	Runner = mockRuntime()
+}
+
 func mockRuntime() *Runtime {
-	return &Runtime{
+	r := &Runtime{
 		Config: Config{
 			Connection: Connection{
 				Upstream: Upstream{
@@ -544,8 +548,15 @@ func mockRuntime() *Runtime {
 				},
 			},
 		},
-		Start: time.Now(),
+		Start:       time.Now(),
+		AcmeHandler: NewAcmeHandler(),
 	}
+
+	//we need this to add the reloadable cert.
+	r.initReloadableCert()
+
+	//now we can work with you
+	return r
 }
 
 func TestJsonifyUpstreamHeadersWithEmptyUp(t *testing.T) {

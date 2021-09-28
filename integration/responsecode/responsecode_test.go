@@ -1,9 +1,10 @@
-package integration
+package responsecode
 
 import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/simonmittag/j8a/integration"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -23,15 +24,15 @@ func TestStatusCode100SentFromProxyWithPutIfExpected100Continue(t *testing.T) {
 	defer c.Close()
 
 	//step 2 we send headers and terminate HTTP message.
-	checkWrite(t, c, "PUT /mse6/put HTTP/1.1\r\n")
-	checkWrite(t, c, "Host: localhost:8081\r\n")
-	checkWrite(t, c, "Content-Type: application/json\r\n")
-	checkWrite(t, c, "Content-Length: 37\r\n")
-	checkWrite(t, c, "User-Agent: integration\r\n")
-	checkWrite(t, c, "Expect: 100-continue\r\n")
-	checkWrite(t, c, "Accept: */*\r\n")
-	checkWrite(t, c, "\r\n")
-	checkWrite(t, c, `{"key":"100 continue test request"}`+"\r\n")
+	integration.CheckWrite(t, c, "PUT /mse6/put HTTP/1.1\r\n")
+	integration.CheckWrite(t, c, "Host: localhost:8081\r\n")
+	integration.CheckWrite(t, c, "Content-Type: application/json\r\n")
+	integration.CheckWrite(t, c, "Content-Length: 37\r\n")
+	integration.CheckWrite(t, c, "User-Agent: integration\r\n")
+	integration.CheckWrite(t, c, "Expect: 100-continue\r\n")
+	integration.CheckWrite(t, c, "Accept: */*\r\n")
+	integration.CheckWrite(t, c, "\r\n")
+	integration.CheckWrite(t, c, `{"key":"100 continue test request"}`+"\r\n")
 
 	//step 3 we try to read the server response. Warning this isn't a proper http client
 	//i.e. doesn't include parsing content length, reading response properly.
@@ -58,15 +59,15 @@ func TestStatusCode100SentFromProxyWithPostIfExpected100Continue(t *testing.T) {
 	defer c.Close()
 
 	//step 2 we send headers and terminate HTTP message.
-	checkWrite(t, c, "POST /mse6/post HTTP/1.1\r\n")
-	checkWrite(t, c, "Host: localhost:8081\r\n")
-	checkWrite(t, c, "Content-Type: application/json\r\n")
-	checkWrite(t, c, "Content-Length: 37\r\n")
-	checkWrite(t, c, "User-Agent: integration\r\n")
-	checkWrite(t, c, "Expect: 100-continue\r\n")
-	checkWrite(t, c, "Accept: */*\r\n")
-	checkWrite(t, c, "\r\n")
-	checkWrite(t, c, `{"key":"100 continue test request"}`+"\r\n")
+	integration.CheckWrite(t, c, "POST /mse6/post HTTP/1.1\r\n")
+	integration.CheckWrite(t, c, "Host: localhost:8081\r\n")
+	integration.CheckWrite(t, c, "Content-Type: application/json\r\n")
+	integration.CheckWrite(t, c, "Content-Length: 37\r\n")
+	integration.CheckWrite(t, c, "User-Agent: integration\r\n")
+	integration.CheckWrite(t, c, "Expect: 100-continue\r\n")
+	integration.CheckWrite(t, c, "Accept: */*\r\n")
+	integration.CheckWrite(t, c, "\r\n")
+	integration.CheckWrite(t, c, `{"key":"100 continue test request"}`+"\r\n")
 
 	//step 3 we try to read the server response. Warning this isn't a proper http client
 	//i.e. doesn't include parsing content length, reading response properly.
@@ -192,22 +193,22 @@ func TestUploadSmallerMaxBodyAllowedButIncorrectContentLengthGreaterMaxBodySize(
 	defer c.Close()
 
 	//step 2 we send headers and terminate HTTP message.
-	checkWrite(t, c, "PUT /mse6/put HTTP/1.1\r\n")
-	checkWrite(t, c, "Host: localhost:8080\r\n")
-	checkWrite(t, c, "User-Agent: integration\r\n")
-	checkWrite(t, c, "Accept-Encoding: identity\r\n")
-	checkWrite(t, c, "Content-Type: application/json\r\n")
+	integration.CheckWrite(t, c, "PUT /mse6/put HTTP/1.1\r\n")
+	integration.CheckWrite(t, c, "Host: localhost:8080\r\n")
+	integration.CheckWrite(t, c, "User-Agent: integration\r\n")
+	integration.CheckWrite(t, c, "Accept-Encoding: identity\r\n")
+	integration.CheckWrite(t, c, "Content-Type: application/json\r\n")
 	//incorrectly set to 4mb which is greater 64k server limit
-	checkWrite(t, c, "Content-Length: 4194304\r\n")
-	checkWrite(t, c, "Accept: */*\r\n")
-	checkWrite(t, c, "\r\n")
+	integration.CheckWrite(t, c, "Content-Length: 4194304\r\n")
+	integration.CheckWrite(t, c, "Accept: */*\r\n")
+	integration.CheckWrite(t, c, "\r\n")
 
 	jsonData := map[string]string{"firstname": "firstname", "lastname": "lastname", "rank": "general", "color": "green"}
 	for i := 0; i < 2; i++ {
 		jsonData[fmt.Sprintf("%d", i)] = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"
 	}
 	jsonValue, _ := json.Marshal(jsonData)
-	checkWrite(t, c, string(jsonValue))
+	integration.CheckWrite(t, c, string(jsonValue))
 
 	//step 3 we try to read the server response. Warning this isn't a proper http client
 	//i.e. doesn't include parsing content length, nor reading response properly.
@@ -235,22 +236,22 @@ func TestUploadLargerMaxBodyAllowedButIncorrectContentLengthSmallerMaxBodySize(t
 	defer c.Close()
 
 	//step 2 we send headers and terminate HTTP message.
-	checkWrite(t, c, "PUT /mse6/put HTTP/1.1\r\n")
-	checkWrite(t, c, "Host: localhost:8080\r\n")
-	checkWrite(t, c, "User-Agent: integration\r\n")
-	checkWrite(t, c, "Accept-Encoding: identity\r\n")
-	checkWrite(t, c, "Content-Type: application/json\r\n")
+	integration.CheckWrite(t, c, "PUT /mse6/put HTTP/1.1\r\n")
+	integration.CheckWrite(t, c, "Host: localhost:8080\r\n")
+	integration.CheckWrite(t, c, "User-Agent: integration\r\n")
+	integration.CheckWrite(t, c, "Accept-Encoding: identity\r\n")
+	integration.CheckWrite(t, c, "Content-Type: application/json\r\n")
 	//incorrectly set to only 32k but the request is actually much larger
-	checkWrite(t, c, "Content-Length: 32768\r\n")
-	checkWrite(t, c, "Accept: */*\r\n")
-	checkWrite(t, c, "\r\n")
+	integration.CheckWrite(t, c, "Content-Length: 32768\r\n")
+	integration.CheckWrite(t, c, "Accept: */*\r\n")
+	integration.CheckWrite(t, c, "\r\n")
 
 	jsonData := map[string]string{"firstname": "firstname", "lastname": "lastname", "rank": "general", "color": "green"}
 	for i := 0; i < 1000; i++ {
 		jsonData[fmt.Sprintf("%d", i)] = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"
 	}
 	jsonValue, _ := json.Marshal(jsonData)
-	checkWrite(t, c, string(jsonValue))
+	integration.CheckWrite(t, c, string(jsonValue))
 
 	//step 3 we try to read the server response. Warning this isn't a proper http client
 	//i.e. doesn't include parsing content length, nor reading response properly.

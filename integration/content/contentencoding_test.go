@@ -1,7 +1,8 @@
-package integration
+package content
 
 import (
 	"fmt"
+	"github.com/simonmittag/j8a/integration"
 	"net"
 	"strings"
 	"testing"
@@ -25,10 +26,10 @@ func DownstreamAcceptEncodingHTTP11(enc string, slug string, t *testing.T) {
 	}
 
 	//step 2 we send headers and terminate http message so j8a sends request upstream.
-	checkWrite(t, c, fmt.Sprintf("GET %s HTTP/1.1\r\n", slug))
-	checkWrite(t, c, "Host: localhost:8080\r\n")
-	checkWrite(t, c, fmt.Sprintf("Accept-Encoding: %v\r\n", enc))
-	checkWrite(t, c, "\r\n")
+	integration.CheckWrite(t, c, fmt.Sprintf("GET %s HTTP/1.1\r\n", slug))
+	integration.CheckWrite(t, c, "Host: localhost:8080\r\n")
+	integration.CheckWrite(t, c, fmt.Sprintf("Accept-Encoding: %v\r\n", enc))
+	integration.CheckWrite(t, c, "\r\n")
 
 	//step 3 we read a response into buffer which returns 501
 	buf := make([]byte, 128)

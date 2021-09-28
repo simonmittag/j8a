@@ -1,4 +1,4 @@
-package integration
+package protocol
 
 import (
 	"crypto/tls"

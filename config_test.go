@@ -2,7 +2,9 @@ package j8a
 
 import (
 	"fmt"
+	isd "github.com/jbenet/go-is-domain"
 	"os"
+	"reflect"
 	"testing"
 )
 
@@ -261,6 +263,299 @@ func TestParseRoute(t *testing.T) {
 	}
 }
 
+//TestValidateAcmeEmail
+func TestValidateAcmeEmail(t *testing.T) {
+	config := &Config{
+		Connection: Connection{
+			Downstream: Downstream{
+				Http: Http{Port: 80},
+				Tls: Tls{
+					Acme: Acme{
+						Domains:  []string{"adyntest.com"},
+						Provider: "letsencrypt"},
+				},
+			},
+		},
+	}
+
+	config = config.validateAcmeConfig()
+
+	if config.Connection.Downstream.Tls.Acme.Email != "noreply@adyntest.com" {
+		t.Errorf("acme email not properly populated")
+	}
+}
+
+//TestValidateAcmeDomainInvalidLeadingDotFails
+func TestValidateValidateAcmeDomainInvalidLeadingDotFails(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Logf("normal. config panic for invalid domain with supported provider")
+		}
+	}()
+
+	acmeConfigWith(".test.com").validateAcmeConfig()
+	t.Errorf("config did not panic for supported Acme provider but with missing domain")
+}
+
+//TestValidateAcmeDomainInvalidTrailingDotFails
+func TestValidateAcmeDomainInvalidTrailingDotFails(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Logf("normal. config panic for invalid domain with supported provider")
+		}
+	}()
+
+	acmeConfigWith("test.com.").validateAcmeConfig()
+	t.Errorf("config did not panic for supported Acme provider but with missing domain")
+}
+
+//TestValidateAcmeDomainInvalidTrailingDotFails
+//NOTE WE DO NOT SUPPORT WILDCART CERTS BECAUSE THEY CANNOT BE VERIFIED USING HTTP01 CHALLENGE ON LETSENCRYPT, SEE: https://letsencrypt.org/docs/faq/
+func TestValidateAcmeDomainInvalidWildcartCertFails(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Logf("normal. config panic for invalid domain with supported provider")
+		}
+	}()
+
+	acmeConfigWith("*.test.com").validateAcmeConfig()
+	t.Errorf("config did not panic for supported Acme provider but with missing domain")
+}
+
+//TestValidateAcmeDomainValidSubdomainPasses
+func TestValidateAcmeDomainValidSubdomainPasses(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Errorf("config did panic for valid subdomain and supported Acme provider")
+		}
+	}()
+
+	acmeConfigWith("subdomain.test.com").validateAcmeConfig()
+	t.Logf("normal. config did not panic for valid subdomain and supported Acme provider")
+}
+
+//TestValidateAcmeDomainMissingFails
+func TestValidateAcmeDomainMissingFails(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Logf("normal. config panic for missing domain with supported provider")
+		}
+	}()
+
+	config := &Config{
+		Connection: Connection{
+			Downstream: Downstream{
+				Http: Http{Port: 80},
+				Tls: Tls{
+					Acme: Acme{
+						Provider: "letsencrypt",
+					},
+				},
+			},
+		},
+	}
+
+	config = config.validateAcmeConfig()
+	t.Errorf("config did not panic for supported Acme provider but with missing domain")
+}
+
+//TestValidateAcmeProviderLetsencrypt
+func TestValidateAcmeProviderLetsencrypt(t *testing.T) {
+	config := &Config{
+		Connection: Connection{
+			Downstream: Downstream{
+				Http: Http{Port: 80},
+				Tls: Tls{
+					Acme: Acme{
+						Domains:  []string{"adyntest.com"},
+						Provider: "letsencrypt",
+					},
+				},
+			},
+		},
+	}
+
+	config = config.validateAcmeConfig()
+	t.Logf("normal. no config panic for Acme provider letsencrypt")
+}
+
+//TestValidateAcmeProviderLetsencryptWithMultipleSubDomains
+func TestValidateAcmeProviderLetsencryptWithMultipleSubdomains(t *testing.T) {
+	config := &Config{
+		Connection: Connection{
+			Downstream: Downstream{
+				Http: Http{Port: 80},
+				Tls: Tls{
+					Acme: Acme{
+						Domains:  []string{"adyntest.com", "api.adyntest.com"},
+						Provider: "letsencrypt",
+					},
+				},
+			},
+		},
+	}
+
+	config = config.validateAcmeConfig()
+	t.Logf("normal. no config panic for Acme provider letsencrypt")
+}
+
+//TestValidateAcmeProviderLetsencryptFailsWithOneInvalidSubDomain
+func TestValidateAcmeProviderLetsencryptFailsWithOneInvalidSubDomain(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Logf("normal. config panic for illegal subdomain.")
+		}
+	}()
+	config := &Config{
+		Connection: Connection{
+			Downstream: Downstream{
+				Http: Http{Port: 80},
+				Tls: Tls{
+					Acme: Acme{
+						Domains:  []string{"adyntest.com", "Iwannabeadomain"},
+						Provider: "letsencrypt",
+					},
+				},
+			},
+		},
+	}
+
+	config = config.validateAcmeConfig()
+	t.Errorf("config did not panic for invalid subdomain")
+}
+
+//TestValidateAcmeProviderLetsencrypt
+func TestValidateAcmeProviderPort80(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Error("config panic for correct config with port 80 for acme provider")
+		}
+	}()
+
+	config := &Config{
+		Connection: Connection{
+			Downstream: Downstream{
+				Http: Http{
+					Port: 80,
+				},
+				Tls: Tls{
+					Acme: Acme{
+						Domains:  []string{"adyntest.com"},
+						Provider: "letsencrypt",
+					},
+				},
+			},
+		},
+	}
+
+	config = config.validateAcmeConfig()
+	t.Logf("normal. no config panic for Acme provider letsencrypt with port 80")
+}
+
+//TestValidateAcmeProviderFailsWithMissingPort80
+func TestValidateAcmeProviderFailsWithMissingPort80(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Logf("normal. config panic for missing port 80 with acme provider")
+		}
+	}()
+
+	config := &Config{
+		Connection: Connection{
+			Downstream: Downstream{
+				Tls: Tls{
+					Acme: Acme{
+						Domains:  []string{"adyntest.com"},
+						Provider: "letsencrypt",
+					},
+				},
+			},
+		},
+	}
+
+	config = config.validateAcmeConfig()
+	t.Error("no config panic for Acme provider without port 80 specified. should have panicked")
+}
+
+//TestValidateAcmeProviderFailsWithCertSpecified
+func TestValidateAcmeProviderFailsWithCertSpecified(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Logf("normal. config panic for extra cert specified")
+		}
+	}()
+
+	config := &Config{
+		Connection: Connection{
+			Downstream: Downstream{
+				Http: Http{Port: 80},
+				Tls: Tls{
+					Acme: Acme{
+						Domains:  []string{"adyntest.com"},
+						Provider: "letsencrypt",
+					},
+					Cert: "iwannabeacertwheni'mbig",
+				},
+			},
+		},
+	}
+
+	config = config.validateAcmeConfig()
+	t.Error("no config panic happened after superfluous cert specified but it should have")
+}
+
+//TestValidateAcmeProviderFailsWithKeySpecified
+func TestValidateAcmeProviderFailsWithKeySpecified(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Logf("normal. config panic for extra private key specified")
+		}
+	}()
+
+	config := &Config{
+		Connection: Connection{
+			Downstream: Downstream{
+				Http: Http{Port: 80},
+				Tls: Tls{
+					Acme: Acme{
+						Domains:  []string{"adyntest.com"},
+						Provider: "letsencrypt",
+					},
+					Key: "wheni'mbigIwannabeaprivatekey",
+				},
+			},
+		},
+	}
+
+	config = config.validateAcmeConfig()
+	t.Error("no config panic occurred after extra private key specified next to acme")
+}
+
+//TestValidateAcmeMissingProviderFails
+func TestValidateAcmeMissingProviderFails(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Logf("normal. config panic for missing ACME provider")
+		}
+	}()
+
+	config := &Config{
+		Connection: Connection{
+			Downstream: Downstream{
+				Http: Http{Port: 80},
+				Tls: Tls{
+					Acme: Acme{
+						Domains: []string{"adyntest.com"},
+					},
+				},
+			},
+		},
+	}
+
+	config = config.validateAcmeConfig()
+	t.Errorf("config did not panic for missing provider")
+}
+
 func TestSortRoutes(t *testing.T) {
 	configJson := []byte("{\"routes\": [{\n\t\t\t\"path\": \"/about\",\n\t\t\t\"resource\": \"aboutj8a\"\n\t\t},\n\t\t{\n\t\t\t\"path\": \"/customer\",\n\t\t\t\"resource\": \"customer\",\n\t\t\t\"policy\": \"ab\"\n\t\t}\n\t]}")
 	config := new(Config).parse(configJson).validateRoutes()
@@ -318,7 +613,7 @@ func TestReadConfigFile(t *testing.T) {
 	if config.Policies == nil {
 		t.Error("incorrectly parsed policies in config file")
 	}
-	if config.Connection == *new(Connection) {
+	if reflect.DeepEqual(config.Connection, *new(Connection)) {
 		t.Error("incorrectly parsed connection in config file")
 	}
 	if config.Resources == nil {
@@ -361,5 +656,91 @@ func TestLoadConfig(t *testing.T) {
 	config := new(Config).load()
 	if config.Connection.Downstream.Tls.Port != 8443 {
 		t.Error("config not loaded from load() function")
+	}
+}
+
+func acmeConfigWith(domain string) *Config {
+	config := &Config{
+		Connection: Connection{
+			Downstream: Downstream{
+				Http: Http{Port: 80},
+				Tls: Tls{
+					Acme: Acme{
+						Domains:  []string{domain},
+						Provider: "letsencrypt",
+					},
+				},
+			},
+		},
+	}
+	return config
+}
+
+func TestFqdnValidate(t *testing.T) {
+	//should pass
+	if !isd.IsDomain("adyntest.com") {
+		t.Error("adyntest.com should have fqdn validated")
+	}
+	if !isd.IsDomain("we.money") {
+		t.Error("we.moneyh should have fqdn validated")
+	}
+	if !isd.IsDomain("911.com.au") {
+		t.Error("911.com.au should have fqdn validated")
+	}
+	if !isd.IsDomain("mittag.biz") {
+		t.Error("mittag.biz should have fqdn validated")
+	}
+	if !isd.IsDomain("foo.studio") {
+		t.Error("foo.studio should have fqdn validated")
+	}
+	if !isd.IsDomain("foo.life") {
+		t.Error("foo.life should have fqdn validated")
+	}
+	if !isd.IsDomain("foo.shop") {
+		t.Error("foo.shop should have fqdn validated")
+	}
+	if !isd.IsDomain("foo.health") {
+		t.Error("foo.health should have fqdn validated")
+	}
+	if !isd.IsDomain("foo.de") {
+		t.Error("foo.de should have fqdn validated")
+	}
+	if !isd.IsDomain("api.foo.de") {
+		t.Error("api.foo.de should have fqdn validated")
+	}
+	if !isd.IsDomain("x.y.z.api.foo.de") {
+		t.Error("x.y.z.api.foo.de should have fqdn validated")
+	}
+	if !isd.IsDomain("foo.co.uk") {
+		t.Error("foo.co.uk should have fqdn validated")
+	}
+	if !isd.IsDomain("foo.tattoo") {
+		t.Error("foo.tattoo should have fqdn validated")
+	}
+	if !isd.IsDomain("foo.design") {
+		t.Error("foo.design should have fqdn validated")
+	}
+	if !isd.IsDomain("foo.sydney") {
+		t.Error("foo.sydney should have fqdn validated")
+	}
+	if !isd.IsDomain("foo.melbourne") {
+		t.Error("foo.melbourne should have fqdn validated")
+	}
+
+	//must fail
+	if isd.IsDomain("-we.money") {
+		t.Error("-we.money should not have fqdn validated")
+	}
+	if isd.IsDomain("_we.money") {
+		t.Error("_we.money should not have fqdn validated")
+	}
+	if isd.IsDomain("foo.baz") {
+		t.Error("foo.baz should not have fqdn validated")
+	}
+	if isd.IsDomain("foo.zydney") {
+		t.Error("foo.zydney should not have fqdn validated")
+	}
+	if isd.IsDomain("foo.nelbourne") {
+		t.Error("foo.nelbourne should not have fqdn validated")
 	}
 }

@@ -1,9 +1,10 @@
-package integration
+package connection
 
 import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"github.com/simonmittag/j8a/integration"
 	"golang.org/x/net/http2"
 	"io/ioutil"
 	"net"
@@ -53,59 +54,12 @@ func (c *CloseListener) Close() error {
 	return err
 }
 
-func Test100ConcurrentTCPConnectionsUsingHTTP11(t *testing.T) {
+func TestConnection_100ConcurrentTCPConnectionsUsingHTTP11(t *testing.T) {
 	ConcurrentHTTP11ConnectionsSucceed(100, t)
 }
 
-func ConcurrentHTTP11ConnectionsSucceed(total int, t *testing.T) {
-	good := 0
-	bad := 0
-
-	R200 := 0
-	N200 := 0
-
-	wg := sync.WaitGroup{}
-	client := &http.Client{
-		Transport: &http.Transport{
-			MaxIdleConns:        2000,
-			MaxIdleConnsPerHost: 2000,
-			//disable HTTP/2 support for TLS
-			TLSNextProto: map[string]func(authority string, c *tls.Conn) http.RoundTripper{},
-		},
-	}
-
-	for i := 0; i < total; i++ {
-		wg.Add(1)
-
-		go func(j int) {
-			serverPort := 8080
-			resp, err := client.Get(fmt.Sprintf("http://localhost:%d/mse6/slowbody?wait=2", serverPort))
-			if err != nil {
-				t.Errorf("received upstream error for GET request: %v", err)
-				bad++
-			} else if resp != nil && resp.Body != nil {
-				defer resp.Body.Close()
-				if resp.Status != "200 OK" {
-					t.Logf("goroutine %d, received non 200 status but normal server response: %v", j, resp.Status)
-					good++
-					N200++
-				} else {
-					t.Logf("goroutine %d, received status 200 OK", j)
-					good++
-					R200++
-				}
-			}
-
-			wg.Done()
-		}(i)
-	}
-
-	wg.Wait()
-	t.Logf("done! good HTTP response: %d, 200s: %d, non 200s: %d, connection errors: %d", good, R200, N200, bad)
-}
-
 //this test covers all codes >=400 we just use 404 cause it's easy to evoke.
-func Test404ResponseClosesDownstreamConnectionUsingHTTP11(t *testing.T) {
+func TestConnection_404ResponseClosesDownstreamConnectionUsingHTTP11(t *testing.T) {
 	//step 1 we connect to j8a with net.dial
 	c, err := net.Dial("tcp", ":8080")
 	if err != nil {
@@ -115,11 +69,11 @@ func Test404ResponseClosesDownstreamConnectionUsingHTTP11(t *testing.T) {
 	defer c.Close()
 
 	//step 2 we send headers and terminate HTTP message.
-	checkWrite(t, c, "GET /mse6/xyz HTTP/1.1\r\n")
-	checkWrite(t, c, "Host: localhost:8080\r\n")
-	checkWrite(t, c, "User-Agent: integration\r\n")
-	checkWrite(t, c, "Accept: */*\r\n")
-	checkWrite(t, c, "\r\n")
+	integration.CheckWrite(t, c, "GET /mse6/xyz HTTP/1.1\r\n")
+	integration.CheckWrite(t, c, "Host: localhost:8080\r\n")
+	integration.CheckWrite(t, c, "User-Agent: integration\r\n")
+	integration.CheckWrite(t, c, "Accept: */*\r\n")
+	integration.CheckWrite(t, c, "\r\n")
 
 	//step 3 we try to read the server response. Warning this isn't a proper http client
 	//i.e. doesn't include parsing content length, reading response properly.
@@ -160,7 +114,7 @@ func Test404ResponseClosesDownstreamConnectionUsingHTTP11(t *testing.T) {
 	}
 }
 
-func Test404ResponseClosesDownstreamConnectionUsingHTTP2(t *testing.T) {
+func TestConnection_404ResponseClosesDownstreamConnectionUsingHTTP2(t *testing.T) {
 	var conn *tls.Conn
 	var cl *CloseListener
 	var err error
@@ -225,7 +179,7 @@ func Test404ResponseClosesDownstreamConnectionUsingHTTP2(t *testing.T) {
 	}
 }
 
-func Test200ResponseLeavesConnectionOptionUsingHTTP2(t *testing.T) {
+func TestConnection_200ResponseLeavesConnectionOptionUsingHTTP2(t *testing.T) {
 	var conn *tls.Conn
 	var cl *CloseListener
 	var err error
@@ -289,4 +243,51 @@ func Test200ResponseLeavesConnectionOptionUsingHTTP2(t *testing.T) {
 	} else {
 		t.Errorf("got unexpected error during first get request %v", err)
 	}
+}
+
+func ConcurrentHTTP11ConnectionsSucceed(total int, t *testing.T) {
+	good := 0
+	bad := 0
+
+	R200 := 0
+	N200 := 0
+
+	wg := sync.WaitGroup{}
+	client := &http.Client{
+		Transport: &http.Transport{
+			MaxIdleConns:        2000,
+			MaxIdleConnsPerHost: 2000,
+			//disable HTTP/2 support for TLS
+			TLSNextProto: map[string]func(authority string, c *tls.Conn) http.RoundTripper{},
+		},
+	}
+
+	for i := 0; i < total; i++ {
+		wg.Add(1)
+
+		go func(j int) {
+			serverPort := 8080
+			resp, err := client.Get(fmt.Sprintf("http://localhost:%d/mse6/slowbody?wait=2", serverPort))
+			if err != nil {
+				t.Errorf("received upstream error for GET request: %v", err)
+				bad++
+			} else if resp != nil && resp.Body != nil {
+				defer resp.Body.Close()
+				if resp.Status != "200 OK" {
+					t.Logf("goroutine %d, received non 200 status but normal server response: %v", j, resp.Status)
+					good++
+					N200++
+				} else {
+					t.Logf("goroutine %d, received status 200 OK", j)
+					good++
+					R200++
+				}
+			}
+
+			wg.Done()
+		}(i)
+	}
+
+	wg.Wait()
+	t.Logf("done! good HTTP response: %d, 200s: %d, non 200s: %d, connection errors: %d", good, R200, N200, bad)
 }

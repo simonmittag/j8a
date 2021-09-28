@@ -12,6 +12,9 @@
 [![Version](https://img.shields.io/docker/v/simonmittag/j8a/0.8.5)](https://hub.docker.com/repository/docker/simonmittag/j8a)
 
 ## What's new?
+### v0.9.0a (unreleased)
+* ACME support for RFC8555
+
 ### v0.8.5 (01/07/2021)
 * downstream responses with status code >=400 now drop TCP connections for both HTTP/1.1 and HTTP/2
 * more tests for HTTP/2 request/response cycles

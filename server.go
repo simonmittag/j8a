@@ -9,6 +9,8 @@ import (
 	golog "log"
 	"net/http"
 	"os"
+	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -26,8 +28,46 @@ var ID string = "unknown"
 //Runtime struct defines runtime environment wrapper for a config.
 type Runtime struct {
 	Config
-	Start  time.Time
-	Memory []sample
+	Start          time.Time
+	Memory         []sample
+	AcmeHandler    *AcmeHandler
+	ReloadableCert *ReloadableCert
+	cacheDir       string
+}
+
+type ReloadableCert struct {
+	Cert *tls.Certificate
+	mu   sync.Mutex
+	Init bool
+	//required to use runtime internally without global pointer for testing.
+	runtime *Runtime
+}
+
+func (r *ReloadableCert) GetCertificateFunc(clientHello *tls.ClientHelloInfo) (*tls.Certificate, error) {
+	return r.Cert, nil
+}
+
+func (r *ReloadableCert) triggerInit() error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.Init = true
+
+	var cert tls.Certificate
+	var err error
+
+	c := []byte(r.runtime.Connection.Downstream.Tls.Cert)
+	k := []byte(r.runtime.Connection.Downstream.Tls.Key)
+
+	cert, err = tls.X509KeyPair(c, k)
+	if err == nil {
+		r.Cert = &cert
+		r.Cert.Leaf, err = x509.ParseCertificate(cert.Certificate[0])
+	}
+	if err == nil {
+		log.Debug().Msgf("TLS certificate #%v initialized", formatSerial(cert.Leaf.SerialNumber))
+	}
+	r.Init = false
+	return err
 }
 
 //Runner is the Live environment of the server
@@ -77,18 +117,57 @@ func BootStrap() {
 		addDefaultPolicy().
 		setDefaultUpstreamParams().
 		setDefaultDownstreamParams().
-		validateHTTPConfig()
+		validateHTTPConfig().
+		validateAcmeConfig()
 
 	Runner = &Runtime{
-		Config: *config,
-		Start:  time.Now(),
+		Config:      *config,
+		Start:       time.Now(),
+		AcmeHandler: NewAcmeHandler(),
 	}
-	Runner.initStats().
+	Runner.
+		initCacheDir().
+		initReloadableCert().
+		initStats().
 		initUserAgent().
 		startListening()
 }
 
-func (runtime Runtime) startListening() {
+const cacheDir = ".j8a"
+
+func (r *Runtime) initCacheDir() *Runtime {
+	home, e1 := os.UserHomeDir()
+	if e1 == nil {
+		myCacheDir := filepath.FromSlash(home + "/" + cacheDir)
+		if _, e3 := os.Stat(myCacheDir); os.IsNotExist(e3) {
+			e2 := os.Mkdir(myCacheDir, acmeRwx)
+			if e2 == nil {
+				r.cacheDir = myCacheDir
+				log.Debug().Msg("init cache dir in user home")
+			}
+		} else {
+			r.cacheDir = myCacheDir
+			log.Debug().Msg("found cache dir in user home")
+		}
+	}
+	return r
+}
+
+func (r *Runtime) cacheDirIsActive() bool {
+	return len(r.cacheDir) > 0
+}
+
+func (r *Runtime) initReloadableCert() *Runtime {
+	r.ReloadableCert = &ReloadableCert{
+		Cert:    nil,
+		Init:    false,
+		mu:      sync.Mutex{},
+		runtime: r,
+	}
+	return r
+}
+
+func (runtime *Runtime) startListening() {
 	readTimeoutDuration := time.Second * time.Duration(runtime.Connection.Downstream.ReadTimeoutSeconds)
 	roundTripTimeoutDuration := time.Second * time.Duration(runtime.Connection.Downstream.RoundTripTimeoutSeconds)
 	roundTripTimeoutDurationWithGrace := roundTripTimeoutDuration + (time.Second * 1)
@@ -118,65 +197,95 @@ func (runtime Runtime) startListening() {
 
 	msg := fmt.Sprintf("j8a %s listener(s) init on", Version)
 	if runtime.isHTTPOn() {
-		msg = msg + fmt.Sprintf(" HTTP:%d", runtime.Connection.Downstream.Http.Port)
-		go runtime.startHTTP(httpConfig, err)
+		h := msg + fmt.Sprintf(" HTTP:%d...", runtime.Connection.Downstream.Http.Port)
+		go runtime.startHTTP(httpConfig, err, h)
 	}
 	if runtime.isTLSOn() {
-		msg = msg + fmt.Sprintf(" TLS:%d", runtime.Connection.Downstream.Tls.Port)
+		t := msg + fmt.Sprintf(" TLS:%d...", runtime.Connection.Downstream.Tls.Port)
 		tlsConfig := *httpConfig
 		tlsConfig.Addr = ":" + strconv.Itoa(runtime.Connection.Downstream.Tls.Port)
-		go runtime.startTls(&tlsConfig, err)
+		go runtime.startTls(&tlsConfig, err, t)
 	}
-	log.Info().Msg(msg + "...")
 
 	select {
 	case sig := <-err:
-		log.Fatal().Err(sig).Msgf("... j8a exiting with ")
+		log.Fatal().Err(sig).Msg("... j8a exiting")
 		panic(sig.Error())
 	}
 }
 
 type HandlerDelegate struct{}
 
+//TODO regex and perftest this function.
+var acmeRex, _ = regexp.Compile("/.well-known/acme-challenge/")
+var aboutRex, _ = regexp.Compile("^" + aboutPath + "$")
+
 func (hd HandlerDelegate) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if Runner.isHTTPOn() &&
+	if Runner.AcmeHandler.isActive() &&
+		acmeRex.MatchString(r.RequestURI) {
+		acmeHandler(w, r)
+	} else if Runner.isHTTPOn() &&
 		Runner.Connection.Downstream.Http.Redirecttls &&
 		r.TLS == nil {
 		redirectHandler(w, r)
 	} else if r.ProtoMajor == 1 && r.Header.Get(UpgradeHeader) == websocket {
 		websocketHandler(w, r)
 		//TODO: this does not resolve whether about was actually configured in routes.
-	} else if r.RequestURI == aboutPath {
+	} else if aboutRex.MatchString(r.RequestURI) {
 		aboutHandler(w, r)
 	} else {
 		httpHandler(w, r)
 	}
 }
 
-func (runtime Runtime) startTls(server *http.Server, err chan<- error) {
-	server.TLSConfig = runtime.tlsConfig()
-	_, tlsErr := checkCertChain(server.TLSConfig.Certificates[0])
+func (runtime *Runtime) startTls(server *http.Server, err chan<- error, msg string) {
+	p := runtime.Connection.Downstream.Tls.Acme.Provider
+	if len(p) > 0 {
+		cacheErr := runtime.loadAcmeCertAndKeyFromCache(p)
+		if cacheErr != nil {
+			//so caching didn't work let's go to acmeProvider
+			acmeErr := runtime.fetchAcmeCertAndKey(acmeProviders[p])
+			if acmeErr != nil {
+				err <- acmeErr
+				return
+			} else {
+				runtime.cacheAcmeCertAndKey(p)
+			}
+		}
+	}
+
+	cfg, tlsCfgErr := runtime.tlsConfig()
+	if tlsCfgErr == nil {
+		server.TLSConfig = cfg
+	} else {
+		err <- tlsCfgErr
+		return
+	}
+
+	_, tlsErr := checkFullCertChain(runtime.ReloadableCert.Cert)
 	if tlsErr == nil {
-		go tlsHealthCheck(server.TLSConfig, true)
+		go runtime.tlsHealthCheck(true)
+		log.Info().Msg(msg)
 		err <- server.ListenAndServeTLS("", "")
 	} else {
 		err <- tlsErr
 	}
 }
 
-func (runtime Runtime) startHTTP(server *http.Server, err chan<- error) {
+func (runtime *Runtime) startHTTP(server *http.Server, err chan<- error, msg string) {
 	server.Addr = ":" + strconv.Itoa(runtime.Connection.Downstream.Http.Port)
+	log.Info().Msg(msg)
 	err <- server.ListenAndServe()
 }
 
-func (runtime Runtime) initUserAgent() Runtime {
+func (runtime *Runtime) initUserAgent() *Runtime {
 	if httpClient == nil {
 		httpClient = scaffoldHTTPClient(runtime)
 	}
 	return runtime
 }
 
-func (runtime Runtime) initStats() Runtime {
+func (runtime *Runtime) initStats() *Runtime {
 	proc, _ := process.NewProcess(int32(os.Getpid()))
 	logProcStats(proc)
 	logUptime()
@@ -201,23 +310,19 @@ func serverVersion() string {
 	return fmt.Sprintf("%s %s %s", j8a, Version, ID)
 }
 
-func (runtime Runtime) tlsConfig() *tls.Config {
-	defer func() {
-		if err := recover(); err != nil {
-			log.Fatal().Msg("unable to parse TLS configuration, check your certificate and/or private key. j8a is exiting ...")
-			os.Exit(-1)
-		}
-	}()
-
-	//here we create a keypair from the PEM string in the config file
+func (runtime *Runtime) tlsConfig() (*tls.Config, error) {
+	//keypair and cert from the runtime params. They may have originated from the config file or ACME
+	//in both instances the certificate now sits as reloadable in GetCertificateFunc which also uses Runner.
 	var cert []byte = []byte(runtime.Connection.Downstream.Tls.Cert)
 	var key []byte = []byte(runtime.Connection.Downstream.Tls.Key)
-	chain, _ := tls.X509KeyPair(cert, key)
 
-	var nocert error
-	chain.Leaf, nocert = x509.ParseCertificate(chain.Certificate[0])
-	if nocert != nil {
-		panic("unable to parse malformed or missing x509 certificate.")
+	//tls config validation
+	if _, err := checkFullCertChainFromBytes(cert, key); err != nil {
+		return nil, err
+	}
+
+	if err := runtime.ReloadableCert.triggerInit(); err != nil {
+		return nil, err
 	}
 
 	//now create the TLS config.
@@ -234,10 +339,10 @@ func (runtime Runtime) tlsConfig() *tls.Config {
 			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
 			tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
 		},
-		Certificates: []tls.Certificate{chain},
+		GetCertificate: runtime.ReloadableCert.GetCertificateFunc,
 	}
 
-	return config
+	return config, nil
 }
 
 const contentType = "Content-Type"

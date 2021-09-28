@@ -17,7 +17,7 @@ type HTTPClient interface {
 }
 
 // scaffoldHTTPClient is a factory method that applies connection params to the transport layer of http.Client
-func scaffoldHTTPClient(runtime Runtime) HTTPClient {
+func scaffoldHTTPClient(runtime *Runtime) HTTPClient {
 	idleConnTimeoutDuration := time.Duration(runtime.Connection.Upstream.IdleTimeoutSeconds) * time.Second
 	tLSHandshakeTimeoutDuration := time.Duration(runtime.Connection.Upstream.SocketTimeoutSeconds) * time.Second
 	socketTimeoutDuration := time.Duration(runtime.Connection.Upstream.SocketTimeoutSeconds) * time.Second

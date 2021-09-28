@@ -4,94 +4,36 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"net"
 	"net/http"
 	"testing"
 	"time"
 )
 
-var tlsConfig *tls.Config
-
-func TestServer1UpstreamReadTimeoutFireWithSlowHeader31S(t *testing.T) {
-	performJ8aTest(t,
-		"/slowheader",
-		31,
-		12,
-		504,
-		8080,
-		false)
+func CheckWrite(t *testing.T, c net.Conn, msg string) {
+	j, err2 := c.Write([]byte(msg))
+	if j == 0 || err2 != nil {
+		t.Errorf("test failure. uh oh, unable to send data to j8a for integration test. bytes %v, err: %v", j, err2)
+	} else {
+		fmt.Printf("normal. sent %v bytes to j8a, content %v", j, msg)
+	}
 }
 
-func TestServer1UpstreamReadTimeoutFireWithSlowBody31S(t *testing.T) {
-	performJ8aTest(t,
-		"/slowbody",
-		31,
-		12,
-		504,
-		8080,
-		false)
+func OkayTimeDrift(elapsed time.Duration, waitSeconds int) bool {
+	fmin := 1.0
+	fmax := 1.3
+	elapsedSeconds := elapsed.Seconds()
+
+	if elapsedSeconds > fmax*float64(waitSeconds) {
+		return false
+	}
+	if elapsedSeconds < fmin*float64(waitSeconds) {
+		return false
+	}
+	return true
 }
 
-func TestServer1UpstreamReadTimeoutFireWithSlowHeader25S(t *testing.T) {
-	performJ8aTest(t,
-		"/slowheader",
-		25,
-		12,
-		504,
-		8080,
-		false)
-}
-
-func TestServer1UpstreamReadTimeoutFireWithSlowBody25S(t *testing.T) {
-	performJ8aTest(t,
-		"/slowbody",
-		25,
-		12,
-		504,
-		8080,
-		false)
-}
-
-func TestServer1UpstreamReadTimeoutFireWithSlowHeader4S(t *testing.T) {
-	performJ8aTest(t,
-		"/slowheader",
-		4,
-		12,
-		504,
-		8080,
-		false)
-}
-
-func TestServer1UpstreamReadTimeoutFireWithSlowBody4S(t *testing.T) {
-	performJ8aTest(t,
-		"/slowbody",
-		4,
-		12,
-		504,
-		8080,
-		false)
-}
-
-func TestServer1UpstreamReadTimeoutNotFireWithSlowHeader2S(t *testing.T) {
-	performJ8aTest(t,
-		"/slowheader",
-		2,
-		2,
-		200,
-		8080,
-		false)
-}
-
-func TestServer1UpstreamReadTimeoutNotFireWithSlowBody2S(t *testing.T) {
-	performJ8aTest(t,
-		"/slowbody",
-		2,
-		2,
-		200,
-		8080,
-		false)
-}
-
-func performJ8aTest(t *testing.T, testMethod string, wantUpstreamWaitSeconds int, wantTotalWaitSeconds int, wantStatusCode int, serverPort int, tlsMode bool) {
+func PerformJ8aTest(t *testing.T, testMethod string, wantUpstreamWaitSeconds int, wantTotalWaitSeconds int, wantStatusCode int, serverPort int, tlsMode bool) {
 	start := time.Now()
 	scheme := "http"
 
@@ -104,7 +46,7 @@ func performJ8aTest(t *testing.T, testMethod string, wantUpstreamWaitSeconds int
 		if !ok {
 			t.Errorf("no certs appended using system certs only")
 		}
-		tlsConfig = &tls.Config{
+		tlsConfig := &tls.Config{
 			MinVersion: tls.VersionTLS12,
 			MaxVersion: tls.VersionTLS13,
 			RootCAs:    certpool,
@@ -129,25 +71,11 @@ func performJ8aTest(t *testing.T, testMethod string, wantUpstreamWaitSeconds int
 	}
 	gotStatusCode := resp.StatusCode
 
-	if !okayTimeDrift(gotTotalWait, wantTotalWaitSeconds) {
+	if !OkayTimeDrift(gotTotalWait, wantTotalWaitSeconds) {
 		t.Errorf("bad time drift for port %d, testMethod %s, want seconds %d, got %f", serverPort, testMethod, wantTotalWaitSeconds, gotTotalWait.Seconds())
 	}
 
 	if gotStatusCode != wantStatusCode {
 		t.Errorf("bad status code for port %d, testMethod %s, want statusCode %d, got %d", serverPort, testMethod, wantStatusCode, gotStatusCode)
 	}
-}
-
-func okayTimeDrift(elapsed time.Duration, waitSeconds int) bool {
-	fmin := 1.0
-	fmax := 1.1
-	elapsedSeconds := elapsed.Seconds()
-
-	if elapsedSeconds > fmax*float64(waitSeconds) {
-		return false
-	}
-	if elapsedSeconds < fmin*float64(waitSeconds) {
-		return false
-	}
-	return true
 }
