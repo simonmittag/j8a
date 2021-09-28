@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/simonmittag/j8a/integration"
 	"net"
 	"net/http"
 	"strings"
@@ -30,11 +31,11 @@ func DownstreamTransferEncodingNoBodyResponsds501Unsupported(enc string, t *test
 	}
 
 	//step 2 we send headers and terminate http message so j8a sends request upstream.
-	checkWrite(t, c, "GET /mse6/get HTTP/1.1\r\n")
-	checkWrite(t, c, "Host: localhost:8087\r\n")
-	checkWrite(t, c, "Accept-Encoding: identity\r\n")
-	checkWrite(t, c, fmt.Sprintf("Transfer-Encoding: %s\r\n", enc))
-	checkWrite(t, c, "\r\n")
+	integration.CheckWrite(t, c, "GET /mse6/get HTTP/1.1\r\n")
+	integration.CheckWrite(t, c, "Host: localhost:8087\r\n")
+	integration.CheckWrite(t, c, "Accept-Encoding: identity\r\n")
+	integration.CheckWrite(t, c, fmt.Sprintf("Transfer-Encoding: %s\r\n", enc))
+	integration.CheckWrite(t, c, "\r\n")
 
 	//step 3 we read a response into buffer which returns 501
 	buf := make([]byte, 16)
