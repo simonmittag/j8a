@@ -3,7 +3,7 @@ commands:
     parameters:
       tests:
         type:string
-      steps:
+    steps:
         - checkout # check out source code to working directory
         - run:
             name: Install upstream server helpers
