@@ -144,7 +144,7 @@ commands:
           command: |
             UPSTREAM_19_PORT=60101
             UPSTREAM_19_SLUG=/badssl
-            mse6 -p ${UPSTREAM_19_PORT} -u ${UPSTREAM_19_SLUG}
+            mse6 -p ${UPSTREAM_19_PORT} -u ${UPSTREAM_19_SLUG} -s
           background: true
 
       - run:
