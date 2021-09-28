@@ -305,7 +305,6 @@ func TestJwtLoadJWKSFailBadUrl(t *testing.T) {
 }
 
 func DoJwtTest(t *testing.T, slug string, want int, forjwt string) {
-	t.Parallel()
 	client := &http.Client{}
 	req, _ := http.NewRequest("GET", fmt.Sprintf("http://localhost:8080%s/get", slug), nil)
 	req.Header.Add("Authorization", "Bearer "+forjwt)
