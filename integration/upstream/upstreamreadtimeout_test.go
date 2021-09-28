@@ -8,82 +8,100 @@ import (
 
 var tlsConfig *tls.Config
 
-func TestServer1UpstreamReadTimeoutFireWithSlowHeader31S(t *testing.T) {
-	integration.PerformJ8aTest(t,
-		"/slowheader",
-		31,
-		12,
-		504,
-		8080,
-		false)
-}
-
-func TestServer1UpstreamReadTimeoutFireWithSlowBody31S(t *testing.T) {
-	integration.PerformJ8aTest(t,
-		"/slowbody",
-		31,
-		12,
-		504,
-		8080,
-		false)
-}
-
-func TestServer1UpstreamReadTimeoutFireWithSlowHeader25S(t *testing.T) {
-	integration.PerformJ8aTest(t,
-		"/slowheader",
-		25,
-		12,
-		504,
-		8080,
-		false)
-}
-
-func TestServer1UpstreamReadTimeoutFireWithSlowBody25S(t *testing.T) {
-	integration.PerformJ8aTest(t,
-		"/slowbody",
-		25,
-		12,
-		504,
-		8080,
-		false)
-}
-
-func TestServer1UpstreamReadTimeoutFireWithSlowHeader4S(t *testing.T) {
-	integration.PerformJ8aTest(t,
-		"/slowheader",
-		4,
-		12,
-		504,
-		8080,
-		false)
-}
-
-func TestServer1UpstreamReadTimeoutFireWithSlowBody4S(t *testing.T) {
-	integration.PerformJ8aTest(t,
-		"/slowbody",
-		4,
-		12,
-		504,
-		8080,
-		false)
-}
-
-func TestServer1UpstreamReadTimeoutNotFireWithSlowHeader2S(t *testing.T) {
-	integration.PerformJ8aTest(t,
-		"/slowheader",
-		2,
-		2,
-		200,
-		8080,
-		false)
-}
-
-func TestServer1UpstreamReadTimeoutNotFireWithSlowBody2S(t *testing.T) {
-	integration.PerformJ8aTest(t,
-		"/slowbody",
-		2,
-		2,
-		200,
-		8080,
-		false)
+func TestServer1UpstreamReadTimeout(t *testing.T) {
+	var tcs = []struct {
+		Name                    string
+		TestMethod              string
+		WantUpstreamWaitSeconds int
+		WantTotalWaitSeconds    int
+		WantStatusCode          int
+		ServerPort              int
+		TlsMode                 bool
+	}{
+		{
+			Name:                    "FireWithSlowHeader31S",
+			TestMethod:              "/slowheader",
+			WantUpstreamWaitSeconds: 31,
+			WantTotalWaitSeconds:    12,
+			WantStatusCode:          504,
+			ServerPort:              8080,
+			TlsMode:                 false,
+		},
+		{
+			Name:                    "FireWithSlowBody31S",
+			TestMethod:              "/slowbody",
+			WantUpstreamWaitSeconds: 31,
+			WantTotalWaitSeconds:    12,
+			WantStatusCode:          504,
+			ServerPort:              8080,
+			TlsMode:                 false,
+		},
+		{
+			Name:                    "FireWithSlowHeader25S",
+			TestMethod:              "/slowheader",
+			WantUpstreamWaitSeconds: 25,
+			WantTotalWaitSeconds:    12,
+			WantStatusCode:          504,
+			ServerPort:              8080,
+			TlsMode:                 false,
+		},
+		{
+			Name:                    "FireWithSlowBody25S",
+			TestMethod:              "/slowbody",
+			WantUpstreamWaitSeconds: 25,
+			WantTotalWaitSeconds:    12,
+			WantStatusCode:          504,
+			ServerPort:              8080,
+			TlsMode:                 false,
+		},
+		{
+			Name:                    "FireWithSlowHeader4S",
+			TestMethod:              "/slowheader",
+			WantUpstreamWaitSeconds: 4,
+			WantTotalWaitSeconds:    12,
+			WantStatusCode:          504,
+			ServerPort:              8080,
+			TlsMode:                 false,
+		},
+		{
+			Name:                    "FireWithSlowBody4S",
+			TestMethod:              "/slowheader",
+			WantUpstreamWaitSeconds: 4,
+			WantTotalWaitSeconds:    12,
+			WantStatusCode:          504,
+			ServerPort:              8080,
+			TlsMode:                 false,
+		},
+		{
+			Name:                    "NotFireWithSlowHeader2S",
+			TestMethod:              "/slowheader",
+			WantUpstreamWaitSeconds: 2,
+			WantTotalWaitSeconds:    2,
+			WantStatusCode:          200,
+			ServerPort:              8080,
+			TlsMode:                 false,
+		},
+		{
+			Name:                    "NotFireWithSlowBody2S",
+			TestMethod:              "/slowbody",
+			WantUpstreamWaitSeconds: 2,
+			WantTotalWaitSeconds:    2,
+			WantStatusCode:          200,
+			ServerPort:              8080,
+			TlsMode:                 false,
+		},
+	}
+	for _, tc := range tcs {
+		tc := tc
+		t.Run(tc.Name, func(t *testing.T) {
+			t.Parallel()
+			integration.PerformJ8aTest(t,
+				tc.TestMethod,
+				tc.WantUpstreamWaitSeconds,
+				tc.WantTotalWaitSeconds,
+				tc.WantStatusCode,
+				tc.ServerPort,
+				tc.TlsMode)
+		})
+	}
 }
