@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/simonmittag/j8a/integration"
 	"github.com/simonmittag/ws"
 	"github.com/simonmittag/ws/wsutil"
 	"net"
@@ -55,16 +56,16 @@ func Test101ResponseForWsUpgrade(t *testing.T) {
 	defer c.Close()
 
 	//step 2 we send headers and terminate HTTP message.
-	checkWrite(t, c, "GET /websocket HTTP/1.1\r\n")
-	checkWrite(t, c, "Host: localhost:8080\r\n")
-	checkWrite(t, c, "User-Agent: integration\r\n")
-	checkWrite(t, c, "Origin: http://localhost\r\n")
-	checkWrite(t, c, "Content-Type: application/json\r\n")
-	checkWrite(t, c, "Connection: Upgrade\r\n")
-	checkWrite(t, c, "Upgrade: websocket\r\n")
-	checkWrite(t, c, "Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw==\r\n")
-	checkWrite(t, c, "Sec-WebSocket-Version: 13\r\n")
-	checkWrite(t, c, "\r\n")
+	integration.CheckWrite(t, c, "GET /websocket HTTP/1.1\r\n")
+	integration.CheckWrite(t, c, "Host: localhost:8080\r\n")
+	integration.CheckWrite(t, c, "User-Agent: integration\r\n")
+	integration.CheckWrite(t, c, "Origin: http://localhost\r\n")
+	integration.CheckWrite(t, c, "Content-Type: application/json\r\n")
+	integration.CheckWrite(t, c, "Connection: Upgrade\r\n")
+	integration.CheckWrite(t, c, "Upgrade: websocket\r\n")
+	integration.CheckWrite(t, c, "Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw==\r\n")
+	integration.CheckWrite(t, c, "Sec-WebSocket-Version: 13\r\n")
+	integration.CheckWrite(t, c, "\r\n")
 
 	buf := make([]byte, 1024)
 	l, err := c.Read(buf)
@@ -91,16 +92,16 @@ func Test400ResponseForBadSecHeader(t *testing.T) {
 	defer c.Close()
 
 	//step 2 we send headers and terminate HTTP message.
-	checkWrite(t, c, "GET /websocket HTTP/1.1\r\n")
-	checkWrite(t, c, "Host: localhost:8080\r\n")
-	checkWrite(t, c, "User-Agent: integration\r\n")
-	checkWrite(t, c, "Origin: http://localhost\r\n")
-	checkWrite(t, c, "Content-Type: application/json\r\n")
-	checkWrite(t, c, "Connection: Upgrade\r\n")
-	checkWrite(t, c, "Upgrade: websocket\r\n")
-	checkWrite(t, c, "Sec-WebSocket-Key: XXXXXXXXXXXXXXXXXXXXXX\r\n")
-	checkWrite(t, c, "Sec-WebSocket-Version: 13\r\n")
-	checkWrite(t, c, "\r\n")
+	integration.CheckWrite(t, c, "GET /websocket HTTP/1.1\r\n")
+	integration.CheckWrite(t, c, "Host: localhost:8080\r\n")
+	integration.CheckWrite(t, c, "User-Agent: integration\r\n")
+	integration.CheckWrite(t, c, "Origin: http://localhost\r\n")
+	integration.CheckWrite(t, c, "Content-Type: application/json\r\n")
+	integration.CheckWrite(t, c, "Connection: Upgrade\r\n")
+	integration.CheckWrite(t, c, "Upgrade: websocket\r\n")
+	integration.CheckWrite(t, c, "Sec-WebSocket-Key: XXXXXXXXXXXXXXXXXXXXXX\r\n")
+	integration.CheckWrite(t, c, "Sec-WebSocket-Version: 13\r\n")
+	integration.CheckWrite(t, c, "\r\n")
 
 	buf := make([]byte, 1024)
 	l, err := c.Read(buf)
@@ -138,16 +139,16 @@ func Test405ResponseForInvalidHTTPMethod(t *testing.T) {
 	defer c.Close()
 
 	//step 2 we send headers and terminate HTTP message.
-	checkWrite(t, c, "PUT /websocket HTTP/1.1\r\n")
-	checkWrite(t, c, "Host: localhost:8080\r\n")
-	checkWrite(t, c, "User-Agent: integration\r\n")
-	checkWrite(t, c, "Origin: http://localhost\r\n")
-	checkWrite(t, c, "Content-Type: application/json\r\n")
-	checkWrite(t, c, "Connection: Upgrade\r\n")
-	checkWrite(t, c, "Upgrade: websocket\r\n")
-	checkWrite(t, c, "Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw==\r\n")
-	checkWrite(t, c, "Sec-WebSocket-Version: 13\r\n")
-	checkWrite(t, c, "\r\n")
+	integration.CheckWrite(t, c, "PUT /websocket HTTP/1.1\r\n")
+	integration.CheckWrite(t, c, "Host: localhost:8080\r\n")
+	integration.CheckWrite(t, c, "User-Agent: integration\r\n")
+	integration.CheckWrite(t, c, "Origin: http://localhost\r\n")
+	integration.CheckWrite(t, c, "Content-Type: application/json\r\n")
+	integration.CheckWrite(t, c, "Connection: Upgrade\r\n")
+	integration.CheckWrite(t, c, "Upgrade: websocket\r\n")
+	integration.CheckWrite(t, c, "Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw==\r\n")
+	integration.CheckWrite(t, c, "Sec-WebSocket-Version: 13\r\n")
+	integration.CheckWrite(t, c, "\r\n")
 
 	buf := make([]byte, 1024)
 	l, err := c.Read(buf)
@@ -171,16 +172,16 @@ func Test426ResponseForBadWsProtocolVersion(t *testing.T) {
 	defer c.Close()
 
 	//step 2 we send headers and terminate HTTP message.
-	checkWrite(t, c, "GET /websocket HTTP/1.1\r\n")
-	checkWrite(t, c, "Host: localhost:8080\r\n")
-	checkWrite(t, c, "User-Agent: integration\r\n")
-	checkWrite(t, c, "Origin: http://localhost\r\n")
-	checkWrite(t, c, "Content-Type: application/json\r\n")
-	checkWrite(t, c, "Connection: Upgrade\r\n")
-	checkWrite(t, c, "Upgrade: websocket\r\n")
-	checkWrite(t, c, "Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw==\r\n")
-	checkWrite(t, c, "Sec-WebSocket-Version: XX\r\n")
-	checkWrite(t, c, "\r\n")
+	integration.CheckWrite(t, c, "GET /websocket HTTP/1.1\r\n")
+	integration.CheckWrite(t, c, "Host: localhost:8080\r\n")
+	integration.CheckWrite(t, c, "User-Agent: integration\r\n")
+	integration.CheckWrite(t, c, "Origin: http://localhost\r\n")
+	integration.CheckWrite(t, c, "Content-Type: application/json\r\n")
+	integration.CheckWrite(t, c, "Connection: Upgrade\r\n")
+	integration.CheckWrite(t, c, "Upgrade: websocket\r\n")
+	integration.CheckWrite(t, c, "Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw==\r\n")
+	integration.CheckWrite(t, c, "Sec-WebSocket-Version: XX\r\n")
+	integration.CheckWrite(t, c, "\r\n")
 
 	buf := make([]byte, 1024)
 	l, err := c.Read(buf)
@@ -204,8 +205,8 @@ func Test400ResponseForBadHTTPProtocolVersion(t *testing.T) {
 	defer c.Close()
 
 	//step 2 we send headers and terminate HTTP message.
-	checkWrite(t, c, "GET /websocket HTTP/2\r\n")
-	checkWrite(t, c, "Host: localhost:8080\r\n")
+	integration.CheckWrite(t, c, "GET /websocket HTTP/2\r\n")
+	integration.CheckWrite(t, c, "Host: localhost:8080\r\n")
 	c.Write([]byte("User-Agent: integration\r\n"))
 	c.Write([]byte("Origin: http://localhost\r\n"))
 	c.Write([]byte("Content-Type: application/json\r\n"))
@@ -590,13 +591,4 @@ func echoMessage(t *testing.T, con net.Conn, echo string) bool {
 		t.Logf("normal. sent and received message: %v", string(msg))
 	}
 	return true
-}
-
-func checkWrite(t *testing.T, c net.Conn, msg string) {
-	j, err2 := c.Write([]byte(msg))
-	if j == 0 || err2 != nil {
-		t.Errorf("test failure. uh oh, unable to send data to j8a for integration test. bytes %v, err: %v", j, err2)
-	} else {
-		fmt.Printf("normal. sent %v bytes to j8a, content %v", j, msg)
-	}
 }

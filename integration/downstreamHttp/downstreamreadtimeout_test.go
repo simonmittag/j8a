@@ -1,7 +1,7 @@
 package downstreamHttp
 
 import (
-	"fmt"
+	"github.com/simonmittag/j8a/integration"
 	"net"
 	"strings"
 	"testing"
@@ -21,8 +21,8 @@ func TestServerHangsUpOnDownstreamIfReadTimeoutExceededDuringHeaderRead(t *testi
 	}
 
 	//step 2 we send headers but do not terminate http message. this will cause j8a to wait for more data
-	checkWrite(t, c, "GET /mse6/get HTTP/1.1\r\n")
-	checkWrite(t, c, "Host: localhost:8080\r\n")
+	integration.CheckWrite(t, c, "GET /mse6/get HTTP/1.1\r\n")
+	integration.CheckWrite(t, c, "Host: localhost:8080\r\n")
 
 	//step 3 we sleep locally until we should hit timeout
 	t.Logf("normal. going to sleep for %d seconds to trigger remote j8a read timeout", wait)
@@ -66,20 +66,20 @@ func TestServerHangsUpOnDownstreamIfReadTimeoutExceededDuringBodyRead(t *testing
 	}
 
 	//step 2 we send headers and some of the body. this will cause j8a to wait for more data
-	checkWrite(t, c, "PUT /mse6/put HTTP/1.1\r\n")
-	checkWrite(t, c, "Host: localhost:8081\r\n")
-	checkWrite(t, c, "User-Agent: integration\r\n")
-	checkWrite(t, c, "Accept-Encoding: identity\r\n")
-	checkWrite(t, c, "Content-Type: application/json\r\n")
-	checkWrite(t, c, "Content-Encoding: identity\r\n")
-	checkWrite(t, c, "Content-Length: 38\r\n")
-	checkWrite(t, c, "\r\n")
-	checkWrite(t, c, "{\n\t\"key\": \"value\"\n}")
+	integration.CheckWrite(t, c, "PUT /mse6/put HTTP/1.1\r\n")
+	integration.CheckWrite(t, c, "Host: localhost:8081\r\n")
+	integration.CheckWrite(t, c, "User-Agent: integration\r\n")
+	integration.CheckWrite(t, c, "Accept-Encoding: identity\r\n")
+	integration.CheckWrite(t, c, "Content-Type: application/json\r\n")
+	integration.CheckWrite(t, c, "Content-Encoding: identity\r\n")
+	integration.CheckWrite(t, c, "Content-Length: 38\r\n")
+	integration.CheckWrite(t, c, "\r\n")
+	integration.CheckWrite(t, c, "{\n\t\"key\": \"value\"\n}")
 
 	//step 3 we sleep locally until we hit downstream readtimeout
 	t.Logf("normal. going to sleep for %d seconds to trigger remote j8a read timeout", wait)
 	time.Sleep(time.Second * time.Duration(wait))
-	checkWrite(t, c, "{\n\t\"key\": \"value\"\n}")
+	integration.CheckWrite(t, c, "{\n\t\"key\": \"value\"\n}")
 
 	//step 4 we try to read the server response. Warning this isn't a proper http client
 	//i.e. doesn't include parsing content length, nor reading response properly.
@@ -110,11 +110,11 @@ func TestServerConnectsNormallyWithoutHangingUp(t *testing.T) {
 	defer c.Close()
 
 	//step 2 we send headers and terminate HTTP message.
-	checkWrite(t, c, "GET /mse6/get HTTP/1.1\r\n")
-	checkWrite(t, c, "Host: localhost:8080\r\n")
-	checkWrite(t, c, "User-Agent: integration\r\n")
-	checkWrite(t, c, "Accept: */*\r\n")
-	checkWrite(t, c, "\r\n")
+	integration.CheckWrite(t, c, "GET /mse6/get HTTP/1.1\r\n")
+	integration.CheckWrite(t, c, "Host: localhost:8080\r\n")
+	integration.CheckWrite(t, c, "User-Agent: integration\r\n")
+	integration.CheckWrite(t, c, "Accept: */*\r\n")
+	integration.CheckWrite(t, c, "\r\n")
 
 	//step 3 we try to read the server response. Warning this isn't a proper http client
 	//i.e. doesn't include parsing content length, nor reading response properly.
@@ -128,14 +128,5 @@ func TestServerConnectsNormallyWithoutHangingUp(t *testing.T) {
 	response := string(buf)
 	if !strings.Contains(response, "Server: j8a") {
 		t.Error("test failure. j8a did not respond, server information not found on response ")
-	}
-}
-
-func checkWrite(t *testing.T, c net.Conn, msg string) {
-	j, err2 := c.Write([]byte(msg))
-	if j == 0 || err2 != nil {
-		t.Errorf("test failure. uh oh, unable to send data to j8a for integration test. bytes %v, err: %v", j, err2)
-	} else {
-		fmt.Printf("normal. sent %v bytes to j8a, content %v", j, msg)
 	}
 }

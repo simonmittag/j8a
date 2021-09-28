@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"github.com/simonmittag/j8a/integration"
 	"golang.org/x/net/http2"
 	"io/ioutil"
 	"net"
@@ -68,11 +69,11 @@ func TestConnection_404ResponseClosesDownstreamConnectionUsingHTTP11(t *testing.
 	defer c.Close()
 
 	//step 2 we send headers and terminate HTTP message.
-	checkWrite(t, c, "GET /mse6/xyz HTTP/1.1\r\n")
-	checkWrite(t, c, "Host: localhost:8080\r\n")
-	checkWrite(t, c, "User-Agent: integration\r\n")
-	checkWrite(t, c, "Accept: */*\r\n")
-	checkWrite(t, c, "\r\n")
+	integration.CheckWrite(t, c, "GET /mse6/xyz HTTP/1.1\r\n")
+	integration.CheckWrite(t, c, "Host: localhost:8080\r\n")
+	integration.CheckWrite(t, c, "User-Agent: integration\r\n")
+	integration.CheckWrite(t, c, "Accept: */*\r\n")
+	integration.CheckWrite(t, c, "\r\n")
 
 	//step 3 we try to read the server response. Warning this isn't a proper http client
 	//i.e. doesn't include parsing content length, reading response properly.
@@ -289,13 +290,4 @@ func ConcurrentHTTP11ConnectionsSucceed(total int, t *testing.T) {
 
 	wg.Wait()
 	t.Logf("done! good HTTP response: %d, 200s: %d, non 200s: %d, connection errors: %d", good, R200, N200, bad)
-}
-
-func checkWrite(t *testing.T, c net.Conn, msg string) {
-	j, err2 := c.Write([]byte(msg))
-	if j == 0 || err2 != nil {
-		t.Errorf("test failure. uh oh, unable to send data to j8a for integration test. bytes %v, err: %v", j, err2)
-	} else {
-		fmt.Printf("normal. sent %v bytes to j8a, content %v", j, msg)
-	}
 }
