@@ -190,7 +190,7 @@ commands:
       - run:
           name: Start j8a two
           command: |
-            J8A_ONE_CFG=./integration/j8a2.yml
+            J8A_TWO_CFG=./integration/j8a2.yml
             j8a -c ${J8A_TWO_CFG}
           background: true
       - run:
