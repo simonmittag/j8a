@@ -1,6 +1,6 @@
 module github.com/simonmittag/j8a
 
-go 1.16
+go 1.17
 
 require (
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
@@ -18,4 +18,25 @@ require (
 	github.com/simonmittag/ws v1.0.42
 	golang.org/x/net v0.0.0-20210614182718-04defd469f4e
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
+)
+
+require (
+	github.com/cenkalti/backoff/v4 v4.1.1 // indirect
+	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.0-20210816181553-5444fa50b93d // indirect
+	github.com/gobwas/httphead v0.1.0 // indirect
+	github.com/gobwas/pool v0.2.1 // indirect
+	github.com/goccy/go-json v0.7.8 // indirect
+	github.com/itchyny/timefmt-go v0.1.3 // indirect
+	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
+	github.com/lestrrat-go/blackmagic v1.0.0 // indirect
+	github.com/lestrrat-go/httpcc v1.0.0 // indirect
+	github.com/lestrrat-go/iter v1.0.1 // indirect
+	github.com/lestrrat-go/option v1.0.0 // indirect
+	github.com/miekg/dns v1.1.43 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
+	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e // indirect
+	golang.org/x/sys v0.0.0-20210831042530-f4d43177bf5e // indirect
+	golang.org/x/text v0.3.6 // indirect
+	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
