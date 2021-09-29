@@ -12,8 +12,9 @@
 [![Version](https://img.shields.io/docker/v/simonmittag/j8a/0.8.5)](https://hub.docker.com/repository/docker/simonmittag/j8a)
 
 ## What's new?
-### v0.9.0a (unreleased)
-* ACME support for RFC8555
+### v0.9.0
+* ACME (RFC8555) support for auto-renewing TLS certs
+* update to go 1.17
 
 ### v0.8.5 (01/07/2021)
 * downstream responses with status code >=400 now drop TCP connections for both HTTP/1.1 and HTTP/2
@@ -22,9 +23,6 @@
 
 ### v0.8.4 (26/06/2021)
 * introduced HTTP 499 responses for client aborts.
-
-### v0.8.3 (10/06/2021)
-* fixed bug with upstream servers and unsupported brotli compression.
 
 ## What is j8a?
 [j8a [ dʒʌbbʌ ]](https://j8a.io) is a modern **TLS 1.3 reverse proxy server** designed as a lightweight API gateway for 
