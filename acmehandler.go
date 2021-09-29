@@ -252,9 +252,12 @@ func (runtime *Runtime) fetchAcmeCertAndKey(url string) error {
 
 	//we always register because it's safer than to cache credentials
 	myUser.Registration, e = client.Registration.Register(registration.RegisterOptions{TermsOfServiceAgreed: true})
+	if e != nil {
+		return e
+	}
 
 	request := certificate.ObtainRequest{
-		Domains: Runner.Connection.Downstream.Tls.Acme.Domains,
+		Domains: runtime.Connection.Downstream.Tls.Acme.Domains,
 		Bundle:  true,
 	}
 

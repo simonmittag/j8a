@@ -500,6 +500,10 @@ func mockRuntime() *Runtime {
 						Port:        65534,
 						Redirecttls: false,
 					},
+					Tls: Tls{
+						Acme: Acme{
+							Domains: []string{"localhost"},
+						}},
 				},
 			},
 			Policies: map[string]Policy{

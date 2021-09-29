@@ -121,3 +121,28 @@ func TestAsSha256Struct(t *testing.T) {
 		t.Logf("normal. struct hashes acme1 %v, acme11 %v", asSha256(acme1), asSha256(acme11))
 	}
 }
+
+func TestAcmeHandlerLifecycle(t *testing.T) {
+	ach := NewAcmeHandler()
+	e1 := ach.Present("domain.com", "key", "value")
+	if e1!=nil {
+		t.Error("acme handler should present")
+	}
+	e2 := ach.CleanUp("domain.com", "key", "value")
+	if e2!=nil {
+		t.Error("acme handler should cleanup")
+	}
+
+	e3 := ach.CleanUp("notadomain", "notakey", "notavalue")
+	if e3!=nil {
+		t.Error("acme handler delete should fail gracefully")
+	}
+}
+
+func TestAcmeHandlerFetch(t *testing.T) {
+	r := mockRuntime()
+	e1 := r.fetchAcmeCertAndKey("http://localhost")
+	if e1 == nil {
+		t.Errorf("domain needs to include at least one dot, should have failed")
+	}
+}
