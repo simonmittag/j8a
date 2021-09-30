@@ -13,7 +13,8 @@
 
 ## What's new?
 ### v0.9.0 (30/09/2021)
-* ACME (RFC8555) support for auto-renewing TLS certs
+* ACME (RFC8555) support. Server auto-renews TLS certificates 30 days
+before expiry for free with zero downtime, no restarts!
 * update to go 1.17
 
 ### v0.8.5 (01/07/2021)
