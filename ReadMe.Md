@@ -34,7 +34,8 @@ Websocket traffic without sacrificing performance.
 
 ## Features
 * Fast! 5k POST req/s traffic.
-* Secure. TLS1.2, TLS/1.3 termination with zero config [A+ SSLLabs rating](https://www.ssllabs.com/ssltest/analyze.html?d=j8a.io). No weak ciphers ever again.
+* Secure. TLS1.2, TLS/1.3 termination w/ [A+ SSLLabs rating](https://www.ssllabs.com/ssltest/analyze.html?d=j8a.io). 
+* Zero downtime. Auto-renew certs using ACME [RFC 8555](https://tools.ietf.org/html/rfc8555).
 * Observable. API request tracing w/ correlation ID for upstream micro-services.
 * APM. CPU, memory logging built-in. Daily TLS health and validity check for your full certificate chain.
 * JWT token validation with full JWK(S) support for [RFC 7519](https://tools.ietf.org/html/rfc7519).
