@@ -11,7 +11,7 @@ require (
 	github.com/hako/durafmt v0.0.0-20200710122514-c0fb7b4da026
 	github.com/itchyny/gojq v0.12.5
 	github.com/jbenet/go-is-domain v1.0.5
-	github.com/lestrrat-go/jwx v1.2.7
+	github.com/lestrrat-go/jwx v1.2.9
 	github.com/rs/zerolog v1.25.0
 	github.com/shirou/gopsutil v2.20.9+incompatible
 	github.com/simonmittag/lego/v4 v4.4.1-0.20210801233615-446f36e1d8f3
@@ -25,7 +25,7 @@ require (
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.0-20210816181553-5444fa50b93d // indirect
 	github.com/gobwas/httphead v0.1.0 // indirect
 	github.com/gobwas/pool v0.2.1 // indirect
-	github.com/goccy/go-json v0.7.8 // indirect
+	github.com/goccy/go-json v0.7.10 // indirect
 	github.com/itchyny/timefmt-go v0.1.3 // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.0 // indirect
