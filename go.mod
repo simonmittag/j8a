@@ -12,11 +12,11 @@ require (
 	github.com/itchyny/gojq v0.12.5
 	github.com/jbenet/go-is-domain v1.0.5
 	github.com/lestrrat-go/jwx v1.2.7
-	github.com/rs/zerolog v1.25.0
+	github.com/rs/zerolog v1.26.0
 	github.com/shirou/gopsutil v2.20.9+incompatible
 	github.com/simonmittag/lego/v4 v4.4.1-0.20210801233615-446f36e1d8f3
 	github.com/simonmittag/ws v1.0.42
-	golang.org/x/net v0.0.0-20210614182718-04defd469f4e
+	golang.org/x/net v0.0.0-20210805182204-aaa1db679c0d
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 )
 
