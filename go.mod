@@ -3,17 +3,16 @@ module github.com/simonmittag/j8a
 go 1.17
 
 require (
-	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-ole/go-ole v1.2.4 // indirect
+	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/google/uuid v1.3.0
 	github.com/hako/durafmt v0.0.0-20200710122514-c0fb7b4da026
 	github.com/itchyny/gojq v0.12.6
 	github.com/jbenet/go-is-domain v1.0.5
 	github.com/lestrrat-go/jwx v1.2.7
 	github.com/rs/zerolog v1.25.0
-	github.com/shirou/gopsutil v2.20.9+incompatible
+	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/simonmittag/lego/v4 v4.4.1-0.20210801233615-446f36e1d8f3
 	github.com/simonmittag/ws v1.0.42
 	golang.org/x/net v0.0.0-20210614182718-04defd469f4e
@@ -34,6 +33,9 @@ require (
 	github.com/lestrrat-go/option v1.0.0 // indirect
 	github.com/miekg/dns v1.1.43 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/tklauser/go-sysconf v0.3.9 // indirect
+	github.com/tklauser/numcpus v0.3.0 // indirect
+	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e // indirect
 	golang.org/x/sys v0.0.0-20211124211545-fe61309f8881 // indirect
 	golang.org/x/text v0.3.6 // indirect
