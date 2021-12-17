@@ -9,7 +9,7 @@ require (
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/google/uuid v1.3.0
 	github.com/hako/durafmt v0.0.0-20200710122514-c0fb7b4da026
-	github.com/itchyny/gojq v0.12.5
+	github.com/itchyny/gojq v0.12.6
 	github.com/jbenet/go-is-domain v1.0.5
 	github.com/lestrrat-go/jwx v1.2.7
 	github.com/rs/zerolog v1.25.0
@@ -35,7 +35,7 @@ require (
 	github.com/miekg/dns v1.1.43 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e // indirect
-	golang.org/x/sys v0.0.0-20210831042530-f4d43177bf5e // indirect
+	golang.org/x/sys v0.0.0-20211124211545-fe61309f8881 // indirect
 	golang.org/x/text v0.3.6 // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
