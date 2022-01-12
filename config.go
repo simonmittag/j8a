@@ -145,9 +145,11 @@ func (config Config) compileRouteTransforms() *Config {
 	return &config
 }
 
-func (config Config) reApplyResourceSchemes() *Config {
+func (config Config) reApplyResourceURLDefaults() *Config {
 	const http = "http"
 	const https = "https"
+	const p80 = 80
+	const p443 = 443
 	for name := range config.Resources {
 		resourceMappings := config.Resources[name]
 		for i, resourceMapping := range resourceMappings {
@@ -162,6 +164,16 @@ func (config Config) reApplyResourceSchemes() *Config {
 				}
 			}
 			resourceMappings[i].URL.Scheme = scheme
+
+			//insert port here if not specified
+			if resourceMapping.URL.Port == 0 {
+				if scheme == http {
+					resourceMappings[i].URL.Port = p80
+				}
+				if scheme == https {
+					resourceMappings[i].URL.Port = p443
+				}
+			}
 		}
 	}
 	return &config
