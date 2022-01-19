@@ -108,7 +108,7 @@ func BootStrap() {
 
 	config := new(Config).
 		load().
-		reApplyResourceSchemes().
+		reApplyResourceURLDefaults().
 		reApplyResourceNames().
 		validateJwt().
 		compileRoutePaths().

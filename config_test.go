@@ -623,7 +623,7 @@ func TestReadConfigFile(t *testing.T) {
 
 func TestReApplyScheme(t *testing.T) {
 	want := map[string]string{"http": "", "https": ""}
-	config := new(Config).readYmlFile("./j8acfg.yml").reApplyResourceSchemes()
+	config := new(Config).readYmlFile("./j8acfg.yml").reApplyResourceURLDefaults()
 
 	for name := range config.Resources {
 		resourceMappings := config.Resources[name]
@@ -631,6 +631,19 @@ func TestReApplyScheme(t *testing.T) {
 			scheme := resourceMapping.URL.Scheme
 			if _, ok := want[scheme]; !ok {
 				t.Errorf("incorrectly reapplied scheme, want any of %v, got %v", want, scheme)
+			}
+		}
+	}
+}
+
+func TestReApplyPort(t *testing.T) {
+	config := new(Config).readYmlFile("./j8acfg.yml").reApplyResourceURLDefaults()
+	for name := range config.Resources {
+		resourceMappings := config.Resources[name]
+		for _, resourceMapping := range resourceMappings {
+			port := int(resourceMapping.URL.Port)
+			if port == 0 {
+				t.Error("incorrectly applied port, got 0")
 			}
 		}
 	}

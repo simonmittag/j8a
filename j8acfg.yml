@@ -221,3 +221,11 @@ resources:
         scheme: http
         host: localhost
         port: 60100
+  noport80:
+    - url:
+        scheme: http
+        host: localhost
+  noport443:
+    - url:
+        scheme: https
+        host: localhost
