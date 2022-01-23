@@ -6,7 +6,6 @@ import (
 	"testing"
 )
 
-//TestDefaultDownstreamReadTimeout
 func TestServerID(t *testing.T) {
 	os.Setenv("HOSTNAME", "localhost")
 	os.Setenv("VERSION", "v0.0.0")

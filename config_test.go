@@ -24,7 +24,7 @@ func testSetup() {
 func TestDefaultDownstreamReadTimeout(t *testing.T) {
 	config := new(Config).setDefaultDownstreamParams()
 	got := config.Connection.Downstream.ReadTimeoutSeconds
-	want := 120
+	want := 5
 	if got != want {
 		t.Errorf("default config got %d, want %d", got, want)
 	}
@@ -34,7 +34,7 @@ func TestDefaultDownstreamReadTimeout(t *testing.T) {
 func TestDefaultDownstreamIdleTimeout(t *testing.T) {
 	config := new(Config).setDefaultDownstreamParams()
 	got := config.Connection.Downstream.IdleTimeoutSeconds
-	want := 120
+	want := 5
 	if got != want {
 		t.Errorf("default config got %d, want %d", got, want)
 	}
@@ -44,7 +44,7 @@ func TestDefaultDownstreamIdleTimeout(t *testing.T) {
 func TestDefaultDownstreamRoundtripTimeout(t *testing.T) {
 	config := new(Config).setDefaultDownstreamParams()
 	got := config.Connection.Downstream.RoundTripTimeoutSeconds
-	want := 240
+	want := 10
 	if got != want {
 		t.Errorf("default config got %d, want %d", got, want)
 	}
