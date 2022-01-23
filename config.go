@@ -272,15 +272,15 @@ func (config Config) addDefaultPolicy() *Config {
 func (config Config) setDefaultDownstreamParams() *Config {
 
 	if config.Connection.Downstream.ReadTimeoutSeconds == 0 {
-		config.Connection.Downstream.ReadTimeoutSeconds = 120
+		config.Connection.Downstream.ReadTimeoutSeconds = 5
 	}
 
 	if config.Connection.Downstream.RoundTripTimeoutSeconds == 0 {
-		config.Connection.Downstream.RoundTripTimeoutSeconds = 240
+		config.Connection.Downstream.RoundTripTimeoutSeconds = 10
 	}
 
 	if config.Connection.Downstream.IdleTimeoutSeconds == 0 {
-		config.Connection.Downstream.IdleTimeoutSeconds = 120
+		config.Connection.Downstream.IdleTimeoutSeconds = 5
 	}
 
 	if config.Connection.Downstream.MaxBodyBytes == 0 {
