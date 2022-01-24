@@ -39,7 +39,6 @@ func BenchmahkGzipNBytes(b *testing.B, n int) {
 	for i := 0; i < b.N; i++ {
 		Gzip(text)
 	}
-	b.Logf("benchmark compressing %d bytes as gzip", len(text))
 }
 
 func BenchmahkGunzipNBytes(b *testing.B, n int) {

@@ -7,12 +7,13 @@ import (
 	"sync"
 )
 
+const brotliLevel int = 1
 var brotliEmpty = []byte{0}
 
 var brotliEncPool = sync.Pool{
 	New: func() interface{} {
 		var buf bytes.Buffer
-		return brotli.NewWriter(&buf)
+		return brotli.NewWriterLevel(&buf, brotliLevel)
 	},
 }
 

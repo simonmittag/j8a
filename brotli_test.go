@@ -13,9 +13,9 @@ func TestBrotliEncoder(t *testing.T) {
 		json := []byte("{\"routes\": [{\n\t\t\t\"path\": \"/about\",\n\t\t\t\"resource\": \"aboutj8a\"\n\t\t},\n\t\t{\n\t\t\t\"path\": \"/customer\",\n\t\t\t\"resource\": \"customer\",\n\t\t\t\"policy\": \"ab\"\n\t\t}\n\t]}")
 		br := *BrotliEncode(json)
 
-		var want = 86
+		var want = 111
 		if len(br) != want {
-			t.Errorf("brotli compression not working, should be []byte size 86 for json provided")
+			t.Errorf("brotli compression not working, should be compressed []byte %d for data size %d provided, but got %d", want, len(json), len(br))
 		}
 	}
 }
@@ -34,7 +34,6 @@ func BenchmahkBrotliEncodeNBytes(b *testing.B, n int) {
 	for i := 0; i < b.N; i++ {
 		BrotliEncode(text)
 	}
-	b.Logf("benchmark compressing %d bytes as brotli", len(text))
 }
 
 func BenchmahkBrotliDecodeNBytes(b *testing.B, n int) {
@@ -42,7 +41,6 @@ func BenchmahkBrotliDecodeNBytes(b *testing.B, n int) {
 	for i := 0; i < b.N; i++ {
 		BrotliDecode(br)
 	}
-	b.Logf("benchmark decompressing %d bytes as brotli", len(br))
 }
 
 func BenchmarkBrotliEncode128B(b *testing.B) {
