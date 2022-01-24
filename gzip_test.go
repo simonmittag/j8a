@@ -129,9 +129,7 @@ func BenchmarkGunzip32MB(b *testing.B) {
 	BenchmahkGunzipNBytes(b,2<<24)
 }
 
-
-
-var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+var letters = []rune("{}\":123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 func randSeq(n int) string {
 	b := make([]rune, n)
