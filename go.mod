@@ -28,6 +28,7 @@ require (
 	github.com/gobwas/pool v0.2.1 // indirect
 	github.com/goccy/go-json v0.9.1 // indirect
 	github.com/itchyny/timefmt-go v0.1.3 // indirect
+	github.com/klauspost/compress v1.14.2 // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.0 // indirect
 	github.com/lestrrat-go/httpcc v1.0.0 // indirect

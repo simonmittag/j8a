@@ -2,7 +2,7 @@ package j8a
 
 import (
 	"bytes"
-	"compress/gzip"
+	"github.com/klauspost/compress/gzip"
 	"io/ioutil"
 	"sync"
 )
