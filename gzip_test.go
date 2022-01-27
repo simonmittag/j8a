@@ -35,14 +35,18 @@ func TestGzipThenUnzip(t *testing.T) {
 }
 
 func BenchmahkGzipNBytes(b *testing.B, n int) {
+	b.StopTimer()
 	text := []byte(randSeq(n))
+	b.StartTimer()
 	for i := 0; i < b.N; i++ {
 		Gzip(text)
 	}
 }
 
 func BenchmahkGunzipNBytes(b *testing.B, n int) {
+	b.StopTimer()
 	zipped := *Gzip([]byte(randSeq(n)))
+	b.StartTimer()
 	for i := 0; i < b.N; i++ {
 		Gunzip(zipped)
 	}

@@ -30,14 +30,18 @@ func TestBrotliDecoder(t *testing.T) {
 }
 
 func BenchmahkBrotliEncodeNBytes(b *testing.B, n int) {
+	b.StopTimer()
 	text := []byte(randSeq(n))
+	b.StartTimer()
 	for i := 0; i < b.N; i++ {
 		BrotliEncode(text)
 	}
 }
 
 func BenchmahkBrotliDecodeNBytes(b *testing.B, n int) {
-	br := *Gzip([]byte(randSeq(n)))
+	b.StopTimer()
+	br := *BrotliEncode([]byte(randSeq(n)))
+	b.StartTimer()
 	for i := 0; i < b.N; i++ {
 		BrotliDecode(br)
 	}
