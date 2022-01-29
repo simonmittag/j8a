@@ -2,7 +2,10 @@ package j8a
 
 import (
 	"bytes"
+	"encoding/binary"
 	"fmt"
+	"github.com/klauspost/compress/gzip"
+	"io/ioutil"
 	"math/rand"
 	"testing"
 )
@@ -34,13 +37,37 @@ func TestGzipThenUnzip(t *testing.T) {
 	}
 }
 
+func TestGzipCompressionRatio(t *testing.T) {
+	nums := []int{1,2,3}
+	zips := []int{1,2,3,4,5,6,7,8,9}
+
+	for _, i := range nums {
+		b, _ := ioutil.ReadFile(fmt.Sprintf("./unit/example%d.json", i))
+		for _, z := range zips {
+			var buf bytes.Buffer
+			w, _ := gzip.NewWriterLevel(&buf, z)
+			w.Write(b)
+			w.Flush()
+			w.Close()
+
+			r := float32(buf.Len())/float32(len(b))
+
+			t.Logf("json size %d, compressed size %d, gzip level %d, compression ratio %v", len(b), buf.Len(), z, r)
+		}
+	}
+
+}
+
 func BenchmahkGzipNBytes(b *testing.B, n int) {
 	b.StopTimer()
 	text := []byte(randSeq(n))
+	var res *[]byte
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
-		Gzip(text)
+		res = Gzip(text)
 	}
+	r := float32(binary.Size(*res))/float32(binary.Size(text))
+	b.Logf("compression ratio gzip level%d/identity: %g", gzipLevel, r)
 }
 
 func BenchmahkGunzipNBytes(b *testing.B, n int) {
