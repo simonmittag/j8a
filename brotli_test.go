@@ -3,8 +3,31 @@ package j8a
 import (
 	"bytes"
 	"fmt"
+	"github.com/andybalholm/brotli"
+	"io/ioutil"
 	"testing"
 )
+
+func TestBrotliCompressionRatio(t *testing.T) {
+	nums := []int{1,2,3}
+	brotlis := []int{1,2,3,4,5,6,7,8,9,10,11}
+
+	for _, i := range nums {
+		b, _ := ioutil.ReadFile(fmt.Sprintf("./unit/example%d.json", i))
+		for _, z := range brotlis {
+			var buf bytes.Buffer
+			w := brotli.NewWriterLevel(&buf, z)
+			w.Write(b)
+			w.Flush()
+			w.Close()
+
+			r := float32(buf.Len())/float32(len(b))
+
+			t.Logf("json size %d, compressed size %d, brotli level %d, compression ratio %v", len(b), buf.Len(), z, r)
+		}
+	}
+
+}
 
 //test pool allocation of zipper
 func TestBrotliEncoder(t *testing.T) {
