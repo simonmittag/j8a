@@ -2,7 +2,6 @@ package j8a
 
 import (
 	"bytes"
-	"encoding/binary"
 	"fmt"
 	"github.com/klauspost/compress/gzip"
 	"io/ioutil"
@@ -38,8 +37,8 @@ func TestGzipThenUnzip(t *testing.T) {
 }
 
 func TestGzipCompressionRatio(t *testing.T) {
-	nums := []int{1,2,3}
-	zips := []int{1,2,3,4,5,6,7,8,9}
+	nums := []int{1, 2, 3}
+	zips := []int{1, 2, 3, 4, 5, 6, 7, 8, 9}
 
 	for _, i := range nums {
 		b, _ := ioutil.ReadFile(fmt.Sprintf("./unit/example%d.json", i))
@@ -50,7 +49,7 @@ func TestGzipCompressionRatio(t *testing.T) {
 			w.Flush()
 			w.Close()
 
-			r := float32(buf.Len())/float32(len(b))
+			r := float32(buf.Len()) / float32(len(b))
 
 			t.Logf("json size %d, compressed size %d, gzip level %d, compression ratio %v", len(b), buf.Len(), z, r)
 		}
@@ -61,13 +60,13 @@ func TestGzipCompressionRatio(t *testing.T) {
 func BenchmahkGzipNBytes(b *testing.B, n int) {
 	b.StopTimer()
 	text := []byte(randSeq(n))
-	var res *[]byte
+	//var res *[]byte
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
-		res = Gzip(text)
+		Gzip(text)
 	}
-	r := float32(binary.Size(*res))/float32(binary.Size(text))
-	b.Logf("compression ratio gzip level%d/identity: %g", gzipLevel, r)
+	//r := float32(binary.Size(*res))/float32(binary.Size(text))
+	//b.Logf("compression ratio gzip level%d/identity: %g", gzipLevel, r)
 }
 
 func BenchmahkGunzipNBytes(b *testing.B, n int) {
@@ -80,83 +79,83 @@ func BenchmahkGunzipNBytes(b *testing.B, n int) {
 }
 
 func BenchmarkGzip128B(b *testing.B) {
-	BenchmahkGzipNBytes(b,2<<6)
+	BenchmahkGzipNBytes(b, 2<<6)
 }
 
 func BenchmarkGunzip128B(b *testing.B) {
-	BenchmahkGunzipNBytes(b,2<<6)
+	BenchmahkGunzipNBytes(b, 2<<6)
 }
 
 func BenchmarkGzip1KB(b *testing.B) {
-	BenchmahkGzipNBytes(b,2<<9)
+	BenchmahkGzipNBytes(b, 2<<9)
 }
 
 func BenchmarkGunzip1KB(b *testing.B) {
-	BenchmahkGunzipNBytes(b,2<<9)
+	BenchmahkGunzipNBytes(b, 2<<9)
 }
 
 func BenchmarkGzip64KB(b *testing.B) {
-	BenchmahkGzipNBytes(b,2<<15)
+	BenchmahkGzipNBytes(b, 2<<15)
 }
 
 func BenchmarkGunzip64KB(b *testing.B) {
-	BenchmahkGunzipNBytes(b,2<<15)
+	BenchmahkGunzipNBytes(b, 2<<15)
 }
 
 func BenchmarkGzip128KB(b *testing.B) {
-	BenchmahkGzipNBytes(b,2<<16)
+	BenchmahkGzipNBytes(b, 2<<16)
 }
 
 func BenchmarkGunzip128KB(b *testing.B) {
-	BenchmahkGunzipNBytes(b,2<<16)
+	BenchmahkGunzipNBytes(b, 2<<16)
 }
 
 func BenchmarkGzip1MB(b *testing.B) {
-	BenchmahkGzipNBytes(b,2<<19)
+	BenchmahkGzipNBytes(b, 2<<19)
 }
 
 func BenchmarkGunzip1MB(b *testing.B) {
-	BenchmahkGunzipNBytes(b,2<<19)
+	BenchmahkGunzipNBytes(b, 2<<19)
 }
 
 func BenchmarkGzip2MB(b *testing.B) {
-	BenchmahkGzipNBytes(b,2<<20)
+	BenchmahkGzipNBytes(b, 2<<20)
 }
 
 func BenchmarkGunzip2MB(b *testing.B) {
-	BenchmahkGunzipNBytes(b,2<<20)
+	BenchmahkGunzipNBytes(b, 2<<20)
 }
 
 func BenchmarkGzip4MB(b *testing.B) {
-	BenchmahkGzipNBytes(b,2<<21)
+	BenchmahkGzipNBytes(b, 2<<21)
 }
 
 func BenchmarkGunzip4MB(b *testing.B) {
-	BenchmahkGunzipNBytes(b,2<<21)
+	BenchmahkGunzipNBytes(b, 2<<21)
 }
 
 func BenchmarkGzip8MB(b *testing.B) {
-	BenchmahkGzipNBytes(b,2<<22)
+	BenchmahkGzipNBytes(b, 2<<22)
 }
 
 func BenchmarkGunzip8MB(b *testing.B) {
-	BenchmahkGunzipNBytes(b,2<<22)
+	BenchmahkGunzipNBytes(b, 2<<22)
 }
 
 func BenchmarkGzip16MB(b *testing.B) {
-	BenchmahkGzipNBytes(b,2<<23)
+	BenchmahkGzipNBytes(b, 2<<23)
 }
 
 func BenchmarkGunzip16MB(b *testing.B) {
-	BenchmahkGunzipNBytes(b,2<<23)
+	BenchmahkGunzipNBytes(b, 2<<23)
 }
 
 func BenchmarkGzip32MB(b *testing.B) {
-	BenchmahkGzipNBytes(b,2<<24)
+	BenchmahkGzipNBytes(b, 2<<24)
 }
 
 func BenchmarkGunzip32MB(b *testing.B) {
-	BenchmahkGunzipNBytes(b,2<<24)
+	BenchmahkGunzipNBytes(b, 2<<24)
 }
 
 var letters = []rune("{}\":123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
