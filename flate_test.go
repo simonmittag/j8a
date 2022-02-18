@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/klauspost/compress/flate"
 	"io/ioutil"
+	"math/rand"
+	"sync"
 	"testing"
 )
 
@@ -43,13 +45,22 @@ func TestFlateEncoder(t *testing.T) {
 	}
 }
 
-func TestFlateDecoder(t *testing.T) {
-	for i := 0; i <= 1000000; i++ {
-		json := []byte(fmt.Sprintf(`{ "key":"value%d" }`, i))
-		if c := bytes.Compare(json, *Deflate(*Flate(json))); c != 0 {
-			t.Error("deflated data is not equal to original")
-		}
+func TestFlateThenDeflatePoolIntegrity(t *testing.T) {
+	var wg sync.WaitGroup
+
+	for i := 0; i <= 100000; i++ {
+		json := []byte(fmt.Sprintf(`{ "key":"value %v" }`, rand.Float64()*float64(i)))
+		wg.Add(1)
+
+		go func() {
+			if c := bytes.Compare(json, *Deflate(*Flate(json))); c != 0 {
+				t.Error("deflated data is not equal to original")
+			}
+			wg.Done()
+		}()
 	}
+
+	wg.Wait()
 }
 
 func BenchmahkFlateNBytes(b *testing.B, n int) {

@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"github.com/andybalholm/brotli"
 	"io/ioutil"
+	"math/rand"
+	"sync"
 	"testing"
 )
 
 func TestBrotliCompressionRatio(t *testing.T) {
-	nums := []int{1,2,3}
-	brotlis := []int{1,2,3,4,5,6,7,8,9,10,11}
+	nums := []int{1, 2, 3}
+	brotlis := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}
 
 	for _, i := range nums {
 		b, _ := ioutil.ReadFile(fmt.Sprintf("./unit/example%d.json", i))
@@ -21,7 +23,7 @@ func TestBrotliCompressionRatio(t *testing.T) {
 			w.Flush()
 			w.Close()
 
-			r := float32(buf.Len())/float32(len(b))
+			r := float32(buf.Len()) / float32(len(b))
 
 			t.Logf("json size %d, compressed size %d, brotli level %d, compression ratio %v", len(b), buf.Len(), z, r)
 		}
@@ -52,6 +54,24 @@ func TestBrotliDecoder(t *testing.T) {
 	}
 }
 
+func TestBrotliEncodeThenBrotliDecodePoolIntegrity(t *testing.T) {
+	var wg sync.WaitGroup
+
+	for i := 0; i <= 100000; i++ {
+		json := []byte(fmt.Sprintf(`{ "key":"value %v" }`, rand.Float64()*float64(i)))
+		wg.Add(1)
+
+		go func() {
+			if c := bytes.Compare(json, *BrotliDecode(*BrotliEncode(json))); c != 0 {
+				t.Error("brotli decoded data is not equal to original")
+			}
+			wg.Done()
+		}()
+	}
+
+	wg.Wait()
+}
+
 func BenchmahkBrotliEncodeNBytes(b *testing.B, n int) {
 	b.StopTimer()
 	text := []byte(randSeq(n))
@@ -71,81 +91,81 @@ func BenchmahkBrotliDecodeNBytes(b *testing.B, n int) {
 }
 
 func BenchmarkBrotliEncode128B(b *testing.B) {
-	BenchmahkBrotliEncodeNBytes(b,2<<6)
+	BenchmahkBrotliEncodeNBytes(b, 2<<6)
 }
 
 func BenchmarkBrotliDecode128B(b *testing.B) {
-	BenchmahkBrotliDecodeNBytes(b,2<<6)
+	BenchmahkBrotliDecodeNBytes(b, 2<<6)
 }
 
 func BenchmarkBrotliEncode1KB(b *testing.B) {
-	BenchmahkBrotliEncodeNBytes(b,2<<9)
+	BenchmahkBrotliEncodeNBytes(b, 2<<9)
 }
 
 func BenchmarkBrotliDecode1KB(b *testing.B) {
-	BenchmahkBrotliDecodeNBytes(b,2<<9)
+	BenchmahkBrotliDecodeNBytes(b, 2<<9)
 }
 
 func BenchmarkBrotliEncode64KB(b *testing.B) {
-	BenchmahkBrotliEncodeNBytes(b,2<<15)
+	BenchmahkBrotliEncodeNBytes(b, 2<<15)
 }
 
 func BenchmarkBrotliDecode64KB(b *testing.B) {
-	BenchmahkBrotliDecodeNBytes(b,2<<15)
+	BenchmahkBrotliDecodeNBytes(b, 2<<15)
 }
 
 func BenchmarkBrotliEncode128KB(b *testing.B) {
-	BenchmahkBrotliEncodeNBytes(b,2<<16)
+	BenchmahkBrotliEncodeNBytes(b, 2<<16)
 }
 
 func BenchmarkBrotliDecode128KB(b *testing.B) {
-	BenchmahkBrotliDecodeNBytes(b,2<<16)
+	BenchmahkBrotliDecodeNBytes(b, 2<<16)
 }
 
 func BenchmarkBrotliEncode1MB(b *testing.B) {
-	BenchmahkBrotliEncodeNBytes(b,2<<19)
+	BenchmahkBrotliEncodeNBytes(b, 2<<19)
 }
 
 func BenchmarkBrotliDecode1MB(b *testing.B) {
-	BenchmahkBrotliDecodeNBytes(b,2<<19)
+	BenchmahkBrotliDecodeNBytes(b, 2<<19)
 }
 
 func BenchmarkBrotliEncode2MB(b *testing.B) {
-	BenchmahkBrotliEncodeNBytes(b,2<<20)
+	BenchmahkBrotliEncodeNBytes(b, 2<<20)
 }
 
 func BenchmarkBrotliDecode2MB(b *testing.B) {
-	BenchmahkBrotliDecodeNBytes(b,2<<20)
+	BenchmahkBrotliDecodeNBytes(b, 2<<20)
 }
 
 func BenchmarkBrotliEncode4MB(b *testing.B) {
-	BenchmahkBrotliEncodeNBytes(b,2<<21)
+	BenchmahkBrotliEncodeNBytes(b, 2<<21)
 }
 
 func BenchmarkBrotliDecode4MB(b *testing.B) {
-	BenchmahkBrotliDecodeNBytes(b,2<<21)
+	BenchmahkBrotliDecodeNBytes(b, 2<<21)
 }
 
 func BenchmarkBrotliEncode8MB(b *testing.B) {
-	BenchmahkBrotliEncodeNBytes(b,2<<22)
+	BenchmahkBrotliEncodeNBytes(b, 2<<22)
 }
 
 func BenchmarkBrotliDecode8MB(b *testing.B) {
-	BenchmahkBrotliDecodeNBytes(b,2<<22)
+	BenchmahkBrotliDecodeNBytes(b, 2<<22)
 }
 
 func BenchmarkBrotliEncode16MB(b *testing.B) {
-	BenchmahkBrotliEncodeNBytes(b,2<<23)
+	BenchmahkBrotliEncodeNBytes(b, 2<<23)
 }
 
 func BenchmarkBrotliDecode16MB(b *testing.B) {
-	BenchmahkBrotliDecodeNBytes(b,2<<23)
+	BenchmahkBrotliDecodeNBytes(b, 2<<23)
 }
 
 func BenchmarkBrotliEncode32MB(b *testing.B) {
-	BenchmahkBrotliEncodeNBytes(b,2<<24)
+	BenchmahkBrotliEncodeNBytes(b, 2<<24)
 }
 
 func BenchmarkBrotliDecode32MB(b *testing.B) {
-	BenchmahkBrotliDecodeNBytes(b,2<<24)
+	BenchmahkBrotliDecodeNBytes(b, 2<<24)
 }

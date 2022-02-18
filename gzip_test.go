@@ -6,6 +6,7 @@ import (
 	"github.com/klauspost/compress/gzip"
 	"io/ioutil"
 	"math/rand"
+	"sync"
 	"testing"
 )
 
@@ -27,13 +28,23 @@ func TestGzipper(t *testing.T) {
 	}
 }
 
-func TestGzipThenUnzip(t *testing.T) {
-	for i := 0; i <= 100; i++ {
-		json := []byte(fmt.Sprintf(`{ "key":"value%d" }`, i))
-		if c := bytes.Compare(json, *Gunzip(*Gzip(json))); c != 0 {
-			t.Error("unzipped data is not equal to original")
-		}
+func TestGzipThenUnzipPoolIntegrity(t *testing.T) {
+	var wg sync.WaitGroup
+
+	for i := 0; i <= 100000; i++ {
+		json := []byte(fmt.Sprintf(`{ "key":"value %v" }`, rand.Float64()*float64(i)))
+		wg.Add(1)
+
+		go func() {
+			if c := bytes.Compare(json, *Gunzip(*Gzip(json))); c != 0 {
+				t.Error("unzipped data is not equal to original")
+			}
+			wg.Done()
+		}()
+
 	}
+
+	wg.Wait()
 }
 
 func TestGzipCompressionRatio(t *testing.T) {
