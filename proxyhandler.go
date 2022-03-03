@@ -44,6 +44,15 @@ const upstreamResourceNotFound = "upstream resource not found"
 const httpRequestEntityTooLarge = "http request entity too large, limit is %d bytes"
 const downstreamRequestAbortedBeforeFirstUpstream = "downstream request aborted or timed out before first upstream attempt"
 
+var httpRequestInvalidAcceptEncoding string
+
+func formatInvalidAcceptEncoding() string {
+	if len(httpRequestInvalidAcceptEncoding) == 0 {
+		httpRequestInvalidAcceptEncoding = fmt.Sprintf("http request content encoding header must contain one of %v", SupportedContentEncodings.Print())
+	}
+	return httpRequestInvalidAcceptEncoding
+}
+
 func proxyHandler(response http.ResponseWriter, request *http.Request, exec proxyfunc) {
 	matched := false
 
@@ -56,6 +65,8 @@ func proxyHandler(response http.ResponseWriter, request *http.Request, exec prox
 	if !validate(proxy) {
 		if proxy.Dwn.ReqTooLarge {
 			sendStatusCodeAsJSON(proxy.respondWith(413, fmt.Sprintf(httpRequestEntityTooLarge, Runner.Connection.Downstream.MaxBodyBytes)))
+		} else if !proxy.Dwn.AcceptEncoding.hasAtLeastOneValidEncoding() {
+			sendStatusCodeAsJSON(proxy.respondWith(406, formatInvalidAcceptEncoding()))
 		} else {
 			sendStatusCodeAsJSON(proxy.respondWith(400, badOrMalFormedRequest))
 		}
@@ -102,7 +113,8 @@ func proxyHandler(response http.ResponseWriter, request *http.Request, exec prox
 
 func validate(proxy *Proxy) bool {
 	return proxy.hasLegalHTTPMethod() &&
-		!proxy.Dwn.ReqTooLarge
+		!proxy.Dwn.ReqTooLarge &&
+		proxy.Dwn.AcceptEncoding.hasAtLeastOneValidEncoding()
 }
 
 const connectionClosedByRemoteUserAgent = "downstream remote user agent aborted request or closed connection"
@@ -136,7 +148,6 @@ func handleHTTP(proxy *Proxy) {
 }
 
 const upstreamURIResolved = "upstream URI resolved"
-const gzipIdentity = gzipS + ", " + identity
 const keepAlive = "Keep-Alive"
 
 func scaffoldUpstreamRequest(proxy *Proxy) *http.Request {
@@ -173,11 +184,8 @@ func scaffoldUpstreamRequest(proxy *Proxy) *http.Request {
 
 	proxy.Up.Atmpt.Aborted = upstreamRequest.Context().Done()
 
-	//do not copy accept encoding header, only set it to gzip if present downstream
-	ae := proxy.Dwn.Req.Header.Get(acceptEncoding)
-	if len(ae) > 0 && strings.Contains(strings.ToLower(ae), gzipS) {
-		upstreamRequest.Header.Add(acceptEncoding, gzipIdentity)
-	}
+	//this contains all accept encodings for content negotiation but is guaranteed to have one valid value.
+	upstreamRequest.Header.Add(acceptEncoding, proxy.Dwn.AcceptEncoding.Print())
 
 	//set upstream headers
 	for key, values := range proxy.Dwn.Req.Header {
@@ -218,13 +226,7 @@ func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
 
 		defer func() {
 			if err := recover(); err != nil {
-				infoOrTraceEv(proxy).
-					//TODO can this be removed?
-					Str("error", fmt.Sprintf("error: %v", err)).
-					Str(XRequestID, proxy.XRequestID).
-					Int64(upAtmptElpsdMicros, time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
-					Str(upAtmpt, proxy.Up.Atmpt.print()).
-					Msg(safeToIgnoreFailedHeaderChannelClosure)
+				//it's safe to ignore this.
 			}
 		}()
 
@@ -303,7 +305,7 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 		proxy.Up.Atmpt.StatusCode = upstreamResponse.StatusCode
 		upstreamResponseBody, bodyError = ioutil.ReadAll(upstreamResponse.Body)
 		if c := bytes.Compare(upstreamResponseBody[0:2], gzipMagicBytes); c == 0 {
-			proxy.Up.Atmpt.isGzip = true
+			proxy.Up.Atmpt.ContentEncoding = EncGzip
 		}
 
 		defer func() {
@@ -353,7 +355,7 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 		}
 
 		//and show what is necessary depending on encoding
-		if !proxy.Up.Atmpt.isGzip {
+		if !proxy.Up.Atmpt.ContentEncoding.isCompressed() {
 			s := string(t)
 			if len(s) == 25 {
 				s += more
@@ -392,7 +394,6 @@ func processUpstreamResponse(proxy *Proxy, upstreamResponse *http.Response, upst
 				proxy.copyUpstreamStatusCodeHeader()
 				proxy.encodeUpstreamResponseBody()
 				proxy.setContentLengthHeader()
-				proxy.writeContentEncodingHeader()
 				proxy.sendDownstreamStatusCodeHeader()
 				proxy.pipeDownstreamResponse()
 				logHandledDownstreamRoundtrip(proxy)
@@ -475,7 +476,7 @@ func logHandledDownstreamRoundtrip(proxy *Proxy) {
 		Str(dwnReqHttpVer, proxy.Dwn.HttpVer).
 		Int(dwnResCode, proxy.Dwn.Resp.StatusCode).
 		Int64(dwnResCntntLen, proxy.Dwn.Resp.ContentLength).
-		Str(dwnResCntntEnc, proxy.contentEncoding()).
+		Str(dwnResCntntEnc, string(proxy.Dwn.Resp.ContentEncoding)).
 		Int64(dwnResElpsdMicros, elapsed.Microseconds()).
 		Str(XRequestID, proxy.XRequestID)
 

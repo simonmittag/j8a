@@ -16,6 +16,230 @@ import (
 	"time"
 )
 
+func TestAcceptEncodingHasAtLeastOneValidEncoding(t *testing.T) {
+	ae := AcceptEncoding{
+		NewContentEncoding("identity"),
+		NewContentEncoding("gzip "),
+		NewContentEncoding("x-gzip"),
+	}
+	if !ae.hasAtLeastOneValidEncoding() {
+		t.Error("valid encoding")
+	}
+
+	ae2 := AcceptEncoding{
+		NewContentEncoding("bad"),
+		NewContentEncoding("gzip "),
+		NewContentEncoding("x-gzip"),
+	}
+	if !ae2.hasAtLeastOneValidEncoding() {
+		t.Error("valid encoding")
+	}
+}
+
+func TestAcceptEncodingHasAtLeastOneValidEncodingFails(t *testing.T) {
+	ae := AcceptEncoding{
+		NewContentEncoding("bad"),
+	}
+	if ae.hasAtLeastOneValidEncoding() {
+		t.Error("not a valid encoding")
+	}
+}
+
+func TestAcceptEncodingMatchesContentEncoding(t *testing.T) {
+	ae := AcceptEncoding{
+		NewContentEncoding("gzip"),
+		NewContentEncoding("x-deflate"),
+	}
+	if !ae.isCompatible(NewContentEncoding("deflate")) {
+		t.Error("should be compatible")
+	}
+
+	ae2 := AcceptEncoding{
+		NewContentEncoding("*"),
+	}
+	if !ae2.isCompatible(NewContentEncoding("deflate")) {
+		t.Error("should be compatible")
+	}
+	if !ae2.isCompatible(NewContentEncoding("gzip")) {
+		t.Error("should be compatible")
+	}
+	if !ae2.isCompatible(NewContentEncoding("identity")) {
+		t.Error("should be compatible")
+	}
+	if !ae2.isCompatible(NewContentEncoding("br")) {
+		t.Error("should be compatible")
+	}
+}
+
+func TestAcceptEncodingMatchesContentEncodingFails(t *testing.T) {
+	ae := AcceptEncoding{
+		NewContentEncoding("gzip"),
+		NewContentEncoding("x-deflate"),
+	}
+	if ae.isCompatible(NewContentEncoding("br")) {
+		t.Error("should not be compatible")
+	}
+}
+
+func TestPrintAcceptEncoding(t *testing.T) {
+	ae := AcceptEncoding{
+		NewContentEncoding("gzip    "),
+		NewContentEncoding("x-gzip"),
+	}
+	want := "gzip, x-gzip"
+	got := ae.Print()
+	if got != want {
+		t.Errorf("AcceptEncoding print got %s, want %s", got, want)
+	}
+}
+
+func TestContentEncodingMatches(t *testing.T) {
+	gz := NewContentEncoding("gZIP")
+	gz2 := NewContentEncoding("Gzip")
+	if !gz.matches(gz2) {
+		t.Error("should match")
+	}
+
+	gz3 := NewContentEncoding("gzip")
+	gz4 := NewContentEncoding("x-gzip")
+	if !gz3.matches(gz4) {
+		t.Error("should match")
+	}
+
+	gz5 := NewContentEncoding("x-gzip")
+	gz6 := NewContentEncoding("gzip")
+	if !gz5.matches(gz6) {
+		t.Error("should match")
+	}
+
+	df1 := NewContentEncoding("deflate")
+	df2 := NewContentEncoding("x-deflate")
+	if !df1.matches(df2) {
+		t.Error("should match")
+	}
+
+	df3 := NewContentEncoding("x-deflate")
+	df4 := NewContentEncoding("deflate")
+	if !df3.matches(df4) {
+		t.Error("should match")
+	}
+
+	df5 := NewContentEncoding("*")
+	df6 := NewContentEncoding("deflate")
+	if !df5.matches(df6) {
+		t.Error("should match")
+	}
+}
+
+func TestContentEncodingisCompressed(t *testing.T) {
+	if !NewContentEncoding("gzip").isCompressed() {
+		t.Error("should be compressed")
+	}
+	if !NewContentEncoding("x-gzip").isCompressed() {
+		t.Error("should be compressed")
+	}
+	if !NewContentEncoding("deflate").isCompressed() {
+		t.Error("should be compressed")
+	}
+	if !NewContentEncoding("x-deflate").isCompressed() {
+		t.Error("should be compressed")
+	}
+	if !NewContentEncoding("br").isCompressed() {
+		t.Error("should be compressed")
+	}
+	if NewContentEncoding("*").isCompressed() {
+		t.Error("should not be compressed")
+	}
+	if NewContentEncoding("identity").isCompressed() {
+		t.Error("should not be compressed")
+	}
+	if NewContentEncoding("whatevs").isCompressed() {
+		t.Error("should not be compressed")
+	}
+}
+
+func TestContentEncodingisAtomic(t *testing.T) {
+	if !NewContentEncoding("gzip").isAtomic() {
+		t.Error("should be atomic")
+	}
+
+	if NewContentEncoding("gzip, br").isAtomic() {
+		t.Error("should not be atomic")
+	}
+}
+
+func TestContentEncodingisGzip(t *testing.T) {
+	gz := NewContentEncoding("x-gZIP")
+	if !gz.isGzip() {
+		t.Error("should be gzip")
+	}
+
+	gz2 := NewContentEncoding("br")
+	if gz2.isGzip() {
+		t.Error("should not be gzip")
+	}
+}
+
+func TestContentEncodingisBrotli(t *testing.T) {
+	br := NewContentEncoding("br")
+	if !br.isBrotli() {
+		t.Error("should be brotli")
+	}
+
+	br2 := NewContentEncoding("identity")
+	if br2.isBrotli() {
+		t.Error("should not be brotli")
+	}
+}
+
+func TestContentEncodingisDeflate(t *testing.T) {
+	df := NewContentEncoding("x-deflate")
+	if !df.isDeflate() {
+		t.Error("should be deflate")
+	}
+
+	df2 := NewContentEncoding("identity")
+	if df2.isDeflate() {
+		t.Error("should not be deflate")
+	}
+}
+
+func TestSupportedContentEncoding(t *testing.T) {
+	supported := []ContentEncoding{
+		NewContentEncoding("gzip"),
+		NewContentEncoding("gzip "),
+		NewContentEncoding("x-gzip"),
+		NewContentEncoding("deflate"),
+		NewContentEncoding("x-deflate"),
+		NewContentEncoding("br"),
+		NewContentEncoding("br\n"),
+		NewContentEncoding("\nbr\n"),
+	}
+	for _, ce := range supported {
+		if !ce.isSupported() {
+			t.Errorf("%v should be supported", ce)
+		}
+	}
+}
+
+func TestUnSupportedContentEncoding(t *testing.T) {
+	supported := []ContentEncoding{
+		NewContentEncoding("xgzip"),
+		NewContentEncoding("ddgzip "),
+		NewContentEncoding("ddsfa"),
+		NewContentEncoding("deflasdfsdte"),
+		NewContentEncoding("x--deflate"),
+		NewContentEncoding("br--"),
+		NewContentEncoding("br\n!"),
+		NewContentEncoding("\nbr\nsdfsd"),
+	}
+	for _, ce := range supported {
+		if ce.isSupported() {
+			t.Errorf("%v should not be supported", ce)
+		}
+	}
+}
+
 func TestAbortAllUpstreamAttempts(t *testing.T) {
 	Runner = mockRuntime()
 
@@ -28,7 +252,6 @@ func TestAbortAllUpstreamAttempts(t *testing.T) {
 			Label:          "",
 			Count:          1,
 			StatusCode:     0,
-			isGzip:         false,
 			resp:           nil,
 			respBody:       nil,
 			CompleteHeader: nil,

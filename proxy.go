@@ -20,6 +20,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	unicode "unicode"
 
 	"github.com/rs/zerolog/log"
 )
@@ -47,23 +48,136 @@ var httpRepeatableMethods = append(httpSafeMethods, httpIdempotentMethods...)
 //RFC7231 4.3
 var httpLegalMethods []string = append(httpRepeatableMethods, []string{"POST", "CONNECT"}...)
 
+type ContentEncoding string
+
+const (
+	EncStar     ContentEncoding = "*"
+	EncIdentity ContentEncoding = "identity"
+	EncBrotli   ContentEncoding = "br"
+	EncGzip     ContentEncoding = "gzip"
+	EncXGzip    ContentEncoding = "x-gzip"
+	EncDeflate  ContentEncoding = "deflate"
+	EncXDeflate ContentEncoding = "x-deflate"
+)
+
+var GzipContentEncodings = AcceptEncoding{EncGzip, EncXGzip}
+var DeflateContentEncodings = AcceptEncoding{EncDeflate, EncXDeflate}
+var CompressedContentEncodings = AcceptEncoding{EncBrotli, EncGzip, EncXGzip, EncDeflate, EncXDeflate}
+var SupportedContentEncodings = AcceptEncoding{EncStar, EncIdentity, EncBrotli, EncGzip, EncXGzip, EncDeflate, EncXDeflate}
+
+func NewContentEncoding(raw string) ContentEncoding {
+	encs := strings.TrimFunc(raw, func(r rune) bool {
+		return !unicode.IsGraphic(r)
+	})
+	return ContentEncoding(strings.ToLower(strings.TrimSpace(encs)))
+}
+
+func (c ContentEncoding) isSupported() bool {
+	for _, ce := range SupportedContentEncodings {
+		if ce == c {
+			return true
+		}
+	}
+	return false
+}
+
+func (c ContentEncoding) isCompressed() bool {
+	for _, ce := range CompressedContentEncodings {
+		if ce == c {
+			return true
+		}
+	}
+	return false
+}
+
+func (c ContentEncoding) isAtomic() bool {
+	return len(c) > 0 && !strings.Contains(string(c), COMMA)
+}
+
+func (c ContentEncoding) isGzip() bool {
+	for _, ce := range GzipContentEncodings {
+		if ce == c {
+			return true
+		}
+	}
+	return false
+}
+
+func (c ContentEncoding) isDeflate() bool {
+	for _, ce := range DeflateContentEncodings {
+		if ce == c {
+			return true
+		}
+	}
+	return false
+}
+
+func (c ContentEncoding) isBrotli() bool {
+	return c == EncBrotli
+}
+
+const xdash string = "x-"
+
+func (c ContentEncoding) matches(encoding ContentEncoding) bool {
+	if len(string(c)) == 0 || len(string(encoding)) == 0 {
+		return false
+	} else if c == encoding || c == STAR {
+		return true
+	} else if len(string(encoding)) >= 2 && string(encoding)[0:2] == xdash {
+		return c == NewContentEncoding(string(encoding)[2:])
+	} else {
+		return c == NewContentEncoding(xdash+string(encoding))
+	}
+}
+
+func (c ContentEncoding) print() string {
+	return string(c)
+}
+
+type AcceptEncoding []ContentEncoding
+
+func (ae AcceptEncoding) hasAtLeastOneValidEncoding() bool {
+	var valid bool = false
+	for _, ce := range ae {
+		valid = valid || ce.isSupported()
+	}
+	return valid
+}
+
+func (ae AcceptEncoding) isCompatible(enc ContentEncoding) bool {
+	var comp = false
+	for _, ce := range ae {
+		comp = comp || ce.matches(enc)
+	}
+	return comp
+}
+
+func (ae AcceptEncoding) Print() string {
+	p := ""
+	for _, ce := range ae {
+		p = p + string(ce) + ", "
+	}
+	p = p[:len(p)-2]
+	return p
+}
+
 type proxyfunc func(*Proxy)
 
 // Atmpt wraps connection attempts to specific upstreams that are already mapped by label
 type Atmpt struct {
-	URL            *URL
-	Label          string
-	Count          int
-	StatusCode     int
-	isGzip         bool
-	resp           *http.Response
-	respBody       *[]byte
-	CompleteHeader chan struct{}
-	CompleteBody   chan struct{}
-	Aborted        <-chan struct{}
-	AbortedFlag    bool
-	CancelFunc     func()
-	startDate      time.Time
+	URL             *URL
+	Label           string
+	Count           int
+	StatusCode      int
+	ContentEncoding ContentEncoding
+	resp            *http.Response
+	respBody        *[]byte
+	CompleteHeader  chan struct{}
+	CompleteBody    chan struct{}
+	Aborted         <-chan struct{}
+	AbortedFlag     bool
+	CancelFunc      func()
+	startDate       time.Time
 }
 
 func (atmpt Atmpt) print() string {
@@ -72,12 +186,12 @@ func (atmpt Atmpt) print() string {
 
 // Resp wraps downstream http response writer and data
 type Resp struct {
-	Writer        http.ResponseWriter
-	StatusCode    int
-	Message       string
-	SendGzip      bool
-	Body          *[]byte
-	ContentLength int64
+	Writer          http.ResponseWriter
+	StatusCode      int
+	Message         string
+	Body            *[]byte
+	ContentLength   int64
+	ContentEncoding ContentEncoding
 }
 
 //Up wraps upstream
@@ -89,23 +203,24 @@ type Up struct {
 
 //Down wraps downstream exchange
 type Down struct {
-	Req         *http.Request
-	Resp        Resp
-	Method      string
-	Path        string
-	URI         string
-	UserAgent   string
-	Body        []byte
-	Aborted     <-chan struct{}
-	AbortedFlag bool
-	Timeout     <-chan struct{}
-	TimeoutFlag bool
-	ReqTooLarge bool
-	startDate   time.Time
-	HttpVer     string
-	TlsVer      string
-	Port        int
-	Listener    string
+	Req            *http.Request
+	Resp           Resp
+	Method         string
+	Path           string
+	URI            string
+	UserAgent      string
+	AcceptEncoding AcceptEncoding
+	Body           []byte
+	Aborted        <-chan struct{}
+	AbortedFlag    bool
+	Timeout        <-chan struct{}
+	TimeoutFlag    bool
+	ReqTooLarge    bool
+	startDate      time.Time
+	HttpVer        string
+	TlsVer         string
+	Port           int
+	Listener       string
 }
 
 // Proxy wraps data for a single downstream request/response with multiple upstream HTTP request/response cycles.
@@ -228,6 +343,7 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 	proxy.XRequestInfo = parseXRequestInfo(request)
 	proxy.Dwn.Path = request.URL.EscapedPath()
 	proxy.Dwn.URI = request.URL.RequestURI()
+	proxy.Dwn.AcceptEncoding = parseAcceptEncoding(request)
 	proxy.Dwn.HttpVer = parseHTTPVer(request)
 	proxy.Dwn.TlsVer = parseTlsVersion(request)
 	proxy.Dwn.UserAgent = parseUserAgent(request)
@@ -236,7 +352,6 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 	proxy.Dwn.Port = parsePort(request)
 	proxy.Dwn.Req = request
 	proxy.Dwn.AbortedFlag = false
-	proxy.Dwn.Resp.SendGzip = strings.Contains(request.Header.Get(acceptEncoding), gzipS)
 
 	infoOrTraceEv(proxy).Str(path, proxy.Dwn.Path).
 		Str(method, proxy.Dwn.Method).
@@ -247,6 +362,28 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 	proxy.parseRequestBody(request)
 
 	return proxy
+}
+
+const AcceptEncodingS = "Accept-Encoding"
+const COMMA = ","
+const STAR = "*"
+
+func parseAcceptEncoding(request *http.Request) AcceptEncoding {
+	//case insensitive
+	var ae AcceptEncoding
+	raw := request.Header.Get(AcceptEncodingS)
+
+	//this is so we pass validation if accept-encoding header was not set by remote user agent.
+	if len(raw) == 0 {
+		raw = STAR
+	}
+
+	encs := strings.Split(raw, COMMA)
+	for _, e := range encs {
+		ae = append(ae, NewContentEncoding(e))
+	}
+
+	return ae
 }
 
 func parsePort(request *http.Request) int {
@@ -449,7 +586,6 @@ func (proxy *Proxy) nextAttempt() *Proxy {
 		Label:          proxy.Up.Atmpt.Label,
 		Count:          proxy.Up.Atmpt.Count + 1,
 		StatusCode:     0,
-		isGzip:         false,
 		resp:           nil,
 		respBody:       nil,
 		CompleteHeader: make(chan struct{}),
@@ -470,12 +606,6 @@ func (proxy *Proxy) nextAttempt() *Proxy {
 	return proxy
 }
 
-func (proxy *Proxy) writeContentEncodingHeader() {
-	if proxy.Dwn.Resp.ContentLength > 0 {
-		proxy.Dwn.Resp.Writer.Header().Set(contentEncoding, proxy.contentEncoding())
-	}
-}
-
 func (proxy *Proxy) copyUpstreamResponseHeaders() {
 	for key, values := range proxy.Up.Atmpt.resp.Header {
 		if shouldProxyHeader(key) {
@@ -486,30 +616,63 @@ func (proxy *Proxy) copyUpstreamResponseHeaders() {
 	}
 }
 
+const upstreamEncodeFlate = "upstream response body re-encoded with flate before passing downstream"
+const upstreamEncodeBr = "upstream response body re-encoded with brotli before passing downstream"
 const upstreamEncodeGzip = "upstream response body re-encoded with gzip before passing downstream"
-const upstreamDecodeGzip = "upstream response body decoded from gzip before passing downstream"
 const upstreamCopyNoRecode = "upstream response body copied without re-coding before passing downstream"
 const upstreamResponseNoBody = "upstream response has no body, nothing to copy before passing downstream"
+
+const varyS = "Vary"
 
 func (proxy *Proxy) encodeUpstreamResponseBody() {
 	atmpt := *proxy.Up.Atmpt
 	if atmpt.respBody != nil && len(*atmpt.respBody) > 0 {
-		if proxy.shouldGzipEncodeResponseBody() {
-			proxy.Dwn.Resp.Body = Gzip(*proxy.Up.Atmpt.respBody)
 
+		//get content encoding, which may be nil
+		proxy.Up.Atmpt.ContentEncoding = NewContentEncoding(proxy.Up.Atmpt.resp.Header.Get(contentEncoding))
+
+		//we pass through all compressed responses without fiddling
+		if proxy.Up.Atmpt.ContentEncoding.isCompressed() {
+			proxy.Dwn.Resp.Body = proxy.Up.Atmpt.respBody
+			proxy.Dwn.Resp.ContentEncoding = proxy.Up.Atmpt.ContentEncoding
+			scaffoldUpAttemptLog(proxy).
+				Msgf(upstreamCopyNoRecode)
+		} else if proxy.Dwn.AcceptEncoding.isCompatible(EncGzip) {
+			proxy.Dwn.Resp.Body = Gzip(*proxy.Up.Atmpt.respBody)
+			proxy.Dwn.Resp.ContentEncoding = EncGzip
 			scaffoldUpAttemptLog(proxy).
 				Msg(upstreamEncodeGzip)
+		} else if proxy.Dwn.AcceptEncoding.isCompatible(EncBrotli) {
+			proxy.Dwn.Resp.Body = BrotliEncode(*proxy.Up.Atmpt.respBody)
+			proxy.Dwn.Resp.ContentEncoding = EncBrotli
+			scaffoldUpAttemptLog(proxy).
+				Msg(upstreamEncodeBr)
+		} else if proxy.Dwn.AcceptEncoding.isCompatible(EncDeflate) {
+			proxy.Dwn.Resp.Body = Flate(*proxy.Up.Atmpt.respBody)
+			proxy.Dwn.Resp.ContentEncoding = EncDeflate
+			scaffoldUpAttemptLog(proxy).
+				Msg(upstreamEncodeFlate)
 		} else {
-			if proxy.shouldGzipDecodeResponseBody() {
-				proxy.Dwn.Resp.Body = Gunzip(*proxy.Up.Atmpt.respBody)
-				scaffoldUpAttemptLog(proxy).
-					Msg(upstreamDecodeGzip)
+			proxy.Dwn.Resp.Body = proxy.Up.Atmpt.respBody
+			if len(proxy.Up.Atmpt.ContentEncoding) > 0 {
+				proxy.Dwn.Resp.ContentEncoding = proxy.Up.Atmpt.ContentEncoding
 			} else {
-				proxy.Dwn.Resp.Body = proxy.Up.Atmpt.respBody
-				scaffoldUpAttemptLog(proxy).
-					Msgf(upstreamCopyNoRecode)
+				proxy.Dwn.Resp.ContentEncoding = EncIdentity
 			}
+			scaffoldUpAttemptLog(proxy).
+				Msgf(upstreamCopyNoRecode)
 		}
+
+		//set this when present, but do not give instructions for empty values
+		if len(proxy.Dwn.Resp.ContentEncoding) > 0 {
+			proxy.Dwn.Resp.Writer.Header().Set(contentEncoding, proxy.Dwn.Resp.ContentEncoding.print())
+		}
+
+		//send a vary header for accept encoding if upstream compression doesn't match expectations for content negotation.
+		if !proxy.Dwn.AcceptEncoding.isCompatible(proxy.Up.Atmpt.ContentEncoding) {
+			proxy.Dwn.Resp.Writer.Header().Set(varyS, acceptEncoding)
+		}
+
 	} else {
 		//just in case golang tries to use this value downstream.
 		nobody := make([]byte, 0)
@@ -517,23 +680,6 @@ func (proxy *Proxy) encodeUpstreamResponseBody() {
 		scaffoldUpAttemptLog(proxy).
 			Msg(upstreamResponseNoBody)
 	}
-}
-
-const identity = "identity"
-const gzipS = "gzip"
-const space = " "
-
-func (proxy *Proxy) contentEncoding() string {
-	ce := identity
-	if proxy.Dwn.Resp.SendGzip {
-		ce = gzipS
-	} else if proxy.hasMadeUpstreamAttempt() && !proxy.shouldGzipDecodeResponseBody() {
-		ceA := proxy.Up.Atmpt.resp.Header[contentEncoding]
-		if len(ceA) > 0 {
-			ce = strings.Join(ceA, space)
-		}
-	}
-	return ce
 }
 
 func (proxy *Proxy) setRoute(route *Route) {
@@ -595,14 +741,6 @@ func (proxy *Proxy) hasLegalHTTPMethod() bool {
 		}
 	}
 	return false
-}
-
-func (proxy *Proxy) shouldGzipEncodeResponseBody() bool {
-	return proxy.Dwn.Resp.SendGzip && !proxy.Up.Atmpt.isGzip
-}
-
-func (proxy *Proxy) shouldGzipDecodeResponseBody() bool {
-	return !proxy.Dwn.Resp.SendGzip && proxy.Up.Atmpt.isGzip
 }
 
 //get bearer token from request. feed into lib. check signature. check expiry. return true || false.

@@ -233,7 +233,7 @@ func TestUpstreamIdentityEncodingPassThrough(t *testing.T) {
 }
 
 // mocks upstream response with custom content encoding that is passed-through as-is
-func TestUpstreamCustomEncodingPassThroughWithBadAcceptEncoding(t *testing.T) {
+func TestContentNegotiationFailsWithBadAcceptEncoding(t *testing.T) {
 	Runner = mockRuntime()
 	httpClient = &MockHttp{}
 	mockDoFunc = func(req *http.Request) (*http.Response, error) {
@@ -241,7 +241,7 @@ func TestUpstreamCustomEncodingPassThroughWithBadAcceptEncoding(t *testing.T) {
 		return &http.Response{
 			StatusCode: 200,
 			Header: map[string][]string{
-				"Content-Encoding": []string{"custom"},
+				"Content-Encoding": []string{"identity"},
 			},
 			Body: ioutil.NopCloser(bytes.NewReader([]byte(json))),
 		}, nil
@@ -263,10 +263,10 @@ func TestUpstreamCustomEncodingPassThroughWithBadAcceptEncoding(t *testing.T) {
 		t.Errorf("body should not have gzip response magic bytes: %v", gotBody[0:2])
 	}
 
-	want := "custom"
-	got := resp.Header["Content-Encoding"][0]
+	want := 406
+	got := resp.StatusCode
 	if got != want {
-		t.Errorf("uh oh, did not receive correct Content-Encoding header, want %v, got %v", want, got)
+		t.Errorf("uh oh, did not receive bad content encoding status code, want %v, got %v", want, got)
 	}
 }
 
@@ -347,7 +347,7 @@ func TestUpstreamGzipReEncoding(t *testing.T) {
 }
 
 // mocks upstream gzip that is re-decoded as identity by j8a
-func TestUpstreamGzipReDecoding(t *testing.T) {
+func TestUpstreamGzipSendVaryHeader(t *testing.T) {
 	Runner = mockRuntime()
 	httpClient = &MockHttp{}
 	mockDoFunc = func(req *http.Request) (*http.Response, error) {
@@ -374,13 +374,18 @@ func TestUpstreamGzipReDecoding(t *testing.T) {
 
 	gotBody, _ := ioutil.ReadAll(resp.Body)
 	if c := bytes.Compare(gotBody[0:2], gzipMagicBytes); c == 0 {
-		t.Errorf("body should not have gzip response magic bytes, got %v", gotBody[0:2])
+		t.Logf("normal. upstream sent gzip despite our pleas not to, got %v", gotBody[0:2])
 	}
 
-	want := "identity"
-	got := resp.Header["Content-Encoding"][0]
+	want := "gzip"
+	got := resp.Header.Get("Content-Encoding")
 	if got != want {
-		t.Errorf("uh oh, did not receive correct Content-Encoding header, want %v, got %v", want, got)
+		t.Errorf("upstream should have sent gzip, got %v", got)
+	}
+
+	vary := resp.Header.Get("Vary")
+	if "Accept-Encoding" != vary {
+		t.Errorf("should have sent a vary header for accept encoding when changing content encoding")
 	}
 }
 
