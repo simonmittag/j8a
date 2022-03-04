@@ -271,7 +271,7 @@ func TestContentNegotiationFailsWithBadAcceptEncoding(t *testing.T) {
 }
 
 // mocks upstream response with custom encoding that is passed through to client that accepts identity
-func TestUpstreamCustomEncodingPassThroughWithIdentityAcceptEncoding(t *testing.T) {
+func TestUpstreamCustomEncodingPassThroughWithIdentityAcceptEncodingAndVary(t *testing.T) {
 	Runner = mockRuntime()
 	httpClient = &MockHttp{}
 	mockDoFunc = func(req *http.Request) (*http.Response, error) {
@@ -302,6 +302,47 @@ func TestUpstreamCustomEncodingPassThroughWithIdentityAcceptEncoding(t *testing.
 	}
 
 	want := "custom"
+	got := resp.Header["Content-Encoding"][0]
+	if got != want {
+		t.Errorf("uh oh, did not receive correct Content-Encoding header, want %v, got %v", want, got)
+	}
+
+	vary := resp.Header.Get("Vary")
+	if "Accept-Encoding" != vary {
+		t.Errorf("should have sent a vary header for accept encoding when changing content encoding")
+	}
+}
+
+// upstream content encoding header is missing. we assume identity, then gzip for client.
+func TestUpstreamMissingContentEncodingIdentityThenGzipReEncoding(t *testing.T) {
+	Runner = mockRuntime()
+	httpClient = &MockHttp{}
+	mockDoFunc = func(req *http.Request) (*http.Response, error) {
+		json := `{"key":"value"}`
+		return &http.Response{
+			StatusCode: 200,
+			Header:     map[string][]string{},
+			Body:       ioutil.NopCloser(bytes.NewReader([]byte(json))),
+		}, nil
+	}
+
+	server := httptest.NewServer(&ProxyHttpHandler{})
+	defer server.Close()
+
+	c := &http.Client{}
+	req, _ := http.NewRequest("GET", server.URL, nil)
+	req.Header.Set("Accept-Encoding", "gzip")
+	resp, err := c.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	gotBody, _ := ioutil.ReadAll(resp.Body)
+	if c := bytes.Compare(gotBody[0:2], gzipMagicBytes); c != 0 {
+		t.Errorf("uh, oh, body did not have gzip response magic bytes, want %v, got %v", gzipMagicBytes, gotBody[0:2])
+	}
+
+	want := "gzip"
 	got := resp.Header["Content-Encoding"][0]
 	if got != want {
 		t.Errorf("uh oh, did not receive correct Content-Encoding header, want %v, got %v", want, got)
@@ -346,8 +387,98 @@ func TestUpstreamGzipReEncoding(t *testing.T) {
 	}
 }
 
-// mocks upstream gzip that is re-decoded as identity by j8a
-func TestUpstreamGzipSendVaryHeader(t *testing.T) {
+// mocks upstream identity that is re-encoded as deflate by j8a
+func TestUpstreamFlateReEncoding(t *testing.T) {
+	Runner = mockRuntime()
+	httpClient = &MockHttp{}
+
+	mockDoFunc = func(req *http.Request) (*http.Response, error) {
+		json := `{"key":"value"}`
+		return &http.Response{
+			StatusCode: 200,
+			Header: map[string][]string{
+				"Content-Encoding": []string{"identity"},
+			},
+			Body: ioutil.NopCloser(bytes.NewReader([]byte(json))),
+		}, nil
+	}
+
+	server := httptest.NewServer(&ProxyHttpHandler{})
+	defer server.Close()
+
+	c := &http.Client{}
+	req, _ := http.NewRequest("GET", server.URL, nil)
+	req.Header.Set("Accept-Encoding", "deflate")
+	resp, err := c.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	gotBody, _ := ioutil.ReadAll(resp.Body)
+	if c := bytes.Compare(gotBody[0:2], gzipMagicBytes); c == 0 {
+		t.Errorf("uh, oh, body should be deflate but was gzip %v", gotBody[0:2])
+	}
+
+	rawBody := string(*Deflate(gotBody))
+	want := `{"key":"value"}`
+	if rawBody != want {
+		t.Errorf("uh oh, encoded body does not match original")
+	}
+
+	want2 := "deflate"
+	got2 := resp.Header["Content-Encoding"][0]
+	if got2 != want2 {
+		t.Errorf("uh oh, did not receive correct Content-Encoding header, want %v, got %v", want2, got2)
+	}
+}
+
+// mocks upstream identity that is re-encoded as brotli by j8a
+func TestUpstreamBrotliReEncoding(t *testing.T) {
+	Runner = mockRuntime()
+	httpClient = &MockHttp{}
+
+	mockDoFunc = func(req *http.Request) (*http.Response, error) {
+		json := `{"key":"value"}`
+		return &http.Response{
+			StatusCode: 200,
+			Header: map[string][]string{
+				"Content-Encoding": []string{"identity"},
+			},
+			Body: ioutil.NopCloser(bytes.NewReader([]byte(json))),
+		}, nil
+	}
+
+	server := httptest.NewServer(&ProxyHttpHandler{})
+	defer server.Close()
+
+	c := &http.Client{}
+	req, _ := http.NewRequest("GET", server.URL, nil)
+	req.Header.Set("Accept-Encoding", "br")
+	resp, err := c.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	gotBody, _ := ioutil.ReadAll(resp.Body)
+	if c := bytes.Compare(gotBody[0:2], gzipMagicBytes); c == 0 {
+		t.Errorf("uh, oh, body should be br but was gzip %v", gotBody[0:2])
+	}
+
+	rawBody := string(*BrotliDecode(gotBody))
+	want := `{"key":"value"}`
+	if rawBody != want {
+		t.Errorf("uh oh, encoded body does not match original")
+	}
+
+	want2 := "br"
+	got2 := resp.Header["Content-Encoding"][0]
+	if got2 != want2 {
+		t.Errorf("uh oh, did not receive correct Content-Encoding header, want %v, got %v", want2, got2)
+	}
+}
+
+// vary header for incompatible content encoding during negotiation
+func TestUpstreamIncompatibleContentEncodingSendVaryHeader(t *testing.T) {
 	Runner = mockRuntime()
 	httpClient = &MockHttp{}
 	mockDoFunc = func(req *http.Request) (*http.Response, error) {
@@ -482,6 +613,72 @@ func TestProxyHeaderRewrite(t *testing.T) {
 	}
 }
 
+func TestJsonifyUpstreamHeadersWithEmptyUp(t *testing.T) {
+	res := jsonifyUpstreamHeaders(&Proxy{
+		Up: Up{},
+	})
+
+	if string(res) != "{}" {
+		t.Errorf("should have returned json object")
+	}
+}
+
+func TestJsonifyUpstreamHeadersWithEmptyProxy(t *testing.T) {
+	res := jsonifyUpstreamHeaders(&Proxy{})
+
+	if string(res) != "{}" {
+		t.Errorf("should have returned json object")
+	}
+}
+
+func TestJsonifyUpstreamHeadersWithEmptyAtmpt(t *testing.T) {
+	res := jsonifyUpstreamHeaders(&Proxy{
+		Up: Up{
+			Atmpt: &Atmpt{},
+		},
+	})
+
+	if string(res) != "{}" {
+		t.Errorf("should have returned json object")
+	}
+}
+
+func TestJsonifyUpstreamHeadersWithNilHeaders(t *testing.T) {
+	res := jsonifyUpstreamHeaders(&Proxy{
+		Up: Up{
+			Atmpt: &Atmpt{
+				resp: &http.Response{
+					Header: nil,
+				},
+			},
+		},
+	})
+
+	if string(res) != "{}" {
+		t.Errorf("should have returned json object")
+	}
+}
+
+func TestJsonifyUpstreamHeadersWithHeader(t *testing.T) {
+	h := http.Header{}
+	h.Add("K", "v")
+	res := jsonifyUpstreamHeaders(&Proxy{
+		Up: Up{
+			Atmpt: &Atmpt{
+				resp: &http.Response{
+					Header: h,
+				},
+			},
+		},
+	})
+
+	want := `{"K":["v"]}`
+	got := string(res)
+	if got != want {
+		t.Errorf("should have returned json encoded headers, but got: %v", got)
+	}
+}
+
 func mockRunner() {
 	Runner = mockRuntime()
 }
@@ -566,70 +763,4 @@ func mockRuntime() *Runtime {
 
 	//now we can work with you
 	return r
-}
-
-func TestJsonifyUpstreamHeadersWithEmptyUp(t *testing.T) {
-	res := jsonifyUpstreamHeaders(&Proxy{
-		Up: Up{},
-	})
-
-	if string(res) != "{}" {
-		t.Errorf("should have returned json object")
-	}
-}
-
-func TestJsonifyUpstreamHeadersWithEmptyProxy(t *testing.T) {
-	res := jsonifyUpstreamHeaders(&Proxy{})
-
-	if string(res) != "{}" {
-		t.Errorf("should have returned json object")
-	}
-}
-
-func TestJsonifyUpstreamHeadersWithEmptyAtmpt(t *testing.T) {
-	res := jsonifyUpstreamHeaders(&Proxy{
-		Up: Up{
-			Atmpt: &Atmpt{},
-		},
-	})
-
-	if string(res) != "{}" {
-		t.Errorf("should have returned json object")
-	}
-}
-
-func TestJsonifyUpstreamHeadersWithNilHeaders(t *testing.T) {
-	res := jsonifyUpstreamHeaders(&Proxy{
-		Up: Up{
-			Atmpt: &Atmpt{
-				resp: &http.Response{
-					Header: nil,
-				},
-			},
-		},
-	})
-
-	if string(res) != "{}" {
-		t.Errorf("should have returned json object")
-	}
-}
-
-func TestJsonifyUpstreamHeadersWithHeader(t *testing.T) {
-	h := http.Header{}
-	h.Add("K", "v")
-	res := jsonifyUpstreamHeaders(&Proxy{
-		Up: Up{
-			Atmpt: &Atmpt{
-				resp: &http.Response{
-					Header: h,
-				},
-			},
-		},
-	})
-
-	want := `{"K":["v"]}`
-	got := string(res)
-	if got != want {
-		t.Errorf("should have returned json encoded headers, but got: %v", got)
-	}
 }

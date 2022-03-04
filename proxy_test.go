@@ -129,6 +129,22 @@ func TestContentEncodingMatches(t *testing.T) {
 	if !df5.matches(df6) {
 		t.Error("should match")
 	}
+
+	df7 := NewContentEncoding("*")
+	df8 := NewContentEncoding("")
+	if df7.matches(df8) {
+		t.Error("should not match")
+	}
+
+	df9 := NewContentEncoding("")
+	df10 := NewContentEncoding("*")
+	if df9.matches(df10) {
+		t.Error("should not match")
+	}
+
+	if df8.matches(df9) {
+		t.Error("should not match")
+	}
 }
 
 func TestContentEncodingisCompressed(t *testing.T) {
