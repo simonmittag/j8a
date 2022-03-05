@@ -370,7 +370,9 @@ func sendStatusCodeAsJSON(proxy *Proxy) {
 
 	b := []byte(statusCodeResponse.AsJSON())
 	proxy.Dwn.Resp.Body = &b
-	if proxy.Dwn.AcceptEncoding.isCompatible(EncGzip) {
+	if proxy.Dwn.AcceptEncoding.isCompatible(EncIdentity) {
+		proxy.Dwn.Resp.ContentEncoding = EncIdentity
+	} else if proxy.Dwn.AcceptEncoding.isCompatible(EncGzip) {
 		proxy.Dwn.Resp.Body = Gzip(*proxy.Dwn.Resp.Body)
 		proxy.Dwn.Resp.ContentEncoding = EncGzip
 	} else if proxy.Dwn.AcceptEncoding.isCompatible(EncBrotli) {
