@@ -170,7 +170,7 @@ func aboutHandler(w http.ResponseWriter, r *http.Request) {
 		proxy.Dwn.Resp.Body = BrotliEncode(res)
 		proxy.Dwn.Resp.ContentEncoding = EncBrotli
 	} else if proxy.Dwn.AcceptEncoding.isCompatible(EncDeflate) {
-		proxy.Dwn.Resp.Body = Flate(res)
+		proxy.Dwn.Resp.Body = Deflate(res)
 		proxy.Dwn.Resp.ContentEncoding = EncDeflate
 	}
 	w.Header().Set(contentEncoding, proxy.Dwn.Resp.ContentEncoding.print())

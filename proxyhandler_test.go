@@ -419,7 +419,7 @@ func TestUpstreamFlateReEncoding(t *testing.T) {
 		t.Errorf("uh, oh, body should be deflate but was gzip %v", gotBody[0:2])
 	}
 
-	rawBody := string(*Deflate(gotBody))
+	rawBody := string(*Inflate(gotBody))
 	want := `{"key":"value"}`
 	if rawBody != want {
 		t.Errorf("uh oh, encoded body does not match original")

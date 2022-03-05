@@ -648,7 +648,7 @@ func (proxy *Proxy) encodeUpstreamResponseBody() {
 			scaffoldUpAttemptLog(proxy).
 				Msg(upstreamEncodeBr)
 		} else if proxy.Dwn.AcceptEncoding.isCompatible(EncDeflate) {
-			proxy.Dwn.Resp.Body = Flate(*proxy.Up.Atmpt.respBody)
+			proxy.Dwn.Resp.Body = Deflate(*proxy.Up.Atmpt.respBody)
 			proxy.Dwn.Resp.ContentEncoding = EncDeflate
 			scaffoldUpAttemptLog(proxy).
 				Msg(upstreamEncodeFlate)
