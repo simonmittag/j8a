@@ -16,6 +16,14 @@ func TestGzipEncodingOn404(t *testing.T) {
 	DownstreamAcceptEncodingHTTP11("gzip", "/", t)
 }
 
+func TestBrotliEncodingOn404(t *testing.T) {
+	DownstreamAcceptEncodingHTTP11("br", "/", t)
+}
+
+func TestDeflateEncodingOn404(t *testing.T) {
+	DownstreamAcceptEncodingHTTP11("deflate", "/", t)
+}
+
 func DownstreamAcceptEncodingHTTP11(enc string, slug string, t *testing.T) {
 	//if this test fails, check the j8a configuration for connection.downstream.ReadTimeoutSeconds
 

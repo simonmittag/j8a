@@ -366,11 +366,20 @@ func sendStatusCodeAsJSON(proxy *Proxy) {
 		proxy.Dwn.Resp.Message = statusCodeResponse.Message
 	}
 
-	//TODO FIX does not encode. does not send content encoding header.
+	proxy.writeStandardResponseHeaders()
+
 	b := []byte(statusCodeResponse.AsJSON())
 	proxy.Dwn.Resp.Body = &b
-
-	proxy.writeStandardResponseHeaders()
+	if proxy.Dwn.AcceptEncoding.isCompatible(EncGzip) {
+		proxy.Dwn.Resp.Body = Gzip(*proxy.Dwn.Resp.Body)
+		proxy.Dwn.Resp.ContentEncoding = EncGzip
+	} else if proxy.Dwn.AcceptEncoding.isCompatible(EncBrotli) {
+		proxy.Dwn.Resp.Body = BrotliEncode(*proxy.Dwn.Resp.Body)
+		proxy.Dwn.Resp.ContentEncoding = EncBrotli
+	} else if proxy.Dwn.AcceptEncoding.isCompatible(EncDeflate) {
+		proxy.Dwn.Resp.Body = Flate(*proxy.Dwn.Resp.Body)
+		proxy.Dwn.Resp.ContentEncoding = EncDeflate
+	}
 
 	if proxy.Dwn.Resp.StatusCode >= clientError {
 		//for http1.1 we send a connection:close. Go HTTP/2 server removes this header which is illegal in HTTP/2.
@@ -379,6 +388,7 @@ func sendStatusCodeAsJSON(proxy *Proxy) {
 	}
 
 	proxy.Dwn.Resp.Writer.Header().Set(contentType, applicationJSON)
+	proxy.Dwn.Resp.Writer.Header().Set(contentEncoding, proxy.Dwn.Resp.ContentEncoding.print())
 	proxy.setContentLengthHeader()
 	proxy.Dwn.Resp.Writer.WriteHeader(proxy.Dwn.Resp.StatusCode)
 
