@@ -2,7 +2,6 @@ package j8a
 
 import (
 	"encoding/json"
-	"fmt"
 	"math/rand"
 	"net/http"
 	"strings"
@@ -159,26 +158,26 @@ func aboutHandler(w http.ResponseWriter, r *http.Request) {
 	proxy.writeStandardResponseHeaders()
 	proxy.respondWith(200, "ok")
 
-	ae := r.Header["Accept-Encoding"]
 	res := AboutResponse{}.AsJSON()
-	w.Header().Set("Content-Type", "application/json")
-	if len(ae) > 0 {
-		s := strings.Join(ae, " ")
-		if strings.Contains(s, "gzip") {
-			w.Header().Set("Content-Encoding", "gzip")
-			res = *Gzip(res)
-			w.Header().Set("Content-Length", fmt.Sprintf("%d", len(res)))
-			w.Write(res)
-		} else {
-			w.Header().Set("Content-Encoding", "identity")
-			w.Header().Set("Content-Length", fmt.Sprintf("%d", len(res)))
-			w.Write(res)
-		}
-	} else {
-		w.Header().Set("Content-Encoding", "identity")
-		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(res)))
-		w.Write(res)
+	w.Header().Set(contentType, applicationJSON)
+	if proxy.Dwn.AcceptEncoding.isCompatible(EncIdentity) {
+		proxy.Dwn.Resp.Body = &res
+		proxy.Dwn.Resp.ContentEncoding = EncIdentity
+	} else if proxy.Dwn.AcceptEncoding.isCompatible(EncGzip) {
+		proxy.Dwn.Resp.Body = Gzip(res)
+		proxy.Dwn.Resp.ContentEncoding = EncGzip
+	} else if proxy.Dwn.AcceptEncoding.isCompatible(EncBrotli) {
+		proxy.Dwn.Resp.Body = BrotliEncode(res)
+		proxy.Dwn.Resp.ContentEncoding = EncBrotli
+	} else if proxy.Dwn.AcceptEncoding.isCompatible(EncDeflate) {
+		proxy.Dwn.Resp.Body = Flate(res)
+		proxy.Dwn.Resp.ContentEncoding = EncDeflate
 	}
+	w.Header().Set(contentEncoding, proxy.Dwn.Resp.ContentEncoding.print())
+
+	proxy.setContentLengthHeader()
+	proxy.sendDownstreamStatusCodeHeader()
+	proxy.pipeDownstreamResponse()
 
 	logHandledDownstreamRoundtrip(proxy)
 }
