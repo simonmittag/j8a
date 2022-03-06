@@ -24,6 +24,10 @@ func TestIdentityEncodingOn404(t *testing.T) {
 	DownstreamAcceptEncodingHTTP11("identity", "/", t)
 }
 
+func TestBadEncodingOn404Sends406Instead(t *testing.T) {
+	DownstreamAcceptEncodingContentEncodingHTTP11("bad", true, "406", "/", t)
+}
+
 func TestIdentityCOMMABadEncodingOn404(t *testing.T) {
 	DownstreamAcceptEncodingContentEncodingHTTP11("identity, bad", true, "identity", "/", t)
 }
@@ -68,6 +72,10 @@ func TestIdentityCOMMABadEncodingOnProxyHandler(t *testing.T) {
 	DownstreamAcceptEncodingContentEncodingHTTP11("badd, identity, gzip, bad", true, "gzip", "/mse6/get", t)
 }
 
+func TestBadEncodingOnProxyHandlerSends406(t *testing.T) {
+	DownstreamAcceptEncodingContentEncodingHTTP11("badd", true, "406", "/mse6/get", t)
+}
+
 func TestGzipEncodingOnProxyHandler(t *testing.T) {
 	DownstreamAcceptEncodingHTTP11("gzip", "/mse6/get", t)
 }
@@ -102,6 +110,10 @@ func TestIdentityCOMMAGzipEncodingOnAboutHandler(t *testing.T) {
 
 func TestIdentityCOMMABadEncodingOnAboutHandler(t *testing.T) {
 	DownstreamAcceptEncodingContentEncodingHTTP11("baddddd, identity", true, "identity", "/about", t)
+}
+
+func TestBadEncodingOnAboutHandlerSends406(t *testing.T) {
+	DownstreamAcceptEncodingContentEncodingHTTP11("baddddd", true, "406", "/about", t)
 }
 
 func TestGzipEncodingOnAboutHandler(t *testing.T) {

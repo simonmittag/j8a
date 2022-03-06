@@ -155,6 +155,11 @@ func aboutHandler(w http.ResponseWriter, r *http.Request) {
 		parseIncoming(r).
 		setOutgoing(w)
 
+	if !proxy.Dwn.AcceptEncoding.hasAtLeastOneValidEncoding() {
+		sendStatusCodeAsJSON(proxy.respondWith(406, formatInvalidAcceptEncoding()))
+		return
+	}
+
 	proxy.writeStandardResponseHeaders()
 	proxy.respondWith(200, "ok")
 
