@@ -49,6 +49,11 @@ func TestDeflateEncodingOn404(t *testing.T) {
 	DownstreamAcceptEncodingContentEncodingHTTP11("x-deflate", true, "406", "/", t)
 }
 
+func TestCompressEncodingOn404(t *testing.T) {
+	DownstreamAcceptEncodingContentEncodingHTTP11("compress", true, "406", "/", t)
+	DownstreamAcceptEncodingContentEncodingHTTP11("x-compress", true, "406", "/", t)
+}
+
 func TestNoAcceptEncodingOnProxyHandler(t *testing.T) {
 	DownstreamAcceptEncodingContentEncodingHTTP11("", false, "gzip", "/mse6/get", t)
 }
@@ -90,6 +95,11 @@ func TestDeflateEncodingOnProxyHandler(t *testing.T) {
 	DownstreamAcceptEncodingContentEncodingHTTP11("x-deflate", true, "406", "/mse6/get", t)
 }
 
+func TestCompressEncodingOnProxyHandler(t *testing.T) {
+	DownstreamAcceptEncodingContentEncodingHTTP11("compress", true, "406", "/mse6/get", t)
+	DownstreamAcceptEncodingContentEncodingHTTP11("x-compress", true, "406", "/mse6/get", t)
+}
+
 func TestNoAcceptEncodingOnAboutHandler(t *testing.T) {
 	DownstreamAcceptEncodingContentEncodingHTTP11("", false, "identity", "/about", t)
 }
@@ -129,6 +139,11 @@ func TestBrotliEncodingOnAboutHandler(t *testing.T) {
 func TestDeflateEncodingOnAboutHandler(t *testing.T) {
 	DownstreamAcceptEncodingContentEncodingHTTP11("deflate", true, "406", "/about", t)
 	DownstreamAcceptEncodingContentEncodingHTTP11("x-deflate", true, "406", "/about", t)
+}
+
+func TestCompressEncodingOnAboutHandler(t *testing.T) {
+	DownstreamAcceptEncodingContentEncodingHTTP11("compress", true, "406", "/about", t)
+	DownstreamAcceptEncodingContentEncodingHTTP11("x-compress", true, "406", "/about", t)
 }
 
 func DownstreamAcceptEncodingHTTP11(enc string, slug string, t *testing.T) {
