@@ -51,19 +51,21 @@ var httpLegalMethods []string = append(httpRepeatableMethods, []string{"POST", "
 type ContentEncoding string
 
 const (
-	EncStar     ContentEncoding = "*"
-	EncIdentity ContentEncoding = "identity"
-	EncBrotli   ContentEncoding = "br"
-	EncGzip     ContentEncoding = "gzip"
-	EncXGzip    ContentEncoding = "x-gzip"
-	EncDeflate  ContentEncoding = "deflate"
-	EncXDeflate ContentEncoding = "x-deflate"
+	EncStar      ContentEncoding = "*"
+	EncIdentity  ContentEncoding = "identity"
+	EncBrotli    ContentEncoding = "br"
+	EncGzip      ContentEncoding = "gzip"
+	EncXGzip     ContentEncoding = "x-gzip"
+	EncDeflate   ContentEncoding = "deflate"
+	EncXDeflate  ContentEncoding = "x-deflate"
+	EncCompress  ContentEncoding = "compress"
+	EncXCompress ContentEncoding = "x-compress"
 )
 
 var GzipContentEncodings = AcceptEncoding{EncGzip, EncXGzip}
-var DeflateContentEncodings = AcceptEncoding{EncDeflate, EncXDeflate}
-var CompressedContentEncodings = AcceptEncoding{EncBrotli, EncGzip, EncXGzip, EncDeflate, EncXDeflate}
-var SupportedContentEncodings = AcceptEncoding{EncStar, EncIdentity, EncBrotli, EncGzip, EncXGzip, EncDeflate, EncXDeflate}
+var CompressedContentEncodings = AcceptEncoding{EncBrotli, EncGzip, EncXGzip}
+var SupportedContentEncodings = AcceptEncoding{EncStar, EncIdentity, EncBrotli, EncGzip, EncXGzip}
+var UnsupportedContentEncodings = AcceptEncoding{EncDeflate, EncXDeflate, EncCompress, EncXCompress}
 
 func NewContentEncoding(raw string) ContentEncoding {
 	encs := strings.TrimFunc(raw, func(r rune) bool {
@@ -103,8 +105,8 @@ func (c ContentEncoding) isGzip() bool {
 	return false
 }
 
-func (c ContentEncoding) isDeflate() bool {
-	for _, ce := range DeflateContentEncodings {
+func (c ContentEncoding) isUnSupported() bool {
+	for _, ce := range UnsupportedContentEncodings {
 		if ce == c {
 			return true
 		}
@@ -647,11 +649,6 @@ func (proxy *Proxy) encodeUpstreamResponseBody() {
 			proxy.Dwn.Resp.ContentEncoding = EncBrotli
 			scaffoldUpAttemptLog(proxy).
 				Msg(upstreamEncodeBr)
-		} else if proxy.Dwn.AcceptEncoding.isCompatible(EncDeflate) {
-			proxy.Dwn.Resp.Body = Deflate(*proxy.Up.Atmpt.respBody)
-			proxy.Dwn.Resp.ContentEncoding = EncDeflate
-			scaffoldUpAttemptLog(proxy).
-				Msg(upstreamEncodeFlate)
 		} else {
 			proxy.Dwn.Resp.Body = proxy.Up.Atmpt.respBody
 			if len(proxy.Up.Atmpt.ContentEncoding) > 0 {

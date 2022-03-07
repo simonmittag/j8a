@@ -154,12 +154,6 @@ func TestContentEncodingisCompressed(t *testing.T) {
 	if !NewContentEncoding("x-gzip").isCompressed() {
 		t.Error("should be compressed")
 	}
-	if !NewContentEncoding("deflate").isCompressed() {
-		t.Error("should be compressed")
-	}
-	if !NewContentEncoding("x-deflate").isCompressed() {
-		t.Error("should be compressed")
-	}
 	if !NewContentEncoding("br").isCompressed() {
 		t.Error("should be compressed")
 	}
@@ -208,25 +202,11 @@ func TestContentEncodingisBrotli(t *testing.T) {
 	}
 }
 
-func TestContentEncodingisDeflate(t *testing.T) {
-	df := NewContentEncoding("x-deflate")
-	if !df.isDeflate() {
-		t.Error("should be deflate")
-	}
-
-	df2 := NewContentEncoding("identity")
-	if df2.isDeflate() {
-		t.Error("should not be deflate")
-	}
-}
-
 func TestSupportedContentEncoding(t *testing.T) {
 	supported := []ContentEncoding{
 		NewContentEncoding("gzip"),
 		NewContentEncoding("gzip "),
 		NewContentEncoding("x-gzip"),
-		NewContentEncoding("deflate"),
-		NewContentEncoding("x-deflate"),
 		NewContentEncoding("br"),
 		NewContentEncoding("br\n"),
 		NewContentEncoding("\nbr\n"),
@@ -243,8 +223,8 @@ func TestUnSupportedContentEncoding(t *testing.T) {
 		NewContentEncoding("xgzip"),
 		NewContentEncoding("ddgzip "),
 		NewContentEncoding("ddsfa"),
-		NewContentEncoding("deflasdfsdte"),
-		NewContentEncoding("x--deflate"),
+		NewContentEncoding("deflate"),
+		NewContentEncoding("x-deflate"),
 		NewContentEncoding("br--"),
 		NewContentEncoding("br\n!"),
 		NewContentEncoding("\nbr\nsdfsd"),

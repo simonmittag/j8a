@@ -45,7 +45,8 @@ func TestBrotliEncodingOn404(t *testing.T) {
 }
 
 func TestDeflateEncodingOn404(t *testing.T) {
-	DownstreamAcceptEncodingHTTP11("deflate", "/", t)
+	DownstreamAcceptEncodingContentEncodingHTTP11("deflate", true, "406", "/", t)
+	DownstreamAcceptEncodingContentEncodingHTTP11("x-deflate", true, "406", "/", t)
 }
 
 func TestNoAcceptEncodingOnProxyHandler(t *testing.T) {

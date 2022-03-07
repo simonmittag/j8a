@@ -387,51 +387,6 @@ func TestUpstreamGzipReEncoding(t *testing.T) {
 	}
 }
 
-// mocks upstream identity that is re-encoded as deflate by j8a
-func TestUpstreamFlateReEncoding(t *testing.T) {
-	Runner = mockRuntime()
-	httpClient = &MockHttp{}
-
-	mockDoFunc = func(req *http.Request) (*http.Response, error) {
-		json := `{"key":"value"}`
-		return &http.Response{
-			StatusCode: 200,
-			Header: map[string][]string{
-				"Content-Encoding": []string{"identity"},
-			},
-			Body: ioutil.NopCloser(bytes.NewReader([]byte(json))),
-		}, nil
-	}
-
-	server := httptest.NewServer(&ProxyHttpHandler{})
-	defer server.Close()
-
-	c := &http.Client{}
-	req, _ := http.NewRequest("GET", server.URL, nil)
-	req.Header.Set("Accept-Encoding", "deflate")
-	resp, err := c.Do(req)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	gotBody, _ := ioutil.ReadAll(resp.Body)
-	if c := bytes.Compare(gotBody[0:2], gzipMagicBytes); c == 0 {
-		t.Errorf("uh, oh, body should be deflate but was gzip %v", gotBody[0:2])
-	}
-
-	rawBody := string(*Inflate(gotBody))
-	want := `{"key":"value"}`
-	if rawBody != want {
-		t.Errorf("uh oh, encoded body does not match original")
-	}
-
-	want2 := "deflate"
-	got2 := resp.Header["Content-Encoding"][0]
-	if got2 != want2 {
-		t.Errorf("uh oh, did not receive correct Content-Encoding header, want %v, got %v", want2, got2)
-	}
-}
-
 // mocks upstream identity that is re-encoded as brotli by j8a
 func TestUpstreamBrotliReEncoding(t *testing.T) {
 	Runner = mockRuntime()
