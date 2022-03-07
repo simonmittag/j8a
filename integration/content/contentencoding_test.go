@@ -111,7 +111,7 @@ func TestIdentityCOMMAGzipEncodingOnAboutHandler(t *testing.T) {
 }
 
 func TestIdentityCOMMABadEncodingOnAboutHandler(t *testing.T) {
-	DownstreamAcceptEncodingContentEncodingHTTP11("baddddd, identity", true, "identity", "/about", t)
+	DownstreamAcceptEncodingContentEncodingHTTP11("deflate, identity", true, "identity", "/about", t)
 }
 
 func TestBadEncodingOnAboutHandlerSends406(t *testing.T) {
