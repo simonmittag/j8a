@@ -24,7 +24,11 @@ func TestStarAcceptEncodingOn404(t *testing.T) {
 }
 
 func TestIdentityEncodingOn404(t *testing.T) {
-	DownstreamAcceptEncodingHTTP11("identity", "/", t)
+	resp := DownstreamContentEncodingIntegrity("identity", true, "identity", "/", t)
+	raw := string(resp)
+	if !strings.Contains(raw, "404") {
+		t.Errorf("identity response should contain 404 in body")
+	}
 }
 
 func TestBadEncodingOn404Sends406Instead(t *testing.T) {
@@ -48,7 +52,11 @@ func TestGzipEncodingOn404(t *testing.T) {
 }
 
 func TestBrotliEncodingOn404(t *testing.T) {
-	DownstreamAcceptEncodingHTTP11("br", "/", t)
+	resp := DownstreamContentEncodingIntegrity("br", true, "br", "/", t)
+	raw := string(*j8a.BrotliDecode(resp))
+	if !strings.Contains(raw, "404") {
+		t.Errorf("brotli response should contain 404 in body")
+	}
 }
 
 func TestDeflateEncodingOn404(t *testing.T) {
@@ -74,7 +82,11 @@ func TestStarAcceptEncodingOnProxyHandler(t *testing.T) {
 }
 
 func TestIdentityEncodingOnProxyHandler(t *testing.T) {
-	DownstreamAcceptEncodingHTTP11("identity", "/mse6/get", t)
+	resp := DownstreamContentEncodingIntegrity("identity", true, "identity", "/mse6/get", t)
+	raw := string(resp)
+	if !strings.Contains(raw, "mse6") {
+		t.Errorf("identity response should contain mse6 response")
+	}
 }
 
 func TestIdentityCOMMAGzipEncodingOnProxyHandler(t *testing.T) {
@@ -98,7 +110,11 @@ func TestGzipEncodingOnProxyHandler(t *testing.T) {
 }
 
 func TestBrotliEncodingOnProxyHandler(t *testing.T) {
-	DownstreamAcceptEncodingHTTP11("br", "/mse6/get", t)
+	resp := DownstreamContentEncodingIntegrity("br", true, "br", "/mse6/get", t)
+	raw := string(*j8a.BrotliDecode(resp))
+	if !strings.Contains(raw, "mse6") {
+		t.Errorf("brotli response should contain mse6 response")
+	}
 }
 
 func TestDeflateEncodingOnProxyHandler(t *testing.T) {
@@ -123,10 +139,6 @@ func TestStarAcceptEncodingOnAboutHandler(t *testing.T) {
 	DownstreamAcceptEncodingContentEncodingHTTP11("*", true, "identity", "/about", t)
 }
 
-func TestIdentityEncodingOnAboutHandler(t *testing.T) {
-	DownstreamAcceptEncodingHTTP11("identity", "/about", t)
-}
-
 func TestIdentityCOMMAGzipEncodingOnAboutHandler(t *testing.T) {
 	DownstreamAcceptEncodingContentEncodingHTTP11("identity, gzip", true, "identity", "/about", t)
 }
@@ -139,6 +151,14 @@ func TestBadEncodingOnAboutHandlerSends406(t *testing.T) {
 	DownstreamAcceptEncodingContentEncodingHTTP11("baddddd", true, "406", "/about", t)
 }
 
+func TestIdentityEncodingOnAboutHandler(t *testing.T) {
+	resp := DownstreamContentEncodingIntegrity("identity", true, "identity", "/about", t)
+	raw := string(resp)
+	if !strings.Contains(raw, "j8a") {
+		t.Errorf("identity aboutresponse should contain j8a in body")
+	}
+}
+
 func TestGzipEncodingOnAboutHandler(t *testing.T) {
 	resp := DownstreamContentEncodingIntegrity("gzip", true, "gzip", "/about", t)
 	raw := string(*j8a.Gunzip(resp))
@@ -148,7 +168,11 @@ func TestGzipEncodingOnAboutHandler(t *testing.T) {
 }
 
 func TestBrotliEncodingOnAboutHandler(t *testing.T) {
-	DownstreamAcceptEncodingHTTP11("br", "/about", t)
+	resp := DownstreamContentEncodingIntegrity("br", true, "br", "/about", t)
+	raw := string(*j8a.BrotliDecode(resp))
+	if !strings.Contains(raw, "j8a") {
+		t.Errorf("brotli aboutresponse should contain j8a in body")
+	}
 }
 
 func TestDeflateEncodingOnAboutHandler(t *testing.T) {
