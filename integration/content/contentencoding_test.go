@@ -2,8 +2,11 @@ package content
 
 import (
 	"fmt"
+	"github.com/simonmittag/j8a"
 	"github.com/simonmittag/j8a/integration"
+	"io/ioutil"
 	"net"
+	"net/http"
 	"strings"
 	"testing"
 )
@@ -37,7 +40,11 @@ func TestIdentityCOMMAGzipEncodingOn404(t *testing.T) {
 }
 
 func TestGzipEncodingOn404(t *testing.T) {
-	DownstreamAcceptEncodingHTTP11("gzip", "/", t)
+	resp := DownstreamContentEncodingIntegrity("gzip", true, "gzip", "/", t)
+	raw := string(*j8a.Gunzip(resp))
+	if !strings.Contains(raw, "404") {
+		t.Errorf("gzip response should contain 404 in body")
+	}
 }
 
 func TestBrotliEncodingOn404(t *testing.T) {
@@ -83,7 +90,11 @@ func TestBadEncodingOnProxyHandlerSends406(t *testing.T) {
 }
 
 func TestGzipEncodingOnProxyHandler(t *testing.T) {
-	DownstreamAcceptEncodingHTTP11("gzip", "/mse6/get", t)
+	resp := DownstreamContentEncodingIntegrity("gzip", true, "gzip", "/mse6/get", t)
+	raw := string(*j8a.Gunzip(resp))
+	if !strings.Contains(raw, "mse6") {
+		t.Errorf("gzip response should contain mse6 response")
+	}
 }
 
 func TestBrotliEncodingOnProxyHandler(t *testing.T) {
@@ -129,7 +140,11 @@ func TestBadEncodingOnAboutHandlerSends406(t *testing.T) {
 }
 
 func TestGzipEncodingOnAboutHandler(t *testing.T) {
-	DownstreamAcceptEncodingHTTP11("gzip", "/about", t)
+	resp := DownstreamContentEncodingIntegrity("gzip", true, "gzip", "/about", t)
+	raw := string(*j8a.Gunzip(resp))
+	if !strings.Contains(raw, "j8a") {
+		t.Errorf("gzip aboutresponse should contain j8a in body")
+	}
 }
 
 func TestBrotliEncodingOnAboutHandler(t *testing.T) {
@@ -176,4 +191,29 @@ func DownstreamAcceptEncodingContentEncodingHTTP11(ae string, sendAEHeader bool,
 	} else {
 		t.Logf("normal. received response %s", string(buf))
 	}
+}
+
+func DownstreamContentEncodingIntegrity(ae string, sendAEHeader bool, ce string, slug string, t *testing.T) []byte {
+	client := &http.Client{}
+	req, _ := http.NewRequest("GET", "http://localhost:8080"+slug, nil)
+	if sendAEHeader {
+		req.Header.Add(j8a.AcceptEncodingS, ae)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Errorf("error connecting to server, cause: %s", err)
+	}
+
+	gotce := resp.Header.Get("Content-Encoding")
+	if gotce != ce {
+		t.Errorf("want content encoding %s, but got %s instead", ce, gotce)
+	}
+
+	if resp != nil && resp.Body != nil {
+		defer resp.Body.Close()
+	}
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	return body
 }
