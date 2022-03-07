@@ -13,7 +13,7 @@
 
 ## What's new?
 ### v0.9.1b (upcoming)
-* Support for Brotli (RFC7932) compressed streams, including brotli encoding for upstream identity content.
+* Support for proxying Brotli (RFC7932) compressed streams, including brotli encoding for upstream content.
 
 ### v0.9.0 (30/09/2021)
 * ACME (RFC8555) support. Server auto-renews TLS certificates 30 days
