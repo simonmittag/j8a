@@ -12,6 +12,9 @@
 [![Version](https://img.shields.io/docker/v/simonmittag/j8a/0.9.0)](https://hub.docker.com/repository/docker/simonmittag/j8a)
 
 ## What's new?
+### v0.9.1b (upcoming)
+* Support for Brotli (RFC7932) compressed streams, including brotli encoding for upstream identity content.
+
 ### v0.9.0 (30/09/2021)
 * ACME (RFC8555) support. Server auto-renews TLS certificates 30 days
 before expiry for free with zero downtime, no restarts!
