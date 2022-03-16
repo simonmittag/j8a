@@ -1,7 +1,5 @@
 ---
-name: Bug report
-about: Create a report to help us improve
-title: ''
+name: Bug report about: Create a report to help us improve title: ''
 labels: ''
 assignees: ''
 
@@ -17,4 +15,5 @@ Steps to reproduce the behaviour, i.e running a test or running a HTTP client su
 A clear and concise description of what you expected to happen.
 
 **Desktop (please complete the following information):**
- - OS: [e.g. iOS]
+
+- OS: [e.g. iOS]

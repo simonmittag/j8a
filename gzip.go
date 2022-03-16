@@ -8,6 +8,7 @@ import (
 )
 
 const gzipLevel int = 1
+
 var gzipMagicBytes = []byte{0x1f, 0x8b}
 var gzipSmall = []byte{31, 139, 8, 0, 0, 0, 0, 0, 0, 255, 170, 174, 5, 4, 0, 0, 255, 255, 67, 191, 166, 163, 2, 0, 0, 0}
 

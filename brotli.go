@@ -8,6 +8,7 @@ import (
 )
 
 const brotliLevel int = 1
+
 var brotliEmpty = []byte{0}
 
 var brotliEncPool = sync.Pool{
