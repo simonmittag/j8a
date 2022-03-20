@@ -154,10 +154,12 @@ func (ae AcceptEncoding) isCompatible(enc ContentEncoding) bool {
 	return comp
 }
 
+const commaSpace = ", "
+
 func (ae AcceptEncoding) Print() string {
-	p := ""
+	p := emptyString
 	for _, ce := range ae {
-		p = p + string(ce) + ", "
+		p = p + string(ce) + commaSpace
 	}
 	p = p[:len(p)-2]
 	return p
