@@ -1,6 +1,8 @@
 package content
 
 import (
+	"bytes"
+	"compress/flate"
 	"fmt"
 	"github.com/simonmittag/j8a"
 	"github.com/simonmittag/j8a/integration"
@@ -86,6 +88,33 @@ func TestIdentityEncodingOnProxyHandler(t *testing.T) {
 	raw := string(resp)
 	if !strings.Contains(raw, "mse6") {
 		t.Errorf("identity response should contain mse6 response")
+	}
+}
+
+func TestIdentityEncodingOnProxyHandlerUpstreamBrotliPassthrough(t *testing.T) {
+	resp := DownstreamContentEncodingIntegrity("identity", true, "br", "/mse6/brotli", t)
+	raw := string(*j8a.BrotliDecode(resp))
+	want := "{\"mse6\":\"Hello from the brotli endpoint\"}"
+	if raw != want {
+		t.Errorf("upstream brotli should decode and contain mse6 response passed through")
+	}
+}
+
+func TestIdentityEncodingOnProxyHandlerUpstreamDeflatePassthrough(t *testing.T) {
+	resp := DownstreamContentEncodingIntegrity("identity", true, "deflate", "/mse6/deflate", t)
+	raw, _ := ioutil.ReadAll(flate.NewReader(bytes.NewBuffer(resp)))
+	want := "{\"mse6\":\"Hello from the deflate endpoint\"}"
+	if string(raw) != want {
+		t.Errorf("upstream deflate shouold decode and contain mse6 response passed through")
+	}
+}
+
+func TestIdentityEncodingOnProxyHandlerUpstreamGzipPassthrough(t *testing.T) {
+	resp := DownstreamContentEncodingIntegrity("identity", true, "gzip", "/mse6/gzip", t)
+	raw := string(*j8a.Gunzip(resp))
+	want := "{\"mse6\":\"Hello from the gzip endpoint\"}"
+	if raw != want {
+		t.Errorf("upstream gzip should decode and contain mse6 response passed through")
 	}
 }
 
