@@ -37,15 +37,15 @@ func TestBadEncodingOn404Sends406Instead(t *testing.T) {
 	DownstreamAcceptEncodingContentEncodingHTTP11("bad", true, "406", "/", t)
 }
 
-func TestIdentityCOMMABadEncodingOn404(t *testing.T) {
+func TestIdentityCOMMABadEncodingOn404SendsIdentity(t *testing.T) {
 	DownstreamAcceptEncodingContentEncodingHTTP11("identity, bad", true, "identity", "/", t)
 }
 
-func TestIdentityCOMMAGzipEncodingOn404(t *testing.T) {
+func TestIdentityCOMMAGzipEncodingOn404SendsIdentity(t *testing.T) {
 	DownstreamAcceptEncodingContentEncodingHTTP11("identity, gzip", true, "identity", "/", t)
 }
 
-func TestGzipEncodingOn404(t *testing.T) {
+func TestGzipEncodingOn404SendsEncodedGzip(t *testing.T) {
 	resp := DownstreamContentEncodingIntegrity("gzip", true, "gzip", "/", t)
 	raw := string(*j8a.Gunzip(resp))
 	if !strings.Contains(raw, "404") {
@@ -53,7 +53,7 @@ func TestGzipEncodingOn404(t *testing.T) {
 	}
 }
 
-func TestBrotliEncodingOn404(t *testing.T) {
+func TestBrotliEncodingOn404SendsEncodedBrotli(t *testing.T) {
 	resp := DownstreamContentEncodingIntegrity("br", true, "br", "/", t)
 	raw := string(*j8a.BrotliDecode(resp))
 	if !strings.Contains(raw, "404") {
@@ -61,29 +61,29 @@ func TestBrotliEncodingOn404(t *testing.T) {
 	}
 }
 
-func TestDeflateEncodingOn404(t *testing.T) {
+func TestDeflateAcceptEncodingOn404Sends406(t *testing.T) {
 	DownstreamAcceptEncodingContentEncodingHTTP11("deflate", true, "406", "/", t)
 	DownstreamAcceptEncodingContentEncodingHTTP11("x-deflate", true, "406", "/", t)
 }
 
-func TestCompressEncodingOn404(t *testing.T) {
+func TestCompressAcceptEncodingOn404Sends406(t *testing.T) {
 	DownstreamAcceptEncodingContentEncodingHTTP11("compress", true, "406", "/", t)
 	DownstreamAcceptEncodingContentEncodingHTTP11("x-compress", true, "406", "/", t)
 }
 
-func TestNoAcceptEncodingOnProxyHandler(t *testing.T) {
+func TestNoAcceptEncodingOnProxyHandlerSendsEncodedGzip(t *testing.T) {
 	DownstreamAcceptEncodingContentEncodingHTTP11("", false, "gzip", "/mse6/get", t)
 }
 
-func TestEmptyAcceptEncodingOnProxyHandler(t *testing.T) {
+func TestEmptyAcceptEncodingOnProxyHandlerSendsEncodedGzip(t *testing.T) {
 	DownstreamAcceptEncodingContentEncodingHTTP11("", true, "gzip", "/mse6/get", t)
 }
 
-func TestStarAcceptEncodingOnProxyHandler(t *testing.T) {
+func TestStarAcceptEncodingOnProxyHandlerSendsEncodedGzip(t *testing.T) {
 	DownstreamAcceptEncodingContentEncodingHTTP11("*", true, "gzip", "/mse6/get", t)
 }
 
-func TestIdentityEncodingOnProxyHandler(t *testing.T) {
+func TestIdentityEncodingOnProxyHandlerSendsIdentity(t *testing.T) {
 	resp := DownstreamContentEncodingIntegrity("identity", true, "identity", "/mse6/get", t)
 	raw := string(resp)
 	if !strings.Contains(raw, "mse6") {
@@ -118,11 +118,11 @@ func TestIdentityEncodingOnProxyHandlerUpstreamGzipPassthrough(t *testing.T) {
 	}
 }
 
-func TestIdentityCOMMAGzipEncodingOnProxyHandler(t *testing.T) {
+func TestIdentityCOMMAGzipEncodingOnProxyHandlerSendsPreferredGzip(t *testing.T) {
 	DownstreamAcceptEncodingContentEncodingHTTP11("identity, gzip", true, "gzip", "/mse6/get", t)
 }
 
-func TestIdentityCOMMABadEncodingOnProxyHandler(t *testing.T) {
+func TestIdentityCOMMABadEncodingOnProxyHandlerIgnoresBadAndSendsPreferredGzip(t *testing.T) {
 	DownstreamAcceptEncodingContentEncodingHTTP11("badd, identity, gzip, bad", true, "gzip", "/mse6/get", t)
 }
 
@@ -130,7 +130,7 @@ func TestBadEncodingOnProxyHandlerSends406(t *testing.T) {
 	DownstreamAcceptEncodingContentEncodingHTTP11("badd", true, "406", "/mse6/get", t)
 }
 
-func TestGzipEncodingOnProxyHandler(t *testing.T) {
+func TestGzipEncodingOnProxyHandlerSendsEncodedGzip(t *testing.T) {
 	resp := DownstreamContentEncodingIntegrity("gzip", true, "gzip", "/mse6/get", t)
 	raw := string(*j8a.Gunzip(resp))
 	if !strings.Contains(raw, "mse6") {
@@ -138,7 +138,7 @@ func TestGzipEncodingOnProxyHandler(t *testing.T) {
 	}
 }
 
-func TestBrotliEncodingOnProxyHandler(t *testing.T) {
+func TestBrotliEncodingOnProxyHandlerSendsEncodedBrotli(t *testing.T) {
 	resp := DownstreamContentEncodingIntegrity("br", true, "br", "/mse6/get", t)
 	raw := string(*j8a.BrotliDecode(resp))
 	if !strings.Contains(raw, "mse6") {
@@ -146,33 +146,33 @@ func TestBrotliEncodingOnProxyHandler(t *testing.T) {
 	}
 }
 
-func TestDeflateEncodingOnProxyHandler(t *testing.T) {
+func TestDeflateEncodingOnProxyHandlerSends406(t *testing.T) {
 	DownstreamAcceptEncodingContentEncodingHTTP11("deflate", true, "406", "/mse6/get", t)
 	DownstreamAcceptEncodingContentEncodingHTTP11("x-deflate", true, "406", "/mse6/get", t)
 }
 
-func TestCompressEncodingOnProxyHandler(t *testing.T) {
+func TestCompressEncodingOnProxyHandlerSends406(t *testing.T) {
 	DownstreamAcceptEncodingContentEncodingHTTP11("compress", true, "406", "/mse6/get", t)
 	DownstreamAcceptEncodingContentEncodingHTTP11("x-compress", true, "406", "/mse6/get", t)
 }
 
-func TestNoAcceptEncodingOnAboutHandler(t *testing.T) {
+func TestNoAcceptEncodingOnAboutHandlerSendsIdentity(t *testing.T) {
 	DownstreamAcceptEncodingContentEncodingHTTP11("", false, "identity", "/about", t)
 }
 
-func TestEmptyAcceptEncodingOnAboutHandler(t *testing.T) {
+func TestEmptyAcceptEncodingOnAboutHandlerSendsIdentity(t *testing.T) {
 	DownstreamAcceptEncodingContentEncodingHTTP11("", true, "identity", "/about", t)
 }
 
-func TestStarAcceptEncodingOnAboutHandler(t *testing.T) {
+func TestStarAcceptEncodingOnAboutHandlerSendsIdentity(t *testing.T) {
 	DownstreamAcceptEncodingContentEncodingHTTP11("*", true, "identity", "/about", t)
 }
 
-func TestIdentityCOMMAGzipEncodingOnAboutHandler(t *testing.T) {
+func TestIdentityCOMMAGzipEncodingOnAboutHandlerSendsPreferredIdentity(t *testing.T) {
 	DownstreamAcceptEncodingContentEncodingHTTP11("identity, gzip", true, "identity", "/about", t)
 }
 
-func TestIdentityCOMMABadEncodingOnAboutHandler(t *testing.T) {
+func TestIdentityCOMMABadEncodingOnAboutHandlerSendsIdentity(t *testing.T) {
 	DownstreamAcceptEncodingContentEncodingHTTP11("deflate, identity", true, "identity", "/about", t)
 }
 
@@ -180,7 +180,7 @@ func TestBadEncodingOnAboutHandlerSends406(t *testing.T) {
 	DownstreamAcceptEncodingContentEncodingHTTP11("baddddd", true, "406", "/about", t)
 }
 
-func TestIdentityEncodingOnAboutHandler(t *testing.T) {
+func TestIdentityEncodingOnAboutHandlerSendsIdentity(t *testing.T) {
 	resp := DownstreamContentEncodingIntegrity("identity", true, "identity", "/about", t)
 	raw := string(resp)
 	if !strings.Contains(raw, "j8a") {
@@ -188,7 +188,7 @@ func TestIdentityEncodingOnAboutHandler(t *testing.T) {
 	}
 }
 
-func TestGzipEncodingOnAboutHandler(t *testing.T) {
+func TestGzipEncodingOnAboutHandlerSendsEncodedGzip(t *testing.T) {
 	resp := DownstreamContentEncodingIntegrity("gzip", true, "gzip", "/about", t)
 	raw := string(*j8a.Gunzip(resp))
 	if !strings.Contains(raw, "j8a") {
@@ -196,7 +196,7 @@ func TestGzipEncodingOnAboutHandler(t *testing.T) {
 	}
 }
 
-func TestBrotliEncodingOnAboutHandler(t *testing.T) {
+func TestBrotliEncodingOnAboutHandlerSendsEncodedBrotli(t *testing.T) {
 	resp := DownstreamContentEncodingIntegrity("br", true, "br", "/about", t)
 	raw := string(*j8a.BrotliDecode(resp))
 	if !strings.Contains(raw, "j8a") {
