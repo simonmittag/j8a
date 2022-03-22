@@ -88,7 +88,7 @@ func TestAboutHandlerContentEncodingGzip(t *testing.T) {
 
 	gotBody, _ := ioutil.ReadAll(resp.Body)
 	if c := bytes.Compare(gotBody[0:2], gzipMagicBytes); c != 0 {
-		t.Errorf("body should not have gzip response magic bytes but does: %v", gotBody[0:2])
+		t.Errorf("body should have gzip response magic bytes but does not: %v", gotBody[0:2])
 	}
 
 	want := "gzip"
