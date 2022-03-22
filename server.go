@@ -378,6 +378,9 @@ func sendStatusCodeAsJSON(proxy *Proxy) {
 	} else if proxy.Dwn.AcceptEncoding.isCompatible(EncBrotli) {
 		proxy.Dwn.Resp.Body = BrotliEncode(*proxy.Dwn.Resp.Body)
 		proxy.Dwn.Resp.ContentEncoding = EncBrotli
+	} else {
+		//fallback
+		proxy.Dwn.Resp.ContentEncoding = EncIdentity
 	}
 
 	if proxy.Dwn.Resp.StatusCode >= clientError {
