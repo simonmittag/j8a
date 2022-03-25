@@ -71,12 +71,12 @@ func TestCompressAcceptEncodingOn404Sends406(t *testing.T) {
 	DownstreamAcceptEncodingContentEncodingHTTP11("x-compress", true, "406", "/", t)
 }
 
-func TestNoAcceptEncodingOnProxyHandlerSendsEncodedGzip(t *testing.T) {
-	DownstreamAcceptEncodingContentEncodingHTTP11("", false, "gzip", "/mse6/get", t)
+func TestNoAcceptEncodingOnProxyHandlerSendsEncodedIdentity(t *testing.T) {
+	DownstreamAcceptEncodingContentEncodingHTTP11("", false, "identity", "/mse6/get", t)
 }
 
-func TestEmptyAcceptEncodingOnProxyHandlerSendsEncodedGzip(t *testing.T) {
-	DownstreamAcceptEncodingContentEncodingHTTP11("", true, "gzip", "/mse6/get", t)
+func TestEmptyAcceptEncodingOnProxyHandlerSendsEncodedIdentity(t *testing.T) {
+	DownstreamAcceptEncodingContentEncodingHTTP11("", true, "identity", "/mse6/get", t)
 }
 
 func TestStarAcceptEncodingOnProxyHandlerSendsEncodedGzip(t *testing.T) {
