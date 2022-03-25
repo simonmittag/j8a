@@ -147,6 +147,56 @@ func TestContentEncodingMatches(t *testing.T) {
 	}
 }
 
+func TestEmptyAcceptEncodingIsCompatibleWithIdentity(t *testing.T) {
+	ae := AcceptEncoding{
+		NewContentEncoding(""),
+	}
+
+	if !ae.isCompatible(EncIdentity) {
+		t.Error("empty accept encoding should be compantible with identity")
+	}
+}
+
+func TestEmptyAcceptEncodingIsIncompatibleWithGzip(t *testing.T) {
+	ae := AcceptEncoding{
+		NewContentEncoding(""),
+	}
+
+	if ae.isCompatible(EncGzip) {
+		t.Error("empty accept encoding should not be compatible with gzip")
+	}
+}
+
+func TestEmptyAcceptEncodingIsIncompatibleWithBrotli(t *testing.T) {
+	ae := AcceptEncoding{
+		NewContentEncoding(""),
+	}
+
+	if ae.isCompatible(EncBrotli) {
+		t.Error("empty accept encoding should not be compantible with brotli")
+	}
+}
+
+func TestContentEncodingEmptyMatchesIdentity(t *testing.T) {
+	df := NewContentEncoding("")
+	df2 := NewContentEncoding("identity")
+	if !df.matches(df2) {
+		t.Error("empty accept encoding should match identity")
+	}
+
+	df3 := NewContentEncoding("")
+	df4 := NewContentEncoding("gzip")
+	if df3.matches(df4) {
+		t.Error("empty accept encoding should not match gzip")
+	}
+
+	df5 := NewContentEncoding("")
+	df6 := NewContentEncoding("br")
+	if df5.matches(df6) {
+		t.Error("empty accept encoding should not match brotli")
+	}
+}
+
 func TestContentEncodingisCompressed(t *testing.T) {
 	if !NewContentEncoding("gzip").isCompressed() {
 		t.Error("should be compressed")

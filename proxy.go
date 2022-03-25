@@ -121,7 +121,9 @@ func (c ContentEncoding) isBrotli() bool {
 const xdash string = "x-"
 
 func (c ContentEncoding) matches(encoding ContentEncoding) bool {
-	if len(string(c)) == 0 || len(string(encoding)) == 0 {
+	if len(c) == 0 && encoding == EncIdentity {
+		return true
+	} else if len(string(encoding)) == 0 {
 		return false
 	} else if c == encoding || c == STAR {
 		return true
@@ -140,8 +142,14 @@ type AcceptEncoding []ContentEncoding
 
 func (ae AcceptEncoding) hasAtLeastOneValidEncoding() bool {
 	var valid bool = false
-	for _, ce := range ae {
-		valid = valid || ce.isSupported()
+	if len(ae) == 0 {
+		valid = true
+	} else if len(ae) == 1 && string(ae[0]) == emptyString {
+		valid = true
+	} else {
+		for _, ce := range ae {
+			valid = valid || ce.isSupported()
+		}
 	}
 	return valid
 }
@@ -377,11 +385,7 @@ func parseAcceptEncoding(request *http.Request) AcceptEncoding {
 	var ae AcceptEncoding
 	raw := request.Header.Get(AcceptEncodingS)
 
-	//this is so we pass validation if accept-encoding header was not set by remote user agent.
-	if len(raw) == 0 {
-		raw = STAR
-	}
-
+	//do not assume this header is set.
 	encs := strings.Split(raw, COMMA)
 	for _, e := range encs {
 		ae = append(ae, NewContentEncoding(e))
@@ -632,10 +636,13 @@ func (proxy *Proxy) encodeUpstreamResponseBody() {
 	atmpt := *proxy.Up.Atmpt
 	if atmpt.respBody != nil && len(*atmpt.respBody) > 0 {
 
-		//get content encoding, which may be nil
-		proxy.Up.Atmpt.ContentEncoding = NewContentEncoding(proxy.Up.Atmpt.resp.Header.Get(contentEncoding))
+		//get the upstream content encoding header. Do this only if we didn't already detect the content type by sniffing
+		if len(proxy.Up.Atmpt.ContentEncoding) == 0 {
+			//try get it from upstream response header
+			proxy.Up.Atmpt.ContentEncoding = NewContentEncoding(proxy.Up.Atmpt.resp.Header.Get(contentEncoding))
+		}
 
-		//we pass through all compressed responses without fiddling
+		//we pass through all compressed responses as is
 		if proxy.Up.Atmpt.ContentEncoding.isCompressed() {
 			proxy.Dwn.Resp.Body = proxy.Up.Atmpt.respBody
 			proxy.Dwn.Resp.ContentEncoding = proxy.Up.Atmpt.ContentEncoding
@@ -654,9 +661,8 @@ func (proxy *Proxy) encodeUpstreamResponseBody() {
 		} else {
 			proxy.Dwn.Resp.Body = proxy.Up.Atmpt.respBody
 			if len(proxy.Up.Atmpt.ContentEncoding) > 0 {
+				//only set this if it was present upstream, otherwise assume nothing and leave empty.
 				proxy.Dwn.Resp.ContentEncoding = proxy.Up.Atmpt.ContentEncoding
-			} else {
-				proxy.Dwn.Resp.ContentEncoding = EncIdentity
 			}
 			scaffoldUpAttemptLog(proxy).
 				Msgf(upstreamCopyNoRecode)
