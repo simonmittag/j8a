@@ -156,7 +156,7 @@ func TestIdentityEncodingOnProxyHandlerUpstreamBrotliPassthrough(t *testing.T) {
 	}
 }
 
-func TestIdentityEncodingOnProxyHandlerUpstreamDeflatePassthrough(t *testing.T) {
+func TestIdentityEncodingOnProxyHandlerUpstreamDeflatePassthroughWithVary(t *testing.T) {
 	resp := DownstreamContentEncodingIntegrity("identity", true, "deflate", true, "/mse6/deflate", t)
 	raw, _ := ioutil.ReadAll(flate.NewReader(bytes.NewBuffer(resp)))
 	want := "{\"mse6\":\"Hello from the deflate endpoint\"}"
@@ -165,12 +165,21 @@ func TestIdentityEncodingOnProxyHandlerUpstreamDeflatePassthrough(t *testing.T) 
 	}
 }
 
-func TestIdentityEncodingOnProxyHandlerUpstreamGzipPassthrough(t *testing.T) {
+func TestIdentityEncodingOnProxyHandlerUpstreamGzipPassthroughWithVary(t *testing.T) {
 	resp := DownstreamContentEncodingIntegrity("identity", true, "gzip", true, "/mse6/gzip", t)
 	raw := string(*j8a.Gunzip(resp))
 	want := "{\"mse6\":\"Hello from the gzip endpoint\"}"
 	if raw != want {
 		t.Errorf("upstream gzip should decode and contain mse6 response passed through")
+	}
+}
+
+func TestIdentityEncodingOnProxyHandlerUpstreamBrotliPassthroughWithVary(t *testing.T) {
+	resp := DownstreamContentEncodingIntegrity("identity", true, "br", true, "/mse6/brotli", t)
+	raw := string(*j8a.BrotliDecode(resp))
+	want := "{\"mse6\":\"Hello from the brotli endpoint\"}"
+	if raw != want {
+		t.Errorf("upstream brotli should decode and contain mse6 response passed through")
 	}
 }
 
