@@ -183,6 +183,24 @@ func TestIdentityEncodingOnProxyHandlerUpstreamBrotliPassthroughWithVary(t *test
 	}
 }
 
+func TestGzipEncodingOnProxyHandlerUpstreamDeflatePassthroughWithVary(t *testing.T) {
+	resp := DownstreamContentEncodingIntegrity("gzip", true, "deflate", true, "/mse6/deflate", t)
+	raw, _ := ioutil.ReadAll(flate.NewReader(bytes.NewBuffer(resp)))
+	want := "{\"mse6\":\"Hello from the deflate endpoint\"}"
+	if string(raw) != want {
+		t.Errorf("upstream deflate should decode and contain mse6 response passed through")
+	}
+}
+
+func TestBrotliEncodingOnProxyHandlerUpstreamDeflatePassthroughWithVary(t *testing.T) {
+	resp := DownstreamContentEncodingIntegrity("br", true, "deflate", true, "/mse6/deflate", t)
+	raw, _ := ioutil.ReadAll(flate.NewReader(bytes.NewBuffer(resp)))
+	want := "{\"mse6\":\"Hello from the deflate endpoint\"}"
+	if string(raw) != want {
+		t.Errorf("upstream deflate should decode and contain mse6 response passed through")
+	}
+}
+
 func TestIdentityCOMMAGzipEncodingOnProxyHandlerSendsPreferredGzip(t *testing.T) {
 	DownstreamAcceptEncodingContentEncodingHTTP11("identity, gzip", true, "gzip", "/mse6/get", t)
 }
