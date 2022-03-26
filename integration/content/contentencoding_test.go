@@ -26,7 +26,7 @@ func TestStarAcceptEncodingOn404(t *testing.T) {
 }
 
 func TestIdentityEncodingOn404(t *testing.T) {
-	resp := DownstreamContentEncodingIntegrity("identity", true, "identity", "/", t)
+	resp := DownstreamContentEncodingIntegrity("identity", true, "identity", false, "/", t)
 	raw := string(resp)
 	if !strings.Contains(raw, "404") {
 		t.Errorf("identity response should contain 404 in body")
@@ -46,7 +46,7 @@ func TestIdentityCOMMAGzipEncodingOn404SendsIdentity(t *testing.T) {
 }
 
 func TestGzipEncodingOn404SendsEncodedGzip(t *testing.T) {
-	resp := DownstreamContentEncodingIntegrity("gzip", true, "gzip", "/", t)
+	resp := DownstreamContentEncodingIntegrity("gzip", true, "gzip", false, "/", t)
 	raw := string(*j8a.Gunzip(resp))
 	if !strings.Contains(raw, "404") {
 		t.Errorf("gzip response should contain 404 in body")
@@ -54,7 +54,7 @@ func TestGzipEncodingOn404SendsEncodedGzip(t *testing.T) {
 }
 
 func TestBrotliEncodingOn404SendsEncodedBrotli(t *testing.T) {
-	resp := DownstreamContentEncodingIntegrity("br", true, "br", "/", t)
+	resp := DownstreamContentEncodingIntegrity("br", true, "br", false, "/", t)
 	raw := string(*j8a.BrotliDecode(resp))
 	if !strings.Contains(raw, "404") {
 		t.Errorf("brotli response should contain 404 in body")
@@ -71,28 +71,84 @@ func TestCompressAcceptEncodingOn404Sends406(t *testing.T) {
 	DownstreamAcceptEncodingContentEncodingHTTP11("x-compress", true, "406", "/", t)
 }
 
-func TestNoAcceptEncodingOnProxyHandlerSendsEncodedIdentity(t *testing.T) {
+func TestNoAcceptEncodingOnProxyHandlerSendsUpstreamIdentityHeader(t *testing.T) {
 	DownstreamAcceptEncodingContentEncodingHTTP11("", false, "identity", "/mse6/get", t)
 }
 
-func TestEmptyAcceptEncodingOnProxyHandlerSendsEncodedIdentity(t *testing.T) {
+func TestEmptyAcceptEncodingOnProxyHandlerSendsUpstreamIdentityHeader(t *testing.T) {
 	DownstreamAcceptEncodingContentEncodingHTTP11("", true, "identity", "/mse6/get", t)
+}
+
+func TestNoAcceptEncodingOnProxyHandlerSendsJ8aIdentityHeader(t *testing.T) {
+	DownstreamAcceptEncodingContentEncodingHTTP11("", false, "identity", "/mse6/nocontentenc", t)
+}
+
+func TestEmptyAcceptEncodingOnProxyHandlerSendsJ8aIdentityHeader(t *testing.T) {
+	DownstreamAcceptEncodingContentEncodingHTTP11("", true, "identity", "/mse6/nocontentenc", t)
 }
 
 func TestStarAcceptEncodingOnProxyHandlerSendsEncodedGzip(t *testing.T) {
 	DownstreamAcceptEncodingContentEncodingHTTP11("*", true, "gzip", "/mse6/get", t)
 }
 
-func TestIdentityEncodingOnProxyHandlerSendsIdentity(t *testing.T) {
-	resp := DownstreamContentEncodingIntegrity("identity", true, "identity", "/mse6/get", t)
+func TestIdentityAcceptEncodingOnProxyHandlerSendsUpstreamIdentityHeader(t *testing.T) {
+	resp := DownstreamContentEncodingIntegrity("identity", true, "identity", false, "/mse6/get", t)
 	raw := string(resp)
 	if !strings.Contains(raw, "mse6") {
 		t.Errorf("identity response should contain mse6 response")
 	}
 }
 
+func TestIdentityAcceptEncodingOnProxyHandlerSendsJ8aIdentityHeader(t *testing.T) {
+	resp := DownstreamContentEncodingIntegrity("identity", true, "identity", false, "/mse6/nocontentenc", t)
+	raw := string(resp)
+	if !strings.Contains(raw, "mse6") {
+		t.Errorf("identity response should contain mse6 response")
+	}
+}
+
+func TestStarAcceptEncodingOnProxyHandlerEncodesUpstreamIdentityAsGzip(t *testing.T) {
+	resp := DownstreamContentEncodingIntegrity("*", true, "gzip", false, "/mse6/get", t)
+	raw := string(*j8a.Gunzip(resp))
+	if !strings.Contains(raw, "get") {
+		t.Errorf("unable to find get response after gunzip")
+	}
+}
+
+func TestStarAcceptEncodingOnProxyHandlerEncodesUpstreamNoContentEncodingAsGzip(t *testing.T) {
+	resp := DownstreamContentEncodingIntegrity("*", true, "gzip", false, "/mse6/nocontentenc", t)
+	raw := string(*j8a.Gunzip(resp))
+	if !strings.Contains(raw, "nocontentenc") {
+		t.Errorf("unable to find nocontenenc response after gunzip")
+	}
+}
+
+func TestStarAcceptEncodingOnProxyHandlerSendsUpstreamGzipAsGzip(t *testing.T) {
+	resp := DownstreamContentEncodingIntegrity("*", true, "gzip", false, "/mse6/gzip", t)
+	raw := string(*j8a.Gunzip(resp))
+	if !strings.Contains(raw, "mse6") {
+		t.Errorf("unable to find mse6 response after gunzip")
+	}
+}
+
+func TestStarAcceptEncodingOnProxyHandlerSendsUpstreamBrotliAsBrotli(t *testing.T) {
+	resp := DownstreamContentEncodingIntegrity("*", true, "br", false, "/mse6/brotli", t)
+	raw := string(*j8a.BrotliDecode(resp))
+	if !strings.Contains(raw, "mse6") {
+		t.Errorf("unable to find mse6 response after brotli decode")
+	}
+}
+
+func TestStarAcceptEncodingOnProxyHandlerSendsUpstreamDeflateAsDeflate(t *testing.T) {
+	resp := DownstreamContentEncodingIntegrity("*", true, "deflate", false, "/mse6/deflate", t)
+	raw := string(resp)
+	if !strings.Contains(raw, "mse6") {
+		t.Errorf("unable to find mse6 response")
+	}
+}
+
 func TestIdentityEncodingOnProxyHandlerUpstreamBrotliPassthrough(t *testing.T) {
-	resp := DownstreamContentEncodingIntegrity("identity", true, "br", "/mse6/brotli", t)
+	resp := DownstreamContentEncodingIntegrity("identity", true, "br", true, "/mse6/brotli", t)
 	raw := string(*j8a.BrotliDecode(resp))
 	want := "{\"mse6\":\"Hello from the brotli endpoint\"}"
 	if raw != want {
@@ -101,7 +157,7 @@ func TestIdentityEncodingOnProxyHandlerUpstreamBrotliPassthrough(t *testing.T) {
 }
 
 func TestIdentityEncodingOnProxyHandlerUpstreamDeflatePassthrough(t *testing.T) {
-	resp := DownstreamContentEncodingIntegrity("identity", true, "deflate", "/mse6/deflate", t)
+	resp := DownstreamContentEncodingIntegrity("identity", true, "deflate", true, "/mse6/deflate", t)
 	raw, _ := ioutil.ReadAll(flate.NewReader(bytes.NewBuffer(resp)))
 	want := "{\"mse6\":\"Hello from the deflate endpoint\"}"
 	if string(raw) != want {
@@ -110,7 +166,7 @@ func TestIdentityEncodingOnProxyHandlerUpstreamDeflatePassthrough(t *testing.T) 
 }
 
 func TestIdentityEncodingOnProxyHandlerUpstreamGzipPassthrough(t *testing.T) {
-	resp := DownstreamContentEncodingIntegrity("identity", true, "gzip", "/mse6/gzip", t)
+	resp := DownstreamContentEncodingIntegrity("identity", true, "gzip", true, "/mse6/gzip", t)
 	raw := string(*j8a.Gunzip(resp))
 	want := "{\"mse6\":\"Hello from the gzip endpoint\"}"
 	if raw != want {
@@ -122,6 +178,10 @@ func TestIdentityCOMMAGzipEncodingOnProxyHandlerSendsPreferredGzip(t *testing.T)
 	DownstreamAcceptEncodingContentEncodingHTTP11("identity, gzip", true, "gzip", "/mse6/get", t)
 }
 
+func TestIdentityCOMMABrotliEncodingOnProxyHandlerSendsPreferredBrotli(t *testing.T) {
+	DownstreamAcceptEncodingContentEncodingHTTP11("identity, br", true, "br", "/mse6/get", t)
+}
+
 func TestIdentityCOMMABadEncodingOnProxyHandlerIgnoresBadAndSendsPreferredGzip(t *testing.T) {
 	DownstreamAcceptEncodingContentEncodingHTTP11("badd, identity, gzip, bad", true, "gzip", "/mse6/get", t)
 }
@@ -130,16 +190,16 @@ func TestBadEncodingOnProxyHandlerSends406(t *testing.T) {
 	DownstreamAcceptEncodingContentEncodingHTTP11("badd", true, "406", "/mse6/get", t)
 }
 
-func TestGzipEncodingOnProxyHandlerSendsEncodedGzip(t *testing.T) {
-	resp := DownstreamContentEncodingIntegrity("gzip", true, "gzip", "/mse6/get", t)
+func TestGzipEncodingOnProxyHandlerSendsJ8aEncodedGzip(t *testing.T) {
+	resp := DownstreamContentEncodingIntegrity("gzip", true, "gzip", false, "/mse6/get", t)
 	raw := string(*j8a.Gunzip(resp))
 	if !strings.Contains(raw, "mse6") {
 		t.Errorf("gzip response should contain mse6 response")
 	}
 }
 
-func TestBrotliEncodingOnProxyHandlerSendsEncodedBrotli(t *testing.T) {
-	resp := DownstreamContentEncodingIntegrity("br", true, "br", "/mse6/get", t)
+func TestBrotliEncodingOnProxyHandlerSendsJ8aEncodedBrotli(t *testing.T) {
+	resp := DownstreamContentEncodingIntegrity("br", true, "br", false, "/mse6/get", t)
 	raw := string(*j8a.BrotliDecode(resp))
 	if !strings.Contains(raw, "mse6") {
 		t.Errorf("brotli response should contain mse6 response")
@@ -181,7 +241,7 @@ func TestBadEncodingOnAboutHandlerSends406(t *testing.T) {
 }
 
 func TestIdentityEncodingOnAboutHandlerSendsIdentity(t *testing.T) {
-	resp := DownstreamContentEncodingIntegrity("identity", true, "identity", "/about", t)
+	resp := DownstreamContentEncodingIntegrity("identity", true, "identity", false, "/about", t)
 	raw := string(resp)
 	if !strings.Contains(raw, "j8a") {
 		t.Errorf("identity aboutresponse should contain j8a in body")
@@ -189,7 +249,7 @@ func TestIdentityEncodingOnAboutHandlerSendsIdentity(t *testing.T) {
 }
 
 func TestGzipEncodingOnAboutHandlerSendsEncodedGzip(t *testing.T) {
-	resp := DownstreamContentEncodingIntegrity("gzip", true, "gzip", "/about", t)
+	resp := DownstreamContentEncodingIntegrity("gzip", true, "gzip", false, "/about", t)
 	raw := string(*j8a.Gunzip(resp))
 	if !strings.Contains(raw, "j8a") {
 		t.Errorf("gzip aboutresponse should contain j8a in body")
@@ -197,7 +257,7 @@ func TestGzipEncodingOnAboutHandlerSendsEncodedGzip(t *testing.T) {
 }
 
 func TestBrotliEncodingOnAboutHandlerSendsEncodedBrotli(t *testing.T) {
-	resp := DownstreamContentEncodingIntegrity("br", true, "br", "/about", t)
+	resp := DownstreamContentEncodingIntegrity("br", true, "br", false, "/about", t)
 	raw := string(*j8a.BrotliDecode(resp))
 	if !strings.Contains(raw, "j8a") {
 		t.Errorf("brotli aboutresponse should contain j8a in body")
@@ -246,7 +306,7 @@ func DownstreamAcceptEncodingContentEncodingHTTP11(ae string, sendAEHeader bool,
 	}
 }
 
-func DownstreamContentEncodingIntegrity(ae string, sendAEHeader bool, ce string, slug string, t *testing.T) []byte {
+func DownstreamContentEncodingIntegrity(ae string, sendAEHeader bool, ce string, wantVaryAE bool, slug string, t *testing.T) []byte {
 	client := &http.Client{}
 	req, _ := http.NewRequest("GET", "http://localhost:8080"+slug, nil)
 	if sendAEHeader {
@@ -261,6 +321,17 @@ func DownstreamContentEncodingIntegrity(ae string, sendAEHeader bool, ce string,
 	gotce := resp.Header.Get("Content-Encoding")
 	if gotce != ce {
 		t.Errorf("want content encoding %s, but got %s instead", ce, gotce)
+	}
+
+	gotVary := resp.Header.Get("Vary")
+	if wantVaryAE == true {
+		if gotVary != "Accept-Encoding" {
+			t.Errorf("want Vary: Accept-Encoding, but got %s instead", gotVary)
+		}
+	} else {
+		if len(gotVary) > 0 {
+			t.Errorf("no vary header should be sent, but got %s", gotVary)
+		}
 	}
 
 	if resp != nil && resp.Body != nil {

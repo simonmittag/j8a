@@ -63,7 +63,7 @@ const (
 )
 
 var GzipContentEncodings = AcceptEncoding{EncGzip, EncXGzip}
-var CompressedContentEncodings = AcceptEncoding{EncBrotli, EncGzip, EncXGzip}
+var CompressedContentEncodings = AcceptEncoding{EncBrotli, EncGzip, EncXGzip, EncDeflate, EncXDeflate, EncCompress, EncXCompress}
 var SupportedContentEncodings = AcceptEncoding{EncStar, EncIdentity, EncBrotli, EncGzip, EncXGzip}
 var UnsupportedContentEncodings = AcceptEncoding{EncDeflate, EncXDeflate, EncCompress, EncXCompress}
 
@@ -642,7 +642,7 @@ func (proxy *Proxy) encodeUpstreamResponseBody() {
 			proxy.Up.Atmpt.ContentEncoding = NewContentEncoding(proxy.Up.Atmpt.resp.Header.Get(contentEncoding))
 		}
 
-		//we pass through all compressed responses as is
+		//we pass through all compressed responses as is, including unsupported deflate and compress codecs.
 		if proxy.Up.Atmpt.ContentEncoding.isCompressed() {
 			proxy.Dwn.Resp.Body = proxy.Up.Atmpt.respBody
 			proxy.Dwn.Resp.ContentEncoding = proxy.Up.Atmpt.ContentEncoding
@@ -663,6 +663,8 @@ func (proxy *Proxy) encodeUpstreamResponseBody() {
 			if len(proxy.Up.Atmpt.ContentEncoding) > 0 {
 				//only set this if it was present upstream, otherwise assume nothing and leave empty.
 				proxy.Dwn.Resp.ContentEncoding = proxy.Up.Atmpt.ContentEncoding
+			} else {
+				proxy.Dwn.Resp.ContentEncoding = EncIdentity
 			}
 			scaffoldUpAttemptLog(proxy).
 				Msgf(upstreamCopyNoRecode)
@@ -673,8 +675,9 @@ func (proxy *Proxy) encodeUpstreamResponseBody() {
 			proxy.Dwn.Resp.Writer.Header().Set(contentEncoding, proxy.Dwn.Resp.ContentEncoding.print())
 		}
 
-		//send a vary header for accept encoding if upstream compression doesn't match expectations for content negotation.
-		if !proxy.Dwn.AcceptEncoding.isCompatible(proxy.Up.Atmpt.ContentEncoding) {
+		//send a vary header for accept encoding if final downstream content encoding
+		//doesn't match expectations for content negotation, i.e. when upstream was passed through.
+		if !proxy.Dwn.AcceptEncoding.isCompatible(proxy.Dwn.Resp.ContentEncoding) {
 			proxy.Dwn.Resp.Writer.Header().Set(varyS, acceptEncoding)
 		}
 
