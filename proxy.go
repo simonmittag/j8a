@@ -114,6 +114,12 @@ func (c ContentEncoding) isUnSupported() bool {
 	return false
 }
 
+func (c ContentEncoding) isCustom() bool {
+	return len(c) > 0 &&
+		c != EncIdentity &&
+		!c.isCompressed()
+}
+
 func (c ContentEncoding) isBrotli() bool {
 	return c == EncBrotli
 }
@@ -643,7 +649,8 @@ func (proxy *Proxy) encodeUpstreamResponseBody() {
 		}
 
 		//we pass through all compressed responses as is, including unsupported deflate and compress codecs.
-		if proxy.Up.Atmpt.ContentEncoding.isCompressed() {
+		//this includes custom encodings, i.e. multiple compressions in series.
+		if proxy.Up.Atmpt.ContentEncoding.isCompressed() || proxy.Up.Atmpt.ContentEncoding.isCustom() {
 			proxy.Dwn.Resp.Body = proxy.Up.Atmpt.respBody
 			proxy.Dwn.Resp.ContentEncoding = proxy.Up.Atmpt.ContentEncoding
 			scaffoldUpAttemptLog(proxy).

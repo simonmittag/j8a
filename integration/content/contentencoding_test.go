@@ -139,6 +139,14 @@ func TestStarAcceptEncodingOnProxyHandlerSendsUpstreamBrotliAsBrotli(t *testing.
 	}
 }
 
+func TestStarAcceptEncodingOnProxyHandlerSendsUpstreamUnknownAsUnknown(t *testing.T) {
+	resp := DownstreamContentEncodingIntegrity("*", true, "unknown", false, "/mse6/unknowncontentenc", t)
+	raw := string(resp)
+	if !strings.Contains(raw, "unknown") {
+		t.Errorf("unable to find mse6 response after with unknown content encoding")
+	}
+}
+
 func TestStarAcceptEncodingOnProxyHandlerSendsUpstreamDeflateAsDeflate(t *testing.T) {
 	resp := DownstreamContentEncodingIntegrity("*", true, "deflate", false, "/mse6/deflate", t)
 	raw := string(resp)

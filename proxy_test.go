@@ -286,6 +286,47 @@ func TestUnSupportedContentEncoding(t *testing.T) {
 	}
 }
 
+func TestCustomContentEncoding(t *testing.T) {
+	custom := []ContentEncoding{
+		NewContentEncoding("compress, br, identity"),
+		NewContentEncoding("gzip,compress"),
+		NewContentEncoding("gzip,deflate"),
+		NewContentEncoding("gzip, identity"),
+		NewContentEncoding("br, gzip"),
+		NewContentEncoding("xgzip"),
+		NewContentEncoding("ddgzip "),
+		NewContentEncoding("ddsfa"),
+		NewContentEncoding("br--"),
+		NewContentEncoding("br\n!"),
+		NewContentEncoding("\nbr\nsdfsd"),
+	}
+	for _, ce := range custom {
+		if !ce.isCustom() {
+			t.Errorf("%v should be custom", ce)
+		}
+	}
+}
+
+func TestNotCustomContentEncoding(t *testing.T) {
+	notcustom := []ContentEncoding{
+		//empty content encoding is custom
+		NewContentEncoding(""),
+		NewContentEncoding("gZip"),
+		NewContentEncoding("x-gzip "),
+		NewContentEncoding("identity"),
+		NewContentEncoding("deflate"),
+		NewContentEncoding("x-deflate"),
+		NewContentEncoding("compress"),
+		NewContentEncoding("x-compress"),
+		NewContentEncoding("br"),
+	}
+	for _, ce := range notcustom {
+		if ce.isCustom() {
+			t.Errorf("%v should not be custom", ce)
+		}
+	}
+}
+
 func TestAbortAllUpstreamAttempts(t *testing.T) {
 	Runner = mockRuntime()
 
