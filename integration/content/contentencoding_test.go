@@ -134,7 +134,7 @@ func TestStarAcceptEncodingOnProxyHandlerSendsUpstreamGzipAsGzip(t *testing.T) {
 func TestStarAcceptEncodingOnProxyHandlerSendsUpstreamBrotliAsBrotli(t *testing.T) {
 	resp := DownstreamContentEncodingIntegrity("*", true, "br", false, "/mse6/brotli", t)
 	raw := string(*j8a.BrotliDecode(resp))
-	if !strings.Contains(raw, "mse6") {
+	if !strings.Contains(raw, "brotli") {
 		t.Errorf("unable to find mse6 response after brotli decode")
 	}
 }
