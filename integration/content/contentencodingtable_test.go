@@ -10,7 +10,155 @@ import (
 	"testing"
 )
 
-func TestContentEncodingPermutationsOnProxyHandler(t *testing.T) {
+func TestContentEncodingPermutationsOnProxyHandlerUpstreamGzip(t *testing.T) {
+	tests := map[string]struct {
+		reqUrlSlug                      string
+		reqAcceptEncodingHeader         string
+		reqSendAcceptEncodingHeader     bool
+		wantResStatusCode               int
+		wantResContentEncodingHeader    string
+		wantResVaryAcceptEncodingHeader bool
+		wantResBodyContent              string
+	}{
+		"noAcceptEncodingSendsEncoded": {"/mse6/gzip",
+			"",
+			false,
+			200,
+			"gzip",
+			true,
+			"gzip",
+		},
+		"emptyAcceptEncodingSendsEncoded": {"/mse6/gzip",
+			"",
+			true,
+			200,
+			"gzip",
+			true,
+			"gzip",
+		},
+		"starAcceptEncodingSendsEncoded": {"/mse6/gzip",
+			"*",
+			true,
+			200,
+			"gzip",
+			false,
+			"gzip",
+		},
+		"starCommaGzipAcceptEncodingSendsEncoded": {"/mse6/gzip",
+			"*,gzip",
+			true,
+			200,
+			"gzip",
+			false,
+			"gzip",
+		},
+		"identityCommaGzipAcceptEncodingSendsEncoded": {"/mse6/gzip",
+			"identity,gzip",
+			true,
+			200,
+			"gzip",
+			false,
+			"gzip",
+		},
+		"gzipCommaIdentityAcceptEncodingSendsEncoded": {"/mse6/gzip",
+			"gzip,identity",
+			true,
+			200,
+			"gzip",
+			false,
+			"gzip",
+		},
+		"gzipCommaStarAcceptEncodingSendsEncoded": {"/mse6/gzip",
+			"gzip,*",
+			true,
+			200,
+			"gzip",
+			false,
+			"gzip",
+		},
+		"gzipAcceptEncodingSendsEncoded": {"/mse6/gzip",
+			"gzip",
+			true,
+			200,
+			"gzip",
+			false,
+			"gzip",
+		},
+		"gzipCommaUnknownAcceptEncodingSendsEncoded": {"/mse6/gzip",
+			"gzip, unknown, moreunknown",
+			true,
+			200,
+			"gzip",
+			false,
+			"gzip",
+		},
+		"gzipCommaBrotliAcceptEncodingSendsGzip": {"/mse6/gzip",
+			"gzip, br",
+			true,
+			200,
+			"gzip",
+			false,
+			"gzip",
+		},
+		"brotliAcceptEncodingSendsGzipWithVary": {"/mse6/gzip",
+			"br",
+			true,
+			200,
+			"gzip",
+			true,
+			"gzip",
+		},
+		"brotliCommaGzipAcceptEncodingSendsGzip": {"/mse6/gzip",
+			"br,gzip",
+			true,
+			200,
+			"gzip",
+			false,
+			"gzip",
+		},
+		"brotliCommaIdentityAcceptEncodingSendsGzipWithVary": {"/mse6/gzip",
+			"br,identity",
+			true,
+			200,
+			"gzip",
+			true,
+			"gzip",
+		},
+		"brotliCommaStarAcceptEncodingSendsGzipNoVary": {"/mse6/gzip",
+			"br,*",
+			true,
+			200,
+			"gzip",
+			false,
+			"gzip",
+		},
+		"deflateAcceptEncodingSends406ResponseCode": {"/mse6/gzip",
+			"deflate",
+			true,
+			406,
+			"identity",
+			false,
+			"406",
+		},
+		"unknownAcceptEncodingSends406ResponseCode": {"/mse6/gzip",
+			"unknown",
+			true,
+			406,
+			"identity",
+			false,
+			"406",
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			DownstreamContentEncodingFullIntegrity(tc.reqUrlSlug, tc.reqAcceptEncodingHeader, tc.reqSendAcceptEncodingHeader,
+				tc.wantResContentEncodingHeader, tc.wantResVaryAcceptEncodingHeader, tc.wantResBodyContent, tc.wantResStatusCode, t)
+		})
+	}
+}
+
+func TestContentEncodingPermutationsOnProxyHandlerUpstreamUnencoded(t *testing.T) {
 	tests := map[string]struct {
 		reqUrlSlug                      string
 		reqAcceptEncodingHeader         string
@@ -247,7 +395,7 @@ func TestContentEncodingPermutationsOnAboutHandler(t *testing.T) {
 			200,
 			"gzip",
 			false,
-			"404",
+			"ServerID",
 		},
 		"brotliAcceptEncodingSendsBrotli": {"/about",
 			"br",
@@ -255,7 +403,7 @@ func TestContentEncodingPermutationsOnAboutHandler(t *testing.T) {
 			200,
 			"br",
 			false,
-			"404",
+			"ServerID",
 		},
 		"brotliCommaGzipAcceptEncodingSendsGzip": {"/about",
 			"br,gzip",
@@ -263,7 +411,7 @@ func TestContentEncodingPermutationsOnAboutHandler(t *testing.T) {
 			200,
 			"gzip",
 			false,
-			"404",
+			"ServerID",
 		},
 		"deflateAcceptEncodingSends406ResponseCode": {"/about",
 			"deflate",
@@ -476,7 +624,9 @@ func DownstreamContentEncodingFullIntegrity(reqUrlSlug string, reqAcceptEncoding
 			body = *j8a.Gunzip(body)
 		} else if wantResContentEncodingHeader == "deflate" {
 			body, _ = ioutil.ReadAll(flate.NewReader(bytes.NewBuffer(body)))
-		} else if !strings.Contains(string(body), wantResBodyContent) {
+		}
+
+		if !strings.Contains(string(body), wantResBodyContent) {
 			t.Errorf("want body response %v, but got (decoded) %v", wantResBodyContent, string(body))
 		}
 	}

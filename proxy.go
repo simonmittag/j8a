@@ -650,7 +650,7 @@ func (proxy *Proxy) encodeUpstreamResponseBody() {
 
 		//we pass through all compressed responses as is, including unsupported deflate and compress codecs.
 		//this includes custom encodings, i.e. multiple compressions in series.
-		if proxy.Up.Atmpt.ContentEncoding.isCompressed() || proxy.Up.Atmpt.ContentEncoding.isCustom() {
+		if atmpt.ContentEncoding.isCompressed() || atmpt.ContentEncoding.isCustom() {
 			proxy.Dwn.Resp.Body = proxy.Up.Atmpt.respBody
 			proxy.Dwn.Resp.ContentEncoding = proxy.Up.Atmpt.ContentEncoding
 			scaffoldUpAttemptLog(proxy).
