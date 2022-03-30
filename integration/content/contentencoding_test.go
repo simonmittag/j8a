@@ -135,7 +135,7 @@ func TestStarAcceptEncodingOnProxyHandlerSendsUpstreamBrotliAsBrotli(t *testing.
 	resp := DownstreamContentEncodingIntegrity("*", true, "br", false, "/mse6/brotli", t)
 	raw := string(*j8a.BrotliDecode(resp))
 	if !strings.Contains(raw, "brotli") {
-		t.Errorf("unable to find mse6 response after brotli decode")
+		t.Errorf("unable to find mse6 response after brotli decode, got %v", raw)
 	}
 }
 
@@ -351,6 +351,8 @@ func DownstreamContentEncodingIntegrity(ae string, sendAEHeader bool, ce string,
 	resp, err := client.Do(req)
 	if err != nil {
 		t.Errorf("error connecting to server, cause: %s", err)
+	} else {
+		t.Logf("normal response: %v", resp)
 	}
 
 	gotce := resp.Header.Get("Content-Encoding")
