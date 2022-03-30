@@ -19,7 +19,10 @@ require (
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 )
 
-require github.com/andybalholm/brotli v1.0.4
+require (
+	github.com/andybalholm/brotli v1.0.4
+	github.com/klauspost/compress v1.14.2
+)
 
 require (
 	github.com/cenkalti/backoff/v4 v4.1.1 // indirect
@@ -28,7 +31,6 @@ require (
 	github.com/gobwas/pool v0.2.1 // indirect
 	github.com/goccy/go-json v0.9.4 // indirect
 	github.com/itchyny/timefmt-go v0.1.3 // indirect
-	github.com/klauspost/compress v1.14.2 // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.0 // indirect
 	github.com/lestrrat-go/httpcc v1.0.0 // indirect
