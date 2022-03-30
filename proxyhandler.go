@@ -303,9 +303,6 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 	go func() {
 		proxy.Up.Atmpt.StatusCode = upstreamResponse.StatusCode
 		upstreamResponseBody, bodyError = ioutil.ReadAll(upstreamResponse.Body)
-		//if c := bytes.Compare(upstreamResponseBody[0:2], gzipMagicBytes); c == 0 {
-		//	proxy.Up.Atmpt.ContentEncoding = EncGzip
-		//}
 
 		defer func() {
 			if err := recover(); err != nil {
