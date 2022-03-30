@@ -352,8 +352,11 @@ func DownstreamContentEncodingIntegrity(ae string, sendAEHeader bool, ce string,
 	if err != nil {
 		t.Errorf("error connecting to server, cause: %s", err)
 	} else {
-		t.Logf("normal response: %v", resp)
+		t.Logf("normal. raw response: %v", resp)
 	}
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	t.Logf("normal. raw body: %v", string(body))
 
 	gotce := resp.Header.Get("Content-Encoding")
 	if gotce != ce {
@@ -375,6 +378,5 @@ func DownstreamContentEncodingIntegrity(ae string, sendAEHeader bool, ce string,
 		defer resp.Body.Close()
 	}
 
-	body, _ := ioutil.ReadAll(resp.Body)
 	return body
 }
