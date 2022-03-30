@@ -342,7 +342,12 @@ func DownstreamAcceptEncodingContentEncodingHTTP11(ae string, sendAEHeader bool,
 }
 
 func DownstreamContentEncodingIntegrity(ae string, sendAEHeader bool, ce string, wantVaryAE bool, slug string, t *testing.T) []byte {
-	client := &http.Client{}
+	client := &http.Client{
+		Transport: &http.Transport{
+			DisableCompression: true,
+		},
+	}
+
 	req, _ := http.NewRequest("GET", "http://localhost:8080"+slug, nil)
 	if sendAEHeader {
 		req.Header.Add(j8a.AcceptEncodingS, ae)
