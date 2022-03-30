@@ -642,15 +642,11 @@ func (proxy *Proxy) encodeUpstreamResponseBody() {
 	atmpt := *proxy.Up.Atmpt
 	if atmpt.respBody != nil && len(*atmpt.respBody) > 0 {
 
-		//get the upstream content encoding header. Do this only if we didn't already detect the content type by sniffing
-		if len(proxy.Up.Atmpt.ContentEncoding) == 0 {
-			//try get it from upstream response header
-			proxy.Up.Atmpt.ContentEncoding = NewContentEncoding(proxy.Up.Atmpt.resp.Header.Get(contentEncoding))
-		}
+		proxy.Up.Atmpt.ContentEncoding = NewContentEncoding(proxy.Up.Atmpt.resp.Header.Get(contentEncoding))
 
 		//we pass through all compressed responses as is, including unsupported deflate and compress codecs.
 		//this includes custom encodings, i.e. multiple compressions in series.
-		if atmpt.ContentEncoding.isCompressed() || atmpt.ContentEncoding.isCustom() {
+		if proxy.Up.Atmpt.ContentEncoding.isCompressed() || proxy.Up.Atmpt.ContentEncoding.isCustom() {
 			proxy.Dwn.Resp.Body = proxy.Up.Atmpt.respBody
 			proxy.Dwn.Resp.ContentEncoding = proxy.Up.Atmpt.ContentEncoding
 			scaffoldUpAttemptLog(proxy).

@@ -1,7 +1,6 @@
 package j8a
 
 import (
-	"bytes"
 	"context"
 	"encoding/hex"
 	"encoding/json"
@@ -292,7 +291,7 @@ func jsonifyUpstreamHeaders(proxy *Proxy) []byte {
 
 const upAtmptResBodyTrunc = "upAtmptResBodyTrunc"
 const more = "..."
-const moreGzip = " [gzipped]"
+const moreEncoded = " [encoded]"
 
 func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byte, error) {
 	var upstreamResponseBody []byte
@@ -304,9 +303,9 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 	go func() {
 		proxy.Up.Atmpt.StatusCode = upstreamResponse.StatusCode
 		upstreamResponseBody, bodyError = ioutil.ReadAll(upstreamResponse.Body)
-		if c := bytes.Compare(upstreamResponseBody[0:2], gzipMagicBytes); c == 0 {
-			proxy.Up.Atmpt.ContentEncoding = EncGzip
-		}
+		//if c := bytes.Compare(upstreamResponseBody[0:2], gzipMagicBytes); c == 0 {
+		//	proxy.Up.Atmpt.ContentEncoding = EncGzip
+		//}
 
 		defer func() {
 			if err := recover(); err != nil {
@@ -355,7 +354,8 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 		}
 
 		//and show what is necessary depending on encoding
-		if !proxy.Up.Atmpt.ContentEncoding.isCompressed() {
+		if !proxy.Up.Atmpt.ContentEncoding.isCompressed() &&
+			!proxy.Up.Atmpt.ContentEncoding.isCustom() {
 			s := string(t)
 			if len(s) == 25 {
 				s += more
@@ -366,7 +366,7 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 			if len(s) == 50 {
 				s += more
 			}
-			ul.Str(upAtmptResBodyTrunc, s+moreGzip)
+			ul.Str(upAtmptResBodyTrunc, s+moreEncoded)
 		}
 
 		ul.Int(upResBodyBytes, len(upstreamResponseBody)).
