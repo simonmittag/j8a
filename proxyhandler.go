@@ -290,6 +290,7 @@ func jsonifyUpstreamHeaders(proxy *Proxy) []byte {
 }
 
 const upAtmptResBodyTrunc = "upAtmptResBodyTrunc"
+const upAtmptCntntEnc = "upAtmptCntntEnc"
 const more = "..."
 const moreEncoded = " [encoded]"
 
@@ -302,6 +303,8 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 
 	go func() {
 		proxy.Up.Atmpt.StatusCode = upstreamResponse.StatusCode
+		proxy.Up.Atmpt.ContentEncoding = NewContentEncoding(proxy.Up.Atmpt.resp.Header.Get(contentEncoding))
+
 		upstreamResponseBody, bodyError = ioutil.ReadAll(upstreamResponse.Body)
 
 		defer func() {
@@ -351,19 +354,22 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 		}
 
 		//and show what is necessary depending on encoding
-		if !proxy.Up.Atmpt.ContentEncoding.isCompressed() &&
-			!proxy.Up.Atmpt.ContentEncoding.isCustom() {
-			s := string(t)
-			if len(s) == 25 {
-				s += more
-			}
-			ul.Str(upAtmptResBodyTrunc, s)
-		} else {
+		if proxy.Up.Atmpt.ContentEncoding.isEncoded() {
 			s := hex.EncodeToString(t)
 			if len(s) == 50 {
 				s += more
 			}
 			ul.Str(upAtmptResBodyTrunc, s+moreEncoded)
+		} else {
+			s := string(t)
+			if len(s) == 25 {
+				s += more
+			}
+			ul.Str(upAtmptResBodyTrunc, s)
+		}
+
+		if len(proxy.Up.Atmpt.ContentEncoding) > 0 {
+			ul.Str(upAtmptCntntEnc, proxy.Up.Atmpt.ContentEncoding.print())
 		}
 
 		ul.Int(upResBodyBytes, len(upstreamResponseBody)).

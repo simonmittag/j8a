@@ -307,6 +307,45 @@ func TestCustomContentEncoding(t *testing.T) {
 	}
 }
 
+func TestContentEncodingIsEncoded(t *testing.T) {
+	custom := []ContentEncoding{
+		NewContentEncoding("compress, br, identity"),
+		NewContentEncoding("gzip,compress"),
+		NewContentEncoding("gzip,deflate"),
+		NewContentEncoding("gzip, identity"),
+		NewContentEncoding("gzip"),
+		NewContentEncoding("deflate"),
+		NewContentEncoding("compress"),
+		NewContentEncoding("br"),
+		NewContentEncoding("br, gzip"),
+		NewContentEncoding("xgzip"),
+		NewContentEncoding("ddgzip "),
+		NewContentEncoding("ddsfa"),
+		NewContentEncoding("br--"),
+		NewContentEncoding("br\n!"),
+		NewContentEncoding("\nbr\nsdfsd"),
+	}
+	for _, ce := range custom {
+		if !ce.isEncoded() {
+			t.Errorf("%v should be encoded", ce)
+		}
+	}
+}
+
+func TestContentEncodingIsNotEncoded(t *testing.T) {
+	custom := []ContentEncoding{
+		NewContentEncoding(""),
+		NewContentEncoding(" "),
+		NewContentEncoding("  "),
+		NewContentEncoding("identity"),
+	}
+	for _, ce := range custom {
+		if ce.isEncoded() {
+			t.Errorf("%v should not be encoded", ce)
+		}
+	}
+}
+
 func TestNotCustomContentEncoding(t *testing.T) {
 	notcustom := []ContentEncoding{
 		//empty content encoding is custom

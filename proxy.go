@@ -92,6 +92,11 @@ func (c ContentEncoding) isCompressed() bool {
 	return false
 }
 
+func (c ContentEncoding) isEncoded() bool {
+	return len(c) > 0 &&
+		c != EncIdentity
+}
+
 func (c ContentEncoding) isAtomic() bool {
 	return len(c) > 0 && !strings.Contains(string(c), COMMA)
 }
@@ -642,30 +647,28 @@ func (proxy *Proxy) encodeUpstreamResponseBody() {
 	atmpt := *proxy.Up.Atmpt
 	if atmpt.respBody != nil && len(*atmpt.respBody) > 0 {
 
-		proxy.Up.Atmpt.ContentEncoding = NewContentEncoding(proxy.Up.Atmpt.resp.Header.Get(contentEncoding))
-
 		//we pass through all compressed responses as is, including unsupported deflate and compress codecs.
 		//this includes custom encodings, i.e. multiple compressions in series.
-		if proxy.Up.Atmpt.ContentEncoding.isCompressed() || proxy.Up.Atmpt.ContentEncoding.isCustom() {
-			proxy.Dwn.Resp.Body = proxy.Up.Atmpt.respBody
-			proxy.Dwn.Resp.ContentEncoding = proxy.Up.Atmpt.ContentEncoding
+		if atmpt.ContentEncoding.isEncoded() {
+			proxy.Dwn.Resp.Body = atmpt.respBody
+			proxy.Dwn.Resp.ContentEncoding = atmpt.ContentEncoding
 			scaffoldUpAttemptLog(proxy).
 				Msgf(upstreamCopyNoRecode)
 		} else if proxy.Dwn.AcceptEncoding.isCompatible(EncGzip) {
-			proxy.Dwn.Resp.Body = Gzip(*proxy.Up.Atmpt.respBody)
+			proxy.Dwn.Resp.Body = Gzip(*atmpt.respBody)
 			proxy.Dwn.Resp.ContentEncoding = EncGzip
 			scaffoldUpAttemptLog(proxy).
 				Msg(upstreamEncodeGzip)
 		} else if proxy.Dwn.AcceptEncoding.isCompatible(EncBrotli) {
-			proxy.Dwn.Resp.Body = BrotliEncode(*proxy.Up.Atmpt.respBody)
+			proxy.Dwn.Resp.Body = BrotliEncode(*atmpt.respBody)
 			proxy.Dwn.Resp.ContentEncoding = EncBrotli
 			scaffoldUpAttemptLog(proxy).
 				Msg(upstreamEncodeBr)
 		} else {
-			proxy.Dwn.Resp.Body = proxy.Up.Atmpt.respBody
-			if len(proxy.Up.Atmpt.ContentEncoding) > 0 {
+			proxy.Dwn.Resp.Body = atmpt.respBody
+			if len(atmpt.ContentEncoding) > 0 {
 				//only set this if it was present upstream, otherwise assume nothing and leave empty.
-				proxy.Dwn.Resp.ContentEncoding = proxy.Up.Atmpt.ContentEncoding
+				proxy.Dwn.Resp.ContentEncoding = atmpt.ContentEncoding
 			} else {
 				proxy.Dwn.Resp.ContentEncoding = EncIdentity
 			}
