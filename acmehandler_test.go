@@ -125,16 +125,16 @@ func TestAsSha256Struct(t *testing.T) {
 func TestAcmeHandlerLifecycle(t *testing.T) {
 	ach := NewAcmeHandler()
 	e1 := ach.Present("domain.com", "key", "value")
-	if e1!=nil {
+	if e1 != nil {
 		t.Error("acme handler should present")
 	}
 	e2 := ach.CleanUp("domain.com", "key", "value")
-	if e2!=nil {
+	if e2 != nil {
 		t.Error("acme handler should cleanup")
 	}
 
 	e3 := ach.CleanUp("notadomain", "notakey", "notavalue")
-	if e3!=nil {
+	if e3 != nil {
 		t.Error("acme handler delete should fail gracefully")
 	}
 }

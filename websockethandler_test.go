@@ -103,7 +103,7 @@ func TestReadDwnWS(t *testing.T) {
 
 func mockProxyWS() Proxy {
 	return Proxy{
-		XRequestID:    "1",
+		XRequestID:   "1",
 		XRequestInfo: false,
 		Up: Up{
 			Atmpt: &Atmpt{

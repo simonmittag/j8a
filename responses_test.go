@@ -16,7 +16,7 @@ func (t AboutHttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	aboutHandler(w, r)
 }
 
-func TestAboutHandlerContentEncodingIdentity(t *testing.T) {
+func TestAboutHandlerAcceptEncodingIdentitySendsIdentity(t *testing.T) {
 	Runner = mockRuntime()
 
 	server := httptest.NewServer(&AboutHttpHandler{})
@@ -42,7 +42,7 @@ func TestAboutHandlerContentEncodingIdentity(t *testing.T) {
 	}
 }
 
-func TestAboutHandlerContentEncodingNotSpecified(t *testing.T) {
+func TestAboutHandlerAcceptEncodingNotSpecifiedSendsIdentity(t *testing.T) {
 	Runner = mockRuntime()
 
 	server := httptest.NewServer(&AboutHttpHandler{})
@@ -72,7 +72,7 @@ func TestAboutHandlerContentEncodingNotSpecified(t *testing.T) {
 	}
 }
 
-func TestAboutHandlerContentEncodingGzip(t *testing.T) {
+func TestAboutHandlerAcceptEncodingGzipSendsGzip(t *testing.T) {
 	Runner = mockRuntime()
 
 	server := httptest.NewServer(&AboutHttpHandler{})
@@ -88,10 +88,58 @@ func TestAboutHandlerContentEncodingGzip(t *testing.T) {
 
 	gotBody, _ := ioutil.ReadAll(resp.Body)
 	if c := bytes.Compare(gotBody[0:2], gzipMagicBytes); c != 0 {
-		t.Errorf("body should not have gzip response magic bytes but does: %v", gotBody[0:2])
+		t.Errorf("body should have gzip response magic bytes but does not: %v", gotBody[0:2])
 	}
 
 	want := "gzip"
+	got := resp.Header["Content-Encoding"][0]
+	if got != want {
+		t.Errorf("response does have correct Content-Encoding header, want %v, got %v", want, got)
+	}
+}
+
+func TestAboutHandlerAcceptEncodingBrotliSendsBrotli(t *testing.T) {
+	Runner = mockRuntime()
+
+	server := httptest.NewServer(&AboutHttpHandler{})
+	defer server.Close()
+
+	c := &http.Client{}
+	req, _ := http.NewRequest("GET", server.URL, nil)
+	req.Header.Set("Accept-Encoding", "br")
+	resp, err := c.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := "br"
+	got := resp.Header["Content-Encoding"][0]
+	if got != want {
+		t.Errorf("response does have correct Content-Encoding header, want %v, got %v", want, got)
+	}
+}
+
+func TestAboutHandlerAcceptEncodingDeflateSends406AsIdentity(t *testing.T) {
+	Runner = mockRuntime()
+
+	server := httptest.NewServer(&AboutHttpHandler{})
+	defer server.Close()
+
+	c := &http.Client{}
+	req, _ := http.NewRequest("GET", server.URL, nil)
+	req.Header.Set("Accept-Encoding", "deflate")
+	resp, err := c.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	gotBody, _ := ioutil.ReadAll(resp.Body)
+	stringBody := string(gotBody)
+	if !strings.Contains(stringBody, "406") {
+		t.Errorf("response should contain 406 for deflate request")
+	}
+
+	want := "identity"
 	got := resp.Header["Content-Encoding"][0]
 	if got != want {
 		t.Errorf("response does have correct Content-Encoding header, want %v, got %v", want, got)

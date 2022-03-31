@@ -1,6 +1,7 @@
 package headers
 
 import (
+	"github.com/simonmittag/j8a"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -79,9 +80,9 @@ func TestSupplyXRequestInfoUpstreamGzip(t *testing.T) {
 	}
 
 	body, _ := ioutil.ReadAll(resp.Body)
-	utf8 := string(body)
+	utf8 := string(*j8a.Gunzip(body))
 	if !strings.Contains(utf8, "gzip endpoint") {
-		t.Errorf("should have sent decoded gzip respose with serverside request info but got this instead: %s", body)
+		t.Errorf("should have sent gzip respose with serverside request info but got this instead: %s", body)
 	}
 }
 
@@ -107,9 +108,9 @@ func TestSupplyXRequestInfoUpstreamTinyGzip(t *testing.T) {
 	}
 
 	body, _ := ioutil.ReadAll(resp.Body)
-	utf8 := string(body)
+	utf8 := string(*j8a.Gunzip(body))
 	if !strings.Contains(utf8, "{}") {
-		t.Errorf("should have sent decoded gzip respose with tiny serverside request info but got this instead: %s", body)
+		t.Errorf("should have sent gzip respose with tiny serverside request info but got this instead: %s", body)
 	}
 }
 

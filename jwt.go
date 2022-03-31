@@ -162,7 +162,7 @@ func (jwt *Jwt) Validate() error {
 		for i, claim := range jwt.Claims {
 
 			//poor mans jq query conversion
-			if len(claim)>0 &&
+			if len(claim) > 0 &&
 				!strings.Contains(claim, " ") &&
 				string(claim[0]) != "." {
 				claim = "." + claim
@@ -426,5 +426,5 @@ func (jwt *Jwt) checkECDSABitSize(alg jwa.SignatureAlgorithm, parsed *ecdsa.Publ
 }
 
 func (jwt *Jwt) hasMandatoryClaims() bool {
-	return len(jwt.Claims)>0 && len(jwt.Claims[0])>0
+	return len(jwt.Claims) > 0 && len(jwt.Claims[0]) > 0
 }

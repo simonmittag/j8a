@@ -12,53 +12,68 @@
 [![Version](https://img.shields.io/docker/v/simonmittag/j8a/0.9.0)](https://hub.docker.com/repository/docker/simonmittag/j8a)
 
 ## What's new?
+
+### v0.9.1b (upcoming)
+
+* Support for proxying Brotli (RFC7932) compressed streams, including brotli encoding for upstream content.
+
 ### v0.9.0 (30/09/2021)
-* ACME (RFC8555) support. Server auto-renews TLS certificates 30 days
-before expiry for free with zero downtime, no restarts!
+
+* ACME (RFC8555) support. Server auto-renews TLS certificates 30 days before expiry for free with zero downtime, no
+  restarts!
 * update to go 1.17
 
 ### v0.8.5 (01/07/2021)
+
 * downstream responses with status code >=400 now drop TCP connections for both HTTP/1.1 and HTTP/2
 * more tests for HTTP/2 request/response cycles
 * minor performance improvements
 
 ### v0.8.4 (26/06/2021)
+
 * introduced HTTP 499 responses for client aborts.
 
 ## What is j8a?
-[j8a [ dʒʌbbʌ ]](https://j8a.io) is a modern **TLS 1.3 reverse proxy server** designed as a lightweight API gateway for 
-micro-service style JSON APIs. It is built for DevOps engineers and allows fine-grained traceability of HTTP and 
-Websocket traffic without sacrificing performance. 
+
+[j8a [ dʒʌbbʌ ]](https://j8a.io) is a modern **TLS 1.3 reverse proxy server** designed as a lightweight API gateway for
+micro-service style JSON APIs. It is built for DevOps engineers and allows fine-grained traceability of HTTP and
+Websocket traffic without sacrificing performance.
 
 ![](images/route.gif)
 
 ## Features
+
 * Fast! 5k POST req/s traffic.
-* Secure. TLS1.2, TLS/1.3 termination w/ [A+ SSLLabs rating](https://www.ssllabs.com/ssltest/analyze.html?d=j8a.io). 
+* Secure. TLS1.2, TLS/1.3 termination w/ [A+ SSLLabs rating](https://www.ssllabs.com/ssltest/analyze.html?d=j8a.io).
 * Zero downtime. Auto-renew certs using ACME [RFC 8555](https://tools.ietf.org/html/rfc8555).
 * Observable. API request tracing w/ correlation ID for upstream micro-services.
 * APM. CPU, memory logging built-in. Daily TLS health and validity check for your full certificate chain.
 * JWT token validation with full JWK(S) support for [RFC 7519](https://tools.ietf.org/html/rfc7519).
 * HTTP/1.1 and HTTP/2 support w/ upstream <> downstream protocol translation.
-* Websocket Support for [RFC 6455](https://datatracker.ietf.org/doc/html/rfc6455)  
+* Websocket Support for [RFC 6455](https://datatracker.ietf.org/doc/html/rfc6455)
 * [Docker](https://hub.docker.com/repository/docker/simonmittag/j8a) native
 
 ## Up and running
+
 ### Docker
+
 ```
 docker pull simonmittag/j8a &&
 docker run -e J8ACFG_YML -p443:443 simonmittag/j8a
 ```
 
 ### Linux / Darwin
+
 ```bash
 go install github.com/simonmittag/j8a/cmd/j8a && j8a
 ```
 
 ## Configuration
+
 ### Environment Variables
 
 #### J8ACFG_YML
+
 Supply the server configuration to the running process in .yml format
 
 ```bash
@@ -90,6 +105,7 @@ J8ACFG_YML="---
 ```
 
 #### LOGLEVEL
+
 Loglevel for stdout, one of TRACE, DEBUG, INFO or WARN
 
 ```bash
@@ -97,6 +113,7 @@ LOGLEVEL="DEBUG"
 ```
 
 #### TZ
+
 TimeZone
 
 ```bash
@@ -104,5 +121,7 @@ TZ="Australia/Sydney"
 ```
 
 ## Contributions
-The j8a team welcomes all [contributors](https://github.com/simonmittag/j8a/blob/master/CONTRIBUTING.md). Everyone interacting with the project's codebase, issue trackers, chat rooms and mailing lists
-is expected to follow the [code of conduct](https://github.com/simonmittag/j8a/blob/master/CODE_OF_CONDUCT.md)
+
+The j8a team welcomes all [contributors](https://github.com/simonmittag/j8a/blob/master/CONTRIBUTING.md). Everyone
+interacting with the project's codebase, issue trackers, chat rooms and mailing lists is expected to follow
+the [code of conduct](https://github.com/simonmittag/j8a/blob/master/CODE_OF_CONDUCT.md)

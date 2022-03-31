@@ -2,10 +2,12 @@ package j8a
 
 import (
 	"bytes"
-	"compress/gzip"
+	"github.com/klauspost/compress/gzip"
 	"io/ioutil"
 	"sync"
 )
+
+const gzipLevel int = 1
 
 var gzipMagicBytes = []byte{0x1f, 0x8b}
 var gzipSmall = []byte{31, 139, 8, 0, 0, 0, 0, 0, 0, 255, 170, 174, 5, 4, 0, 0, 255, 255, 67, 191, 166, 163, 2, 0, 0, 0}
@@ -13,7 +15,8 @@ var gzipSmall = []byte{31, 139, 8, 0, 0, 0, 0, 0, 0, 255, 170, 174, 5, 4, 0, 0, 
 var zipPool = sync.Pool{
 	New: func() interface{} {
 		var buf bytes.Buffer
-		return gzip.NewWriter(&buf)
+		w, _ := gzip.NewWriterLevel(&buf, gzipLevel)
+		return w
 	},
 }
 

@@ -93,12 +93,13 @@ func (r *Runtime) tlsHealthCheck(daemon bool) {
 }
 
 const acmeRetry24h = "unable to renew ACME certificate from provider %s, cause: %s, will retry in 24h"
+
 func (r *Runtime) renewAcmeCertAndKey() error {
 	p := r.Connection.Downstream.Tls.Acme.Provider
 	log.Debug().Msgf("triggering renewal of ACME certificate from provider %s ", p)
 
 	e1 := r.fetchAcmeCertAndKey(acmeProviders[p])
-	if e1==nil {
+	if e1 == nil {
 		c := []byte(r.Connection.Downstream.Tls.Cert)
 		k := []byte(r.Connection.Downstream.Tls.Key)
 
@@ -111,7 +112,7 @@ func (r *Runtime) renewAcmeCertAndKey() error {
 
 			//now trigger a re-init of TLS cert for the cert we just downloaded.
 			e3 := r.ReloadableCert.triggerInit()
-			if e3 ==nil {
+			if e3 == nil {
 				logCertStats(newCerts)
 				log.Debug().Msgf("successful renewal of ACME certificate from provider %s complete", p)
 			} else {

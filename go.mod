@@ -20,6 +20,11 @@ require (
 )
 
 require (
+	github.com/andybalholm/brotli v1.0.4
+	github.com/klauspost/compress v1.14.2
+)
+
+require (
 	github.com/cenkalti/backoff/v4 v4.1.1 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.0-20210816181553-5444fa50b93d // indirect
 	github.com/gobwas/httphead v0.1.0 // indirect

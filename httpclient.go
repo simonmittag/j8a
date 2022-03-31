@@ -26,6 +26,7 @@ func scaffoldHTTPClient(runtime *Runtime) HTTPClient {
 
 	httpClient = &http.Client{
 		Transport: &http.Transport{
+			DisableCompression: true,
 			DialContext: (&net.Dialer{
 				Timeout:   socketTimeoutDuration,
 				KeepAlive: getKeepAliveIntervalDuration(),
