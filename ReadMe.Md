@@ -13,9 +13,10 @@
 
 ## What's new?
 
-### v0.9.1b (upcoming)
+### v0.9.1 (01/04/2022)
 
 * Support for proxying Brotli (RFC7932) compressed streams, including brotli encoding for upstream content.
+* update to go 1.18
 
 ### v0.9.0 (30/09/2021)
 
@@ -28,10 +29,6 @@
 * downstream responses with status code >=400 now drop TCP connections for both HTTP/1.1 and HTTP/2
 * more tests for HTTP/2 request/response cycles
 * minor performance improvements
-
-### v0.8.4 (26/06/2021)
-
-* introduced HTTP 499 responses for client aborts.
 
 ## What is j8a?
 
