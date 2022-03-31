@@ -27,7 +27,7 @@ var httpClient HTTPClient
 
 //httpHeadersNoRewrite contains a list of headers that are not copied in either direction. they must be set by the
 //server or are ignored.
-var httpHeadersNoRewrite []string = []string{connectionS, date, contentLength, acceptEncoding, transferEncoding, server}
+var httpHeadersNoRewrite []string = []string{connectionS, date, contentLength, acceptEncoding, transferEncoding, server, varyS}
 
 //extract IPs for stdout. thread safe.
 var ipr iprex = iprex{}
