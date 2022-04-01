@@ -250,7 +250,7 @@ jobs:
   unit:
     resource_class: medium
     docker:
-      - image: circleci/golang:1.17 #
+      - image: cimg/go:1.18 #
     environment:
       LOGCOLOR: TRUE
       LOGLEVEL: TRACE
@@ -263,7 +263,7 @@ jobs:
   testsum:
     resource_class: medium
     docker:
-      - image: circleci/golang:1.17
+      - image: cimg/go:1.18
     environment:
       TEST_RESULTS: /tmp/test-results
     steps:
@@ -282,7 +282,7 @@ jobs:
   codeclimate:
     resource_class: medium
     docker:
-      - image: circleci/golang:1.17
+      - image: cimg/go:1.18
     environment:
       TEST_RESULTS: /tmp/test-results
       LOGLEVEL: TRACE
@@ -319,7 +319,7 @@ jobs:
   integrationConnection:
     resource_class: medium
     docker:
-      - image: circleci/golang:1.17
+      - image: cimg/go:1.18
     steps:
       - intjob:
           test: github.com/simonmittag/j8a/integration/connection
@@ -327,7 +327,7 @@ jobs:
   integrationContent:
     resource_class: medium
     docker:
-      - image: circleci/golang:1.17
+      - image: cimg/go:1.18
     steps:
       - intjob:
           test: github.com/simonmittag/j8a/integration/content
@@ -335,7 +335,7 @@ jobs:
   integrationDownstreamHttp:
     resource_class: medium
     docker:
-      - image: circleci/golang:1.17
+      - image: cimg/go:1.18
     steps:
       - intjob:
           test: github.com/simonmittag/j8a/integration/downstreamHttp
@@ -343,7 +343,7 @@ jobs:
   integrationDownstreamTls:
     resource_class: medium
     docker:
-      - image: circleci/golang:1.17
+      - image: cimg/go:1.18
     steps:
       - intjob:
           test: github.com/simonmittag/j8a/integration/downstreamTls
@@ -351,7 +351,7 @@ jobs:
   integrationHeaders:
     resource_class: medium
     docker:
-      - image: circleci/golang:1.17
+      - image: cimg/go:1.18
     steps:
       - intjob:
           test: github.com/simonmittag/j8a/integration/headers
@@ -359,7 +359,7 @@ jobs:
   integrationJwt:
     resource_class: medium
     docker:
-      - image: circleci/golang:1.17
+      - image: cimg/go:1.18
     steps:
       - intjob:
           test: github.com/simonmittag/j8a/integration/jwt
@@ -367,7 +367,7 @@ jobs:
   integrationProtocol:
     resource_class: medium
     docker:
-      - image: circleci/golang:1.17
+      - image: cimg/go:1.18
     steps:
       - intjob:
           test: github.com/simonmittag/j8a/integration/protocol
@@ -375,7 +375,7 @@ jobs:
   integrationResponsecode:
     resource_class: medium
     docker:
-      - image: circleci/golang:1.17
+      - image: cimg/go:1.18
     steps:
       - intjob:
           test: github.com/simonmittag/j8a/integration/responsecode
@@ -383,7 +383,7 @@ jobs:
   integrationUpstream:
     resource_class: medium
     docker:
-      - image: circleci/golang:1.17
+      - image: cimg/go:1.18
     steps:
       - intjob:
           test: github.com/simonmittag/j8a/integration/upstream
@@ -391,14 +391,14 @@ jobs:
   integrationWebsocket:
     resource_class: medium
     docker:
-      - image: circleci/golang:1.17
+      - image: cimg/go:1.18
     steps:
       - intjob:
           test: github.com/simonmittag/j8a/integration/websocket
 
   performanceHttpLowGet:
     docker:
-      - image: simonmittag/wrk:go1.17
+      - image: simonmittag/wrk:go1.18
     resource_class: medium
     environment:
       LOGLEVEL: WARN
@@ -480,7 +480,7 @@ jobs:
 
   performanceHttpLowPost:
     docker:
-      - image: simonmittag/wrk:go1.17
+      - image: simonmittag/wrk:go1.18
     resource_class: medium
     environment:
       LOGLEVEL: WARN
@@ -571,7 +571,7 @@ jobs:
 
   performanceHttpLowPostJwt:
     docker:
-      - image: simonmittag/wrk:go1.17
+      - image: simonmittag/wrk:go1.18
     resource_class: medium
     environment:
       LOGLEVEL: WARN
@@ -662,7 +662,7 @@ jobs:
 
   performanceTlsLowPost:
     docker:
-      - image: simonmittag/wrk:go1.17
+      - image: simonmittag/wrk:go1.18
     resource_class: medium
     environment:
       LOGLEVEL: WARN
@@ -753,7 +753,7 @@ jobs:
 
   performanceHttpHighPost:
     docker:
-      - image: simonmittag/wrk:go1.17
+      - image: simonmittag/wrk:go1.18
     resource_class: medium
     environment:
       LOGLEVEL: WARN
@@ -844,7 +844,7 @@ jobs:
 
   performanceTlsHighPost:
     docker:
-      - image: simonmittag/wrk:go1.17
+      - image: simonmittag/wrk:go1.18
     resource_class: medium
     environment:
       LOGLEVEL: WARN
