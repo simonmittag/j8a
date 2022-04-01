@@ -212,7 +212,9 @@ commands:
       - run:
           name: Install Test dependencies
           command: |
-            sudo apt-get install lsof -y
+            sudo apt update
+            sudo apt install ack -y
+            sudo apt install lsof -y
       - run:
           name: Run integration tests
           command: "go test -v <<parameters.test>>"
@@ -325,6 +327,7 @@ jobs:
           test: github.com/simonmittag/j8a/integration/connection
 
   integrationContent:
+    working_directory: ~/project/tmp
     resource_class: medium
     docker:
       - image: cimg/go:1.18
@@ -333,6 +336,7 @@ jobs:
           test: github.com/simonmittag/j8a/integration/content
 
   integrationDownstreamHttp:
+    working_directory: ~/project/tmp
     resource_class: medium
     docker:
       - image: cimg/go:1.18
@@ -341,6 +345,7 @@ jobs:
           test: github.com/simonmittag/j8a/integration/downstreamHttp
 
   integrationDownstreamTls:
+    working_directory: ~/project/tmp
     resource_class: medium
     docker:
       - image: cimg/go:1.18
@@ -349,6 +354,7 @@ jobs:
           test: github.com/simonmittag/j8a/integration/downstreamTls
 
   integrationHeaders:
+    working_directory: ~/project/tmp
     resource_class: medium
     docker:
       - image: cimg/go:1.18
@@ -357,6 +363,7 @@ jobs:
           test: github.com/simonmittag/j8a/integration/headers
 
   integrationJwt:
+    working_directory: ~/project/tmp
     resource_class: medium
     docker:
       - image: cimg/go:1.18
@@ -365,6 +372,7 @@ jobs:
           test: github.com/simonmittag/j8a/integration/jwt
 
   integrationProtocol:
+    working_directory: ~/project/tmp
     resource_class: medium
     docker:
       - image: cimg/go:1.18
@@ -373,6 +381,7 @@ jobs:
           test: github.com/simonmittag/j8a/integration/protocol
 
   integrationResponsecode:
+    working_directory: ~/project/tmp
     resource_class: medium
     docker:
       - image: cimg/go:1.18
@@ -381,6 +390,7 @@ jobs:
           test: github.com/simonmittag/j8a/integration/responsecode
 
   integrationUpstream:
+    working_directory: ~/project/tmp
     resource_class: medium
     docker:
       - image: cimg/go:1.18
@@ -389,6 +399,7 @@ jobs:
           test: github.com/simonmittag/j8a/integration/upstream
 
   integrationWebsocket:
+    working_directory: ~/project/tmp
     resource_class: medium
     docker:
       - image: cimg/go:1.18
@@ -397,6 +408,7 @@ jobs:
           test: github.com/simonmittag/j8a/integration/websocket
 
   performanceHttpLowGet:
+    working_directory: ~/project/tmp
     docker:
       - image: simonmittag/wrk:go1.18
     resource_class: medium
@@ -479,6 +491,7 @@ jobs:
           destination: performance_results_http_low_get.json
 
   performanceHttpLowPost:
+    working_directory: ~/project/tmp
     docker:
       - image: simonmittag/wrk:go1.18
     resource_class: medium
@@ -570,6 +583,7 @@ jobs:
           destination: performance_results_http_low_post.json
 
   performanceHttpLowPostJwt:
+    working_directory: ~/project/tmp
     docker:
       - image: simonmittag/wrk:go1.18
     resource_class: medium
@@ -661,6 +675,7 @@ jobs:
           destination: performance_results_jwt_http_low.json
 
   performanceTlsLowPost:
+    working_directory: ~/project/tmp
     docker:
       - image: simonmittag/wrk:go1.18
     resource_class: medium
@@ -752,6 +767,7 @@ jobs:
           destination: performance_results_tls_low.json
 
   performanceHttpHighPost:
+    working_directory: ~/project/tmp
     docker:
       - image: simonmittag/wrk:go1.18
     resource_class: medium
@@ -843,6 +859,7 @@ jobs:
           destination: performance_results_http_high.json
 
   performanceTlsHighPost:
+    working_directory: ~/project/tmp
     docker:
       - image: simonmittag/wrk:go1.18
     resource_class: medium
