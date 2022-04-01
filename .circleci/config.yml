@@ -212,7 +212,6 @@ commands:
       - run:
           name: Install Test dependencies
           command: |
-            sudo apt-get install ack -y
             sudo apt-get install lsof -y
       - run:
           name: Run integration tests
