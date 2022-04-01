@@ -317,6 +317,7 @@ jobs:
           path: /tmp/artifacts
 
   integrationConnection:
+    working_directory: ~/project/tmp
     resource_class: medium
     docker:
       - image: cimg/go:1.18
