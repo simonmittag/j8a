@@ -13,7 +13,7 @@
 
 ## What's new?
 
-### v0.9.1 (02/04/2022)
+### v0.9.1 (03/04/2022)
 
 * Support for proxying Brotli (RFC7932) compressed streams, including brotli encoding for upstream content.
 * update to go 1.18
