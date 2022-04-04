@@ -90,7 +90,7 @@ func TestRouteMapDefault(t *testing.T) {
 		Port:   8084,
 	}
 	if *gotUrl != wantUrl {
-		t.Errorf("url did not successfuly map, want %v, got %v, wantUrl,  url", wantUrl, gotUrl)
+		t.Errorf("url did not successfully map, want %v, got %v, wantUrl,  url", wantUrl, gotUrl)
 	}
 }
 
@@ -112,7 +112,7 @@ func TestRouteMap(t *testing.T) {
 		Port:   8083,
 	}
 	if *gotUrl != wantUrl {
-		t.Errorf("url did not successfuly map, want %v, got %v, wantUrl,  url", wantUrl, gotUrl)
+		t.Errorf("url did not successfully map, want %v, got %v, wantUrl,  url", wantUrl, gotUrl)
 	}
 }
 

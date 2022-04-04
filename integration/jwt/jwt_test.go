@@ -64,7 +64,7 @@ func TestKeyRotationSuccess(t *testing.T) {
 	//now test we can still use k1
 	DoJwtTest(t, "/mse6jwtjwksbadrotate2", 200, k1tok)
 
-	//we cannot initally use k3 because it's not in the config until but it will cause rotating to k2b which is bad
+	//we cannot initially use k3 because it's not in the config until but it will cause rotating to k2b which is bad
 	k3tok := "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6ImszIn0.eyJpc3MiOiJqb2UiLCJodHRwOi8vZXhhbXBsZS5jb20vaXNfcm9vdCI6dHJ1ZSwianRpIjoiOWI5ODk5NDctMWNhNi00Njk4LThiMmYtMjBhODE4ZjdlZDcxIiwiaWF0IjoxNjA4MzMwNDIxfQ.dCK241wxJrwAcv-eL4E_LgzeBXutfikWao5WBsJJFZDBlAf3yAHGe7SLz4P9EjqMPcn0BYiCTXGLKvkb7CEgMwKnl2GL7KImMxJZTnxHe2_45hV3KhFtfyuLMoO005eJfcD5U-27tEK6niXku8g5XRclSaVaphRJja1G0AleOFfplhhxaaMKokdpoj9E_Tr4TejUeW1LS_OvujE0idHxothGmtD3w21W9iujuVfRMCn37SxI59YcA4HlExd7zwXvb5iv9k40NSd8AfqILwVGZgDqb-uRUq3z5gOIOmNNRULNaiPrpVzhdMVdGXOUS7Gelk487RgsiUDIV619IvKpUw"
 	DoJwtTest(t, "/mse6jwtjwksbadrotate2", 401, k3tok)
 

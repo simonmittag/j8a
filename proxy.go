@@ -682,7 +682,7 @@ func (proxy *Proxy) encodeUpstreamResponseBody() {
 		}
 
 		//send a vary header for accept encoding if final downstream content encoding
-		//doesn't match expectations for content negotation, i.e. when upstream was passed through.
+		//doesn't match expectations for content negotiation, i.e. when upstream was passed through.
 		if !proxy.Dwn.AcceptEncoding.isCompatible(proxy.Dwn.Resp.ContentEncoding) {
 			proxy.Dwn.Resp.Writer.Header().Set(varyS, acceptEncoding)
 		}
