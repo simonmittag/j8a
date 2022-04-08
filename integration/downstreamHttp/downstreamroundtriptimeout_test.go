@@ -70,7 +70,7 @@ func TestServer2HangsUpOnDownstreamIfRoundTripTimeoutExceeded(t *testing.T) {
 	}
 
 	//step 5 now wait for the grace period, then re-read. the connection must now be closed.
-	//note you must read in a loop with small buffer because golang's reader has cached data
+	//note you must read in a loop with small buffer because golang's client reader in this test reads cached data
 	time.Sleep(time.Duration(grace) * time.Second)
 	for i := 0; i < 32; i++ {
 		b, err2 = c.Read(buf)

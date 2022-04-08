@@ -153,7 +153,7 @@ func scaffoldUpstreamRequest(proxy *Proxy) *http.Request {
 	//this context is used to time out the upstream request
 	ctx, cancel := context.WithCancel(context.TODO())
 
-	//remember the cancelFunc, we may need to call it earlier from the outside
+	//remember the cancelFunc, we may need to call it before it times out from the outside
 	proxy.Up.Atmpt.CancelFunc = cancel
 
 	//will call the cancel func in it's own goroutine after timeout seconds.
