@@ -309,10 +309,10 @@ func (config Config) setDefaultUpstreamParams() *Config {
 		config.Connection.Upstream.SocketTimeoutSeconds = 3
 	}
 	if config.Connection.Upstream.ReadTimeoutSeconds == 0 {
-		config.Connection.Upstream.ReadTimeoutSeconds = 120
+		config.Connection.Upstream.ReadTimeoutSeconds = 10
 	}
 	if config.Connection.Upstream.IdleTimeoutSeconds == 0 {
-		config.Connection.Upstream.IdleTimeoutSeconds = 120
+		config.Connection.Upstream.IdleTimeoutSeconds = 5
 	}
 	if config.Connection.Upstream.PoolSize == 0 {
 		config.Connection.Upstream.PoolSize = 32768
