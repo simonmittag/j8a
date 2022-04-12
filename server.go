@@ -20,7 +20,7 @@ import (
 //Version is the server version
 const Server string = "Server"
 
-var Version string = "v0.9.1"
+var Version string = "v0.9.2"
 
 //ID is a unique server ID
 var ID string = "unknown"
