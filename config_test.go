@@ -73,7 +73,7 @@ func TestDefaultUpstreamSocketTimeout(t *testing.T) {
 func TestDefaultUpstreamReadTimeout(t *testing.T) {
 	config := new(Config).setDefaultUpstreamParams()
 	got := config.Connection.Upstream.ReadTimeoutSeconds
-	want := 120
+	want := 10
 	if got != want {
 		t.Errorf("default config got %d, want %d", got, want)
 	}
