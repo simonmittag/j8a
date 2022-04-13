@@ -10,7 +10,7 @@ require (
 	github.com/hako/durafmt v0.0.0-20200710122514-c0fb7b4da026
 	github.com/itchyny/gojq v0.12.7
 	github.com/jbenet/go-is-domain v1.0.5
-	github.com/lestrrat-go/jwx v1.2.22
+	github.com/lestrrat-go/jwx v1.2.23
 	github.com/rs/zerolog v1.26.1
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/simonmittag/lego/v4 v4.4.1-0.20210801233615-446f36e1d8f3
