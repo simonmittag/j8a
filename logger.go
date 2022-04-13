@@ -59,11 +59,6 @@ func getHost() string {
 }
 
 func getVersion() string {
-	osv := os.Getenv("VERSION")
-	if len(osv) > 0 {
-		Version = osv
-	}
-
 	log.Debug().Str("version", Version).Msg("version determined")
 	return Version
 }

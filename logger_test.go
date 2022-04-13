@@ -8,7 +8,7 @@ import (
 
 func TestServerID(t *testing.T) {
 	os.Setenv("HOSTNAME", "localhost")
-	os.Setenv("VERSION", "v0.0.0")
+	Version = "v0.0.0"
 	initServerID()
 	want := "f47f7b28"
 	if ID != want {
