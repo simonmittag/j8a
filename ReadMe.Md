@@ -14,7 +14,7 @@
 
 ## What's new?
 
-### v0.9.2
+### v0.9.2 (12/04/2022)
 * Shorter default http upstream timeout, for details see https://j8a.io/docs
 * upgraded jwx dependency to v1.2.22
 
@@ -28,12 +28,6 @@
 * ACME (RFC8555) support. Server auto-renews TLS certificates 30 days before expiry for free with zero downtime, no
   restarts!
 * update to go 1.17
-
-### v0.8.5 (01/07/2021)
-
-* downstream responses with status code >=400 now drop TCP connections for both HTTP/1.1 and HTTP/2
-* more tests for HTTP/2 request/response cycles
-* minor performance improvements
 
 ## What is j8a?
 
