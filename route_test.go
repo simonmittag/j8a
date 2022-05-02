@@ -58,6 +58,15 @@ func TestRouteMatchWithWildcardSlug(t *testing.T) {
 	routeMatch("*/some/", "/some/more?param=value&param2=value2", t)
 }
 
+// some of these do not match because regex greedy matches to "/"
+func TestRouteMatchWithAbsoluteWildcardSlug(t *testing.T) {
+	routeNoMatch("/*/some/", "/want/some/", t)
+	routeNoMatch("/*/some/", "/really/want/some/", t)
+	routeNoMatch("/*/some/", "/really/want/some/more", t)
+	routeNoMatch("/*/some/", "/really/want/some/more?with=params", t)
+	routeNoMatch("/*/some/", "/really/want/some/more/", t)
+}
+
 func routeMatch(route string, path string, t *testing.T) {
 	r := routeFactory(route)
 	req := requestFactory(path)
