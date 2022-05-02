@@ -41,6 +41,23 @@ func TestRouteMatchWithTerminatedSlug(t *testing.T) {
 	routeMatch("/some/", "/some/more?param=value&param2=value2", t)
 }
 
+func TestRouteMatchWithWildcardSlug(t *testing.T) {
+	routeNoMatch("*/some/", "some", t)
+	routeNoMatch("*/some/", "", t)
+	routeNoMatch("*/some/", "/", t)
+	routeNoMatch("*/some/", "/some", t)
+	routeMatch("*/some/", "/want/some/", t)
+	routeMatch("*/some/", "/really/want/some/", t)
+	routeMatch("*/some/", "/really/want/some/more", t)
+	routeMatch("*/some/", "/really/want/some/more?with=params", t)
+	routeMatch("*/some/", "/really/want/some/more/", t)
+	routeMatch("*/some/", "/some/", t)
+	routeMatch("*/some/", "/some/more", t)
+	routeMatch("*/some/", "/some/more?param", t)
+	routeMatch("*/some/", "/some/more?param=value", t)
+	routeMatch("*/some/", "/some/more?param=value&param2=value2", t)
+}
+
 func routeMatch(route string, path string, t *testing.T) {
 	r := routeFactory(route)
 	req := requestFactory(path)
