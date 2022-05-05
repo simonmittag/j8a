@@ -10,7 +10,7 @@ require (
 	github.com/hako/durafmt v0.0.0-20200710122514-c0fb7b4da026
 	github.com/itchyny/gojq v0.12.7
 	github.com/jbenet/go-is-domain v1.0.5
-	github.com/lestrrat-go/jwx v1.2.22
+	github.com/lestrrat-go/jwx v1.2.24
 	github.com/rs/zerolog v1.26.1
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/simonmittag/lego/v4 v4.4.1-0.20210801233615-446f36e1d8f3
@@ -29,7 +29,7 @@ require (
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.0-20210816181553-5444fa50b93d // indirect
 	github.com/gobwas/httphead v0.1.0 // indirect
 	github.com/gobwas/pool v0.2.1 // indirect
-	github.com/goccy/go-json v0.9.6 // indirect
+	github.com/goccy/go-json v0.9.7 // indirect
 	github.com/itchyny/timefmt-go v0.1.3 // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.0 // indirect
@@ -41,7 +41,7 @@ require (
 	github.com/tklauser/go-sysconf v0.3.9 // indirect
 	github.com/tklauser/numcpus v0.3.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
-	golang.org/x/crypto v0.0.0-20220214200702-86341886e292 // indirect
+	golang.org/x/crypto v0.0.0-20220427172511-eb4f295cb31f // indirect
 	golang.org/x/sys v0.0.0-20220227234510-4e6760a101f9 // indirect
 	golang.org/x/text v0.3.6 // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
