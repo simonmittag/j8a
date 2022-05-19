@@ -11,7 +11,9 @@ func TestStats(t *testing.T) {
 	pid := os.Getpid()
 	proc, _ := process.NewProcess(int32(pid))
 
-	s := getSample(proc)
+	rt := mockRuntime()
+
+	s := rt.getSample(proc)
 	if s.pid != int32(os.Getpid()) {
 		t.Error("pid not correctly set")
 	}
@@ -31,8 +33,10 @@ func TestSamplesAppendDoNotExceedCapacity(t *testing.T) {
 	proc, _ := process.NewProcess(int32(pid))
 	var history samples = make(samples, historyMaxSamples)
 
+	rt := mockRuntime()
+
 	//now using same sample for append test, it makes the test so much faster
-	sample := getSample(proc)
+	sample := rt.getSample(proc)
 	for i := 0; i < 50; i++ {
 		t.Logf("appending %d sample", i)
 		history.append(sample)
@@ -55,7 +59,10 @@ func TestProcStatsAppendInOrder(t *testing.T) {
 	pid := int32(os.Getpid())
 	proc, _ := process.NewProcess(pid)
 	var history samples = make(samples, historyMaxSamples)
-	sample := getSample(proc)
+
+	rt := mockRuntime()
+
+	sample := rt.getSample(proc)
 
 	for i := 0; i < historyMaxSamples; i++ {
 		history.append(sample)
@@ -178,6 +185,7 @@ func TestRSSGrowthRatesInsufficientData(t *testing.T) {
 func TestLogProcStats(t *testing.T) {
 	//runtime panic test only, no assertions
 	proc, _ := process.NewProcess(int32(os.Getpid()))
-	logProcStats(proc)
+	rt := mockRuntime()
+	rt.logRuntimeStats(proc)
 	time.Sleep(time.Duration(time.Second * 3))
 }

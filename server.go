@@ -7,6 +7,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/shirou/gopsutil/process"
 	golog "log"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -14,6 +15,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -28,11 +30,12 @@ var ID string = "unknown"
 //Runtime struct defines runtime environment wrapper for a config.
 type Runtime struct {
 	Config
-	Start          time.Time
-	Memory         []sample
-	AcmeHandler    *AcmeHandler
-	ReloadableCert *ReloadableCert
-	cacheDir       string
+	Start             time.Time
+	Memory            []sample
+	AcmeHandler       *AcmeHandler
+	ReloadableCert    *ReloadableCert
+	cacheDir          string
+	ConnectionWatcher ConnectionWatcher
 }
 
 type ReloadableCert struct {
@@ -68,6 +71,33 @@ func (r *ReloadableCert) triggerInit() error {
 	}
 	r.Init = false
 	return err
+}
+
+type ConnectionWatcher struct {
+	n int64
+}
+
+// OnStateChange records open connections in response to connection
+// state changes. Set net/http Server.ConnState to this method
+// as value.
+func (cw *ConnectionWatcher) OnStateChange(conn net.Conn, state http.ConnState) {
+	switch state {
+	case http.StateNew:
+		cw.Add(1)
+	case http.StateHijacked, http.StateClosed:
+		cw.Add(-1)
+	}
+}
+
+// Count returns the number of connections at the time
+// the call.
+func (cw *ConnectionWatcher) Count() uint64 {
+	return uint64(atomic.LoadInt64(&cw.n))
+}
+
+// Add adds c to the number of active connections.
+func (cw *ConnectionWatcher) Add(c int64) {
+	atomic.AddInt64(&cw.n, c)
 }
 
 //Runner is the Live environment of the server
@@ -121,9 +151,10 @@ func BootStrap() {
 		validateAcmeConfig()
 
 	Runner = &Runtime{
-		Config:      *config,
-		Start:       time.Now(),
-		AcmeHandler: NewAcmeHandler(),
+		Config:            *config,
+		Start:             time.Now(),
+		AcmeHandler:       NewAcmeHandler(),
+		ConnectionWatcher: ConnectionWatcher{n: 0},
 	}
 	Runner.
 		initCacheDir().
@@ -167,27 +198,28 @@ func (r *Runtime) initReloadableCert() *Runtime {
 	return r
 }
 
-func (runtime *Runtime) startListening() {
-	readTimeoutDuration := time.Second * time.Duration(runtime.Connection.Downstream.ReadTimeoutSeconds)
-	roundTripTimeoutDuration := time.Second * time.Duration(runtime.Connection.Downstream.RoundTripTimeoutSeconds)
+func (rt *Runtime) startListening() {
+	readTimeoutDuration := time.Second * time.Duration(rt.Connection.Downstream.ReadTimeoutSeconds)
+	roundTripTimeoutDuration := time.Second * time.Duration(rt.Connection.Downstream.RoundTripTimeoutSeconds)
 	roundTripTimeoutDurationWithGrace := roundTripTimeoutDuration + (time.Second * 1)
-	idleTimeoutDuration := time.Second * time.Duration(runtime.Connection.Downstream.IdleTimeoutSeconds)
+	idleTimeoutDuration := time.Second * time.Duration(rt.Connection.Downstream.IdleTimeoutSeconds)
 
 	log.Debug().
-		Int64("dwnMaxBodyBytes", runtime.Connection.Downstream.MaxBodyBytes).
+		Int64("dwnMaxBodyBytes", rt.Connection.Downstream.MaxBodyBytes).
 		Float64("dwnReadTimeoutSeconds", readTimeoutDuration.Seconds()).
 		Float64("dwnRoundTripTimeoutSeconds", roundTripTimeoutDuration.Seconds()).
 		Float64("dwnIdleConnTimeoutSeconds", idleTimeoutDuration.Seconds()).
 		Msg("server derived downstream params")
 
 	httpConfig := &http.Server{
-		Addr:              ":" + strconv.Itoa(runtime.Connection.Downstream.Http.Port),
+		Addr:              ":" + strconv.Itoa(rt.Connection.Downstream.Http.Port),
 		ReadHeaderTimeout: readTimeoutDuration,               //downstream connection deadline
 		ReadTimeout:       readTimeoutDuration,               //downstream connection deadline
 		WriteTimeout:      roundTripTimeoutDurationWithGrace, //downstream connection deadline
 		IdleTimeout:       idleTimeoutDuration,               //downstream connection deadline
 		ErrorLog:          golog.New(&zerologAdapter{}, "", 0),
 		Handler:           HandlerDelegate{},
+		ConnState:         rt.ConnectionWatcher.OnStateChange,
 	}
 
 	//signal the WaitGroup that boot is over.
@@ -196,15 +228,15 @@ func (runtime *Runtime) startListening() {
 	err := make(chan error)
 
 	msg := fmt.Sprintf("j8a %s listener(s) init on", Version)
-	if runtime.isHTTPOn() {
-		h := msg + fmt.Sprintf(" HTTP:%d...", runtime.Connection.Downstream.Http.Port)
-		go runtime.startHTTP(httpConfig, err, h)
+	if rt.isHTTPOn() {
+		h := msg + fmt.Sprintf(" HTTP:%d...", rt.Connection.Downstream.Http.Port)
+		go rt.startHTTP(httpConfig, err, h)
 	}
-	if runtime.isTLSOn() {
-		t := msg + fmt.Sprintf(" TLS:%d...", runtime.Connection.Downstream.Tls.Port)
+	if rt.isTLSOn() {
+		t := msg + fmt.Sprintf(" TLS:%d...", rt.Connection.Downstream.Tls.Port)
 		tlsConfig := *httpConfig
-		tlsConfig.Addr = ":" + strconv.Itoa(runtime.Connection.Downstream.Tls.Port)
-		go runtime.startTls(&tlsConfig, err, t)
+		tlsConfig.Addr = ":" + strconv.Itoa(rt.Connection.Downstream.Tls.Port)
+		go rt.startTls(&tlsConfig, err, t)
 	}
 
 	select {
@@ -285,11 +317,11 @@ func (runtime *Runtime) initUserAgent() *Runtime {
 	return runtime
 }
 
-func (runtime *Runtime) initStats() *Runtime {
+func (rt *Runtime) initStats() *Runtime {
 	proc, _ := process.NewProcess(int32(os.Getpid()))
-	logProcStats(proc)
-	logUptime()
-	return runtime
+	rt.logRuntimeStats(proc)
+	rt.logUptime()
+	return rt
 }
 
 func (proxy *Proxy) writeStandardResponseHeaders() {
