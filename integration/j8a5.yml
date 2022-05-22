@@ -1,0 +1,26 @@
+---
+connection:
+  downstream:
+    readTimeoutSeconds: 30
+    roundTripTimeoutSeconds: 60
+    idleTimeoutSeconds: 10
+    http:
+      port: 8080
+    maxBodyBytes: 65535
+  upstream:
+    socketTimeoutSeconds: 10
+    readTimeoutSeconds: 30
+    idleTimeoutSeconds: 10
+    maxAttempts: 1
+    tlsInsecureSkipVerify: true
+
+routes:
+  - path: /mse6/
+    resource: mse6
+
+resources:
+  mse6:
+    - url:
+        scheme: http://
+        host: localhost
+        port: 60083
