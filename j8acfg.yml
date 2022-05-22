@@ -1,17 +1,17 @@
 ---
 connection:
   downstream:
-    readTimeoutSeconds: 30
-    roundTripTimeoutSeconds: 30
-    idleTimeoutSeconds: 10
+    readTimeoutSeconds: 3
+    roundTripTimeoutSeconds: 20
+    idleTimeoutSeconds: 30
     http:
       port: 8080
     maxBodyBytes: 65535
   upstream:
-    socketTimeoutSeconds: 10
+    socketTimeoutSeconds: 3
     readTimeoutSeconds: 30
     idleTimeoutSeconds: 10
-    maxAttempts: 1
+    maxAttempts: 4
     poolSize: 8
     tlsInsecureSkipVerify: true
 
@@ -45,6 +45,7 @@ routes:
     resource: mse61
   - path: /mse6/
     resource: mse6
+    policy: ab
   - path: /mse7
     transform: /mse6
     resource: mse6
