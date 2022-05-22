@@ -164,6 +164,44 @@ func TestServerInitDotDir(t *testing.T) {
 	}
 }
 
+func BenchmarkConnectionWatcher_OnStateChange(b *testing.B) {
+	cw := ConnectionWatcher{n: 0}
+	for i := 0; i < b.N; i++ {
+		cw.OnStateChange(nil, http.StateNew)
+	}
+}
+
+func TestConnectionWatcher_OnStateChange(t *testing.T) {
+	cw := ConnectionWatcher{n: 0, m: 0}
+	cw.OnStateChange(nil, http.StateNew)
+
+	if cw.Count() != 1 {
+		t.Error("count should be 1")
+	}
+
+	if cw.MaxCount() != 1 {
+		t.Error("maxcount should be 1")
+	}
+
+	cw.OnStateChange(nil, http.StateNew)
+	if cw.Count() != 2 {
+		t.Error("count should be 2")
+	}
+
+	if cw.MaxCount() != 2 {
+		t.Error("maxcount should be 2")
+	}
+
+	cw.OnStateChange(nil, http.StateClosed)
+	if cw.Count() != 1 {
+		t.Error("count should be 1")
+	}
+
+	if cw.MaxCount() != 2 {
+		t.Error("maxcount should still be 2")
+	}
+}
+
 func setupJ8a() {
 	ConfigFile = "./j8acfg.yml"
 	Boot.Add(1)
