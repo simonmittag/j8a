@@ -12,7 +12,7 @@ connection:
     readTimeoutSeconds: 30
     idleTimeoutSeconds: 10
     maxAttempts: 1
-#    poolSize: 8
+    poolSize: 8
     tlsInsecureSkipVerify: true
 
 jwt:
