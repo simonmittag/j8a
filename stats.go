@@ -12,14 +12,15 @@ import (
 )
 
 type sample struct {
-	pid         int32
-	cpuPc       float64
-	mPc         float32
-	rssBytes    uint64
-	vmsBytes    uint64
-	swapBytes   uint64
-	time        time.Time
-	openTcpCons uint64
+	pid               int32
+	cpuPc             float64
+	mPc               float32
+	rssBytes          uint64
+	vmsBytes          uint64
+	swapBytes         uint64
+	time              time.Time
+	dwnOpenTcpCons    uint64
+	dwnMaxOpenTcpCons uint64
 }
 
 type growthRate struct {
@@ -44,7 +45,8 @@ const pidMemPct = "pidMemPct"
 const pidRssBytes = "pidRssBytes"
 const pidVmsBytes = "pidVmsBytes"
 const pidSwapBytes = "pidSwapBytes"
-const pidOpenTcpCons = "pidOpenTcpCons"
+const pidDwnOpenTcpCons = "pidDwnOpenTcpCons"
+const pidDwnMaxOpenTcpCons = "pidDwnMaxOpenTcpCons"
 const serverPerformance = "server performance"
 const pcd2f = "%.2f"
 
@@ -55,7 +57,8 @@ func (s sample) log() {
 		Int32(pid, s.pid).
 		Str(pidCPUCorePct, fmt.Sprintf(pcd2f, s.cpuPc)).
 		Str(pidMemPct, fmt.Sprintf(pcd2f, s.mPc)).
-		Uint64(pidOpenTcpCons, s.openTcpCons).
+		Uint64(pidDwnOpenTcpCons, s.dwnOpenTcpCons).
+		Uint64(pidDwnMaxOpenTcpCons, s.dwnMaxOpenTcpCons).
 		Uint64(pidRssBytes, s.rssBytes).
 		Uint64(pidVmsBytes, s.vmsBytes).
 		Uint64(pidSwapBytes, s.swapBytes).
@@ -111,14 +114,15 @@ func (rt *Runtime) getSample(proc *process.Process) sample {
 
 	procStatsLock.Unlock()
 	return sample{
-		pid:         proc.Pid,
-		cpuPc:       cpuPc,
-		mPc:         mPc,
-		rssBytes:    mInfo.RSS,
-		vmsBytes:    mInfo.VMS,
-		swapBytes:   mInfo.Swap,
-		time:        time.Now(),
-		openTcpCons: rt.ConnectionWatcher.Count(),
+		pid:               proc.Pid,
+		cpuPc:             cpuPc,
+		mPc:               mPc,
+		rssBytes:          mInfo.RSS,
+		vmsBytes:          mInfo.VMS,
+		swapBytes:         mInfo.Swap,
+		time:              time.Now(),
+		dwnOpenTcpCons:    rt.ConnectionWatcher.Count(),
+		dwnMaxOpenTcpCons: rt.ConnectionWatcher.MaxCount(),
 	}
 }
 

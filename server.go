@@ -75,6 +75,7 @@ func (r *ReloadableCert) triggerInit() error {
 
 type ConnectionWatcher struct {
 	n int64
+	m int64
 }
 
 // OnStateChange records open connections in response to connection
@@ -87,6 +88,10 @@ func (cw *ConnectionWatcher) OnStateChange(conn net.Conn, state http.ConnState) 
 	case http.StateHijacked, http.StateClosed:
 		cw.Add(-1)
 	}
+	c := cw.Count()
+	if c > cw.MaxCount() {
+		cw.SetMax(int64(c))
+	}
 }
 
 // Count returns the number of connections at the time
@@ -95,9 +100,18 @@ func (cw *ConnectionWatcher) Count() uint64 {
 	return uint64(atomic.LoadInt64(&cw.n))
 }
 
+func (cw *ConnectionWatcher) MaxCount() uint64 {
+	return uint64(atomic.LoadInt64(&cw.m))
+}
+
 // Add adds c to the number of active connections.
 func (cw *ConnectionWatcher) Add(c int64) {
 	atomic.AddInt64(&cw.n, c)
+}
+
+// Sets the maximum number of active connections observed
+func (cw *ConnectionWatcher) SetMax(c int64) {
+	atomic.StoreInt64(&cw.m, c)
 }
 
 //Runner is the Live environment of the server
