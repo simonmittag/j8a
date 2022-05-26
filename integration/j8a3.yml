@@ -114,7 +114,6 @@ routes:
     resource: mse61
   - path: "/mse6/"
     resource: mse6
-    policy: ab
   - path: "/s01"
     resource: s01
   - path: "/s02"
