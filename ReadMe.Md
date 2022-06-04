@@ -52,16 +52,22 @@ Websocket traffic without sacrificing performance.
 ## Up and running
 
 ### Docker
-
 ```
 docker pull simonmittag/j8a &&
-docker run -e J8ACFG_YML -p443:443 simonmittag/j8a
+  docker run -e J8ACFG_YML -p443:443 simonmittag/j8a
 ```
 
-### Linux / Darwin
-
+### Hombrew
 ```bash
-go install github.com/simonmittag/j8a/cmd/j8a && j8a
+brew tap simonmittag/cli && 
+  brew install j8a && 
+  j8a
+```
+
+### Golang
+```bash
+go install github.com/simonmittag/j8a/cmd/j8a &&
+  j8a
 ```
 
 ## Configuration
