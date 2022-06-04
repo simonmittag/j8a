@@ -1,0 +1,31 @@
+builds:
+  - binary: p0d
+    main: cmd/j8a/main.go
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+
+release:
+  prerelease: auto
+
+universal_binaries:
+  - replace: true
+
+brews:
+  -
+    name: p0d
+    homepage: "https://github.com/simonmittag/j8a"
+    tap:
+      owner: simonmittag
+      name: homebrew-cli
+    commit_author:
+      name: simonmittag
+      email: simonmittag@gmail.com
+
+checksum:
+  name_template: 'checksums.txt'
