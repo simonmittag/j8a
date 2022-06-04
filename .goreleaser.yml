@@ -18,7 +18,7 @@ universal_binaries:
 
 brews:
   -
-    name: p0d
+    name: j8a
     homepage: "https://github.com/simonmittag/j8a"
     tap:
       owner: simonmittag
