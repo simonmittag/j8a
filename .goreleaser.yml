@@ -1,5 +1,5 @@
 builds:
-  - binary: p0d
+  - binary: j8a
     main: cmd/j8a/main.go
     goos:
       - darwin
