@@ -127,8 +127,8 @@ func (cw *ConnectionWatcher) AddUp(c int64) {
 	atomic.AddInt64(&cw.upOpenConns, c)
 }
 
-func (cw *ConnectionWatcher) SetUp(c int64) {
-	atomic.StoreInt64(&cw.upOpenConns, c)
+func (cw *ConnectionWatcher) SetUp(c uint64) {
+	atomic.StoreInt64(&cw.upOpenConns, int64(c))
 }
 
 func (cw *ConnectionWatcher) UpdateMaxUp(c uint64) {
