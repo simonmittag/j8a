@@ -3,12 +3,12 @@ package j8a
 import (
 	"fmt"
 	"github.com/hako/durafmt"
-	"os"
-	"sync"
-	"time"
-
 	"github.com/rs/zerolog/log"
 	"github.com/shirou/gopsutil/process"
+	"os"
+	"runtime/pprof"
+	"sync"
+	"time"
 )
 
 type sample struct {
@@ -21,6 +21,7 @@ type sample struct {
 	time              time.Time
 	dwnOpenTcpCons    uint64
 	dwnMaxOpenTcpCons uint64
+	threads           int
 }
 
 type growthRate struct {
@@ -45,8 +46,9 @@ const pidMemPct = "pidMemPct"
 const pidRssBytes = "pidRssBytes"
 const pidVmsBytes = "pidVmsBytes"
 const pidSwapBytes = "pidSwapBytes"
-const pidDwnOpenTcpCons = "pidDwnOpenTcpCons"
-const pidDwnMaxOpenTcpCons = "pidDwnMaxOpenTcpCons"
+const pidDwnOpenTcpConns = "pidDwnOpenTcpConns"
+const pidDwnMaxOpenTcpConns = "pidDwnMaxOpenTcpConns"
+const pidOSThreads = "pidOSThreads"
 const serverPerformance = "server performance"
 const pcd2f = "%.2f"
 
@@ -57,11 +59,12 @@ func (s sample) log() {
 		Int32(pid, s.pid).
 		Str(pidCPUCorePct, fmt.Sprintf(pcd2f, s.cpuPc)).
 		Str(pidMemPct, fmt.Sprintf(pcd2f, s.mPc)).
-		Uint64(pidDwnOpenTcpCons, s.dwnOpenTcpCons).
-		Uint64(pidDwnMaxOpenTcpCons, s.dwnMaxOpenTcpCons).
+		Uint64(pidDwnOpenTcpConns, s.dwnOpenTcpCons).
+		Uint64(pidDwnMaxOpenTcpConns, s.dwnMaxOpenTcpCons).
 		Uint64(pidRssBytes, s.rssBytes).
 		Uint64(pidVmsBytes, s.vmsBytes).
 		Uint64(pidSwapBytes, s.swapBytes).
+		Int(pidOSThreads, s.threads).
 		Msg(serverPerformance)
 }
 
@@ -108,6 +111,7 @@ High:
 func (rt *Runtime) getSample(proc *process.Process) sample {
 	procStatsLock.Lock()
 
+	var threadProfile = pprof.Lookup("threadcreate")
 	cpuPc, _ := proc.Percent(time.Millisecond * cpuSampleMilliSeconds)
 	mPc, _ := proc.MemoryPercent()
 	mInfo, _ := proc.MemoryInfo()
@@ -123,6 +127,7 @@ func (rt *Runtime) getSample(proc *process.Process) sample {
 		time:              time.Now(),
 		dwnOpenTcpCons:    rt.ConnectionWatcher.Count(),
 		dwnMaxOpenTcpCons: rt.ConnectionWatcher.MaxCount(),
+		threads:           threadProfile.Count(),
 	}
 }
 
