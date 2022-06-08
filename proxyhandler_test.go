@@ -711,7 +711,7 @@ func mockRuntime() *Runtime {
 		},
 		Start:             time.Now(),
 		AcmeHandler:       NewAcmeHandler(),
-		ConnectionWatcher: ConnectionWatcher{n: 0},
+		ConnectionWatcher: ConnectionWatcher{dwnOpenConns: 0},
 	}
 
 	//we need this to add the reloadable cert.

@@ -38,6 +38,7 @@ require (
 	github.com/lestrrat-go/option v1.0.0 // indirect
 	github.com/miekg/dns v1.1.43 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/simonmittag/procspy v0.0.0-20191119070947-e8cf3f846a67 // indirect
 	github.com/tklauser/go-sysconf v0.3.9 // indirect
 	github.com/tklauser/numcpus v0.3.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect

@@ -165,39 +165,39 @@ func TestServerInitDotDir(t *testing.T) {
 }
 
 func BenchmarkConnectionWatcher_OnStateChange(b *testing.B) {
-	cw := ConnectionWatcher{n: 0}
+	cw := ConnectionWatcher{dwnOpenConns: 0}
 	for i := 0; i < b.N; i++ {
 		cw.OnStateChange(nil, http.StateNew)
 	}
 }
 
 func TestConnectionWatcher_OnStateChange(t *testing.T) {
-	cw := ConnectionWatcher{n: 0, m: 0}
+	cw := ConnectionWatcher{dwnOpenConns: 0, dwnMaxOpenConns: 0}
 	cw.OnStateChange(nil, http.StateNew)
 
-	if cw.Count() != 1 {
+	if cw.DwnCount() != 1 {
 		t.Error("count should be 1")
 	}
 
-	if cw.MaxCount() != 1 {
+	if cw.DwnMaxCount() != 1 {
 		t.Error("maxcount should be 1")
 	}
 
 	cw.OnStateChange(nil, http.StateNew)
-	if cw.Count() != 2 {
+	if cw.DwnCount() != 2 {
 		t.Error("count should be 2")
 	}
 
-	if cw.MaxCount() != 2 {
+	if cw.DwnMaxCount() != 2 {
 		t.Error("maxcount should be 2")
 	}
 
 	cw.OnStateChange(nil, http.StateClosed)
-	if cw.Count() != 1 {
+	if cw.DwnCount() != 1 {
 		t.Error("count should be 1")
 	}
 
-	if cw.MaxCount() != 2 {
+	if cw.DwnMaxCount() != 2 {
 		t.Error("maxcount should still be 2")
 	}
 }
