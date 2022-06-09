@@ -161,20 +161,20 @@ func (rt *Runtime) CountUpConns(proc *process.Process, cs procspy.ConnIter, ips 
 	d := 0
 UpConn:
 	for c := cs.Next(); c != nil; c = cs.Next() {
-		if c.PID == uint(proc.Pid) {
-			for _, v := range rt.Config.Resources {
-				for _, r := range v {
-					if c.RemotePort == r.URL.Port {
-						for _, ip := range ips[r.URL.Host] {
-							if ip.Equal(c.RemoteAddress) {
-								d++
-								continue UpConn
-							}
+		//if c.PID == uint(proc.Pid) {
+		for _, v := range rt.Config.Resources {
+			for _, r := range v {
+				if c.RemotePort == r.URL.Port {
+					for _, ip := range ips[r.URL.Host] {
+						if ip.Equal(c.RemoteAddress) {
+							d++
+							continue UpConn
 						}
 					}
 				}
 			}
 		}
+		//}
 	}
 	return d
 }
