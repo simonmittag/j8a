@@ -129,26 +129,7 @@ func (rt *Runtime) getSample(proc *process.Process) sample {
 	if e != nil {
 		_ = e
 	} else {
-		d := 0
-
-	UpConn:
-		for c := cs.Next(); c != nil; c = cs.Next() {
-			if c.PID == uint(proc.Pid) {
-				for _, v := range rt.Config.Resources {
-					for _, r := range v {
-						if c.RemotePort == r.URL.Port {
-							ips, _ := net.LookupIP(r.URL.Host)
-							for _, ip := range ips {
-								if ip.Equal(c.RemoteAddress) {
-									d++
-									continue UpConn
-								}
-							}
-						}
-					}
-				}
-			}
-		}
+		d := rt.CountUpConns(proc, cs, rt.LookUpResourceIps())
 		rt.ConnectionWatcher.SetUp(uint64(d))
 		rt.ConnectionWatcher.UpdateMaxUp(uint64(d))
 	}
@@ -168,6 +149,43 @@ func (rt *Runtime) getSample(proc *process.Process) sample {
 		upMaxOpenTcpConns:  rt.ConnectionWatcher.UpMaxCount(),
 		threads:            threadProfile.Count(),
 	}
+}
+
+func (rt *Runtime) CountUpConns(proc *process.Process, cs procspy.ConnIter, ips map[string][]net.IP) int {
+	d := 0
+UpConn:
+	for c := cs.Next(); c != nil; c = cs.Next() {
+		if c.PID == uint(proc.Pid) {
+			for _, v := range rt.Config.Resources {
+				for _, r := range v {
+					if c.RemotePort == r.URL.Port {
+						for _, ip := range ips[r.URL.Host] {
+							if ip.Equal(c.RemoteAddress) {
+								d++
+								continue UpConn
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	return d
+}
+
+func (rt *Runtime) LookUpResourceIps() map[string][]net.IP {
+	var ips = make(map[string][]net.IP)
+	for _, v := range rt.Resources {
+		for _, r := range v {
+			is := make([]net.IP, 1)
+			is[0] = net.ParseIP(r.URL.Host)
+			if is[0] == nil {
+				is, _ = net.LookupIP(r.URL.Host)
+			}
+			ips[r.URL.Host] = is
+		}
+	}
+	return ips
 }
 
 //log proc samples infinite loop
