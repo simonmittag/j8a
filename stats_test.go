@@ -189,3 +189,10 @@ func TestLogProcStats(t *testing.T) {
 	rt.logRuntimeStats(proc)
 	time.Sleep(time.Duration(time.Second * 3))
 }
+
+func BenchmarkRuntime_FindUpConns(b *testing.B) {
+	rt := mockRuntime()
+	for i := 0; i < b.N; i++ {
+		rt.FindUpConns()
+	}
+}

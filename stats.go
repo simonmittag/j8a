@@ -125,8 +125,9 @@ func (rt *Runtime) getSample(proc *process.Process) sample {
 	mPc, _ := proc.MemoryPercent()
 	mInfo, _ := proc.MemoryInfo()
 
-	cs, e := procspy.Connections(true)
+	cs, e := rt.FindUpConns()
 	if e != nil {
+		//if this fails, skip upconns and continue with other sample data.
 		_ = e
 	} else {
 		d := rt.CountUpConns(proc, cs, rt.LookUpResourceIps())
@@ -149,6 +150,11 @@ func (rt *Runtime) getSample(proc *process.Process) sample {
 		upMaxOpenTcpConns:  rt.ConnectionWatcher.UpMaxCount(),
 		threads:            threadProfile.Count(),
 	}
+}
+
+func (rt *Runtime) FindUpConns() (procspy.ConnIter, error) {
+	cs, e := procspy.Connections(true)
+	return cs, e
 }
 
 func (rt *Runtime) CountUpConns(proc *process.Process, cs procspy.ConnIter, ips map[string][]net.IP) int {
