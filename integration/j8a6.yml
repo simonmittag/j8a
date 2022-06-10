@@ -22,5 +22,5 @@ resources:
   mse6:
     - url:
         scheme: http://
-        host: localhost
+        host: "[::1]"
         port: 60083

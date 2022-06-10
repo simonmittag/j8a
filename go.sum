@@ -387,8 +387,8 @@ github.com/shirou/gopsutil v3.21.11+incompatible/go.mod h1:5b4v6he4MtMOwMlS0TUMT
 github.com/shurcooL/sanitized_anchor_name v1.0.0/go.mod h1:1NzhyTcUVG4SuEtjjoZeVRXNmyL/1OwPU0+IJeTBvfc=
 github.com/simonmittag/lego/v4 v4.4.1-0.20210801233615-446f36e1d8f3 h1:hdLd+gO0aciLEjk7mVn/4nnhuGhl+9QJM5xnycbQmAI=
 github.com/simonmittag/lego/v4 v4.4.1-0.20210801233615-446f36e1d8f3/go.mod h1:KwnaQv/8qFqXREe3f/+7MXWXVzaXpMCIkaaLKxLCgh4=
-github.com/simonmittag/procspy v0.0.3 h1:N7pfTmZYTafwtSnRnFMYr5Xib8CMMD9KawMfy7RxVlk=
-github.com/simonmittag/procspy v0.0.3/go.mod h1:l0JM9lRYlCWSks6n2bR8LoSXsv4E6a5jUk/tAthhTgg=
+github.com/simonmittag/procspy v0.0.4 h1:Y/sXePLWVJUxodCNLtYsMjmUnBcBSZ6BakED0CvkOAw=
+github.com/simonmittag/procspy v0.0.4/go.mod h1:l0JM9lRYlCWSks6n2bR8LoSXsv4E6a5jUk/tAthhTgg=
 github.com/simonmittag/ws v1.0.42 h1:T/NtSuIDAedeFfGct4P03G0TonoM8TjpLbWhF2GXhy8=
 github.com/simonmittag/ws v1.0.42/go.mod h1:qQ22pZZRjR7+hBJ6fCl7YFytZtLWwD75kkmhL1lY/pM=
 github.com/sirupsen/logrus v1.2.0/go.mod h1:LxeOpSwHxABJmUn/MG1IvRgCAasNZTLOkJPxbbu5VWo=
