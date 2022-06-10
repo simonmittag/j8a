@@ -3,16 +3,17 @@ package j8a
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/asaskevich/govalidator"
-	"github.com/ghodss/yaml"
-	isd "github.com/jbenet/go-is-domain"
-	"github.com/rs/zerolog"
 	"io/ioutil"
 	"os"
 	"regexp"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/asaskevich/govalidator"
+	"github.com/ghodss/yaml"
+	isd "github.com/jbenet/go-is-domain"
+	"github.com/rs/zerolog"
 
 	"github.com/rs/zerolog/log"
 )
@@ -337,6 +338,10 @@ func (config Config) validateJwt() *Config {
 		}
 		log.Debug().Msgf("parsed %d jwt configurations", len(config.Jwt))
 	}
+	return &config
+}
+func (config Config) renderTemplate() *Config {
+
 	return &config
 }
 

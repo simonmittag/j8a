@@ -4,8 +4,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"github.com/rs/zerolog/log"
-	"github.com/shirou/gopsutil/process"
 	golog "log"
 	"net"
 	"net/http"
@@ -17,6 +15,9 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/rs/zerolog/log"
+	"github.com/shirou/gopsutil/process"
 )
 
 //Version is the server version
@@ -152,6 +153,7 @@ func BootStrap() {
 
 	config := new(Config).
 		load().
+		renderTemplate().
 		reApplyResourceURLDefaults().
 		reApplyResourceNames().
 		validateJwt().

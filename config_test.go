@@ -2,10 +2,11 @@ package j8a
 
 import (
 	"fmt"
-	isd "github.com/jbenet/go-is-domain"
 	"os"
 	"reflect"
 	"testing"
+
+	isd "github.com/jbenet/go-is-domain"
 )
 
 func TestMain(m *testing.M) {
@@ -669,6 +670,15 @@ func TestLoadConfig(t *testing.T) {
 	config := new(Config).load()
 	if config.Connection.Downstream.Tls.Port != 8443 {
 		t.Error("config not loaded from load() function")
+	}
+}
+
+func TestRenderTemplate(t *testing.T) {
+	// Rendering Template without any placeholders
+	ConfigFile = "./integration/template/j8a1.yml"
+	config := new(Config).load().renderTemplate()
+	if config.Connection.Downstream.Http.Port != 8080 {
+		t.Error("config not Parsed from renderTemplate() function")
 	}
 }
 
