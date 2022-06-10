@@ -61,7 +61,7 @@ const pcd2f = "%.2f"
 const rssMemIncrease = "RSS memory increase for previous %s with high factor >=%s, monitor actively."
 
 func (s sample) log() {
-	log.Debug().
+	log.Warn().
 		Int32(pid, s.pid).
 		Str(pidCPUCorePct, fmt.Sprintf(pcd2f, s.cpuPc)).
 		Str(pidMemPct, fmt.Sprintf(pcd2f, s.mPc)).
