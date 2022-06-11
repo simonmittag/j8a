@@ -10,7 +10,7 @@ connection:
   upstream:
     socketTimeoutSeconds: 10
     readTimeoutSeconds: 30
-    idleTimeoutSeconds: 10
+    idleTimeoutSeconds: 60
     maxAttempts: 1
     tlsInsecureSkipVerify: true
 
