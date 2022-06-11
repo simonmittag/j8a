@@ -696,6 +696,39 @@ func mockRuntime() *Runtime {
 						},
 					},
 				},
+				"ipv4Resource": {
+					ResourceMapping{
+						Name:   "ipv4Resource",
+						Labels: nil,
+						URL: URL{
+							Scheme: "http",
+							Host:   "127.0.0.1",
+							Port:   8084,
+						},
+					},
+				},
+				"ipv6Resource": {
+					ResourceMapping{
+						Name:   "ipv6Resource",
+						Labels: nil,
+						URL: URL{
+							Scheme: "http",
+							Host:   "[::1]",
+							Port:   8084,
+						},
+					},
+				},
+				"ipv6Resource2": {
+					ResourceMapping{
+						Name:   "ipv6Resource",
+						Labels: nil,
+						URL: URL{
+							Scheme: "http",
+							Host:   "::1",
+							Port:   8085,
+						},
+					},
+				},
 			},
 			Routes: []Route{
 				{

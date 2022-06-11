@@ -9,6 +9,7 @@ import (
 	"net"
 	"os"
 	"runtime/pprof"
+	"strings"
 	"sync"
 	"time"
 )
@@ -184,7 +185,9 @@ func (rt *Runtime) LookUpResourceIps() map[string][]net.IP {
 	for _, v := range rt.Resources {
 		for _, r := range v {
 			is := make([]net.IP, 1)
-			is[0] = net.ParseIP(r.URL.Host)
+			h := strings.TrimLeft(r.URL.Host, "[")
+			h = strings.TrimRight(h, "]")
+			is[0] = net.ParseIP(h)
 			if is[0] == nil {
 				is, _ = net.LookupIP(r.URL.Host)
 			}
