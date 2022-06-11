@@ -135,6 +135,7 @@ func (rt *Runtime) getSample(proc *process.Process) sample {
 		rt.ConnectionWatcher.SetUp(uint64(d))
 		rt.ConnectionWatcher.UpdateMaxUp(uint64(d))
 	}
+	_ = cs
 
 	procStatsLock.Unlock()
 	return sample{
