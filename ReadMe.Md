@@ -10,9 +10,14 @@
 [![Go Version](https://img.shields.io/github/go-mod/go-version/simonmittag/j8a)](https://img.shields.io/github/go-mod/go-version/simonmittag/j8a)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Docker Pulls](https://img.shields.io/docker/pulls/simonmittag/j8a)](https://hub.docker.com/repository/docker/simonmittag/j8a)
-[![Version](https://img.shields.io/docker/v/simonmittag/j8a/0.9.2)](https://hub.docker.com/repository/docker/simonmittag/j8a)
+[![Version](https://img.shields.io/docker/v/simonmittag/j8a/0.9.3)](https://hub.docker.com/repository/docker/simonmittag/j8a)
 
 ## What's new?
+
+### v0.9.3 (12/06/2022)
+* Added homebrew distribution under brew tap simonmittag/cli
+* Added thread logging and upstream connection logging
+* bumped gojq 0.12.8, lestrrat-go/jwx 1.2.25, klauspost/compress 1.15.6
 
 ### v0.9.2 (12/04/2022)
 * Shorter default http upstream timeout, for details see https://j8a.io/docs
@@ -22,12 +27,6 @@
 
 * Support for proxying Brotli (RFC7932) compressed streams, including brotli encoding for upstream content.
 * update to go 1.18
-
-### v0.9.0 (30/09/2021)
-
-* ACME (RFC8555) support. Server auto-renews TLS certificates 30 days before expiry for free with zero downtime, no
-  restarts!
-* update to go 1.17
 
 ## What is j8a?
 
