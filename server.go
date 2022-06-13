@@ -153,7 +153,6 @@ func BootStrap() {
 
 	config := new(Config).
 		load().
-		renderTemplate().
 		reApplyResourceURLDefaults().
 		reApplyResourceNames().
 		validateJwt().

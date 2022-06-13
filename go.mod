@@ -22,6 +22,7 @@ require (
 require (
 	github.com/andybalholm/brotli v1.0.4
 	github.com/klauspost/compress v1.15.1
+	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
@@ -45,5 +46,4 @@ require (
 	golang.org/x/sys v0.0.0-20220227234510-4e6760a101f9 // indirect
 	golang.org/x/text v0.3.6 // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 )

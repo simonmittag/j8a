@@ -673,11 +673,12 @@ func TestLoadConfig(t *testing.T) {
 	}
 }
 
-func TestRenderTemplate(t *testing.T) {
-	// Rendering Template without any placeholders
-	ConfigFile = "./integration/template/j8a1.yml"
-	config := new(Config).load().renderTemplate()
-	if config.Connection.Downstream.Http.Port != 8080 {
+func TestRenderVariableTemplate(t *testing.T) {
+	// Rendering Template with placeholders
+	os.Setenv("PORT", "8082")
+	ConfigFile = "./integration/template/j8a2.yml"
+	config := new(Config).load()
+	if config.Connection.Downstream.Http.Port != 8082 {
 		t.Error("config not Parsed from renderTemplate() function")
 	}
 }
