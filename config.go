@@ -13,7 +13,7 @@ import (
 	"sort"
 	"strings"
 	"time"
-
+	"text/template"
 	"github.com/rs/zerolog/log"
 )
 
@@ -93,6 +93,15 @@ func (config Config) readYmlFile(file string) *Config {
 }
 
 func (config Config) parse(yml []byte) *Config {
+	envMap, _ := envToMap()
+	configTemplate := template.New("config")
+	configTemplate, _ = configTemplate.Parse(string(yml[:]))
+	var configTpl bytes.Buffer
+	renderingErr := configTemplate.Execute(&configTpl, envMap)
+	if renderingErr != nil {
+		fmt.Println(renderingErr)
+	}
+	yml, _ = ioutil.ReadAll(&configTpl)
 	jsn, _ := yaml.YAMLToJSON(yml)
 	json.Unmarshal(jsn, &config)
 	return &config
@@ -342,4 +351,15 @@ func (config Config) validateJwt() *Config {
 
 func (config Config) getDownstreamRoundTripTimeoutDuration() time.Duration {
 	return time.Duration(time.Second * time.Duration(config.Connection.Downstream.RoundTripTimeoutSeconds))
+}
+func envToMap() (map[string]string, error) {
+	envMap := make(map[string]string)
+	var err error
+
+	for _, v := range os.Environ() {
+		split_v := strings.SplitN(v, "=", 2)
+		envMap[split_v[0]] = split_v[1]
+	}
+
+	return envMap, err
 }
