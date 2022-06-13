@@ -672,6 +672,38 @@ func TestLoadConfig(t *testing.T) {
 	}
 }
 
+func TestRenderVariableTemplate(t *testing.T) {
+	// Rendering Template with placeholders
+	os.Setenv("PORT", "8082")
+	ConfigFile = "./integration/template/j8a2.yml"
+	config := new(Config).load()
+	if config.Connection.Downstream.Http.Port != 8082 {
+		t.Error("config not Parsed from renderTemplate() function")
+	}
+}
+func TestRenderSecretVariableTemplate(t *testing.T) {
+	// Rendering Template with placeholders
+	PUBLIC_KEY := `-----BEGIN PUBLIC KEY-----
+      MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuFrwC7xqek3lA7TkRMBr
+      7koamTCE5DF0UxVPd0FbmloGTkkLLXW3R6fOxubi8O2PXk/tN+TfJZiOYswUE/+n
+      gR7gEXLebosLtVdmbGraTGwtoGmpSe3FRr9ZmQu74pZsAzwqZVMqz6CINc7uvxTI
+      Djd98ORUrnuxqgHE9Yz/uo2qvnaOgWIXKhkDkMqA8O0Fk/kaCfeeZQMN70OnCwIS
+      +LPFE8uYGIdbaEIkjZfMxm/iNRENOV849vwOiOuWruCyp+YMqTVtcW49Q1mcZfyG
+      T7B5GHWe7MtxqQNhf1m2Nvo1m/LvaLap/EM3684xOa6RexB1XdB8oegpMRygPx7o
+      rwIDAQAB
+      -----END PUBLIC KEY-----`
+
+	os.Setenv("PUBLIC_KEY", PUBLIC_KEY)
+	os.Setenv("PORT", "8080")
+
+	ConfigFile = "./integration/template/j8a3.yml"
+	config := new(Config).load().validateJwt()
+	if config.Connection.Downstream.Http.Port != 8080 {
+		t.Error("config not Parsed from renderTemplate() function")
+	}
+}
+
+
 func acmeConfigWith(domain string) *Config {
 	config := &Config{
 		Connection: Connection{
