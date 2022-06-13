@@ -46,7 +46,7 @@ var procStatsLock sync.Mutex
 var procHistory samples
 
 const pid = "pid"
-const pidCPUCorePct = "pidCpuCore"
+const pidCPUCorePct = "pidCpuCorePct"
 const pidMemPct = "pidMemPct"
 const pidRssBytes = "pidRssBytes"
 const pidVmsBytes = "pidVmsBytes"
