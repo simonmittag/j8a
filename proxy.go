@@ -506,6 +506,16 @@ func infoOrTraceEv(proxy *Proxy) *zerolog.Event {
 	return ev
 }
 
+func infoOrDebugEv(proxy *Proxy) *zerolog.Event {
+	var ev *zerolog.Event
+	if proxy.XRequestInfo {
+		ev = log.Info()
+	} else {
+		ev = log.Debug()
+	}
+	return ev
+}
+
 func parseMethod(request *http.Request) string {
 	return strings.ToUpper(request.Method)
 }
