@@ -2,7 +2,6 @@ package j8a
 
 import (
 	"fmt"
-	"github.com/rs/zerolog/log"
 	"net/http"
 	"strings"
 	"time"
@@ -40,7 +39,7 @@ func redirectHandler(response http.ResponseWriter, request *http.Request) {
 		target += Q + request.URL.RawQuery
 	}
 
-	log.Info().Str("dwnReqListnr", proxy.Dwn.Listener).
+	infoOrDebugEv(proxy).Str("dwnReqListnr", proxy.Dwn.Listener).
 		Str("dwnReqPort", fmt.Sprintf("%d", proxy.Dwn.Port)).
 		Str("dwnReqPath", proxy.Dwn.Path).
 		Str("dwnReqRemoteAddr", ipr.extractAddr(proxy.Dwn.Req.RemoteAddr)).

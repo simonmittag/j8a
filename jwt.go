@@ -203,7 +203,7 @@ func (jwt *Jwt) LoadJwks() error {
 		var keyset jwk.Set
 		keyset, err = jwk.Fetch(context.Background(), jwt.JwksUrl)
 		if err == nil {
-			log.Debug().Msgf("jwt [%s] fetched %d jwk from jwks URL %s", jwt.Name, keyset.Len(), jwt.JwksUrl)
+			log.Info().Msgf("jwt [%s] fetched %d jwk from jwks URL %s", jwt.Name, keyset.Len(), jwt.JwksUrl)
 		} else {
 			log.Warn().Msgf("jwt [%s] unable to fetch jwk from jwks URL %s, cause: %v", jwt.Name, jwt.JwksUrl, err)
 		}
@@ -261,7 +261,7 @@ func (jwt *Jwt) LoadJwks() error {
 					default:
 						err = errors.New(fmt.Sprintf("unknown key type in Jwks %v", alg.String()))
 					}
-					log.Debug().Msgf("jwt [%s] successfully parsed %s key from remote jwk", jwt.Name, alg)
+					log.Info().Msgf("jwt [%s] successfully parsed %s key from remote jwk", jwt.Name, alg)
 				} else {
 					break Keyrange
 				}
@@ -276,7 +276,7 @@ func (jwt *Jwt) LoadJwks() error {
 		//release here, don't use defer
 		jwt.lock.Release(1)
 	} else {
-		log.Debug().
+		log.Info().
 			Str("jwt", jwt.Name).
 			Msgf("jwt [%s] already updating within 10s, skipping attempt.", jwt.Name)
 	}
@@ -406,7 +406,7 @@ func (jwt *Jwt) parseKey(alg jwa.SignatureAlgorithm) error {
 		return errors.New(fmt.Sprintf(keyTypeInvalid, jwt.Name, validAlg))
 	}
 
-	log.Debug().Msgf("jwt [%s] successfully parsed %s key", jwt.Name, alg)
+	log.Info().Msgf("jwt [%s] successfully parsed %s key", jwt.Name, alg)
 
 	return err
 }

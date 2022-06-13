@@ -168,14 +168,7 @@ func scaffoldUpstreamRequest(proxy *Proxy) *http.Request {
 		upURI,
 		proxy.bodyReader())
 
-	var ev *zerolog.Event
-	if proxy.XRequestInfo {
-		ev = log.Info()
-	} else {
-		ev = log.Trace()
-	}
-
-	ev.Str(dwnReqPath, proxy.Dwn.Path).
+	infoOrTraceEv(proxy).Str(dwnReqPath, proxy.Dwn.Path).
 		Int64(dwnElpsdMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
 		Str(XRequestID, proxy.XRequestID).
 		Str(upReqURI, upURI).
@@ -430,14 +423,7 @@ func shouldProxyHeader(header string) bool {
 }
 
 func scaffoldUpAttemptLog(proxy *Proxy) *zerolog.Event {
-	var ev *zerolog.Event
-	if proxy.XRequestInfo {
-		ev = log.Info()
-	} else {
-		ev = log.Trace()
-	}
-
-	return ev.
+	return infoOrTraceEv(proxy).
 		Str(XRequestID, proxy.XRequestID).
 		Int64(upAtmtpElpsdMicros, time.Since(proxy.Up.Atmpt.startDate).Microseconds()).
 		Int64(dwnElpsdMicros, time.Since(proxy.Dwn.startDate).Microseconds()).
@@ -452,7 +438,7 @@ const pdS = "%d"
 func logHandledDownstreamRoundtrip(proxy *Proxy) {
 	elapsed := time.Since(proxy.Dwn.startDate)
 	msg := downstreamResponseServed
-	ev := log.Info()
+	ev := infoOrDebugEv(proxy)
 
 	if proxy.hasMadeUpstreamAttempt() {
 		ev = ev.Str(upReqURI, proxy.resolveUpstreamURI()).
@@ -466,6 +452,7 @@ func logHandledDownstreamRoundtrip(proxy *Proxy) {
 
 	if proxy.Dwn.Resp.StatusCode > 399 {
 		msg = downstreamErrorResponseServed
+		//upgrade the message to warn for anything 400 and up
 		ev = log.Warn()
 		ev = ev.Str(dwnResErrMsg, proxy.Dwn.Resp.Message)
 	}

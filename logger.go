@@ -45,7 +45,7 @@ func initServerID() {
 	hasher := md5.New()
 	hasher.Write([]byte(getHost() + getVersion()))
 	ID = hex.EncodeToString(hasher.Sum(nil))[0:8]
-	log.Debug().Str("srvID", ID).Msg("srvID determined")
+	log.Info().Str("srvID", ID).Msg("srvID determined")
 	log.Logger = log.With().Str("srvId", ID).Logger()
 }
 
@@ -54,12 +54,12 @@ func getHost() string {
 	if len(host) == 0 {
 		host, _ = os.Hostname()
 	}
-	log.Debug().Str("hostName", host).Msg("hostName determined")
+	log.Info().Str("hostName", host).Msg("hostName determined")
 	return host
 }
 
 func getVersion() string {
-	log.Debug().Str("version", Version).Msg("version determined")
+	log.Info().Str("version", Version).Msg("version determined")
 	return Version
 }
 
@@ -93,5 +93,5 @@ func initLogger() {
 
 	initServerID()
 	initTime()
-	log.Debug().Msgf("setting global log level to %s", logLevel)
+	log.Info().Msgf("setting global log level to %s", logLevel)
 }

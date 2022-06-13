@@ -96,7 +96,7 @@ const acmeRetry24h = "unable to renew ACME certificate from provider %s, cause: 
 
 func (r *Runtime) renewAcmeCertAndKey() error {
 	p := r.Connection.Downstream.Tls.Acme.Provider
-	log.Debug().Msgf("triggering renewal of ACME certificate from provider %s ", p)
+	log.Info().Msgf("triggering renewal of ACME certificate from provider %s ", p)
 
 	e1 := r.fetchAcmeCertAndKey(acmeProviders[p])
 	if e1 == nil {
@@ -114,7 +114,7 @@ func (r *Runtime) renewAcmeCertAndKey() error {
 			e3 := r.ReloadableCert.triggerInit()
 			if e3 == nil {
 				logCertStats(newCerts)
-				log.Debug().Msgf("successful renewal of ACME certificate from provider %s complete", p)
+				log.Info().Msgf("successful renewal of ACME certificate from provider %s complete", p)
 			} else {
 				log.Warn().Msgf(acmeRetry24h, p, e3)
 				return e3
@@ -292,7 +292,7 @@ func logCertStats(tlsLinks []TlsLink) {
 			if t.expiresTooCloseForComfort() || t.legalBrowserValidityPeriodPassed() {
 				ev = log.Warn()
 			} else {
-				ev = log.Debug()
+				ev = log.Info()
 			}
 			ev.Msg(sb.String())
 		}

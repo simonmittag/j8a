@@ -51,7 +51,7 @@ func (a *AcmeHandler) Present(domain, token, keyAuth string) error {
 	a.Domains[token] = domain
 	a.KeyAuths[token] = []byte(keyAuth)
 
-	log.Debug().Msgf("ACME handler for domain %s activated, ready to serve challenge response for token %s.", domain, token)
+	log.Info().Msgf("ACME handler for domain %s activated, ready to serve challenge response for token %s.", domain, token)
 	return nil
 }
 
@@ -60,7 +60,7 @@ func (a *AcmeHandler) CleanUp(domain, token, keyAuth string) error {
 	delete(a.Domains, token)
 	delete(a.KeyAuths, token)
 
-	log.Debug().Msgf("ACME handler for domain %s deactivated.", domain)
+	log.Info().Msgf("ACME handler for domain %s deactivated.", domain)
 	return nil
 }
 
@@ -77,7 +77,7 @@ const acmeEvent = "responded to remote ACME challenge path %s, with %s for domai
 func acmeHandler(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 		if r1 := recover(); r1 != nil {
-			log.Debug().Msgf("unsuccessful response to remote ACME challenge, URI %s, cause: %v", r.RequestURI, r1)
+			log.Warn().Msgf("unsuccessful response to remote ACME challenge, URI %s, cause: %v", r.RequestURI, r1)
 		}
 	}()
 
@@ -88,7 +88,7 @@ func acmeHandler(w http.ResponseWriter, r *http.Request) {
 	path := http01.ChallengePath(token)
 	w.WriteHeader(200)
 	w.Write([]byte(a.KeyAuths[token]))
-	log.Debug().Msgf(acmeEvent, path, a.KeyAuths[token], a.Domains[token])
+	log.Info().Msgf(acmeEvent, path, a.KeyAuths[token], a.Domains[token])
 }
 
 type AcmeUser struct {
@@ -140,7 +140,7 @@ func (runtime *Runtime) loadAcmeCertAndKeyFromCache(provider string) error {
 		os.Remove(keyFile)
 		os.Remove(certFile)
 		os.Remove(hashFile)
-		log.Debug().Msg(msg)
+		log.Info().Msg(msg)
 	}
 
 	if c := bytes.Compare(hash, runtime.acmeProviderHashAsBytes()); c != 0 {
@@ -152,7 +152,7 @@ func (runtime *Runtime) loadAcmeCertAndKeyFromCache(provider string) error {
 	if _, e3 := checkFullCertChainFromBytes(cert, key); e3 == nil {
 		runtime.Connection.Downstream.Tls.Key = string(key)
 		runtime.Connection.Downstream.Tls.Cert = string(cert)
-		log.Debug().Msgf("TLS cert and key for ACME provider %s loaded from cache", provider)
+		log.Info().Msgf("TLS cert and key for ACME provider %s loaded from cache", provider)
 	} else {
 		//if delete doesn't work ignore this it may already be gone (partially).
 		msg := fmt.Sprintf("unable to load data, clearing TLS cache for ACME provider %s", provider)
@@ -199,7 +199,7 @@ func (runtime *Runtime) cacheAcmeCertAndKey(provider string) error {
 		return e3
 	}
 
-	log.Debug().Msgf("stored TLS cert and key for ACME provider %s in cache", provider)
+	log.Info().Msgf("stored TLS cert and key for ACME provider %s in cache", provider)
 	return e
 }
 
@@ -220,7 +220,7 @@ func (runtime *Runtime) fetchAcmeCertAndKey(url string) error {
 	defer func() {
 		if r := recover(); r != nil {
 			msg := fmt.Sprintf("TLS ACME certificate not fetched, cause: %s", r)
-			log.Debug().Msg(msg)
+			log.Warn().Msg(msg)
 			e = errors.New(msg)
 		}
 	}()
@@ -264,14 +264,14 @@ func (runtime *Runtime) fetchAcmeCertAndKey(url string) error {
 	var c *certificate.Resource
 	c, e = client.Certificate.Obtain(request)
 	if e != nil {
-		log.Debug().Msgf("ACME certificate from %s unsuccessful, cause %v", url, e)
+		log.Warn().Msgf("ACME certificate from %s unsuccessful, cause %v", url, e)
 		return e
 	}
 
 	runtime.Connection.Downstream.Tls.Cert = string(c.Certificate)
 	runtime.Connection.Downstream.Tls.Key = string(c.PrivateKey)
 
-	log.Debug().Msgf("ACME certificate successfully fetched from %s", url)
+	log.Info().Msgf("ACME certificate successfully fetched from %s", url)
 
 	return e
 }

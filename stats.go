@@ -46,11 +46,11 @@ var procStatsLock sync.Mutex
 var procHistory samples
 
 const pid = "pid"
-const pidCPUCorePct = "pidCpuCore"
+const pidCPUCorePct = "pidCpuCorePct"
 const pidMemPct = "pidMemPct"
-const pidRssBytes = "pidRssBytes"
-const pidVmsBytes = "pidVmsBytes"
-const pidSwapBytes = "pidSwapBytes"
+const pidRssBytes = "pidMemRssBytes"
+const pidVmsBytes = "pidMemVmsBytes"
+const pidSwapBytes = "pidMemSwapBytes"
 const pidDwnOpenTcpConns = "pidDwnOpenTcpConns"
 const pidDwnMaxOpenTcpConns = "pidDwnMaxOpenTcpConns"
 const pidUpOpenTcpConns = "pidUpOpenTcpConns"
@@ -62,7 +62,7 @@ const pcd2f = "%.2f"
 const rssMemIncrease = "RSS memory increase for previous %s with high factor >=%s, monitor actively."
 
 func (s sample) log() {
-	log.Debug().
+	log.Info().
 		Int32(pid, s.pid).
 		Str(pidCPUCorePct, fmt.Sprintf(pcd2f, s.cpuPc)).
 		Str(pidMemPct, fmt.Sprintf(pcd2f, s.mPc)).
@@ -106,7 +106,7 @@ func (samples *samples) log() []growthRate {
 High:
 	for m := len(*samples) - 1; m >= 0; m-- {
 		if growthRates[m].high {
-			log.Debug().
+			log.Info().
 				Msgf(rssMemIncrease,
 					durafmt.Parse(time.Duration(time.Second*historySamplerSleepSeconds*historyMaxSamples)).LimitFirstN(1).String(),
 					fmt.Sprintf("%.1f", growthRateThreshold))
@@ -235,7 +235,7 @@ func (rt *Runtime) logUptime() {
 			upNanos := time.Since(rt.Start)
 			if upNanos > time.Second*10 {
 				uptime := durafmt.Parse(upNanos).LimitFirstN(1).String()
-				log.Debug().
+				log.Info().
 					Int(pid, os.Getpid()).
 					Int64(uptimeMicros, int64(upNanos/1000)).
 					Msgf(fmt.Sprintf("server upTime is %s", uptime))
