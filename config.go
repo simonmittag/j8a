@@ -92,7 +92,6 @@ func (config Config) readYmlFile(file string) *Config {
 		panic(msg)
 	}
 	byteValue, _ := ioutil.ReadAll(f)
-
 	return config.parse(byteValue)
 }
 
