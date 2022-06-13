@@ -107,6 +107,7 @@ func (config Config) parse(yml []byte) *Config {
 		fmt.Println(renderingErr)
 	}
 	yml, _ = ioutil.ReadAll(&configTpl)
+	fmt.Print(string(yml))
 	jsn, _ := yaml.YAMLToJSON(yml)
 	json.Unmarshal(jsn, &config)
 	return &config
@@ -353,30 +354,6 @@ func (config Config) validateJwt() *Config {
 	}
 	return &config
 }
-
-// func (config Config) renderTemplate() *Config {
-// 	configData, err := yaml.Marshal(config)
-
-// 	if err != nil {
-// 		fmt.Printf("Error while Marshaling. %v", err)
-// 	}
-// 	envMap, _ := envToMap()
-// 	configTemplate := template.New("config")
-// 	configTemplate, _ = configTemplate.Parse(string(configData[:]))
-// 	var configTpl bytes.Buffer
-// 	renderingErr := configTemplate.Execute(&configTpl, envMap)
-// 	if renderingErr != nil {
-// 		fmt.Println(err)
-// 	}
-// 	configValue, _ := ioutil.ReadAll(&configTpl)
-
-// 	err = yaml.Unmarshal(configValue, config)
-// 	if err != nil {
-// 		fmt.Println(err)
-// 	}
-// 	return &config
-
-// }
 
 func (config Config) getDownstreamRoundTripTimeoutDuration() time.Duration {
 	return time.Duration(time.Second * time.Duration(config.Connection.Downstream.RoundTripTimeoutSeconds))
