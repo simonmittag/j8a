@@ -22,7 +22,7 @@ func TestHttpClientSocketTimeout(t *testing.T) {
 			},
 		},
 		Start:             time.Now(),
-		ConnectionWatcher: ConnectionWatcher{n: 0},
+		ConnectionWatcher: ConnectionWatcher{dwnOpenConns: 0},
 	}
 	Runner.initReloadableCert()
 

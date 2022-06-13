@@ -4,11 +4,15 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"github.com/shirou/gopsutil/process"
+	"github.com/simonmittag/j8a"
 	"github.com/simonmittag/j8a/integration"
+	"github.com/simonmittag/procspy"
 	"golang.org/x/net/http2"
 	"io/ioutil"
 	"net"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 	"testing"
@@ -290,4 +294,41 @@ func ConcurrentHTTP11ConnectionsSucceed(total int, t *testing.T) {
 
 	wg.Wait()
 	t.Logf("done! good HTTP response: %d, 200s: %d, non 200s: %d, connection errors: %d", good, R200, N200, bad)
+}
+
+// this test is a little different to other integration tests. it's not a unit test
+// because of the dependency on site hosted on external domain. it checks that procspy
+// connections from within j8a to that site are properly counted as if it were an
+// upstream resource configured within j8a.
+func TestRuntime_CountResourceIps(t *testing.T) {
+	proc, _ := process.NewProcess(int32(os.Getpid()))
+	ad, _ := net.LookupIP("adyntest.com")
+	ips := map[string][]net.IP{"adyntest.com": ad}
+
+	c := http.Client{Transport: &http.Transport{IdleConnTimeout: 0}}
+
+	resp, _ := c.Get("https://adyntest.com/about")
+	if resp != nil {
+		defer resp.Body.Close()
+	}
+
+	ps, _ := procspy.Connections(true)
+
+	rt := j8a.Runtime{
+		Config: j8a.Config{
+			Resources: map[string][]j8a.ResourceMapping{
+				"adyntest": []j8a.ResourceMapping{{
+					URL: j8a.URL{
+						Host: "adyntest.com",
+						Port: 443,
+					},
+				}},
+			}},
+	}
+	got := rt.CountUpConns(proc, ps, ips)
+	want := 1
+	if got != want {
+		t.Errorf("want %v connections for adyntest.com, got %v", want, got)
+	}
+	c.CloseIdleConnections()
 }

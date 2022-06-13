@@ -1,0 +1,310 @@
+---
+connection:
+  downstream:
+    readTimeoutSeconds: 3
+    roundTripTimeoutSeconds: 20
+    idleTimeoutSeconds: 30
+    http:
+      port: 8083
+      redirecttls: true
+    tls:
+      port: 8443
+      cert: |
+        -----BEGIN CERTIFICATE-----
+        MIIEkzCCAvugAwIBAgIRANiwkh9AuRgrvYh7Y5DtWIUwDQYJKoZIhvcNAQELBQAw
+        gYExHjAcBgNVBAoTFW1rY2VydCBkZXZlbG9wbWVudCBDQTErMCkGA1UECwwic2lt
+        b25taXR0YWdAdHJvb3BlciAoU2ltb24gTWl0dGFnKTEyMDAGA1UEAwwpbWtjZXJ0
+        IHNpbW9ubWl0dGFnQHRyb29wZXIgKFNpbW9uIE1pdHRhZykwHhcNMTkwNjAxMDAw
+        MDAwWhcNMzAwNzMwMDExNDU5WjBjMScwJQYDVQQKEx5ta2NlcnQgZGV2ZWxvcG1l
+        bnQgY2VydGlmaWNhdGUxODA2BgNVBAsML3NpbW9ubWl0dGFnQE1hY0Jvb2stUHJv
+        LTE2LmxvY2FsIChTaW1vbiBNaXR0YWcpMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A
+        MIIBCgKCAQEAsCTQ9rLTQYjIlGF7EOrTJux8E514TUoAuQ0xo1NOSssptjmDyGhb
+        8K7+A/TgdU/xlPMcJf22nNDQ2MpqpgHGlDcuXt3SmVrcsTeby1Pa81gxKp23a51B
+        8xAoHoHwXVSWdiMWk3H/Jjv/dtYL1L180neewcWvK26ANUwlzWG6BW1QVUXXNdRo
+        dmxQ1eg2S/qMBASFj6QjCsWWJiEfmz4PQpsP8q5IqCcX85BUqGO919JlE/eXEAgk
+        9Yuh61/50n39B/sPC0mU5s6vH0SPCBvz1g8SiXa8jj3jCXxa/0ZsYtAVqPe5BoRP
+        vK2q1sbKbJVr7EpmiOdKxKPHonRHasweGwIDAQABo4GiMIGfMA4GA1UdDwEB/wQE
+        AwIFoDATBgNVHSUEDDAKBggrBgEFBQcDATAMBgNVHRMBAf8EAjAAMB8GA1UdIwQY
+        MBaAFMNEcloV4jg+eonB5omuJvQXiqiRMEkGA1UdEQRCMECCDyouamFiYmF0ZXN0
+        LmNvbYIKamFiYmEudGVzdIIJbG9jYWxob3N0hwR/AAABhxAAAAAAAAAAAAAAAAAA
+        AAABMA0GCSqGSIb3DQEBCwUAA4IBgQDGI3EUWPKsEOqLCpnwSlFihu8n9+g4pV3/
+        jItYhUqMBz1v8TqV2zykkJUtlfNoxrp5OAg4CG0Xr1zhqjub3teKbsNKlRpV+h04
+        4ncltpe66u4gg9RW+ww/f+J3C2yZRIX+brhDcTpdEMyfVoCV/5jeCxWf29MdFcLU
+        BfgFdEp1oe3bK/dyZc8SbUlmizyumaDOaZACihz/DKsJ+lzRdy6c3UPQgC3r72oN
+        Lx/ccpnwdeumWFs+qYOjYfrCGFXaabokdtyit4XURFngxpnPUB9jHDvkI5+/eTaB
+        SpdjJxE6x4mciyZSvshhu1v8j52+d9zUANs9+Y/v6EoCZ6byaaS4NAmTXdAWlnYb
+        hIuRRsI4gIDhJWLrACBu1Osh7ZknaLNVMt5xo3TemCkVKud3NHGbycHTUoFBuHz/
+        JOTQJ/Z1Ym3enpTAESZVcZTzS9gL62wfIfLcFvq+tVjoJZVJCcolP2fYn3U5lEiN
+        vZvs72xp4sYEOa9zhvEs/yte9c6rkU0=
+        -----END CERTIFICATE-----
+        -----BEGIN CERTIFICATE-----
+        MIIE0zCCAzugAwIBAgIQB2bsiI7SUtxu+HwBxuNtpDANBgkqhkiG9w0BAQsFADCB
+        gTEeMBwGA1UEChMVbWtjZXJ0IGRldmVsb3BtZW50IENBMSswKQYDVQQLDCJzaW1v
+        bm1pdHRhZ0B0cm9vcGVyIChTaW1vbiBNaXR0YWcpMTIwMAYDVQQDDClta2NlcnQg
+        c2ltb25taXR0YWdAdHJvb3BlciAoU2ltb24gTWl0dGFnKTAeFw0yMDA1MDEyMTE2
+        NDNaFw0zMDA1MDEyMTE2NDNaMIGBMR4wHAYDVQQKExVta2NlcnQgZGV2ZWxvcG1l
+        bnQgQ0ExKzApBgNVBAsMInNpbW9ubWl0dGFnQHRyb29wZXIgKFNpbW9uIE1pdHRh
+        ZykxMjAwBgNVBAMMKW1rY2VydCBzaW1vbm1pdHRhZ0B0cm9vcGVyIChTaW1vbiBN
+        aXR0YWcpMIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAzivKfp5OiWpT
+        362cVgbw9DBqwMP0pO32aP79Y4UYeAxCfaWQDdqQEatBdraShtZcvUX8vZ9jvgHE
+        oGMGSJb/DIVRxIDfhdvhh4qGQgbbSLwDkfLJTkpGMdONa/5yDC54fNZjF095YZn7
+        iPmsFbvYUfTwpM8qrP+jZzobByrTO4rG3Ps080gIR08RCA0E+uLg58rTpnsdBKZ0
+        K2uuE4B4lVAs2AeS4KPMrH/rnCjSZz4KRwnaGqh+wiAjO0PHAfrbrhNsFB6P1/Zk
+        Cqzclj3TXdkMDaXhSvt0qJPEpNIPQMkvj9GROom7hExZUT7t7LPOZwODtiR2VjM3
+        DDehfLqpNPRrxU3aOR7b4lFVtEL1+9NXKc3rnR5T2xPVVvBxx8FqYAxFmQtkGqpA
+        YlRxImBONBreIr5/fdkr5xqd/S0s1pb8ubuK7x5COfqf0Mv++j+UjMptBQ3kYvOh
+        tNrbnEI1q/7kvHNB8ETtJ4hqXikl9EHMYWdOo4nyGd4P8jo9jmGVAgMBAAGjRTBD
+        MA4GA1UdDwEB/wQEAwICBDASBgNVHRMBAf8ECDAGAQH/AgEAMB0GA1UdDgQWBBTD
+        RHJaFeI4PnqJweaJrib0F4qokTANBgkqhkiG9w0BAQsFAAOCAYEAb+K3HO2AlDed
+        S2yT7GnxD75Hcjnv1tMvMIlh1EOmRMHrzbsi7jv3Z7SDe2R5s1qRku3nxbVWj8i8
+        oRBi5GeRE+q/HkVloi4WPmgFGxUUbkWszAFSSGN5TAs72e5sCG/wMyEa0Gj8cOO1
+        dK5SH3thP8+OjSpgQXToYfOimILlk7Hj7EgKE5Y8YX8UV+41LhGkzeK2UX9dBZn1
+        of9qBc0dAQVlAA/O3dOgXorgiDbNT38cjignWEwVYzjeuJCYB91Ixf0CfHJZKHZR
+        ZCdIAHTJqW1tx7vsbrcl0PVAMgm+rkHLL0Dh9cp4fvONXWygVSjbqKM1s8UI9bFA
+        bWU5Z3MhEn25wZCXLQDIq0uC+FwCxyS9e/exL4wmYpCLmRKVCp2gUa78Rlr/FJNa
+        H9kfvP41Ya+fLzDWNKAlYQgizpZJmZuhPZu7O6n0UusaI+0WTKblCFUQJkx4aKEv
+        io8QmLzoedmvVpO9Zp44Lyabmc7VnjoYTOcZczx4ECwEdKH/jswc
+        -----END CERTIFICATE-----
+      key: |
+        -----BEGIN PRIVATE KEY-----
+        MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCwJND2stNBiMiU
+        YXsQ6tMm7HwTnXhNSgC5DTGjU05Kyym2OYPIaFvwrv4D9OB1T/GU8xwl/bac0NDY
+        ymqmAcaUNy5e3dKZWtyxN5vLU9rzWDEqnbdrnUHzECgegfBdVJZ2IxaTcf8mO/92
+        1gvUvXzSd57Bxa8rboA1TCXNYboFbVBVRdc11Gh2bFDV6DZL+owEBIWPpCMKxZYm
+        IR+bPg9Cmw/yrkioJxfzkFSoY73X0mUT95cQCCT1i6HrX/nSff0H+w8LSZTmzq8f
+        RI8IG/PWDxKJdryOPeMJfFr/Rmxi0BWo97kGhE+8rarWxspslWvsSmaI50rEo8ei
+        dEdqzB4bAgMBAAECggEAc9nDFn7HM3MjeXQj3RyVhCRF9yC63xqtHwjufN1twQOe
+        i5uIcWcyETsHFtMYThAmdDDxcotMcBdnRS7cthK06QbiGMMMoJCCVoyciz674xE+
+        RSk2WjE0DwmxWV9dGAVqcIjjcFap2hvcCez+Gw4F6ueCIzBB5e7npCZRNqPwFWCY
+        /og06ypz/4LHXFNatvRJC3qhWFwFo1bVC1ycZmc5RQ4IHeQHzi6oCJhSRdCbM7Q9
+        7fQhmjtcw0pxvJTVV+XP7tTf9iDDwgi/Le2iEqNQ1D6c4+nYAGYj2D3919oUYnyv
+        tnznZ2GTibIyP6kl4L79ChRz0JGBzraKH7aJh9H1AQKBgQDS0xd8RNLJ5hkwPitt
+        x/4RNlobGGZqqvQiCKkaDvnc1E1eKR3rVlxH17/ccA/qs0vcoFDPbGyRa/OgD7p5
+        Ro3R+EPDFoFq1KMP4SRoGcDgrNKHQ3o06sUngmtUUP28G+DUQm46xW7cnQrvvNiK
+        f9MMfeNH+tAPtssZh0HNKJa9fwKBgQDV40peDqh9b4Ag+mfiHIJGuwTN8LMvKRqr
+        N5dVirl2BDYMwF6JflIwIwjBZq7ah3NsT5/Yd+nuY+ux/pO4iU5jMbTtoAOv2dc7
+        VKpqNTaQdJhta5OlOdBSP5iXj4siVCMIFL1jz8JtWuXX4hUtbliG6ICZTH2/5ivG
+        faPiOhAlZQKBgQCp941jnojiRSPhhP22UBpA/jS+y3kmXhTcq2bJn3FJ289ULon0
+        hXd4ZDRGIAJ1EYADqyv7TkppI0MStBt+UqdbtG/NBIPqAOxFjRmw47JgcHR6oKgR
+        qYSxSbAGFhW6Zi9ocPY1Y57xNZrvlKxvXIZl98gY69h6EsDDIAyoviRpOQKBgC0g
+        Rjlv+EZ2tt6+VhqTjzzjClF03ikuD+1dzjUDDrwCiXDJSWjS2P5E9fzv8CY0+7o3
+        Vm8yZY2hUUH9hycg+QPeoeCcqQp5+HoRE99SmM+DegFj+AOdHgGsX0Jiy6UTgUyc
+        K5UaaVfvHJ0emv85z72u4ir1w3YwVr4LFf+N5ogtAoGAHODQpVC7sg+nlbeSKsPf
+        RbULfOG4YD5pHszNM+nCjNWs00ofJoZOFA64qXwTIc4Vrh8JLiwAkXiTGYM2guv5
+        Qnp+HbFi/tAc+rQu4SGBaVIglnIj7jFNdgJOb68Vw/L9v2jW1Y8VoAC0eCRWpHud
+        GsMkN4GFOfQKoBI/aCXn4DM=
+        -----END PRIVATE KEY-----
+  upstream:
+    socketTimeoutSeconds: 30
+    readTimeoutSeconds: 120
+    idleTimeoutSeconds: 120
+    maxAttempts: 1
+    tlsInsecureSkipVerify: yes
+policies:
+  ab:
+    - label: green
+      weight: 0.8
+    - label: blue
+      weight: 0.2
+routes:
+  - path: "/about"
+    resource: about
+  - path: "/mse6/some"
+    resource: mse61
+  - path: "/mse6/"
+    resource: mse6
+  - path: "/s01"
+    resource: s01
+  - path: "/s02"
+    resource: s02
+  - path: "/s03"
+    resource: s03
+  - path: "/s04"
+    resource: s04
+  - path: "/s05"
+    resource: s05
+  - path: "/s06"
+    resource: s06
+  - path: "/s07"
+    resource: s07
+  - path: "/s08"
+    resource: s08
+  - path: "/s09"
+    resource: s09
+  - path: "/s10"
+    resource: s10
+  - path: "/s11"
+    resource: s11
+  - path: "/s12"
+    resource: s12
+  - path: "/s13"
+    resource: s13
+  - path: "/s14"
+    resource: s14
+  - path: "/s15"
+    resource: s15
+  - path: "/s16"
+    resource: s16
+  - path: "/badip"
+    resource: badip
+  - path: "/baddns"
+    resource: baddns
+  - path: "/badremote"
+    resource: badremote
+  - path: "/badlocal"
+    resource: badlocal
+  - path: /badssl
+    resource: badssl
+  - path: "/websocket"
+    transform: "/mse6/websocket"
+    resource: websocket
+  - path: "/websocketdown"
+    resource: websocketdown
+  - path: /websocketsecure
+    transform: /badssl
+    resource: websocketsecure
+  - path: /todos
+    resource: jsonplaceholder
+resources:
+  badssl:
+    - url:
+        scheme: https
+        host: localhost
+        port: 60101
+  badip:
+    - url:
+        scheme: http
+        host: 10.247.13.14
+        port: 29471
+  baddns:
+    - url:
+        scheme: http
+        host: kajsdkfj23848392sdfjsj332jkjkjdkshhhhimnotahost.com
+        port: 29471
+  badremote:
+    - url:
+        scheme: http
+        host: google.com
+        port: 29471
+  badlocal:
+    - url:
+        scheme: http
+        host: localhost
+        port: 29471
+  mse61:
+    - url:
+        scheme: 'http:'
+        host: localhost
+        port: 60083
+  mse6:
+    - labels:
+        - green
+      url:
+        scheme: http://
+        host: localhost
+        port: 60083
+    - labels:
+        - blue
+      url:
+        host: localhost
+        port: 60084
+  s01:
+    - url:
+        scheme: http
+        host: localhost
+        port: 60085
+  s02:
+    - url:
+        scheme: http
+        host: localhost
+        port: 60086
+  s03:
+    - url:
+        scheme: http
+        host: localhost
+        port: 60087
+  s04:
+    - url:
+        scheme: http
+        host: localhost
+        port: 60088
+  s05:
+    - url:
+        scheme: http
+        host: localhost
+        port: 60089
+  s06:
+    - url:
+        scheme: http
+        host: localhost
+        port: 60090
+  s07:
+    - url:
+        scheme: http
+        host: localhost
+        port: 60091
+  s08:
+    - url:
+        scheme: http
+        host: localhost
+        port: 60092
+  s09:
+    - url:
+        scheme: http
+        host: localhost
+        port: 60093
+  s10:
+    - url:
+        scheme: http
+        host: localhost
+        port: 60094
+  s11:
+    - url:
+        scheme: http
+        host: localhost
+        port: 60095
+  s12:
+    - url:
+        scheme: http
+        host: localhost
+        port: 60096
+  s13:
+    - url:
+        scheme: http
+        host: localhost
+        port: 60097
+  s14:
+    - url:
+        scheme: http
+        host: localhost
+        port: 60098
+  s15:
+    - url:
+        scheme: http
+        host: localhost
+        port: 60099
+  s16:
+    - url:
+        scheme: http
+        host: localhost
+        port: 60100
+  websocket:
+    - url:
+        scheme: ws
+        host: localhost
+        port: 60083
+  websocketdown:
+    - url:
+        scheme: ws
+        host: 10.247.13.14
+        port: 29471
+  websocketsecure:
+    - url:
+        scheme: wss
+        host: localhost
+        port: 60101
+  jsonplaceholder:
+    - url:
+        scheme: https
+        host: jsonplaceholder.typicode.com
+        port: 443

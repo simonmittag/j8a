@@ -23,7 +23,7 @@ import (
 //Version is the server version
 const Server string = "Server"
 
-var Version string = "v0.9.2"
+var Version string = "v0.9.3"
 
 //ID is a unique server ID
 var ID string = "unknown"
@@ -75,8 +75,10 @@ func (r *ReloadableCert) triggerInit() error {
 }
 
 type ConnectionWatcher struct {
-	n int64
-	m int64
+	dwnOpenConns    int64
+	dwnMaxOpenConns int64
+	upOpenConns     int64
+	upMaxOpenConns  int64
 }
 
 // OnStateChange records open connections in response to connection
@@ -85,34 +87,55 @@ type ConnectionWatcher struct {
 func (cw *ConnectionWatcher) OnStateChange(conn net.Conn, state http.ConnState) {
 	switch state {
 	case http.StateNew:
-		cw.Add(1)
+		cw.AddDwn(1)
 	case http.StateHijacked, http.StateClosed:
-		cw.Add(-1)
+		cw.AddDwn(-1)
 	}
-	c := cw.Count()
-	if c > cw.MaxCount() {
-		cw.SetMax(int64(c))
-	}
+	cw.UpdateMaxDwn(cw.DwnCount())
 }
 
 // Count returns the number of connections at the time
 // the call.
-func (cw *ConnectionWatcher) Count() uint64 {
-	return uint64(atomic.LoadInt64(&cw.n))
+func (cw *ConnectionWatcher) DwnCount() uint64 {
+	return uint64(atomic.LoadInt64(&cw.dwnOpenConns))
 }
 
-func (cw *ConnectionWatcher) MaxCount() uint64 {
-	return uint64(atomic.LoadInt64(&cw.m))
+func (cw *ConnectionWatcher) DwnMaxCount() uint64 {
+	return uint64(atomic.LoadInt64(&cw.dwnMaxOpenConns))
 }
 
 // Add adds c to the number of active connections.
-func (cw *ConnectionWatcher) Add(c int64) {
-	atomic.AddInt64(&cw.n, c)
+func (cw *ConnectionWatcher) AddDwn(c int64) {
+	atomic.AddInt64(&cw.dwnOpenConns, c)
 }
 
 // Sets the maximum number of active connections observed
-func (cw *ConnectionWatcher) SetMax(c int64) {
-	atomic.StoreInt64(&cw.m, c)
+func (cw *ConnectionWatcher) UpdateMaxDwn(c uint64) {
+	if c > cw.DwnMaxCount() {
+		atomic.StoreInt64(&cw.dwnMaxOpenConns, int64(c))
+	}
+}
+
+func (cw *ConnectionWatcher) UpCount() uint64 {
+	return uint64(atomic.LoadInt64(&cw.upOpenConns))
+}
+
+func (cw *ConnectionWatcher) UpMaxCount() uint64 {
+	return uint64(atomic.LoadInt64(&cw.upMaxOpenConns))
+}
+
+func (cw *ConnectionWatcher) AddUp(c int64) {
+	atomic.AddInt64(&cw.upOpenConns, c)
+}
+
+func (cw *ConnectionWatcher) SetUp(c uint64) {
+	atomic.StoreInt64(&cw.upOpenConns, int64(c))
+}
+
+func (cw *ConnectionWatcher) UpdateMaxUp(c uint64) {
+	if c > cw.UpMaxCount() {
+		atomic.StoreInt64(&cw.upMaxOpenConns, int64(c))
+	}
 }
 
 //Runner is the Live environment of the server
@@ -169,7 +192,7 @@ func BootStrap() {
 		Config:            *config,
 		Start:             time.Now(),
 		AcmeHandler:       NewAcmeHandler(),
-		ConnectionWatcher: ConnectionWatcher{n: 0},
+		ConnectionWatcher: ConnectionWatcher{dwnOpenConns: 0},
 	}
 	Runner.
 		initCacheDir().

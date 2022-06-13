@@ -189,3 +189,37 @@ func TestLogProcStats(t *testing.T) {
 	rt.logRuntimeStats(proc)
 	time.Sleep(time.Duration(time.Second * 3))
 }
+
+func TestRuntime_LookUpResourceIps(t *testing.T) {
+	rt := mockRuntime()
+	ips := rt.LookUpResourceIps()
+
+	got1 := ips["localhost"][0].String()
+	want1 := "::1"
+	want11 := "127.0.0.1"
+	if got1 != want1 && got1 != want11 {
+		t.Errorf("invalid ip lookup for host, want %v, got %v", want1, got1)
+	}
+	got2 := ips["127.0.0.1"][0].String()
+	want2 := "127.0.0.1"
+	if got2 != want2 {
+		t.Errorf("invalid ip lookup for ipv4, want %v, got %v", want2, got2)
+	}
+	got3 := ips["[::1]"][0].String()
+	want3 := "::1"
+	if got3 != want3 {
+		t.Errorf("invalid ip lookup for ipv6, want %v, got %v", want3, got3)
+	}
+	got4 := ips["::1"][0].String()
+	want4 := "::1"
+	if got4 != want4 {
+		t.Errorf("invalid ip lookup for ipv6, want %v, got %v", want4, got4)
+	}
+}
+
+func BenchmarkRuntime_FindUpConns(b *testing.B) {
+	rt := mockRuntime()
+	for i := 0; i < b.N; i++ {
+		rt.FindUpConns()
+	}
+}

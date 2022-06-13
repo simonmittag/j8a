@@ -10,7 +10,7 @@ connection:
   upstream:
     socketTimeoutSeconds: 10
     readTimeoutSeconds: 30
-    idleTimeoutSeconds: 10
+    idleTimeoutSeconds: 60
     maxAttempts: 1
     tlsInsecureSkipVerify: true
 
@@ -22,5 +22,5 @@ resources:
   mse6:
     - url:
         scheme: http://
-        host: localhost
+        host: "[::1]"
         port: 60083
