@@ -1,19 +1,21 @@
 package j8a
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/asaskevich/govalidator"
-	"github.com/ghodss/yaml"
-	isd "github.com/jbenet/go-is-domain"
-	"github.com/rs/zerolog"
 	"io/ioutil"
 	"os"
 	"regexp"
 	"sort"
 	"strings"
-	"time"
 	"text/template"
+	"time"
+
+	"github.com/asaskevich/govalidator"
+	"github.com/ghodss/yaml"
+	isd "github.com/jbenet/go-is-domain"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
