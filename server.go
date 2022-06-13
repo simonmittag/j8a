@@ -67,7 +67,7 @@ func (r *ReloadableCert) triggerInit() error {
 		r.Cert.Leaf, err = x509.ParseCertificate(cert.Certificate[0])
 	}
 	if err == nil {
-		log.Debug().Msgf("TLS certificate #%v initialized", formatSerial(cert.Leaf.SerialNumber))
+		log.Info().Msgf("TLS certificate #%v initialized", formatSerial(cert.Leaf.SerialNumber))
 	}
 	r.Init = false
 	return err
