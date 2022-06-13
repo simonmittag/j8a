@@ -13,7 +13,7 @@ func initTime() string {
 	if len(tz) == 0 {
 		tz = "UTC"
 	}
-	log.Debug().Str("timeZone", tz).Msg("timeZone determined")
+	log.Info().Str("timeZone", tz).Msg("timeZone determined")
 	TZ = tz
 	return tz
 }

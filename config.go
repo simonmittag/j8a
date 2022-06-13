@@ -36,28 +36,28 @@ const DefaultConfigFile = "j8acfg.yml"
 
 func (config Config) load() *Config {
 	if len(ConfigFile) > 0 {
-		log.Debug().Msgf("attempting config from file '%s'", ConfigFile)
+		log.Info().Msgf("attempting config from file '%s'", ConfigFile)
 		if cfg := *config.readYmlFile(ConfigFile); cfg.ok() {
 			config = cfg
 		} else {
 			config.panic(fmt.Sprintf("error loading config from file '%s'", ConfigFile))
 		}
 	} else if len(os.Getenv(J8ACFG_YML)) > 0 {
-		log.Debug().Msgf("attempting config from env %s", J8ACFG_YML)
+		log.Info().Msgf("attempting config from env %s", J8ACFG_YML)
 		if cfg := *config.readYmlEnv(); cfg.ok() {
 			config = cfg
 		} else {
 			config.panic(fmt.Sprintf("error loading config from env '%s'", J8ACFG_YML))
 		}
 	} else {
-		log.Debug().Msgf("attempting config from default file '%s'", DefaultConfigFile)
+		log.Info().Msgf("attempting config from default file '%s'", DefaultConfigFile)
 		if cfg := config.readYmlFile(DefaultConfigFile); cfg.ok() {
 			config = *cfg
 		} else {
 			config.panic(fmt.Sprintf("error loading config from default file '%s'", DefaultConfigFile))
 		}
 	}
-	log.Debug().Msgf("parsed config with %d live routes", config.Routes.Len())
+	log.Info().Msgf("parsed config with %d live routes", config.Routes.Len())
 	return &config
 }
 
@@ -335,7 +335,7 @@ func (config Config) validateJwt() *Config {
 			}
 			config.Jwt[name] = jwt
 		}
-		log.Debug().Msgf("parsed %d jwt configurations", len(config.Jwt))
+		log.Info().Msgf("parsed %d jwt configurations", len(config.Jwt))
 	}
 	return &config
 }

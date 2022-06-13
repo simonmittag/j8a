@@ -906,7 +906,7 @@ func (proxy *Proxy) triggerKeyRotationCheck(kid string) {
 	if len(routeSec.JwksUrl) > 0 {
 		//MUST run async since it will block on loading remote JWKS key
 		go routeSec.LoadJwks()
-		log.Debug().
+		log.Info().
 			Str("route", route.Path).
 			Str("jwt", route.Jwt).
 			Str(XRequestID, proxy.XRequestID).

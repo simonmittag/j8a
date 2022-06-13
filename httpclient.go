@@ -46,7 +46,7 @@ func scaffoldHTTPClient(runtime *Runtime) HTTPClient {
 		},
 	}
 
-	log.Debug().
+	log.Info().
 		Int("upMaxIdleConns", runtime.Connection.Upstream.PoolSize).
 		Int("upMaxIdleConnsPerHost", runtime.Connection.Upstream.PoolSize).
 		Float64("upTransportDialTimeoutSecs", socketTimeoutDuration.Seconds()).

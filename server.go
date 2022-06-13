@@ -211,11 +211,11 @@ func (r *Runtime) initCacheDir() *Runtime {
 			e2 := os.Mkdir(myCacheDir, acmeRwx)
 			if e2 == nil {
 				r.cacheDir = myCacheDir
-				log.Debug().Msg("init cache dir in user home")
+				log.Info().Msg("init cache dir in user home")
 			}
 		} else {
 			r.cacheDir = myCacheDir
-			log.Debug().Msg("found cache dir in user home")
+			log.Info().Msg("found cache dir in user home")
 		}
 	}
 	return r
@@ -241,7 +241,7 @@ func (rt *Runtime) startListening() {
 	roundTripTimeoutDurationWithGrace := roundTripTimeoutDuration + (time.Second * 1)
 	idleTimeoutDuration := time.Second * time.Duration(rt.Connection.Downstream.IdleTimeoutSeconds)
 
-	log.Debug().
+	log.Info().
 		Int64("dwnMaxBodyBytes", rt.Connection.Downstream.MaxBodyBytes).
 		Float64("dwnReadTimeoutSeconds", readTimeoutDuration.Seconds()).
 		Float64("dwnRoundTripTimeoutSeconds", roundTripTimeoutDuration.Seconds()).
