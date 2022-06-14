@@ -2,10 +2,12 @@ package j8a
 
 import (
 	"fmt"
-	isd "github.com/jbenet/go-is-domain"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
+
+	isd "github.com/jbenet/go-is-domain"
 )
 
 func TestMain(m *testing.M) {
@@ -672,6 +674,21 @@ func TestLoadConfig(t *testing.T) {
 	}
 }
 
+func TestGetEnvFunction(t *testing.T) {
+	// Rendering Template with placeholders
+	os.Setenv("PORT", "8082")
+	os.Setenv("TEST_ENV_VAR", "VALUES")
+	env_vars, err := envToMap()
+	if err != nil {
+		fmt.Print(err)
+	}
+	fmt.Print(env_vars["PORT"])
+	if strings.Compare(env_vars["PORT"], "8080") == 0 && strings.Compare(env_vars["TEST_ENV_VAR"], "VALUES") == 0 {
+		t.Error("Get Env function not working as expected")
+	}
+
+}
+
 func TestRenderVariableTemplate(t *testing.T) {
 	// Rendering Template with placeholders
 	os.Setenv("PORT", "8082")
@@ -702,7 +719,14 @@ func TestRenderSecretVariableTemplate(t *testing.T) {
 		t.Error("config not Parsed from renderTemplate() function")
 	}
 }
-
+func TestLoadAndRenderConfigFromEnv(t *testing.T) {
+	os.Setenv("READ_TIME_OUT_SECONDS", "300")
+	os.Setenv("J8ACFG_YML", "---\nconnection:\n  downstream:\n    readTimeoutSeconds: {{.READ_TIME_OUT_SECONDS}}\n    roundTripTimeoutSeconds: 20\n    idleTimeoutSeconds: 30\n    port: 8080\n    mode: HTTP\n    maxBodyBytes: 65535\n  upstream:\n    socketTimeoutSeconds: 3\n    readTimeoutSeconds: 30\n    idleTimeoutSeconds: 10\n    maxAttempts: 4\n    poolSize: 8\n    tlsInsecureSkipVerify: true\npolicies:\n  ab:\n    - label: green\n      weight: 0.8\n    - label: blue\n      weight: 0.2\nroutes:\n  - path: \"/todos\"\n    resource: jsonplaceholder\n  - path: \"/about\"\n    resource: about\n  - path: \"/mse6/some\"\n    resource: mse61\n  - path: \"/mse6/\"\n    resource: mse6\n    policy: ab\n  - path: \"/s01\"\n    resource: s01\n  - path: \"/s02\"\n    resource: s02\n  - path: \"/s03\"\n    resource: s03\n  - path: \"/s04\"\n    resource: s04\n  - path: \"/s05\"\n    resource: s05\n  - path: \"/s06\"\n    resource: s06\n  - path: \"/s07\"\n    resource: s07\n  - path: \"/s08\"\n    resource: s08\n  - path: \"/s09\"\n    resource: s09\n  - path: \"/s10\"\n    resource: s10\n  - path: \"/s11\"\n    resource: s11\n  - path: \"/s12\"\n    resource: s12\n  - path: \"/s13\"\n    resource: s13\n  - path: \"/s14\"\n    resource: s14\n  - path: \"/s15\"\n    resource: s15\n  - path: \"/s16\"\n    resource: s16\n  - path: \"/badip\"\n    resource: badip\n  - path: \"/baddns\"\n    resource: baddns\n  - path: \"/badremote\"\n    resource: badremote\n  - path: \"/badlocal\"\n    resource: badlocal\n  - path: /badssl\n    resource: badssl\nresources:\n  jsonplaceholder:\n    - url:\n        scheme: https\n        host: jsonplaceholder.typicode.com\n        port: 443\n  badssl:\n    - url:\n        scheme: https\n        host: localhost\n        port: 60101\n  badip:\n    - url:\n        scheme: http\n        host: 10.247.13.14\n        port: 29471\n  baddns:\n    - url:\n        scheme: http\n        host: kajsdkfj23848392sdfjsj332jkjkjdkshhhhimnotahost.com\n        port: 29471\n  badremote:\n    - url:\n        scheme: http\n        host: google.com\n        port: 29471\n  badlocal:\n    - url:\n        scheme: http\n        host: localhost\n        port: 29471\n  mse61:\n    - url:\n        scheme: 'http:'\n        host: localhost\n        port: 60083\n  mse6:\n    - labels:\n        - green\n      url:\n        scheme: http://\n        host: localhost\n        port: 60083\n    - labels:\n        - blue\n      url:\n        host: localhost\n        port: 60084\n  s01:\n    - url:\n        scheme: http\n        host: localhost\n        port: 60085\n  s02:\n    - url:\n        scheme: http\n        host: localhost\n        port: 60086\n  s03:\n    - url:\n        scheme: http\n        host: localhost\n        port: 60087\n  s04:\n    - url:\n        scheme: http\n        host: localhost\n        port: 60088\n  s05:\n    - url:\n        scheme: http\n        host: localhost\n        port: 60089\n  s06:\n    - url:\n        scheme: http\n        host: localhost\n        port: 60090\n  s07:\n    - url:\n        scheme: http\n        host: localhost\n        port: 60091\n  s08:\n    - url:\n        scheme: http\n        host: localhost\n        port: 60092\n  s09:\n    - url:\n        scheme: http\n        host: localhost\n        port: 60093\n  s10:\n    - url:\n        scheme: http\n        host: localhost\n        port: 60094\n  s11:\n    - url:\n        scheme: http\n        host: localhost\n        port: 60095\n  s12:\n    - url:\n        scheme: http\n        host: localhost\n        port: 60096\n  s13:\n    - url:\n        scheme: http\n        host: localhost\n        port: 60097\n  s14:\n    - url:\n        scheme: http\n        host: localhost\n        port: 60098\n  s15:\n    - url:\n        scheme: http\n        host: localhost\n        port: 60099\n  s16:\n    - url:\n        scheme: http\n        host: localhost\n        port: 60100")
+	config := new(Config).readYmlEnv()
+	if config.Connection.Downstream.ReadTimeoutSeconds != 300 {
+		t.Error("config not Rendered from ENV")
+	}
+}
 
 func acmeConfigWith(domain string) *Config {
 	config := &Config{
