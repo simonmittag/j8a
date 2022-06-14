@@ -10,9 +10,12 @@
 [![Go Version](https://img.shields.io/github/go-mod/go-version/simonmittag/j8a)](https://img.shields.io/github/go-mod/go-version/simonmittag/j8a)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Docker Pulls](https://img.shields.io/docker/pulls/simonmittag/j8a)](https://hub.docker.com/repository/docker/simonmittag/j8a)
-[![Version](https://img.shields.io/docker/v/simonmittag/j8a/0.9.3)](https://hub.docker.com/repository/docker/simonmittag/j8a)
+[![Version](https://img.shields.io/docker/v/simonmittag/j8a/0.9.4)](https://hub.docker.com/repository/docker/simonmittag/j8a)
 
 ## What's new?
+
+### v0.9.4 (14/06/2022)
+* changes to standard log levels. All server internal messages now at info, downstream at debug, upstream data at trace level.
 
 ### v0.9.3 (12/06/2022)
 * Added homebrew distribution under brew tap simonmittag/cli
@@ -22,11 +25,6 @@
 ### v0.9.2 (12/04/2022)
 * Shorter default http upstream timeout, for details see https://j8a.io/docs
 * upgraded jwx dependency to v1.2.22
-
-### v0.9.1 (03/04/2022)
-
-* Support for proxying Brotli (RFC7932) compressed streams, including brotli encoding for upstream content.
-* update to go 1.18
 
 ## What is j8a?
 
