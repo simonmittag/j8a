@@ -5,10 +5,10 @@ connection:
     roundTripTimeoutSeconds: 20
     idleTimeoutSeconds: 30
     http:
-      port: 8083
+      port: 9080
       redirecttls: true
     tls:
-      port: {{.PORT}}
+      port: 9443
       cert: |
         -----BEGIN CERTIFICATE-----
         MIIEkzCCAvugAwIBAgIRANiwkh9AuRgrvYh7Y5DtWIUwDQYJKoZIhvcNAQELBQAw

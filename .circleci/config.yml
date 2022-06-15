@@ -212,7 +212,7 @@ commands:
       - run:
           name: Start j8a four
           command: |
-            export PORT=8444
+            #!/bin/bash
             export J8A_PRIVATE_KEY=`cat ./integration/key.pem`
             env
             J8A_FOUR_CFG=./integration/templatej8a3.yml
@@ -221,11 +221,12 @@ commands:
       - run:
           name: Wait for j8a four
           command: |
-            J8A_FOUR_PORT=8444
+            J8A_FOUR_PORT=9443
             pwt localhost:${J8A_FOUR_PORT}
       - run:
           name: Start j8a five
           command: |
+
             export READ_TIME_OUT_SECONDS=300
             export PORT=8445
             export J8ACFG_YML=`cat ./integration/templatej8a1.yml`
