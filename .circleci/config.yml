@@ -210,6 +210,84 @@ commands:
             J8A_THREE_PORT=8443
             pwt localhost:${J8A_THREE_PORT}
       - run:
+          name: Start j8a four
+          command: |
+            export PORT=9443
+            export J8A_CERTIFICATE=`-----BEGIN CERTIFICATE-----
+                    MIIEkzCCAvugAwIBAgIRANiwkh9AuRgrvYh7Y5DtWIUwDQYJKoZIhvcNAQELBQAw
+                    gYExHjAcBgNVBAoTFW1rY2VydCBkZXZlbG9wbWVudCBDQTErMCkGA1UECwwic2lt
+                    b25taXR0YWdAdHJvb3BlciAoU2ltb24gTWl0dGFnKTEyMDAGA1UEAwwpbWtjZXJ0
+                    IHNpbW9ubWl0dGFnQHRyb29wZXIgKFNpbW9uIE1pdHRhZykwHhcNMTkwNjAxMDAw
+                    MDAwWhcNMzAwNzMwMDExNDU5WjBjMScwJQYDVQQKEx5ta2NlcnQgZGV2ZWxvcG1l
+                    bnQgY2VydGlmaWNhdGUxODA2BgNVBAsML3NpbW9ubWl0dGFnQE1hY0Jvb2stUHJv
+                    LTE2LmxvY2FsIChTaW1vbiBNaXR0YWcpMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A
+                    MIIBCgKCAQEAsCTQ9rLTQYjIlGF7EOrTJux8E514TUoAuQ0xo1NOSssptjmDyGhb
+                    8K7+A/TgdU/xlPMcJf22nNDQ2MpqpgHGlDcuXt3SmVrcsTeby1Pa81gxKp23a51B
+                    8xAoHoHwXVSWdiMWk3H/Jjv/dtYL1L180neewcWvK26ANUwlzWG6BW1QVUXXNdRo
+                    dmxQ1eg2S/qMBASFj6QjCsWWJiEfmz4PQpsP8q5IqCcX85BUqGO919JlE/eXEAgk
+                    9Yuh61/50n39B/sPC0mU5s6vH0SPCBvz1g8SiXa8jj3jCXxa/0ZsYtAVqPe5BoRP
+                    vK2q1sbKbJVr7EpmiOdKxKPHonRHasweGwIDAQABo4GiMIGfMA4GA1UdDwEB/wQE
+                    AwIFoDATBgNVHSUEDDAKBggrBgEFBQcDATAMBgNVHRMBAf8EAjAAMB8GA1UdIwQY
+                    MBaAFMNEcloV4jg+eonB5omuJvQXiqiRMEkGA1UdEQRCMECCDyouamFiYmF0ZXN0
+                    LmNvbYIKamFiYmEudGVzdIIJbG9jYWxob3N0hwR/AAABhxAAAAAAAAAAAAAAAAAA
+                    AAABMA0GCSqGSIb3DQEBCwUAA4IBgQDGI3EUWPKsEOqLCpnwSlFihu8n9+g4pV3/
+                    jItYhUqMBz1v8TqV2zykkJUtlfNoxrp5OAg4CG0Xr1zhqjub3teKbsNKlRpV+h04
+                    4ncltpe66u4gg9RW+ww/f+J3C2yZRIX+brhDcTpdEMyfVoCV/5jeCxWf29MdFcLU
+                    BfgFdEp1oe3bK/dyZc8SbUlmizyumaDOaZACihz/DKsJ+lzRdy6c3UPQgC3r72oN
+                    Lx/ccpnwdeumWFs+qYOjYfrCGFXaabokdtyit4XURFngxpnPUB9jHDvkI5+/eTaB
+                    SpdjJxE6x4mciyZSvshhu1v8j52+d9zUANs9+Y/v6EoCZ6byaaS4NAmTXdAWlnYb
+                    hIuRRsI4gIDhJWLrACBu1Osh7ZknaLNVMt5xo3TemCkVKud3NHGbycHTUoFBuHz/
+                    JOTQJ/Z1Ym3enpTAESZVcZTzS9gL62wfIfLcFvq+tVjoJZVJCcolP2fYn3U5lEiN
+                    vZvs72xp4sYEOa9zhvEs/yte9c6rkU0=
+                    -----END CERTIFICATE-----
+                    -----BEGIN CERTIFICATE-----
+                    MIIE0zCCAzugAwIBAgIQB2bsiI7SUtxu+HwBxuNtpDANBgkqhkiG9w0BAQsFADCB
+                    gTEeMBwGA1UEChMVbWtjZXJ0IGRldmVsb3BtZW50IENBMSswKQYDVQQLDCJzaW1v
+                    bm1pdHRhZ0B0cm9vcGVyIChTaW1vbiBNaXR0YWcpMTIwMAYDVQQDDClta2NlcnQg
+                    c2ltb25taXR0YWdAdHJvb3BlciAoU2ltb24gTWl0dGFnKTAeFw0yMDA1MDEyMTE2
+                    NDNaFw0zMDA1MDEyMTE2NDNaMIGBMR4wHAYDVQQKExVta2NlcnQgZGV2ZWxvcG1l
+                    bnQgQ0ExKzApBgNVBAsMInNpbW9ubWl0dGFnQHRyb29wZXIgKFNpbW9uIE1pdHRh
+                    ZykxMjAwBgNVBAMMKW1rY2VydCBzaW1vbm1pdHRhZ0B0cm9vcGVyIChTaW1vbiBN
+                    aXR0YWcpMIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAzivKfp5OiWpT
+                    362cVgbw9DBqwMP0pO32aP79Y4UYeAxCfaWQDdqQEatBdraShtZcvUX8vZ9jvgHE
+                    oGMGSJb/DIVRxIDfhdvhh4qGQgbbSLwDkfLJTkpGMdONa/5yDC54fNZjF095YZn7
+                    iPmsFbvYUfTwpM8qrP+jZzobByrTO4rG3Ps080gIR08RCA0E+uLg58rTpnsdBKZ0
+                    K2uuE4B4lVAs2AeS4KPMrH/rnCjSZz4KRwnaGqh+wiAjO0PHAfrbrhNsFB6P1/Zk
+                    Cqzclj3TXdkMDaXhSvt0qJPEpNIPQMkvj9GROom7hExZUT7t7LPOZwODtiR2VjM3
+                    DDehfLqpNPRrxU3aOR7b4lFVtEL1+9NXKc3rnR5T2xPVVvBxx8FqYAxFmQtkGqpA
+                    YlRxImBONBreIr5/fdkr5xqd/S0s1pb8ubuK7x5COfqf0Mv++j+UjMptBQ3kYvOh
+                    tNrbnEI1q/7kvHNB8ETtJ4hqXikl9EHMYWdOo4nyGd4P8jo9jmGVAgMBAAGjRTBD
+                    MA4GA1UdDwEB/wQEAwICBDASBgNVHRMBAf8ECDAGAQH/AgEAMB0GA1UdDgQWBBTD
+                    RHJaFeI4PnqJweaJrib0F4qokTANBgkqhkiG9w0BAQsFAAOCAYEAb+K3HO2AlDed
+                    S2yT7GnxD75Hcjnv1tMvMIlh1EOmRMHrzbsi7jv3Z7SDe2R5s1qRku3nxbVWj8i8
+                    oRBi5GeRE+q/HkVloi4WPmgFGxUUbkWszAFSSGN5TAs72e5sCG/wMyEa0Gj8cOO1
+                    dK5SH3thP8+OjSpgQXToYfOimILlk7Hj7EgKE5Y8YX8UV+41LhGkzeK2UX9dBZn1
+                    of9qBc0dAQVlAA/O3dOgXorgiDbNT38cjignWEwVYzjeuJCYB91Ixf0CfHJZKHZR
+                    ZCdIAHTJqW1tx7vsbrcl0PVAMgm+rkHLL0Dh9cp4fvONXWygVSjbqKM1s8UI9bFA
+                    bWU5Z3MhEn25wZCXLQDIq0uC+FwCxyS9e/exL4wmYpCLmRKVCp2gUa78Rlr/FJNa
+                    H9kfvP41Ya+fLzDWNKAlYQgizpZJmZuhPZu7O6n0UusaI+0WTKblCFUQJkx4aKEv
+                    io8QmLzoedmvVpO9Zp44Lyabmc7VnjoYTOcZczx4ECwEdKH/jswc
+                    -----END CERTIFICATE-----`
+            J8A_FOUR_CFG=./integration/templatej8a3.yml
+            j8a -c ${J8A_FOUR_CFG}
+          background: true
+      - run:
+          name: Wait for j8a four
+          command: |
+            J8A_FOUR_PORT=9443
+            pwt localhost:${J8A_FOUR_PORT}
+      - run:
+          name: Start j8a five
+          command: |
+            export J8ACFG_YML=`---\nconnection:\n  downstream:\n    readTimeoutSeconds: {{.READ_TIME_OUT_SECONDS}}\n    roundTripTimeoutSeconds: 20\n    idleTimeoutSeconds: 30\n    port: 8080\n    mode: HTTP\n    maxBodyBytes: 65535\n  upstream:\n    socketTimeoutSeconds: 3\n    readTimeoutSeconds: 30\n    idleTimeoutSeconds: 10\n    maxAttempts: 4\n    poolSize: 8\n    tlsInsecureSkipVerify: true\npolicies:\n  ab:\n    - label: green\n      weight: 0.8\n    - label: blue\n      weight: 0.2\nroutes:\n  - path: \"/todos\"\n    resource: jsonplaceholder\n  - path: \"/about\"\n    resource: about\n  - path: \"/mse6/some\"\n    resource: mse61\n  - path: \"/mse6/\"\n    resource: mse6\n    policy: ab\n  - path: \"/s01\"\n    resource: s01\n  - path: \"/s02\"\n    resource: s02\n  - path: \"/s03\"\n    resource: s03\n  - path: \"/s04\"\n    resource: s04\n  - path: \"/s05\"\n    resource: s05\n  - path: \"/s06\"\n    resource: s06\n  - path: \"/s07\"\n    resource: s07\n  - path: \"/s08\"\n    resource: s08\n  - path: \"/s09\"\n    resource: s09\n  - path: \"/s10\"\n    resource: s10\n  - path: \"/s11\"\n    resource: s11\n  - path: \"/s12\"\n    resource: s12\n  - path: \"/s13\"\n    resource: s13\n  - path: \"/s14\"\n    resource: s14\n  - path: \"/s15\"\n    resource: s15\n  - path: \"/s16\"\n    resource: s16\n  - path: \"/badip\"\n    resource: badip\n  - path: \"/baddns\"\n    resource: baddns\n  - path: \"/badremote\"\n    resource: badremote\n  - path: \"/badlocal\"\n    resource: badlocal\n  - path: /badssl\n    resource: badssl\nresources:\n  jsonplaceholder:\n    - url:\n        scheme: https\n        host: jsonplaceholder.typicode.com\n        port: 443\n  badssl:\n    - url:\n        scheme: https\n        host: localhost\n        port: 60101\n  badip:\n    - url:\n        scheme: http\n        host: 10.247.13.14\n        port: 29471\n  baddns:\n    - url:\n        scheme: http\n        host: kajsdkfj23848392sdfjsj332jkjkjdkshhhhimnotahost.com\n        port: 29471\n  badremote:\n    - url:\n        scheme: http\n        host: google.com\n        port: 29471\n  badlocal:\n    - url:\n        scheme: http\n        host: localhost\n        port: 29471\n  mse61:\n    - url:\n        scheme: 'http:'\n        host: localhost\n        port: 60083\n  mse6:\n    - labels:\n        - green\n      url:\n        scheme: http://\n        host: localhost\n        port: 60083\n    - labels:\n        - blue\n      url:\n        host: localhost\n        port: 60084\n  s01:\n    - url:\n        scheme: http\n        host: localhost\n        port: 60085\n  s02:\n    - url:\n        scheme: http\n        host: localhost\n        port: 60086\n  s03:\n    - url:\n        scheme: http\n        host: localhost\n        port: 60087\n  s04:\n    - url:\n        scheme: http\n        host: localhost\n        port: 60088\n  s05:\n    - url:\n        scheme: http\n        host: localhost\n        port: 60089\n  s06:\n    - url:\n        scheme: http\n        host: localhost\n        port: 60090\n  s07:\n    - url:\n        scheme: http\n        host: localhost\n        port: 60091\n  s08:\n    - url:\n        scheme: http\n        host: localhost\n        port: 60092\n  s09:\n    - url:\n        scheme: http\n        host: localhost\n        port: 60093\n  s10:\n    - url:\n        scheme: http\n        host: localhost\n        port: 60094\n  s11:\n    - url:\n        scheme: http\n        host: localhost\n        port: 60095\n  s12:\n    - url:\n        scheme: http\n        host: localhost\n        port: 60096\n  s13:\n    - url:\n        scheme: http\n        host: localhost\n        port: 60097\n  s14:\n    - url:\n        scheme: http\n        host: localhost\n        port: 60098\n  s15:\n    - url:\n        scheme: http\n        host: localhost\n        port: 60099\n  s16:\n    - url:\n        scheme: http\n        host: localhost\n        port: 60100`
+            j8a -c ${J8A_FIVE_CFG}
+          background: true
+      - run:
+          name: Wait for j8a five
+          command: |
+            J8A_FIVE_CFG=8443
+            pwt localhost:${J8A_FIVE_CFG}
+      - run:
           name: Install Test dependencies
           command: |
             sudo apt update
