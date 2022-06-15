@@ -689,7 +689,7 @@ func TestGetEnvFunction(t *testing.T) {
 func TestRenderVariableTemplate(t *testing.T) {
 	// Rendering Template with placeholders
 	os.Setenv("PORT", "8082")
-	ConfigFile = "./integration/template/j8a2.yml"
+	ConfigFile = "./integration/templatej8a1.yml"
 	config := new(Config).load()
 	if config.Connection.Downstream.Http.Port != 8082 {
 		t.Error("config not Parsed from renderTemplate() function")
@@ -710,7 +710,7 @@ func TestRenderSecretVariableTemplate(t *testing.T) {
 	os.Setenv("PUBLIC_KEY", PUBLIC_KEY)
 	os.Setenv("PORT", "8080")
 
-	ConfigFile = "./integration/template/j8a3.yml"
+	ConfigFile = "./integration/templatej8a2.yml"
 	config := new(Config).load().validateJwt()
 	if config.Connection.Downstream.Http.Port != 8080 {
 		t.Error("config not Parsed from renderTemplate() function")
