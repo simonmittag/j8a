@@ -95,7 +95,7 @@ func (config Config) readYmlFile(file string) *Config {
 }
 
 func (config Config) parse(yml []byte) *Config {
-	envMap, _ := envToMap()
+	envMap := envToMap()
 	configTemplate := template.New("config")
 	configTemplate, _ = configTemplate.Parse(string(yml[:]))
 	var configTpl bytes.Buffer
@@ -354,14 +354,13 @@ func (config Config) validateJwt() *Config {
 func (config Config) getDownstreamRoundTripTimeoutDuration() time.Duration {
 	return time.Duration(time.Second * time.Duration(config.Connection.Downstream.RoundTripTimeoutSeconds))
 }
-func envToMap() (map[string]string, error) {
+func envToMap() map[string]string {
 	envMap := make(map[string]string)
-	var err error
 
 	for _, v := range os.Environ() {
 		split_v := strings.SplitN(v, "=", 2)
 		envMap[split_v[0]] = split_v[1]
 	}
 
-	return envMap, err
+	return envMap
 }

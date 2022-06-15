@@ -678,10 +678,7 @@ func TestGetEnvFunction(t *testing.T) {
 	// Rendering Template with placeholders
 	os.Setenv("PORT", "8082")
 	os.Setenv("TEST_ENV_VAR", "VALUES")
-	env_vars, err := envToMap()
-	if err != nil {
-		fmt.Print(err)
-	}
+	env_vars := envToMap()
 	fmt.Print(env_vars["PORT"])
 	if strings.Compare(env_vars["PORT"], "8080") == 0 && strings.Compare(env_vars["TEST_ENV_VAR"], "VALUES") == 0 {
 		t.Error("Get Env function not working as expected")
