@@ -104,7 +104,9 @@ func (config Config) parse(yml []byte) *Config {
 		fmt.Println(renderingErr)
 	}
 	yml, _ = ioutil.ReadAll(&configTpl)
+	fmt.Println(string(yml[:]))
 	jsn, _ := yaml.YAMLToJSON(yml)
+
 	json.Unmarshal(jsn, &config)
 	return &config
 }
