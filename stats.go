@@ -11,6 +11,7 @@ import (
 	"runtime/pprof"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 )
 
@@ -27,6 +28,7 @@ type sample struct {
 	upOpenTcpConns     uint64
 	upMaxOpenTcpConns  uint64
 	threads            int
+	ulimit             uint64
 }
 
 type growthRate struct {
@@ -56,6 +58,7 @@ const pidDwnMaxOpenTcpConns = "pidDwnMaxOpenTcpConns"
 const pidUpOpenTcpConns = "pidUpOpenTcpConns"
 const pidUpMaxOpenTcpConns = "pidUpMaxOpenTcpConns"
 const pidOSThreads = "pidOSThreads"
+const pidOSUlimit = "pidOSUlimit"
 const serverPerformance = "server performance"
 const pcd2f = "%.2f"
 
@@ -74,6 +77,7 @@ func (s sample) log() {
 		Uint64(pidVmsBytes, s.vmsBytes).
 		Uint64(pidSwapBytes, s.swapBytes).
 		Int(pidOSThreads, s.threads).
+		Uint64(pidOSUlimit, s.ulimit).
 		Msg(serverPerformance)
 }
 
@@ -126,6 +130,13 @@ func (rt *Runtime) getSample(proc *process.Process) sample {
 	mPc, _ := proc.MemoryPercent()
 	mInfo, _ := proc.MemoryInfo()
 
+	var rLimit syscall.Rlimit
+	e := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &rLimit)
+	var ulimit uint64 = 0
+	if e == nil {
+		ulimit = rLimit.Cur
+	}
+
 	cs, e := rt.FindUpConns()
 	if e != nil {
 		//if this fails, skip upconns and continue with other sample data.
@@ -151,6 +162,7 @@ func (rt *Runtime) getSample(proc *process.Process) sample {
 		upOpenTcpConns:     rt.ConnectionWatcher.UpCount(),
 		upMaxOpenTcpConns:  rt.ConnectionWatcher.UpMaxCount(),
 		threads:            threadProfile.Count(),
+		ulimit:             ulimit,
 	}
 }
 
