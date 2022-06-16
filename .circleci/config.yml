@@ -229,7 +229,7 @@ commands:
           command: |
             export PORT=8445
             export J8A_PRIVATE_KEY=`cat ./integration/key.pem`
-            export J8ACFG_YML=`cat ./integration/templatej8a3.yml`
+            export J8ACFG_YML=`cat ./integration/templatej8a4.yml`
             env
             j8a
           background: true
