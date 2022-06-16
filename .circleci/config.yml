@@ -214,6 +214,7 @@ commands:
           command: |
             #!/bin/bash
             export J8A_PRIVATE_KEY=`cat ./integration/key.pem`
+            export PORT=9443
             env
             J8A_FOUR_CFG=./integration/templatej8a3.yml
             j8a -c ${J8A_FOUR_CFG}
@@ -226,10 +227,10 @@ commands:
       - run:
           name: Start j8a five
           command: |
-
-            export READ_TIME_OUT_SECONDS=300
             export PORT=8445
-            export J8ACFG_YML=`cat ./integration/templatej8a1.yml`
+            export J8A_PRIVATE_KEY=`cat ./integration/key.pem`
+            export J8ACFG_YML=`cat ./integration/templatej8a3.yml`
+            env
             j8a
           background: true
       - run:

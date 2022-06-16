@@ -8,7 +8,7 @@ connection:
       port: 9080
       redirecttls: true
     tls:
-      port: 9443
+      port: {{.PORT}}
       cert: |
         -----BEGIN CERTIFICATE-----
         MIIEkzCCAvugAwIBAgIRANiwkh9AuRgrvYh7Y5DtWIUwDQYJKoZIhvcNAQELBQAw
