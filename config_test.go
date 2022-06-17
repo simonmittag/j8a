@@ -731,7 +731,7 @@ func TestLoadAndRenderCertificateFromEnv(t *testing.T) {
 	ConfigFile = "./integration/templatej8a3.yml"
 	config := new(Config).load()
 
-	if config.Connection.Downstream.Tls.Key == "" {
+	if config.Connection.Downstream.Tls.Port != 9443 {
 		t.Error("config not Rendered from ENV")
 	}
 }

@@ -101,7 +101,7 @@ func (config Config) parse(yml []byte) *Config {
 	var configTpl bytes.Buffer
 	renderingErr := configTemplate.Execute(&configTpl, envMap)
 	if renderingErr != nil {
-		fmt.Println(renderingErr)
+		config.panic("Rendering Failed" + renderingErr.Error())
 	}
 	yml, _ = ioutil.ReadAll(&configTpl)
 	fmt.Println(string(yml[:]))
