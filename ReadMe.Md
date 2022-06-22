@@ -15,7 +15,7 @@
 ## What's new?
 
 ### v0.9.5 (16/06/2022)
-* now logging ulimit so admin has visibility next to maxopenconns
+* now logging ulimit (max open files) so admin has visibility next to maxopenconns
 
 ### v0.9.4 (14/06/2022)
 * changes to standard log levels. All server internal messages now at info, downstream at debug, upstream data at trace level.
