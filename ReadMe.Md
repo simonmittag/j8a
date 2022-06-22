@@ -57,7 +57,7 @@ docker pull simonmittag/j8a &&
   docker run -e J8ACFG_YML -p443:443 simonmittag/j8a
 ```
 
-### Hombrew
+### Homebrew
 ```bash
 brew tap simonmittag/cli && 
   brew install j8a && 
