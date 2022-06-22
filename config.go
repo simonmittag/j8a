@@ -96,7 +96,7 @@ func (config Config) readYmlFile(file string) *Config {
 
 func (config Config) parse(yml []byte) *Config {
 	envMap := envToMap()
-	configTemplate := template.New("config")
+	configTemplate := template.New("config").Option("missingkey=error")
 	configTemplate, _ = configTemplate.Parse(string(yml[:]))
 	var configTpl bytes.Buffer
 	renderingErr := configTemplate.Execute(&configTpl, envMap)
