@@ -104,7 +104,6 @@ func (config Config) parse(yml []byte) *Config {
 		config.panic("unable to parse config, cause: " + renderingErr.Error())
 	}
 	yml, _ = ioutil.ReadAll(&configTpl)
-	fmt.Println(string(yml[:]))
 	jsn, _ := yaml.YAMLToJSON(yml)
 
 	json.Unmarshal(jsn, &config)
