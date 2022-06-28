@@ -210,6 +210,35 @@ commands:
             J8A_THREE_PORT=8443
             pwt localhost:${J8A_THREE_PORT}
       - run:
+          name: Start j8a four
+          command: |
+            #!/bin/bash
+            export J8A_PRIVATE_KEY=`cat ./integration/key.pem`
+            export PORT=9443
+            env
+            J8A_FOUR_CFG=./integration/templatej8a3.yml
+            j8a -c ${J8A_FOUR_CFG}
+          background: true
+      - run:
+          name: Wait for j8a four
+          command: |
+            J8A_FOUR_PORT=9443
+            pwt localhost:${J8A_FOUR_PORT}
+      - run:
+          name: Start j8a five
+          command: |
+            export PORT=8445
+            export J8A_PRIVATE_KEY=`cat ./integration/key.pem`
+            export J8ACFG_YML=`cat ./integration/templatej8a4.yml`
+            env
+            j8a
+          background: true
+      - run:
+          name: Wait for j8a five
+          command: |
+            J8A_FIVE_CFG=8445
+            pwt localhost:${J8A_FIVE_CFG}
+      - run:
           name: Install Test dependencies
           command: |
             sudo apt update

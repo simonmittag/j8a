@@ -1,19 +1,21 @@
 package j8a
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/asaskevich/govalidator"
-	"github.com/ghodss/yaml"
-	isd "github.com/jbenet/go-is-domain"
-	"github.com/rs/zerolog"
 	"io/ioutil"
 	"os"
 	"regexp"
 	"sort"
 	"strings"
+	"text/template"
 	"time"
 
+	"github.com/asaskevich/govalidator"
+	"github.com/ghodss/yaml"
+	isd "github.com/jbenet/go-is-domain"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
@@ -93,7 +95,18 @@ func (config Config) readYmlFile(file string) *Config {
 }
 
 func (config Config) parse(yml []byte) *Config {
+	envMap := envToMap()
+	configTemplate := template.New("config").Option("missingkey=error")
+	configTemplate, _ = configTemplate.Parse(string(yml[:]))
+	var configTpl bytes.Buffer
+	renderingErr := configTemplate.Execute(&configTpl, envMap)
+	if renderingErr != nil {
+		config.panic("unable to parse config, cause: " + renderingErr.Error())
+	}
+	yml, _ = ioutil.ReadAll(&configTpl)
+	fmt.Println(string(yml[:]))
 	jsn, _ := yaml.YAMLToJSON(yml)
+
 	json.Unmarshal(jsn, &config)
 	return &config
 }
@@ -342,4 +355,14 @@ func (config Config) validateJwt() *Config {
 
 func (config Config) getDownstreamRoundTripTimeoutDuration() time.Duration {
 	return time.Duration(time.Second * time.Duration(config.Connection.Downstream.RoundTripTimeoutSeconds))
+}
+func envToMap() map[string]string {
+	envMap := make(map[string]string)
+
+	for _, v := range os.Environ() {
+		split_v := strings.SplitN(v, "=", 2)
+		envMap[split_v[0]] = split_v[1]
+	}
+
+	return envMap
 }
