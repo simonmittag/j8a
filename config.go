@@ -202,7 +202,6 @@ func (config Config) validateHTTPConfig() *Config {
 
 const wildcardDomainPrefix = "*."
 const dot = "."
-const noreply = "noreply@"
 
 func (config Config) validateAcmeConfig() *Config {
 	acmeProvider := len(config.Connection.Downstream.Tls.Acme.Provider) > 0
@@ -252,8 +251,6 @@ func (config Config) validateAcmeConfig() *Config {
 				config.panic(fmt.Sprintf("ACME domain validation does not support domains ending with '.', was %s", domain))
 			}
 		}
-
-		config.Connection.Downstream.Tls.Acme.Email = noreply + config.Connection.Downstream.Tls.Acme.Domains[0]
 	}
 
 	if acmeProvider {

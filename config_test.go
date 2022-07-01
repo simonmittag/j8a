@@ -272,18 +272,17 @@ func TestValidateAcmeEmail(t *testing.T) {
 				Http: Http{Port: 80},
 				Tls: Tls{
 					Acme: Acme{
-						Domains:  []string{"adyntest.com"},
-						Provider: "letsencrypt"},
+						Domains:   []string{"adyntest.com"},
+						Provider:  "letsencrypt",
+						Email:     "noreply@example.org",
+						AcceptTOS: true,
+					},
 				},
 			},
 		},
 	}
 
 	config = config.validateAcmeConfig()
-
-	if config.Connection.Downstream.Tls.Acme.Email != "noreply@adyntest.com" {
-		t.Errorf("acme email not properly populated")
-	}
 }
 
 //TestValidateAcmeDomainInvalidLeadingDotFails

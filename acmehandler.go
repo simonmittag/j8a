@@ -9,18 +9,19 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
-	"github.com/rs/zerolog/log"
-	"github.com/simonmittag/lego/v4/certcrypto"
-	"github.com/simonmittag/lego/v4/certificate"
-	"github.com/simonmittag/lego/v4/challenge/http01"
-	"github.com/simonmittag/lego/v4/lego"
-	"github.com/simonmittag/lego/v4/registration"
 	"io/fs"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/rs/zerolog/log"
+	"github.com/simonmittag/lego/v4/certcrypto"
+	"github.com/simonmittag/lego/v4/certificate"
+	"github.com/simonmittag/lego/v4/challenge/http01"
+	"github.com/simonmittag/lego/v4/lego"
+	"github.com/simonmittag/lego/v4/registration"
 )
 
 const acmeChallenge = "/.well-known/acme-challenge/"
@@ -251,7 +252,7 @@ func (runtime *Runtime) fetchAcmeCertAndKey(url string) error {
 	}
 
 	//we always register because it's safer than to cache credentials
-	myUser.Registration, e = client.Registration.Register(registration.RegisterOptions{TermsOfServiceAgreed: true})
+	myUser.Registration, e = client.Registration.Register(registration.RegisterOptions{TermsOfServiceAgreed: runtime.Connection.Downstream.Tls.Acme.AcceptTOS})
 	if e != nil {
 		return e
 	}

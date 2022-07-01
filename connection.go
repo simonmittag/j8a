@@ -60,8 +60,11 @@ type Acme struct {
 	// Domain
 	Domains []string
 
-	// Email for registration. Auto generated from domain.
+	// Email for registration.
 	Email string
+
+	// Accept ACME TOS
+	AcceptTOS bool
 }
 
 // Upstream connection params for remote servers that are being proxied
