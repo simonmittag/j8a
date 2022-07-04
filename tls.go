@@ -98,7 +98,7 @@ func (r *Runtime) renewAcmeCertAndKey() error {
 	p := r.Connection.Downstream.Tls.Acme.Provider
 	log.Info().Msgf("triggering renewal of ACME certificate from provider %s ", p)
 
-	e1 := r.fetchAcmeCertAndKey(acmeProviders[p])
+	e1 := r.fetchAcmeCertAndKey(acmeProviders[p].endpoint)
 	if e1 == nil {
 		c := []byte(r.Connection.Downstream.Tls.Cert)
 		k := []byte(r.Connection.Downstream.Tls.Key)
@@ -108,7 +108,7 @@ func (r *Runtime) renewAcmeCertAndKey() error {
 			return e2
 		} else {
 			//if no issues, cache the cert and key. we don't assert whether this works it only matters when loading.
-			r.cacheAcmeCertAndKey(acmeProviders[p])
+			r.cacheAcmeCertAndKey(acmeProviders[p].endpoint)
 
 			//now trigger a re-init of TLS cert for the cert we just downloaded.
 			e3 := r.ReloadableCert.triggerInit()

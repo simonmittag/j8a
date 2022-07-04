@@ -207,9 +207,8 @@ func (config Config) validateAcmeConfig() *Config {
 	acmeProvider := len(config.Connection.Downstream.Tls.Acme.Provider) > 0
 	acmeDomain := len(config.Connection.Downstream.Tls.Acme.Domains) > 0 && len(config.Connection.Downstream.Tls.Acme.Domains[0]) > 0
 	acmeEmail := len(config.Connection.Downstream.Tls.Acme.Email) > 0
-	acmeAcceptTOS := config.Connection.Downstream.Tls.Acme.AcceptTOS
 
-	if acmeProvider || acmeDomain {
+	if acmeProvider || acmeDomain || acmeEmail {
 		if len(config.Connection.Downstream.Tls.Cert) > 0 {
 			config.panic("cannot specify TLS cert with ACME configuration, it would be overridden.")
 		}
@@ -232,10 +231,6 @@ func (config Config) validateAcmeConfig() *Config {
 
 		if !acmeEmail {
 			config.panic("ACME email must be specified in ACME config")
-		}
-
-		if !acmeAcceptTOS {
-			config.panic("ACME TOS must be accepted in ACME config")
 		}
 	
 		// ACME domain checks
@@ -270,6 +265,8 @@ func (config Config) validateAcmeConfig() *Config {
 		if !govalidator.IsEmail(config.Connection.Downstream.Tls.Acme.Email) {
 			config.panic(fmt.Sprintf("ACME email must be a valid email address, but was %s", config.Connection.Downstream.Tls.Acme.Email))
 		}
+
+		log.Info().Msgf("By using the ACME provider %s you agree to the provider terms of service (%s)", acmeProviders[config.Connection.Downstream.Tls.Acme.Provider].friendlyName, acmeProviders[config.Connection.Downstream.Tls.Acme.Provider].tosURL)
 
 	}
 

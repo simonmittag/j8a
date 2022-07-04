@@ -313,7 +313,7 @@ func (runtime *Runtime) startTls(server *http.Server, err chan<- error, msg stri
 		cacheErr := runtime.loadAcmeCertAndKeyFromCache(p)
 		if cacheErr != nil {
 			//so caching didn't work let's go to acmeProvider
-			acmeErr := runtime.fetchAcmeCertAndKey(acmeProviders[p])
+			acmeErr := runtime.fetchAcmeCertAndKey(acmeProviders[p].endpoint)
 			if acmeErr != nil {
 				err <- acmeErr
 				return
