@@ -591,7 +591,7 @@ func TestValidateAcmeEmailFails(t *testing.T) {
 }
 
 //TestValidateAcmeInvalidEmailFails
-func TestValidateAcmeInvalidFails(t *testing.T) {
+func TestValidateAcmeInvalidEmailFails(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
 			t.Logf("normal. config panic for invalid ACME email")
