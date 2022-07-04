@@ -62,9 +62,6 @@ type Acme struct {
 
 	// Email for registration.
 	Email string
-
-	// Accept ACME TOS
-	AcceptTOS bool
 }
 
 // Upstream connection params for remote servers that are being proxied

@@ -829,7 +829,6 @@ func acmeConfigWith(domain string) *Config {
 						Domains:  []string{domain},
 						Provider: "letsencrypt",
 						Email: "noreply@example.org",
-						AcceptTOS: true,
 					},
 				},
 			},
