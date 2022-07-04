@@ -206,6 +206,8 @@ const dot = "."
 func (config Config) validateAcmeConfig() *Config {
 	acmeProvider := len(config.Connection.Downstream.Tls.Acme.Provider) > 0
 	acmeDomain := len(config.Connection.Downstream.Tls.Acme.Domains) > 0 && len(config.Connection.Downstream.Tls.Acme.Domains[0]) > 0
+	acmeEmail := len(config.Connection.Downstream.Tls.Acme.Email) > 0
+	acmeAcceptTOS := config.Connection.Downstream.Tls.Acme.AcceptTOS
 
 	if acmeProvider || acmeDomain {
 		if len(config.Connection.Downstream.Tls.Cert) > 0 {
@@ -219,17 +221,24 @@ func (config Config) validateAcmeConfig() *Config {
 		if config.Connection.Downstream.Http.Port != 80 {
 			config.panic("HTTP listener must be configured and set to port 80 for ACME challenge")
 		}
-	}
 
-	if acmeDomain && !acmeProvider {
-		config.panic("ACME provider must be specified with ACME domain")
-	}
+		if !acmeProvider {
+			config.panic("ACME provider must be specified in ACME config")
+		}
+	
+		if !acmeDomain {
+			config.panic("ACME domain must be specified in ACME config")
+		}
 
-	if acmeProvider && !acmeDomain {
-		config.panic("ACME domain must be specified with ACME provider")
-	}
+		if !acmeEmail {
+			config.panic("ACME email must be specified in ACME config")
+		}
 
-	if acmeDomain {
+		if !acmeAcceptTOS {
+			config.panic("ACME TOS must be accepted in ACME config")
+		}
+	
+		// ACME domain checks
 		for _, domain := range config.Connection.Downstream.Tls.Acme.Domains {
 			if !govalidator.IsDNSName(domain) {
 				config.panic(fmt.Sprintf("ACME domain must be a valid DNS name, but was %s", domain))
@@ -251,12 +260,17 @@ func (config Config) validateAcmeConfig() *Config {
 				config.panic(fmt.Sprintf("ACME domain validation does not support domains ending with '.', was %s", domain))
 			}
 		}
-	}
-
-	if acmeProvider {
+	
+		// ACME provider checks
 		if _, supported := acmeProviders[config.Connection.Downstream.Tls.Acme.Provider]; !supported {
 			config.panic(fmt.Sprintf("ACME provider not supported: %s", config.Connection.Downstream.Tls.Acme.Provider))
 		}
+
+		// ACME email checks
+		if !govalidator.IsEmail(config.Connection.Downstream.Tls.Acme.Email) {
+			config.panic(fmt.Sprintf("ACME email must be a valid email address, but was %s", config.Connection.Downstream.Tls.Acme.Email))
+		}
+
 	}
 
 	return &config

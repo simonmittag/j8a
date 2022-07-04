@@ -349,6 +349,8 @@ func TestValidateAcmeDomainMissingFails(t *testing.T) {
 				Tls: Tls{
 					Acme: Acme{
 						Provider: "letsencrypt",
+						Email: "noreply@example.org",
+						AcceptTOS: true,
 					},
 				},
 			},
@@ -369,6 +371,8 @@ func TestValidateAcmeProviderLetsencrypt(t *testing.T) {
 					Acme: Acme{
 						Domains:  []string{"adyntest.com"},
 						Provider: "letsencrypt",
+						Email: "noreply@example.org",
+						AcceptTOS: true,
 					},
 				},
 			},
@@ -389,6 +393,8 @@ func TestValidateAcmeProviderLetsencryptWithMultipleSubdomains(t *testing.T) {
 					Acme: Acme{
 						Domains:  []string{"adyntest.com", "api.adyntest.com"},
 						Provider: "letsencrypt",
+						Email: "noreply@example.org",
+						AcceptTOS: true,
 					},
 				},
 			},
@@ -414,6 +420,8 @@ func TestValidateAcmeProviderLetsencryptFailsWithOneInvalidSubDomain(t *testing.
 					Acme: Acme{
 						Domains:  []string{"adyntest.com", "Iwannabeadomain"},
 						Provider: "letsencrypt",
+						Email: "noreply@example.org",
+						AcceptTOS: true,
 					},
 				},
 			},
@@ -442,6 +450,8 @@ func TestValidateAcmeProviderPort80(t *testing.T) {
 					Acme: Acme{
 						Domains:  []string{"adyntest.com"},
 						Provider: "letsencrypt",
+						Email: "noreply@example.org",
+						AcceptTOS: true,
 					},
 				},
 			},
@@ -467,6 +477,8 @@ func TestValidateAcmeProviderFailsWithMissingPort80(t *testing.T) {
 					Acme: Acme{
 						Domains:  []string{"adyntest.com"},
 						Provider: "letsencrypt",
+						Email: "noreply@example.org",
+						AcceptTOS: true,
 					},
 				},
 			},
@@ -493,6 +505,8 @@ func TestValidateAcmeProviderFailsWithCertSpecified(t *testing.T) {
 					Acme: Acme{
 						Domains:  []string{"adyntest.com"},
 						Provider: "letsencrypt",
+						Email: "noreply@example.org",
+						AcceptTOS: true,
 					},
 					Cert: "iwannabeacertwheni'mbig",
 				},
@@ -520,6 +534,8 @@ func TestValidateAcmeProviderFailsWithKeySpecified(t *testing.T) {
 					Acme: Acme{
 						Domains:  []string{"adyntest.com"},
 						Provider: "letsencrypt",
+						Email: "noreply@example.org",
+						AcceptTOS: true,
 					},
 					Key: "wheni'mbigIwannabeaprivatekey",
 				},
@@ -546,6 +562,8 @@ func TestValidateAcmeMissingProviderFails(t *testing.T) {
 				Tls: Tls{
 					Acme: Acme{
 						Domains: []string{"adyntest.com"},
+						Email: "noreply@example.org",
+						AcceptTOS: true,
 					},
 				},
 			},
@@ -554,6 +572,88 @@ func TestValidateAcmeMissingProviderFails(t *testing.T) {
 
 	config = config.validateAcmeConfig()
 	t.Errorf("config did not panic for missing provider")
+}
+
+//TestValidateAcmeMissingEmailFails
+func TestValidateAcmeEmailFails(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Logf("normal. config panic for missing ACME email")
+		}
+	}()
+
+	config := &Config{
+		Connection: Connection{
+			Downstream: Downstream{
+				Http: Http{Port: 80},
+				Tls: Tls{
+					Acme: Acme{
+						Domains: []string{"adyntest.com"},
+						Provider: "letsencrypt",
+						AcceptTOS: true,
+					},
+				},
+			},
+		},
+	}
+
+	config = config.validateAcmeConfig()
+	t.Errorf("config did not panic for missing email")
+}
+
+//TestValidateAcmeInvalidEmailFails
+func TestValidateAcmeInvalidFails(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Logf("normal. config panic for invalid ACME email")
+		}
+	}()
+
+	config := &Config{
+		Connection: Connection{
+			Downstream: Downstream{
+				Http: Http{Port: 80},
+				Tls: Tls{
+					Acme: Acme{
+						Domains: []string{"adyntest.com"},
+						Provider: "letsencrypt",
+						Email: "invalidemail@",
+						AcceptTOS: true,
+					},
+				},
+			},
+		},
+	}
+
+	config = config.validateAcmeConfig()
+	t.Errorf("config did not panic for invalid email")
+}
+
+//TestValidateAcmeAcceptTOSFails
+func TestValidateAcmeAcceptTOSFails(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Logf("normal. config panic for accept ACME TOS")
+		}
+	}()
+
+	config := &Config{
+		Connection: Connection{
+			Downstream: Downstream{
+				Http: Http{Port: 80},
+				Tls: Tls{
+					Acme: Acme{
+						Domains: []string{"adyntest.com"},
+						Provider: "letsencrypt",
+						Email: "noreply@example.org",
+					},
+				},
+			},
+		},
+	}
+
+	config = config.validateAcmeConfig()
+	t.Errorf("config did not panic for invalid email")
 }
 
 func TestSortRoutes(t *testing.T) {
@@ -767,6 +867,8 @@ func acmeConfigWith(domain string) *Config {
 					Acme: Acme{
 						Domains:  []string{domain},
 						Provider: "letsencrypt",
+						Email: "noreply@example.org",
+						AcceptTOS: true,
 					},
 				},
 			},
