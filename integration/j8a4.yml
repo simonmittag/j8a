@@ -11,6 +11,7 @@ connection:
       port: 443
       acme:
         provider: letsencrypt
+        email: noreply@example.org
         domains:
           - api.adyntest.com
           - adyntest.com
