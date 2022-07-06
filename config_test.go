@@ -272,18 +272,16 @@ func TestValidateAcmeEmail(t *testing.T) {
 				Http: Http{Port: 80},
 				Tls: Tls{
 					Acme: Acme{
-						Domains:  []string{"adyntest.com"},
-						Provider: "letsencrypt"},
+						Domains:   []string{"adyntest.com"},
+						Provider:  "letsencrypt",
+						Email:     "noreply@example.org",
+					},
 				},
 			},
 		},
 	}
 
 	config = config.validateAcmeConfig()
-
-	if config.Connection.Downstream.Tls.Acme.Email != "noreply@adyntest.com" {
-		t.Errorf("acme email not properly populated")
-	}
 }
 
 //TestValidateAcmeDomainInvalidLeadingDotFails
@@ -350,6 +348,7 @@ func TestValidateAcmeDomainMissingFails(t *testing.T) {
 				Tls: Tls{
 					Acme: Acme{
 						Provider: "letsencrypt",
+						Email: "noreply@example.org",
 					},
 				},
 			},
@@ -370,6 +369,7 @@ func TestValidateAcmeProviderLetsencrypt(t *testing.T) {
 					Acme: Acme{
 						Domains:  []string{"adyntest.com"},
 						Provider: "letsencrypt",
+						Email: "noreply@example.org",
 					},
 				},
 			},
@@ -390,6 +390,7 @@ func TestValidateAcmeProviderLetsencryptWithMultipleSubdomains(t *testing.T) {
 					Acme: Acme{
 						Domains:  []string{"adyntest.com", "api.adyntest.com"},
 						Provider: "letsencrypt",
+						Email: "noreply@example.org",
 					},
 				},
 			},
@@ -415,6 +416,7 @@ func TestValidateAcmeProviderLetsencryptFailsWithOneInvalidSubDomain(t *testing.
 					Acme: Acme{
 						Domains:  []string{"adyntest.com", "Iwannabeadomain"},
 						Provider: "letsencrypt",
+						Email: "noreply@example.org",
 					},
 				},
 			},
@@ -443,6 +445,7 @@ func TestValidateAcmeProviderPort80(t *testing.T) {
 					Acme: Acme{
 						Domains:  []string{"adyntest.com"},
 						Provider: "letsencrypt",
+						Email: "noreply@example.org",
 					},
 				},
 			},
@@ -468,6 +471,7 @@ func TestValidateAcmeProviderFailsWithMissingPort80(t *testing.T) {
 					Acme: Acme{
 						Domains:  []string{"adyntest.com"},
 						Provider: "letsencrypt",
+						Email: "noreply@example.org",
 					},
 				},
 			},
@@ -494,6 +498,7 @@ func TestValidateAcmeProviderFailsWithCertSpecified(t *testing.T) {
 					Acme: Acme{
 						Domains:  []string{"adyntest.com"},
 						Provider: "letsencrypt",
+						Email: "noreply@example.org",
 					},
 					Cert: "iwannabeacertwheni'mbig",
 				},
@@ -521,6 +526,7 @@ func TestValidateAcmeProviderFailsWithKeySpecified(t *testing.T) {
 					Acme: Acme{
 						Domains:  []string{"adyntest.com"},
 						Provider: "letsencrypt",
+						Email: "noreply@example.org",
 					},
 					Key: "wheni'mbigIwannabeaprivatekey",
 				},
@@ -547,6 +553,7 @@ func TestValidateAcmeMissingProviderFails(t *testing.T) {
 				Tls: Tls{
 					Acme: Acme{
 						Domains: []string{"adyntest.com"},
+						Email: "noreply@example.org",
 					},
 				},
 			},
@@ -555,6 +562,59 @@ func TestValidateAcmeMissingProviderFails(t *testing.T) {
 
 	config = config.validateAcmeConfig()
 	t.Errorf("config did not panic for missing provider")
+}
+
+//TestValidateAcmeMissingEmailFails
+func TestValidateAcmeEmailFails(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Logf("normal. config panic for missing ACME email")
+		}
+	}()
+
+	config := &Config{
+		Connection: Connection{
+			Downstream: Downstream{
+				Http: Http{Port: 80},
+				Tls: Tls{
+					Acme: Acme{
+						Domains: []string{"adyntest.com"},
+						Provider: "letsencrypt",
+					},
+				},
+			},
+		},
+	}
+
+	config = config.validateAcmeConfig()
+	t.Errorf("config did not panic for missing email")
+}
+
+//TestValidateAcmeInvalidEmailFails
+func TestValidateAcmeInvalidEmailFails(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Logf("normal. config panic for invalid ACME email")
+		}
+	}()
+
+	config := &Config{
+		Connection: Connection{
+			Downstream: Downstream{
+				Http: Http{Port: 80},
+				Tls: Tls{
+					Acme: Acme{
+						Domains: []string{"adyntest.com"},
+						Provider: "letsencrypt",
+						Email: "invalidemail@",
+					},
+				},
+			},
+		},
+	}
+
+	config = config.validateAcmeConfig()
+	t.Errorf("config did not panic for invalid email")
 }
 
 func TestSortRoutes(t *testing.T) {
@@ -768,6 +828,7 @@ func acmeConfigWith(domain string) *Config {
 					Acme: Acme{
 						Domains:  []string{domain},
 						Provider: "letsencrypt",
+						Email: "noreply@example.org",
 					},
 				},
 			},

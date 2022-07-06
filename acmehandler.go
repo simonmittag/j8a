@@ -9,27 +9,34 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
-	"github.com/rs/zerolog/log"
-	"github.com/simonmittag/lego/v4/certcrypto"
-	"github.com/simonmittag/lego/v4/certificate"
-	"github.com/simonmittag/lego/v4/challenge/http01"
-	"github.com/simonmittag/lego/v4/lego"
-	"github.com/simonmittag/lego/v4/registration"
 	"io/fs"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/rs/zerolog/log"
+	"github.com/simonmittag/lego/v4/certcrypto"
+	"github.com/simonmittag/lego/v4/certificate"
+	"github.com/simonmittag/lego/v4/challenge/http01"
+	"github.com/simonmittag/lego/v4/lego"
+	"github.com/simonmittag/lego/v4/registration"
 )
 
 const acmeChallenge = "/.well-known/acme-challenge/"
 
-var acmeProviders = map[string]string{
-	"letsencrypt":  "https://acme-v02.api.letsencrypt.org/directory",
-	"let'sencrypt": "https://acme-v02.api.letsencrypt.org/directory",
-	//"letsencrypt":  "https://acme-staging-v02.api.letsencrypt.org/directory",
-	//"let'sencrypt": "https://acme-staging-v02.api.letsencrypt.org/directory",
+type acmeProvider struct {
+	endpoint string
+	friendlyName string
+	tosURL string
+}
+
+var acmeProviders = map[string]acmeProvider {
+	"letsencrypt": acmeProvider{"https://acme-v02.api.letsencrypt.org/directory", "LetsEncrypt", "https://letsencrypt.org/repository/#let-s-encrypt-subscriber-agreement"},
+	"let'sencrypt": acmeProvider{"https://acme-v02.api.letsencrypt.org/directory", "LetsEncrypt", "https://letsencrypt.org/repository/#let-s-encrypt-subscriber-agreement"},
+	"letsencryptstaging": acmeProvider{"https://acme-staging-v02.api.letsencrypt.org/directory", "LetsEncrypt Staging", "https://letsencrypt.org/repository/#let-s-encrypt-subscriber-agreement"},
+	"let'sencryptstaging": acmeProvider{"https://acme-staging-v02.api.letsencrypt.org/directory", "LetsEncrypt Staging", "https://letsencrypt.org/repository/#let-s-encrypt-subscriber-agreement"},
 }
 
 type AcmeHandler struct {
