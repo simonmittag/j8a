@@ -67,7 +67,6 @@ func (config Config) panic(msg string) {
 	if len(msg) == 0 {
 		msg = "error loading config."
 	}
-	msg = msg + " exiting..."
 	log.WithLevel(zerolog.FatalLevel).Msg(msg)
 	panic(msg)
 }
@@ -86,7 +85,7 @@ func (config Config) readYmlFile(file string) *Config {
 	f, err := os.Open(file)
 	defer f.Close()
 	if err != nil {
-		msg := fmt.Sprintf("unable to load config from %s, exiting...", file)
+		msg := fmt.Sprintf("unable to load config from %s", file)
 		log.Fatal().Msg(msg)
 		panic(msg)
 	}
@@ -224,7 +223,7 @@ func (config Config) validateAcmeConfig() *Config {
 		if !acmeProvider {
 			config.panic("ACME provider must be specified in ACME config")
 		}
-	
+
 		if !acmeDomain {
 			config.panic("ACME domain must be specified in ACME config")
 		}
@@ -232,7 +231,7 @@ func (config Config) validateAcmeConfig() *Config {
 		if !acmeEmail {
 			config.panic("ACME email must be specified in ACME config")
 		}
-	
+
 		// ACME domain checks
 		for _, domain := range config.Connection.Downstream.Tls.Acme.Domains {
 			if !govalidator.IsDNSName(domain) {
@@ -255,7 +254,7 @@ func (config Config) validateAcmeConfig() *Config {
 				config.panic(fmt.Sprintf("ACME domain validation does not support domains ending with '.', was %s", domain))
 			}
 		}
-	
+
 		// ACME provider checks
 		if _, supported := acmeProviders[config.Connection.Downstream.Tls.Acme.Provider]; !supported {
 			config.panic(fmt.Sprintf("ACME provider not supported: %s", config.Connection.Downstream.Tls.Acme.Provider))
