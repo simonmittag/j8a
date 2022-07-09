@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 func main() {
@@ -42,7 +43,7 @@ func isFlagPassed(name string) bool {
 	return found
 }
 
-func recovery() {
+func recovery(prefix string) {
 	if r := recover(); r != nil {
 		pid := os.Getpid()
 		log.WithLevel(zerolog.FatalLevel).
@@ -60,6 +61,7 @@ func waitForSignal() {
 		case <-sig:
 			panic("os signal")
 		default:
+			time.Sleep(time.Second * 1)
 		}
 	}
 }
