@@ -43,7 +43,7 @@ func isFlagPassed(name string) bool {
 	return found
 }
 
-func recovery(prefix string) {
+func recovery() {
 	if r := recover(); r != nil {
 		pid := os.Getpid()
 		log.WithLevel(zerolog.FatalLevel).
