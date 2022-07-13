@@ -278,7 +278,7 @@ func (rt *Runtime) startListening() {
 
 	select {
 	case sig := <-err:
-		log.Fatal().Err(sig).Msg("... j8a exiting")
+		log.Fatal().Err(sig).Msg(sig.Error())
 		panic(sig.Error())
 	}
 }

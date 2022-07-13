@@ -49,6 +49,14 @@ func initServerID() {
 	log.Logger = log.With().Str("srvId", ID).Logger()
 }
 
+//ServerID is a unique identifier made up as md5 of hostname and version.
+//initServerId creates a unique ID for the server log.
+func initPID() {
+	pid := os.Getpid()
+	log.Info().Int("pid", pid).Msg("pid determined")
+	log.Logger = log.With().Int("pid", pid).Logger()
+}
+
 func getHost() string {
 	host := os.Getenv("HOSTNAME")
 	if len(host) == 0 {
@@ -93,5 +101,6 @@ func initLogger() {
 
 	initServerID()
 	initTime()
+	initPID()
 	log.Info().Msgf("setting global log level to %s", logLevel)
 }
