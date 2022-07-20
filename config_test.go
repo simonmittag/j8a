@@ -272,9 +272,9 @@ func TestValidateAcmeEmail(t *testing.T) {
 				Http: Http{Port: 80},
 				Tls: Tls{
 					Acme: Acme{
-						Domains:   []string{"adyntest.com"},
-						Provider:  "letsencrypt",
-						Email:     "noreply@example.org",
+						Domains:  []string{"adyntest.com"},
+						Provider: "letsencrypt",
+						Email:    "noreply@example.org",
 					},
 				},
 			},
@@ -348,7 +348,7 @@ func TestValidateAcmeDomainMissingFails(t *testing.T) {
 				Tls: Tls{
 					Acme: Acme{
 						Provider: "letsencrypt",
-						Email: "noreply@example.org",
+						Email:    "noreply@example.org",
 					},
 				},
 			},
@@ -369,7 +369,7 @@ func TestValidateAcmeProviderLetsencrypt(t *testing.T) {
 					Acme: Acme{
 						Domains:  []string{"adyntest.com"},
 						Provider: "letsencrypt",
-						Email: "noreply@example.org",
+						Email:    "noreply@example.org",
 					},
 				},
 			},
@@ -390,7 +390,7 @@ func TestValidateAcmeProviderLetsencryptWithMultipleSubdomains(t *testing.T) {
 					Acme: Acme{
 						Domains:  []string{"adyntest.com", "api.adyntest.com"},
 						Provider: "letsencrypt",
-						Email: "noreply@example.org",
+						Email:    "noreply@example.org",
 					},
 				},
 			},
@@ -416,7 +416,7 @@ func TestValidateAcmeProviderLetsencryptFailsWithOneInvalidSubDomain(t *testing.
 					Acme: Acme{
 						Domains:  []string{"adyntest.com", "Iwannabeadomain"},
 						Provider: "letsencrypt",
-						Email: "noreply@example.org",
+						Email:    "noreply@example.org",
 					},
 				},
 			},
@@ -445,7 +445,7 @@ func TestValidateAcmeProviderPort80(t *testing.T) {
 					Acme: Acme{
 						Domains:  []string{"adyntest.com"},
 						Provider: "letsencrypt",
-						Email: "noreply@example.org",
+						Email:    "noreply@example.org",
 					},
 				},
 			},
@@ -471,7 +471,7 @@ func TestValidateAcmeProviderFailsWithMissingPort80(t *testing.T) {
 					Acme: Acme{
 						Domains:  []string{"adyntest.com"},
 						Provider: "letsencrypt",
-						Email: "noreply@example.org",
+						Email:    "noreply@example.org",
 					},
 				},
 			},
@@ -498,7 +498,7 @@ func TestValidateAcmeProviderFailsWithCertSpecified(t *testing.T) {
 					Acme: Acme{
 						Domains:  []string{"adyntest.com"},
 						Provider: "letsencrypt",
-						Email: "noreply@example.org",
+						Email:    "noreply@example.org",
 					},
 					Cert: "iwannabeacertwheni'mbig",
 				},
@@ -526,7 +526,7 @@ func TestValidateAcmeProviderFailsWithKeySpecified(t *testing.T) {
 					Acme: Acme{
 						Domains:  []string{"adyntest.com"},
 						Provider: "letsencrypt",
-						Email: "noreply@example.org",
+						Email:    "noreply@example.org",
 					},
 					Key: "wheni'mbigIwannabeaprivatekey",
 				},
@@ -553,7 +553,7 @@ func TestValidateAcmeMissingProviderFails(t *testing.T) {
 				Tls: Tls{
 					Acme: Acme{
 						Domains: []string{"adyntest.com"},
-						Email: "noreply@example.org",
+						Email:   "noreply@example.org",
 					},
 				},
 			},
@@ -578,7 +578,7 @@ func TestValidateAcmeEmailFails(t *testing.T) {
 				Http: Http{Port: 80},
 				Tls: Tls{
 					Acme: Acme{
-						Domains: []string{"adyntest.com"},
+						Domains:  []string{"adyntest.com"},
 						Provider: "letsencrypt",
 					},
 				},
@@ -604,9 +604,9 @@ func TestValidateAcmeInvalidEmailFails(t *testing.T) {
 				Http: Http{Port: 80},
 				Tls: Tls{
 					Acme: Acme{
-						Domains: []string{"adyntest.com"},
+						Domains:  []string{"adyntest.com"},
 						Provider: "letsencrypt",
-						Email: "invalidemail@",
+						Email:    "invalidemail@",
 					},
 				},
 			},
@@ -828,7 +828,7 @@ func acmeConfigWith(domain string) *Config {
 					Acme: Acme{
 						Domains:  []string{domain},
 						Provider: "letsencrypt",
-						Email: "noreply@example.org",
+						Email:    "noreply@example.org",
 					},
 				},
 			},
@@ -903,5 +903,28 @@ func TestFqdnValidate(t *testing.T) {
 	}
 	if isd.IsDomain("foo.nelbourne") {
 		t.Error("foo.nelbourne should not have fqdn validated")
+	}
+}
+
+func TestParseDisableXRequestInfoTrue(t *testing.T) {
+	configJson := []byte("{\"disableXRequestInfo\": true}")
+	config := new(Config).parse(configJson)
+
+	got := config.DisableXRequestInfo
+	want := true
+
+	if got != want {
+		t.Error("X-Request-Info should be disabled")
+	}
+}
+
+func TestParseDisableXRequestInfoFalse(t *testing.T) {
+	config := new(Config).parse([]byte(""))
+
+	got := config.DisableXRequestInfo
+	want := false
+
+	if got != want {
+		t.Error("X-Request-Info should be enabled")
 	}
 }

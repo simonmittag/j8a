@@ -363,7 +363,9 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 	//this is separate context for abort. abort is manual close
 	proxy.Dwn.Aborted = request.Context().Done()
 
-	proxy.XRequestInfo = parseXRequestInfo(request)
+	if !Runner.DisableXRequestInfo {
+		proxy.XRequestInfo = parseXRequestInfo(request)
+	}
 	proxy.Dwn.Path = request.URL.EscapedPath()
 	proxy.Dwn.URI = request.URL.RequestURI()
 	proxy.Dwn.AcceptEncoding = parseAcceptEncoding(request)

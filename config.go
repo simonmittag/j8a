@@ -21,11 +21,12 @@ import (
 
 //Config is the system wide configuration for j8a
 type Config struct {
-	Policies   map[string]Policy
-	Routes     Routes
-	Jwt        map[string]*Jwt
-	Resources  map[string][]ResourceMapping
-	Connection Connection
+	Policies            map[string]Policy
+	Routes              Routes
+	Jwt                 map[string]*Jwt
+	Resources           map[string][]ResourceMapping
+	Connection          Connection
+	DisableXRequestInfo bool
 }
 
 const HTTP = "HTTP"
