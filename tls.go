@@ -46,7 +46,10 @@ type TlsLink struct {
 }
 
 func (t TlsLink) expiresTooCloseForComfort() bool {
-	gracePeriodDays := time.Hour * 24 * time.Duration(Runner.Connection.Downstream.Tls.Acme.GracePeriodDays)
+	gracePeriodDays := Days30
+	if Runner.Connection.Downstream.Tls.Acme.GracePeriodDays > 0 {
+		gracePeriodDays = time.Hour * 24 * time.Duration(Runner.Connection.Downstream.Tls.Acme.GracePeriodDays)
+	}
 	return time.Duration(t.remainingValidity) <= gracePeriodDays
 }
 
