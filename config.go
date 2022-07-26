@@ -209,6 +209,12 @@ func (config Config) validateAcmeConfig() *Config {
 	acmeEmail := len(config.Connection.Downstream.Tls.Acme.Email) > 0
 
 	if acmeProvider || acmeDomain || acmeEmail {
+		if config.Connection.Downstream.Tls.Acme.GracePeriodDays == 0 {
+			config.Connection.Downstream.Tls.Acme.GracePeriodDays = 30
+		} else if config.Connection.Downstream.Tls.Acme.GracePeriodDays > 30 {
+			config.panic("ACME grace period must be between 1 and 30 days")
+		}
+
 		if len(config.Connection.Downstream.Tls.Cert) > 0 {
 			config.panic("cannot specify TLS cert with ACME configuration, it would be overridden.")
 		}

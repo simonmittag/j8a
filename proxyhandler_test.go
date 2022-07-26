@@ -659,7 +659,8 @@ func mockRuntime() *Runtime {
 					},
 					Tls: Tls{
 						Acme: Acme{
-							Domains: []string{"localhost"},
+							Domains:         []string{"localhost"},
+							GracePeriodDays: 30,
 						}},
 				},
 			},

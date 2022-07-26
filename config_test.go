@@ -284,6 +284,112 @@ func TestValidateAcmeEmail(t *testing.T) {
 	config = config.validateAcmeConfig()
 }
 
+//TestValidateAcmeEmail
+func TestValidateAcmeGracePeriod30(t *testing.T) {
+	config := &Config{
+		Connection: Connection{
+			Downstream: Downstream{
+				Http: Http{Port: 80},
+				Tls: Tls{
+					Acme: Acme{
+						Domains:         []string{"adyntest.com"},
+						Provider:        "letsencrypt",
+						Email:           "noreply@example.org",
+						GracePeriodDays: 30,
+					},
+				},
+			},
+		},
+	}
+
+	config = config.validateAcmeConfig()
+
+	want := 30
+	got := config.Connection.Downstream.Tls.Acme.GracePeriodDays
+	if want != got {
+		t.Errorf("want grace period days %v, got %v", want, got)
+	}
+}
+
+func TestValidateAcmeGracePeriod15(t *testing.T) {
+	config := &Config{
+		Connection: Connection{
+			Downstream: Downstream{
+				Http: Http{Port: 80},
+				Tls: Tls{
+					Acme: Acme{
+						Domains:         []string{"adyntest.com"},
+						Provider:        "letsencrypt",
+						Email:           "noreply@example.org",
+						GracePeriodDays: 15,
+					},
+				},
+			},
+		},
+	}
+
+	config = config.validateAcmeConfig()
+
+	want := 15
+	got := config.Connection.Downstream.Tls.Acme.GracePeriodDays
+	if want != got {
+		t.Errorf("want grace period days %v, got %v", want, got)
+	}
+}
+
+func TestValidateDefaultAcmeGracePeriod(t *testing.T) {
+	config := &Config{
+		Connection: Connection{
+			Downstream: Downstream{
+				Http: Http{Port: 80},
+				Tls: Tls{
+					Acme: Acme{
+						Domains:  []string{"adyntest.com"},
+						Provider: "letsencrypt",
+						Email:    "noreply@example.org",
+					},
+				},
+			},
+		},
+	}
+
+	config = config.validateAcmeConfig()
+
+	want := 30
+	got := config.Connection.Downstream.Tls.Acme.GracePeriodDays
+	if want != got {
+		t.Errorf("want grace period days %v, got %v", want, got)
+	}
+}
+
+func TestValidateAcmeGracePeriodFailsGreater30(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("config should have panicked with 31 days acme grace period")
+		} else {
+			t.Logf("normal config panic for 31 days acme grace period")
+		}
+	}()
+
+	config := &Config{
+		Connection: Connection{
+			Downstream: Downstream{
+				Http: Http{Port: 80},
+				Tls: Tls{
+					Acme: Acme{
+						Domains:         []string{"adyntest.com"},
+						Provider:        "letsencrypt",
+						Email:           "noreply@example.org",
+						GracePeriodDays: 31,
+					},
+				},
+			},
+		},
+	}
+
+	config = config.validateAcmeConfig()
+}
+
 //TestValidateAcmeDomainInvalidLeadingDotFails
 func TestValidateValidateAcmeDomainInvalidLeadingDotFails(t *testing.T) {
 	defer func() {

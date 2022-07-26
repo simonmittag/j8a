@@ -15,6 +15,7 @@ connection:
         domains:
           - api.adyntest.com
           - adyntest.com
+        gracePeriodDays: 30
   upstream:
     socketTimeoutSeconds: 10
     readTimeoutSeconds: 30
