@@ -62,6 +62,9 @@ type Acme struct {
 
 	// Email for registration.
 	Email string
+
+	// Number of days before certificate expiry that triggers first renewal attempt
+	GracePeriodDays int
 }
 
 // Upstream connection params for remote servers that are being proxied

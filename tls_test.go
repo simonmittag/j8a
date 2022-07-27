@@ -19,6 +19,7 @@ func TestPDurationAsString(t *testing.T) {
 }
 
 func TestTlsLinkRemainingValidity29DaysTooCloseForComfort(t *testing.T) {
+	Runner = mockRuntime()
 	t1 := TlsLink{remainingValidity: PDuration(time.Hour * 24 * 29)}
 	if !t1.expiresTooCloseForComfort() {
 		t.Errorf("did not fire too close for comfort, but 29 days is")
@@ -26,6 +27,7 @@ func TestTlsLinkRemainingValidity29DaysTooCloseForComfort(t *testing.T) {
 }
 
 func TestTlsLinkRemainingValidity31DaysNotTooCloseForComfort(t *testing.T) {
+	Runner = mockRuntime()
 	t1 := TlsLink{remainingValidity: PDuration(time.Hour * 24 * 31)}
 	if t1.expiresTooCloseForComfort() {
 		t.Errorf("did fire too close for comfort but 31 days is not")
@@ -33,6 +35,7 @@ func TestTlsLinkRemainingValidity31DaysNotTooCloseForComfort(t *testing.T) {
 }
 
 func TestTlsLinkTotalValidity397DaysWithinLegalBrowserPeriod(t *testing.T) {
+	Runner = mockRuntime()
 	t1 := TlsLink{
 		remainingValidity: PDuration(time.Hour * 24 * 397),
 		browserValidity:   PDuration(time.Hour * 24 * 398),
@@ -43,6 +46,7 @@ func TestTlsLinkTotalValidity397DaysWithinLegalBrowserPeriod(t *testing.T) {
 }
 
 func TestTlsLinkTotalValidity399DaysNotWithinLegalBrowserPeriod(t *testing.T) {
+	Runner = mockRuntime()
 	t1 := TlsLink{
 		remainingValidity: PDuration(time.Hour * 24 * 399),
 		browserValidity:   PDuration(time.Hour * 24 * 398),
