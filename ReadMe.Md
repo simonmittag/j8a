@@ -15,7 +15,7 @@
 ## What's new?
 
 ### v0.9.6 (01/08/2022)
-* allows go {{template}} variables in config file to substituate env vars.
+* allows go `{{template}}` variables in config file to substituate env vars.
 * new params for acmeEmail, gracePeriodDays to configure letsencrypt provider
 * new param for disableXRequestInfo to disable debug mode
 
