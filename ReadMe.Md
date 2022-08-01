@@ -14,20 +14,16 @@
 
 ## What's new?
 
+### v0.9.6 (01/08/2022)
+* allows go {{template}} variables in config file to substituate env vars.
+* new params for acmeEmail, gracePeriodDays to configure letsencrypt provider
+* new param for disableXRequestInfo to disable debug mode
+
 ### v0.9.5 (16/06/2022)
 * now logging ulimit (max open files) so admin has visibility next to maxopenconns
 
 ### v0.9.4 (14/06/2022)
 * changes to standard log levels. All server internal messages now at info, downstream at debug, upstream data at trace level.
-
-### v0.9.3 (12/06/2022)
-* Added homebrew distribution under brew tap simonmittag/cli
-* Added thread logging and upstream connection logging
-* bumped gojq 0.12.8, lestrrat-go/jwx 1.2.25, klauspost/compress 1.15.6
-
-### v0.9.2 (12/04/2022)
-* Shorter default http upstream timeout, for details see https://j8a.io/docs
-* upgraded jwx dependency to v1.2.22
 
 ## What is j8a?
 
