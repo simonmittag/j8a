@@ -21,7 +21,7 @@ require (
 
 require (
 	github.com/andybalholm/brotli v1.0.4
-	github.com/klauspost/compress v1.15.9
+	github.com/klauspost/compress v1.15.11
 	github.com/simonmittag/procspy v0.0.4
 )
 
