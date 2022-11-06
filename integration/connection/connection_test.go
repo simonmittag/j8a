@@ -62,7 +62,7 @@ func TestConnection_100ConcurrentTCPConnectionsUsingHTTP11(t *testing.T) {
 	ConcurrentHTTP11ConnectionsSucceed(100, t)
 }
 
-//this test covers all codes >=400 we just use 404 cause it's easy to evoke.
+// this test covers all codes >=400 we just use 404 cause it's easy to evoke.
 func TestConnection_404ResponseClosesDownstreamConnectionUsingHTTP11(t *testing.T) {
 	//step 1 we connect to j8a with net.dial
 	c, err := net.Dial("tcp", ":8080")
@@ -302,12 +302,12 @@ func ConcurrentHTTP11ConnectionsSucceed(total int, t *testing.T) {
 // upstream resource configured within j8a.
 func TestRuntime_CountResourceIps(t *testing.T) {
 	proc, _ := process.NewProcess(int32(os.Getpid()))
-	ad, _ := net.LookupIP("adyntest.com")
-	ips := map[string][]net.IP{"adyntest.com": ad}
+	ad, _ := net.LookupIP("jsonplaceholder.typicode.com")
+	ips := map[string][]net.IP{"jsonplaceholder.typicode.com": ad}
 
 	c := http.Client{Transport: &http.Transport{IdleConnTimeout: 0}}
 
-	resp, _ := c.Get("https://adyntest.com/about")
+	resp, _ := c.Get("https://jsonplaceholder.typicode.com/")
 	if resp != nil {
 		defer resp.Body.Close()
 	}
@@ -317,9 +317,9 @@ func TestRuntime_CountResourceIps(t *testing.T) {
 	rt := j8a.Runtime{
 		Config: j8a.Config{
 			Resources: map[string][]j8a.ResourceMapping{
-				"adyntest": []j8a.ResourceMapping{{
+				"jsonplaceholder.typicode.com": []j8a.ResourceMapping{{
 					URL: j8a.URL{
-						Host: "adyntest.com",
+						Host: "jsonplaceholder.typicode.com",
 						Port: 443,
 					},
 				}},
