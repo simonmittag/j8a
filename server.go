@@ -19,15 +19,15 @@ import (
 	"time"
 )
 
-//Version is the server version
+// Version is the server version
 const Server string = "Server"
 
-var Version string = "v0.9.6"
+var Version string = "v0.9.7"
 
-//ID is a unique server ID
+// ID is a unique server ID
 var ID string = "unknown"
 
-//Runtime struct defines runtime environment wrapper for a config.
+// Runtime struct defines runtime environment wrapper for a config.
 type Runtime struct {
 	Config
 	Start             time.Time
@@ -137,7 +137,7 @@ func (cw *ConnectionWatcher) UpdateMaxUp(c uint64) {
 	}
 }
 
-//Runner is the Live environment of the server
+// Runner is the Live environment of the server
 var Runner *Runtime
 
 var Boot sync.WaitGroup = sync.WaitGroup{}
@@ -169,7 +169,7 @@ func (zla *zerologAdapter) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
-//BootStrap starts up the server from a ServerConfig
+// BootStrap starts up the server from a ServerConfig
 func BootStrap() {
 	initLogger()
 
@@ -285,7 +285,7 @@ func (rt *Runtime) startListening() {
 
 type HandlerDelegate struct{}
 
-//TODO regex and perftest this function.
+// TODO regex and perftest this function.
 var acmeRex, _ = regexp.Compile("/.well-known/acme-challenge/")
 var aboutRex, _ = regexp.Compile("^" + aboutPath + "$")
 
