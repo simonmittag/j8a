@@ -15,7 +15,7 @@ require (
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/simonmittag/lego/v4 v4.4.1-0.20210801233615-446f36e1d8f3
 	github.com/simonmittag/ws v1.0.42
-	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2
+	golang.org/x/net v0.7.0
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 )
 
@@ -46,7 +46,7 @@ require (
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	golang.org/x/crypto v0.0.0-20220427172511-eb4f295cb31f // indirect
 	golang.org/x/sys v0.5.0 // indirect
-	golang.org/x/text v0.3.8 // indirect
+	golang.org/x/text v0.7.0 // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
