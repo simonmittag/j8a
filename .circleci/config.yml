@@ -522,7 +522,7 @@ jobs:
   performanceHttpLowPost:
     working_directory: ~/project/tmp
     docker:
-      - image: simonmittag/wrk:go1.18
+      - image: simonmittag/wrk:go1.20
     resource_class: medium
     environment:
       LOGLEVEL: WARN
@@ -614,7 +614,7 @@ jobs:
   performanceHttpLowPostJwt:
     working_directory: ~/project/tmp
     docker:
-      - image: simonmittag/wrk:go1.18
+      - image: simonmittag/wrk:go1.20
     resource_class: medium
     environment:
       LOGLEVEL: WARN
@@ -706,7 +706,7 @@ jobs:
   performanceTlsLowPost:
     working_directory: ~/project/tmp
     docker:
-      - image: simonmittag/wrk:go1.18
+      - image: simonmittag/wrk:go1.20
     resource_class: medium
     environment:
       LOGLEVEL: WARN
@@ -798,7 +798,7 @@ jobs:
   performanceHttpHighPost:
     working_directory: ~/project/tmp
     docker:
-      - image: simonmittag/wrk:go1.18
+      - image: simonmittag/wrk:go1.20
     resource_class: medium
     environment:
       LOGLEVEL: WARN
@@ -890,7 +890,7 @@ jobs:
   performanceTlsHighPost:
     working_directory: ~/project/tmp
     docker:
-      - image: simonmittag/wrk:go1.18
+      - image: simonmittag/wrk:go1.20
     resource_class: medium
     environment:
       LOGLEVEL: WARN
