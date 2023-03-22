@@ -280,7 +280,7 @@ jobs:
   unit:
     resource_class: medium
     docker:
-      - image: cimg/go:1.19 #
+      - image: cimg/go:1.20 #
     environment:
       LOGCOLOR: TRUE
       LOGLEVEL: TRACE
@@ -293,7 +293,7 @@ jobs:
   testsum:
     resource_class: medium
     docker:
-      - image: cimg/go:1.19
+      - image: cimg/go:1.20
     environment:
       TEST_RESULTS: /tmp/test-results
     steps:
@@ -312,7 +312,7 @@ jobs:
   codeclimate:
     resource_class: medium
     docker:
-      - image: cimg/go:1.19
+      - image: cimg/go:1.20
     environment:
       TEST_RESULTS: /tmp/test-results
       LOGLEVEL: TRACE
@@ -350,7 +350,7 @@ jobs:
     working_directory: ~/project/tmp
     resource_class: medium
     docker:
-      - image: cimg/go:1.19
+      - image: cimg/go:1.20
     steps:
       - intjob:
           test: github.com/simonmittag/j8a/integration/connection
@@ -359,7 +359,7 @@ jobs:
     working_directory: ~/project/tmp
     resource_class: medium
     docker:
-      - image: cimg/go:1.19
+      - image: cimg/go:1.20
     steps:
       - intjob:
           test: github.com/simonmittag/j8a/integration/content
@@ -368,7 +368,7 @@ jobs:
     working_directory: ~/project/tmp
     resource_class: medium
     docker:
-      - image: cimg/go:1.19
+      - image: cimg/go:1.20
     steps:
       - intjob:
           test: github.com/simonmittag/j8a/integration/downstreamHttp
@@ -377,7 +377,7 @@ jobs:
     working_directory: ~/project/tmp
     resource_class: medium
     docker:
-      - image: cimg/go:1.19
+      - image: cimg/go:1.20
     steps:
       - intjob:
           test: github.com/simonmittag/j8a/integration/downstreamTls
@@ -386,7 +386,7 @@ jobs:
     working_directory: ~/project/tmp
     resource_class: medium
     docker:
-      - image: cimg/go:1.19
+      - image: cimg/go:1.20
     steps:
       - intjob:
           test: github.com/simonmittag/j8a/integration/headers
@@ -395,7 +395,7 @@ jobs:
     working_directory: ~/project/tmp
     resource_class: medium
     docker:
-      - image: cimg/go:1.19
+      - image: cimg/go:1.20
     steps:
       - intjob:
           test: github.com/simonmittag/j8a/integration/jwt
@@ -404,7 +404,7 @@ jobs:
     working_directory: ~/project/tmp
     resource_class: medium
     docker:
-      - image: cimg/go:1.19
+      - image: cimg/go:1.20
     steps:
       - intjob:
           test: github.com/simonmittag/j8a/integration/protocol
@@ -413,7 +413,7 @@ jobs:
     working_directory: ~/project/tmp
     resource_class: medium
     docker:
-      - image: cimg/go:1.19
+      - image: cimg/go:1.20
     steps:
       - intjob:
           test: github.com/simonmittag/j8a/integration/responsecode
@@ -422,7 +422,7 @@ jobs:
     working_directory: ~/project/tmp
     resource_class: medium
     docker:
-      - image: cimg/go:1.19
+      - image: cimg/go:1.20
     steps:
       - intjob:
           test: github.com/simonmittag/j8a/integration/upstream
@@ -431,7 +431,7 @@ jobs:
     working_directory: ~/project/tmp
     resource_class: medium
     docker:
-      - image: cimg/go:1.19
+      - image: cimg/go:1.20
     steps:
       - intjob:
           test: github.com/simonmittag/j8a/integration/websocket
