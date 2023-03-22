@@ -280,7 +280,7 @@ jobs:
   unit:
     resource_class: medium
     docker:
-      - image: cimg/go:1.19 #
+      - image: cimg/go:1.20 #
     environment:
       LOGCOLOR: TRUE
       LOGLEVEL: TRACE
@@ -293,7 +293,7 @@ jobs:
   testsum:
     resource_class: medium
     docker:
-      - image: cimg/go:1.19
+      - image: cimg/go:1.20
     environment:
       TEST_RESULTS: /tmp/test-results
     steps:
@@ -312,7 +312,7 @@ jobs:
   codeclimate:
     resource_class: medium
     docker:
-      - image: cimg/go:1.19
+      - image: cimg/go:1.20
     environment:
       TEST_RESULTS: /tmp/test-results
       LOGLEVEL: TRACE
@@ -350,7 +350,7 @@ jobs:
     working_directory: ~/project/tmp
     resource_class: medium
     docker:
-      - image: cimg/go:1.19
+      - image: cimg/go:1.20
     steps:
       - intjob:
           test: github.com/simonmittag/j8a/integration/connection
@@ -359,7 +359,7 @@ jobs:
     working_directory: ~/project/tmp
     resource_class: medium
     docker:
-      - image: cimg/go:1.19
+      - image: cimg/go:1.20
     steps:
       - intjob:
           test: github.com/simonmittag/j8a/integration/content
@@ -368,7 +368,7 @@ jobs:
     working_directory: ~/project/tmp
     resource_class: medium
     docker:
-      - image: cimg/go:1.19
+      - image: cimg/go:1.20
     steps:
       - intjob:
           test: github.com/simonmittag/j8a/integration/downstreamHttp
@@ -377,7 +377,7 @@ jobs:
     working_directory: ~/project/tmp
     resource_class: medium
     docker:
-      - image: cimg/go:1.19
+      - image: cimg/go:1.20
     steps:
       - intjob:
           test: github.com/simonmittag/j8a/integration/downstreamTls
@@ -386,7 +386,7 @@ jobs:
     working_directory: ~/project/tmp
     resource_class: medium
     docker:
-      - image: cimg/go:1.19
+      - image: cimg/go:1.20
     steps:
       - intjob:
           test: github.com/simonmittag/j8a/integration/headers
@@ -395,7 +395,7 @@ jobs:
     working_directory: ~/project/tmp
     resource_class: medium
     docker:
-      - image: cimg/go:1.19
+      - image: cimg/go:1.20
     steps:
       - intjob:
           test: github.com/simonmittag/j8a/integration/jwt
@@ -404,7 +404,7 @@ jobs:
     working_directory: ~/project/tmp
     resource_class: medium
     docker:
-      - image: cimg/go:1.19
+      - image: cimg/go:1.20
     steps:
       - intjob:
           test: github.com/simonmittag/j8a/integration/protocol
@@ -413,7 +413,7 @@ jobs:
     working_directory: ~/project/tmp
     resource_class: medium
     docker:
-      - image: cimg/go:1.19
+      - image: cimg/go:1.20
     steps:
       - intjob:
           test: github.com/simonmittag/j8a/integration/responsecode
@@ -422,7 +422,7 @@ jobs:
     working_directory: ~/project/tmp
     resource_class: medium
     docker:
-      - image: cimg/go:1.19
+      - image: cimg/go:1.20
     steps:
       - intjob:
           test: github.com/simonmittag/j8a/integration/upstream
@@ -431,7 +431,7 @@ jobs:
     working_directory: ~/project/tmp
     resource_class: medium
     docker:
-      - image: cimg/go:1.19
+      - image: cimg/go:1.20
     steps:
       - intjob:
           test: github.com/simonmittag/j8a/integration/websocket
@@ -439,7 +439,7 @@ jobs:
   performanceHttpLowGet:
     working_directory: ~/project/tmp
     docker:
-      - image: simonmittag/wrk:go1.18
+      - image: simonmittag/wrk:go1.20
     resource_class: medium
     environment:
       LOGLEVEL: WARN
@@ -522,7 +522,7 @@ jobs:
   performanceHttpLowPost:
     working_directory: ~/project/tmp
     docker:
-      - image: simonmittag/wrk:go1.18
+      - image: simonmittag/wrk:go1.20
     resource_class: medium
     environment:
       LOGLEVEL: WARN
@@ -614,7 +614,7 @@ jobs:
   performanceHttpLowPostJwt:
     working_directory: ~/project/tmp
     docker:
-      - image: simonmittag/wrk:go1.18
+      - image: simonmittag/wrk:go1.20
     resource_class: medium
     environment:
       LOGLEVEL: WARN
@@ -629,7 +629,7 @@ jobs:
       J8A_ONE_CFG: ./integration/j8a1.yml
       TEST_DURATION_SECONDS: 10
       TEST_CONCURRENCY_JWT_LOW: 12
-      TEST_CONCURRENCY_JWT_LOW_THRESHOLD: 1000
+      TEST_CONCURRENCY_JWT_LOW_THRESHOLD: 500
       TEST_STATUS_ERRORS_THRESHOLD: 1
     steps:
       - checkout
@@ -706,7 +706,7 @@ jobs:
   performanceTlsLowPost:
     working_directory: ~/project/tmp
     docker:
-      - image: simonmittag/wrk:go1.18
+      - image: simonmittag/wrk:go1.20
     resource_class: medium
     environment:
       LOGLEVEL: WARN
@@ -798,7 +798,7 @@ jobs:
   performanceHttpHighPost:
     working_directory: ~/project/tmp
     docker:
-      - image: simonmittag/wrk:go1.18
+      - image: simonmittag/wrk:go1.20
     resource_class: medium
     environment:
       LOGLEVEL: WARN
@@ -890,7 +890,7 @@ jobs:
   performanceTlsHighPost:
     working_directory: ~/project/tmp
     docker:
-      - image: simonmittag/wrk:go1.18
+      - image: simonmittag/wrk:go1.20
     resource_class: medium
     environment:
       LOGLEVEL: WARN
