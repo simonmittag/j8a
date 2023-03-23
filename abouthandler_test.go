@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-//this testHandler binds the mock HTTP server to proxyHandler.
+// this testHandler binds the mock HTTP server to proxyHandler.
 type AboutHttpHandler struct{}
 
 func (t AboutHttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
