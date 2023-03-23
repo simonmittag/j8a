@@ -38,14 +38,14 @@ const (
 	Sep                   = " "
 )
 
-//RFC7231 4.2.1
+// RFC7231 4.2.1
 var httpSafeMethods []string = []string{"GET", "HEAD", "OPTIONS", "TRACE"}
 
-//RFC7231 4.2.2
+// RFC7231 4.2.2
 var httpIdempotentMethods []string = []string{"PUT", "DELETE"}
 var httpRepeatableMethods = append(httpSafeMethods, httpIdempotentMethods...)
 
-//RFC7231 4.3
+// RFC7231 4.3
 var httpLegalMethods []string = append(httpRepeatableMethods, []string{"POST", "CONNECT"}...)
 
 type ContentEncoding string
@@ -217,14 +217,14 @@ type Resp struct {
 	ContentEncoding ContentEncoding
 }
 
-//Up wraps upstream
+// Up wraps upstream
 type Up struct {
 	Atmpt  *Atmpt
 	Atmpts []Atmpt
 	Count  int
 }
 
-//Down wraps downstream exchange
+// Down wraps downstream exchange
 type Down struct {
 	Req            *http.Request
 	Resp           Resp
@@ -712,9 +712,12 @@ func (proxy *Proxy) setRoute(route *Route) {
 	proxy.Route = route
 }
 
-//RFC7230, section 3.3.2
+// RFC7230, section 3.3.2
 func (proxy *Proxy) setContentLengthHeader() {
-	proxy.Dwn.Resp.ContentLength = int64(len(*proxy.Dwn.Resp.Body))
+	proxy.Dwn.Resp.ContentLength = 0
+	if proxy.Dwn.Resp.Body != nil {
+		proxy.Dwn.Resp.ContentLength = int64(len(*proxy.Dwn.Resp.Body))
+	}
 
 	if te := proxy.Dwn.Resp.Writer.Header().Get(transferEncoding); len(te) != 0 ||
 		//we set 0 for status code 204 because of RFC7230, 4.3.7, see: https://tools.ietf.org/html/rfc7231#page-31
@@ -745,7 +748,7 @@ func (proxy *Proxy) pipeDownstreamResponse() {
 	proxy.Dwn.Resp.Writer.Write(*proxy.Dwn.Resp.Body)
 }
 
-//status Code must be last, no headers may be written after this one.
+// status Code must be last, no headers may be written after this one.
 func (proxy *Proxy) copyUpstreamStatusCodeHeader() {
 	proxy.respondWith(proxy.Up.Atmpt.StatusCode, "none")
 }
@@ -769,7 +772,7 @@ func (proxy *Proxy) hasLegalHTTPMethod() bool {
 	return false
 }
 
-//get bearer token from request. feed into lib. check signature. check expiry. return true || false.
+// get bearer token from request. feed into lib. check signature. check expiry. return true || false.
 func (proxy *Proxy) validateJwt() bool {
 	var token string = ""
 	var err error

@@ -92,21 +92,21 @@ var httpResponses = map[int]string{
 	599: "network connect timeout error",
 }
 
-//AboutResponse exposes standard environment
+// AboutResponse exposes standard environment
 type AboutResponse struct {
 	J8a      string
 	ServerID string
 	Version  string
 }
 
-//StatusCodeResponse defines a JSON structure for a canned HTTP response
+// StatusCodeResponse defines a JSON structure for a canned HTTP response
 type StatusCodeResponse struct {
 	AboutResponse
 	Code    int
 	Message string
 }
 
-//AsJSON renders the status Code response into a JSON string as []byte
+// AsJSON renders the status Code response into a JSON string as []byte
 func (aboutResponse AboutResponse) AsJSON() []byte {
 	aboutResponse.ServerID = ID
 	aboutResponse.Version = Version
@@ -130,7 +130,7 @@ func (statusCodeResponse *StatusCodeResponse) withCode(code int) {
 	}
 }
 
-//AsJSON renders the status Code response into a JSON string as []byte
+// AsJSON renders the status Code response into a JSON string as []byte
 func (statusCodeResponse StatusCodeResponse) AsJSON() []byte {
 	statusCodeResponse.ServerID = ID
 	statusCodeResponse.Version = Version

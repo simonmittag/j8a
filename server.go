@@ -257,6 +257,8 @@ func (rt *Runtime) startListening() {
 		ErrorLog:          golog.New(&zerologAdapter{}, "", 0),
 		Handler:           HandlerDelegate{},
 		ConnState:         rt.ConnectionWatcher.OnStateChange,
+		//since go1.20, see:
+		DisableGeneralOptionsHandler: true,
 	}
 
 	//signal the WaitGroup that boot is over.
@@ -289,6 +291,9 @@ type HandlerDelegate struct{}
 var acmeRex, _ = regexp.Compile("/.well-known/acme-challenge/")
 var aboutRex, _ = regexp.Compile("^" + aboutPath + "$")
 
+const star = "*"
+const options = "OPTIONS"
+
 func (hd HandlerDelegate) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if Runner.AcmeHandler.isActive() &&
 		acmeRex.MatchString(r.RequestURI) {
@@ -302,6 +307,8 @@ func (hd HandlerDelegate) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		//TODO: this does not resolve whether about was actually configured in routes.
 	} else if aboutRex.MatchString(r.RequestURI) {
 		aboutHandler(w, r)
+	} else if star == r.RequestURI && options == strings.ToUpper(r.Method) {
+		globalOptionsHandler(w, r)
 	} else {
 		httpHandler(w, r)
 	}
