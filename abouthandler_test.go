@@ -24,7 +24,7 @@ func TestAboutHandlerAcceptEncodingIdentitySendsIdentity(t *testing.T) {
 
 	c := &http.Client{}
 	req, _ := http.NewRequest("GET", server.URL, nil)
-	req.Header.Set("Accept-Encoding", "identity")
+	req.Header.Set(acceptEncoding, "identity")
 	resp, err := c.Do(req)
 	if err != nil {
 		t.Fatal(err)
@@ -36,7 +36,7 @@ func TestAboutHandlerAcceptEncodingIdentitySendsIdentity(t *testing.T) {
 	}
 
 	want := "identity"
-	got := resp.Header["Content-Encoding"][0]
+	got := resp.Header[contentEncoding][0]
 	if got != want {
 		t.Errorf("response does have correct Content-Encoding header, want %v, got %v", want, got)
 	}
@@ -54,7 +54,7 @@ func TestAboutHandlerAcceptEncodingNotSpecifiedSendsIdentity(t *testing.T) {
 		},
 	}
 	req, _ := http.NewRequest("GET", server.URL, nil)
-	req.Header.Del("Accept-Encoding")
+	req.Header.Del(acceptEncoding)
 	resp, err := c.Do(req)
 	if err != nil {
 		t.Fatal(err)
@@ -66,7 +66,7 @@ func TestAboutHandlerAcceptEncodingNotSpecifiedSendsIdentity(t *testing.T) {
 	}
 
 	want := "identity"
-	got := resp.Header["Content-Encoding"][0]
+	got := resp.Header[contentEncoding][0]
 	if got != want {
 		t.Errorf("response does have correct Content-Encoding header, want %v, got %v", want, got)
 	}
@@ -80,7 +80,7 @@ func TestAboutHandlerAcceptEncodingGzipSendsGzip(t *testing.T) {
 
 	c := &http.Client{}
 	req, _ := http.NewRequest("GET", server.URL, nil)
-	req.Header.Set("Accept-Encoding", "gzip")
+	req.Header.Set(acceptEncoding, "gzip")
 	resp, err := c.Do(req)
 	if err != nil {
 		t.Fatal(err)
@@ -92,7 +92,7 @@ func TestAboutHandlerAcceptEncodingGzipSendsGzip(t *testing.T) {
 	}
 
 	want := "gzip"
-	got := resp.Header["Content-Encoding"][0]
+	got := resp.Header[contentEncoding][0]
 	if got != want {
 		t.Errorf("response does have correct Content-Encoding header, want %v, got %v", want, got)
 	}
@@ -106,14 +106,14 @@ func TestAboutHandlerAcceptEncodingBrotliSendsBrotli(t *testing.T) {
 
 	c := &http.Client{}
 	req, _ := http.NewRequest("GET", server.URL, nil)
-	req.Header.Set("Accept-Encoding", "br")
+	req.Header.Set(acceptEncoding, "br")
 	resp, err := c.Do(req)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	want := "br"
-	got := resp.Header["Content-Encoding"][0]
+	got := resp.Header[contentEncoding][0]
 	if got != want {
 		t.Errorf("response does have correct Content-Encoding header, want %v, got %v", want, got)
 	}
@@ -127,7 +127,7 @@ func TestAboutHandlerAcceptEncodingDeflateSends406AsIdentity(t *testing.T) {
 
 	c := &http.Client{}
 	req, _ := http.NewRequest("GET", server.URL, nil)
-	req.Header.Set("Accept-Encoding", "deflate")
+	req.Header.Set(acceptEncoding, "deflate")
 	resp, err := c.Do(req)
 	if err != nil {
 		t.Fatal(err)
@@ -140,7 +140,7 @@ func TestAboutHandlerAcceptEncodingDeflateSends406AsIdentity(t *testing.T) {
 	}
 
 	want := "identity"
-	got := resp.Header["Content-Encoding"][0]
+	got := resp.Header[contentEncoding][0]
 	if got != want {
 		t.Errorf("response does have correct Content-Encoding header, want %v, got %v", want, got)
 	}

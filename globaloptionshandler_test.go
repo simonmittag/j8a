@@ -33,7 +33,7 @@ func TestGlobalOptionsHandlerReturnsWithAcceptHeaders(t *testing.T) {
 
 	c := &http.Client{}
 	req, _ := http.NewRequest("OPTIONS", server.URL, nil)
-	req.Header.Set("Accept-Encoding", "identity")
+	req.Header.Set(acceptEncoding, "identity")
 	resp, err := c.Do(req)
 	if err != nil {
 		t.Fatal(err)
@@ -46,7 +46,7 @@ func TestGlobalOptionsHandlerReturnsWithAcceptHeaders(t *testing.T) {
 	}
 
 	want2 := "identity"
-	got2 := resp.Header["Content-Encoding"][0]
+	got2 := resp.Header[contentEncoding][0]
 	if got2 != want2 {
 		t.Errorf("response does have correct Content-Encoding header, want %v, got %v", want2, got2)
 	}

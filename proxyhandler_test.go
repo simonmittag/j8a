@@ -15,7 +15,7 @@ var (
 	mockGetFunc func(uri string) (*http.Response, error)
 )
 
-//this Mock object wraps the httpClient and prevents actual outgoing HTTP requests.
+// this Mock object wraps the httpClient and prevents actual outgoing HTTP requests.
 type MockHttp struct{}
 
 func (m *MockHttp) Do(req *http.Request) (*http.Response, error) {
@@ -26,7 +26,7 @@ func (m *MockHttp) Get(uri string) (*http.Response, error) {
 	return mockGetFunc(uri)
 }
 
-//this testHandler binds the mock HTTP server to proxyHandler.
+// this testHandler binds the mock HTTP server to proxyHandler.
 type ProxyHttpHandler struct{}
 
 func (t ProxyHttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -96,7 +96,7 @@ func TestUpstreamGzipEncodingPassThrough(t *testing.T) {
 		return &http.Response{
 			StatusCode: 200,
 			Header: map[string][]string{
-				"Content-Encoding": []string{"gzip"},
+				contentEncoding: []string{"gzip"},
 			},
 			Body: ioutil.NopCloser(bytes.NewReader(*Gzip([]byte(json)))),
 		}, nil
@@ -107,7 +107,7 @@ func TestUpstreamGzipEncodingPassThrough(t *testing.T) {
 
 	c := &http.Client{}
 	req, _ := http.NewRequest("GET", server.URL, nil)
-	req.Header.Set("Accept-Encoding", "gzip")
+	req.Header.Set(acceptEncoding, "gzip")
 	resp, err := c.Do(req)
 	if err != nil {
 		t.Fatal(err)
@@ -119,7 +119,7 @@ func TestUpstreamGzipEncodingPassThrough(t *testing.T) {
 	}
 
 	want := "gzip"
-	got := resp.Header["Content-Encoding"][0]
+	got := resp.Header[contentEncoding][0]
 	if got != want {
 		t.Errorf("uh oh, did not receive correct Content-Encoding header, want %v, got %v", want, got)
 	}
@@ -133,7 +133,7 @@ func TestUpstreamGzipEncodingPassThroughWhenBrotliRequestedDownstream(t *testing
 		return &http.Response{
 			StatusCode: 200,
 			Header: map[string][]string{
-				"Content-Encoding": []string{"gzip"},
+				contentEncoding: []string{"gzip"},
 			},
 			Body: ioutil.NopCloser(bytes.NewReader(*Gzip([]byte(json)))),
 		}, nil
@@ -144,7 +144,7 @@ func TestUpstreamGzipEncodingPassThroughWhenBrotliRequestedDownstream(t *testing
 
 	c := &http.Client{}
 	req, _ := http.NewRequest("GET", server.URL, nil)
-	req.Header.Set("Accept-Encoding", "gzip, br")
+	req.Header.Set(acceptEncoding, "gzip, br")
 	resp, err := c.Do(req)
 	if err != nil {
 		t.Fatal(err)
@@ -156,7 +156,7 @@ func TestUpstreamGzipEncodingPassThroughWhenBrotliRequestedDownstream(t *testing
 	}
 
 	want := "gzip"
-	got := resp.Header["Content-Encoding"][0]
+	got := resp.Header[contentEncoding][0]
 	if got != want {
 		t.Errorf("uh oh, did not receive correct Content-Encoding header, want %v, got %v", want, got)
 	}
@@ -181,7 +181,7 @@ func TestUpstreamServerHeaderNotCopied(t *testing.T) {
 
 	c := &http.Client{}
 	req, _ := http.NewRequest("GET", server.URL, nil)
-	req.Header.Set("Accept-Encoding", "identity")
+	req.Header.Set(acceptEncoding, "identity")
 	resp, err := c.Do(req)
 	if err != nil {
 		t.Fatal(err)
@@ -203,7 +203,7 @@ func TestUpstreamIdentityEncodingPassThrough(t *testing.T) {
 		return &http.Response{
 			StatusCode: 200,
 			Header: map[string][]string{
-				"Content-Encoding": []string{"identity"},
+				contentEncoding: []string{"identity"},
 			},
 			Body: ioutil.NopCloser(bytes.NewReader([]byte(json))),
 		}, nil
@@ -214,7 +214,7 @@ func TestUpstreamIdentityEncodingPassThrough(t *testing.T) {
 
 	c := &http.Client{}
 	req, _ := http.NewRequest("GET", server.URL, nil)
-	req.Header.Set("Accept-Encoding", "identity")
+	req.Header.Set(acceptEncoding, "identity")
 	resp, err := c.Do(req)
 	if err != nil {
 		t.Fatal(err)
@@ -226,7 +226,7 @@ func TestUpstreamIdentityEncodingPassThrough(t *testing.T) {
 	}
 
 	want := "identity"
-	got := resp.Header["Content-Encoding"][0]
+	got := resp.Header[contentEncoding][0]
 	if got != want {
 		t.Errorf("uh oh, did not receive correct Content-Encoding header, want %v, got %v", want, got)
 	}
@@ -241,7 +241,7 @@ func TestContentNegotiationFailsWithBadAcceptEncoding(t *testing.T) {
 		return &http.Response{
 			StatusCode: 200,
 			Header: map[string][]string{
-				"Content-Encoding": []string{"identity"},
+				contentEncoding: []string{"identity"},
 			},
 			Body: ioutil.NopCloser(bytes.NewReader([]byte(json))),
 		}, nil
@@ -252,7 +252,7 @@ func TestContentNegotiationFailsWithBadAcceptEncoding(t *testing.T) {
 
 	c := &http.Client{}
 	req, _ := http.NewRequest("GET", server.URL, nil)
-	req.Header.Set("Accept-Encoding", "uh-oh")
+	req.Header.Set(acceptEncoding, "uh-oh")
 	resp, err := c.Do(req)
 	if err != nil {
 		t.Fatal(err)
@@ -279,7 +279,7 @@ func TestUpstreamCustomEncodingPassThroughWithIdentityAcceptEncodingAndVary(t *t
 		return &http.Response{
 			StatusCode: 200,
 			Header: map[string][]string{
-				"Content-Encoding": []string{"custom"},
+				contentEncoding: []string{"custom"},
 			},
 			Body: ioutil.NopCloser(bytes.NewReader([]byte(json))),
 		}, nil
@@ -290,7 +290,7 @@ func TestUpstreamCustomEncodingPassThroughWithIdentityAcceptEncodingAndVary(t *t
 
 	c := &http.Client{}
 	req, _ := http.NewRequest("GET", server.URL, nil)
-	req.Header.Set("Accept-Encoding", "identity")
+	req.Header.Set(acceptEncoding, "identity")
 	resp, err := c.Do(req)
 	if err != nil {
 		t.Fatal(err)
@@ -302,13 +302,13 @@ func TestUpstreamCustomEncodingPassThroughWithIdentityAcceptEncodingAndVary(t *t
 	}
 
 	want := "custom"
-	got := resp.Header["Content-Encoding"][0]
+	got := resp.Header[contentEncoding][0]
 	if got != want {
 		t.Errorf("uh oh, did not receive correct Content-Encoding header, want %v, got %v", want, got)
 	}
 
 	vary := resp.Header.Get("Vary")
-	if "Accept-Encoding" != vary {
+	if acceptEncoding != vary {
 		t.Errorf("should have sent a vary header for accept encoding when changing content encoding")
 	}
 }
@@ -331,7 +331,7 @@ func TestUpstreamMissingContentEncodingIdentityThenGzipReEncoding(t *testing.T) 
 
 	c := &http.Client{}
 	req, _ := http.NewRequest("GET", server.URL, nil)
-	req.Header.Set("Accept-Encoding", "gzip")
+	req.Header.Set(acceptEncoding, "gzip")
 	resp, err := c.Do(req)
 	if err != nil {
 		t.Fatal(err)
@@ -343,7 +343,7 @@ func TestUpstreamMissingContentEncodingIdentityThenGzipReEncoding(t *testing.T) 
 	}
 
 	want := "gzip"
-	got := resp.Header["Content-Encoding"][0]
+	got := resp.Header[contentEncoding][0]
 	if got != want {
 		t.Errorf("uh oh, did not receive correct Content-Encoding header, want %v, got %v", want, got)
 	}
@@ -358,7 +358,7 @@ func TestUpstreamGzipReEncoding(t *testing.T) {
 		return &http.Response{
 			StatusCode: 200,
 			Header: map[string][]string{
-				"Content-Encoding": []string{"identity"},
+				contentEncoding: []string{"identity"},
 			},
 			Body: ioutil.NopCloser(bytes.NewReader([]byte(json))),
 		}, nil
@@ -369,7 +369,7 @@ func TestUpstreamGzipReEncoding(t *testing.T) {
 
 	c := &http.Client{}
 	req, _ := http.NewRequest("GET", server.URL, nil)
-	req.Header.Set("Accept-Encoding", "gzip")
+	req.Header.Set(acceptEncoding, "gzip")
 	resp, err := c.Do(req)
 	if err != nil {
 		t.Fatal(err)
@@ -381,7 +381,7 @@ func TestUpstreamGzipReEncoding(t *testing.T) {
 	}
 
 	want := "gzip"
-	got := resp.Header["Content-Encoding"][0]
+	got := resp.Header[contentEncoding][0]
 	if got != want {
 		t.Errorf("uh oh, did not receive correct Content-Encoding header, want %v, got %v", want, got)
 	}
@@ -397,7 +397,7 @@ func TestUpstreamBrotliReEncoding(t *testing.T) {
 		return &http.Response{
 			StatusCode: 200,
 			Header: map[string][]string{
-				"Content-Encoding": []string{"identity"},
+				contentEncoding: []string{"identity"},
 			},
 			Body: ioutil.NopCloser(bytes.NewReader([]byte(json))),
 		}, nil
@@ -408,7 +408,7 @@ func TestUpstreamBrotliReEncoding(t *testing.T) {
 
 	c := &http.Client{}
 	req, _ := http.NewRequest("GET", server.URL, nil)
-	req.Header.Set("Accept-Encoding", "br")
+	req.Header.Set(acceptEncoding, "br")
 	resp, err := c.Do(req)
 	if err != nil {
 		t.Fatal(err)
@@ -426,7 +426,7 @@ func TestUpstreamBrotliReEncoding(t *testing.T) {
 	}
 
 	want2 := "br"
-	got2 := resp.Header["Content-Encoding"][0]
+	got2 := resp.Header[contentEncoding][0]
 	if got2 != want2 {
 		t.Errorf("uh oh, did not receive correct Content-Encoding header, want %v, got %v", want2, got2)
 	}
@@ -441,7 +441,7 @@ func TestUpstreamIncompatibleContentEncodingSendVaryHeader(t *testing.T) {
 		return &http.Response{
 			StatusCode: 200,
 			Header: map[string][]string{
-				"Content-Encoding": []string{"gzip"},
+				contentEncoding: []string{"gzip"},
 			},
 			Body: ioutil.NopCloser(bytes.NewReader(*Gzip([]byte(json)))),
 		}, nil
@@ -452,7 +452,7 @@ func TestUpstreamIncompatibleContentEncodingSendVaryHeader(t *testing.T) {
 
 	c := &http.Client{}
 	req, _ := http.NewRequest("GET", server.URL, nil)
-	req.Header.Set("Accept-Encoding", "identity")
+	req.Header.Set(acceptEncoding, "identity")
 	resp, err := c.Do(req)
 	if err != nil {
 		t.Fatal(err)
@@ -464,13 +464,13 @@ func TestUpstreamIncompatibleContentEncodingSendVaryHeader(t *testing.T) {
 	}
 
 	want := "gzip"
-	got := resp.Header.Get("Content-Encoding")
+	got := resp.Header.Get(contentEncoding)
 	if got != want {
 		t.Errorf("upstream should have sent gzip, got %v", got)
 	}
 
 	vary := resp.Header.Get("Vary")
-	if "Accept-Encoding" != vary {
+	if acceptEncoding != vary {
 		t.Errorf("should have sent a vary header for accept encoding when changing content encoding")
 	}
 }
