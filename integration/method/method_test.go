@@ -14,6 +14,11 @@ func TestHttpMethods(t *testing.T) {
 		responseCode int
 	}{
 		{
+			method:       "CONNECT",
+			url:          "/mse6/connect",
+			responseCode: 200,
+		},
+		{
 			method:       "GET",
 			url:          "/mse6/get",
 			responseCode: 200,
