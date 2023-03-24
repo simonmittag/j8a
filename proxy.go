@@ -46,7 +46,7 @@ var httpIdempotentMethods []string = []string{"PUT", "DELETE"}
 var httpRepeatableMethods = append(httpSafeMethods, httpIdempotentMethods...)
 
 // RFC7231 4.3
-var httpLegalMethods []string = append(httpRepeatableMethods, []string{"POST", "CONNECT"}...)
+var httpLegalMethods []string = append(httpRepeatableMethods, []string{"POST", "PATCH", "CONNECT"}...)
 
 type ContentEncoding string
 

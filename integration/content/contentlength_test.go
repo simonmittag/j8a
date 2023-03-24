@@ -9,6 +9,10 @@ import (
 	"testing"
 )
 
+func TestCONNECTContentLengthResponses(t *testing.T) {
+	MethodHasZeroContentLengthAndNoBody(t, "CONNECT", "http://localhost:8080/mse6/connect", "Identity")
+}
+
 func TestGETContentLengthResponses(t *testing.T) {
 	MethodHasContentLengthAndBody(t, "GET", "http://localhost:8080/about", "Identity")
 	MethodHasContentLengthAndBody(t, "GET", "http://localhost:8080/about", "identity")
