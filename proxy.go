@@ -712,6 +712,9 @@ func (proxy *Proxy) setRoute(route *Route) {
 	proxy.Route = route
 }
 
+const connectS = "CONNECT"
+const head = "HEAD"
+
 // RFC7230, section 3.3.2
 func (proxy *Proxy) setContentLengthHeader() {
 	proxy.Dwn.Resp.ContentLength = 0
@@ -727,21 +730,20 @@ func (proxy *Proxy) setContentLengthHeader() {
 		//Content-Length==0 and no header present to detect when/if future golang version changes behavior.
 		proxy.Dwn.Resp.StatusCode == 204 ||
 		(proxy.Dwn.Resp.StatusCode >= 100 && proxy.Dwn.Resp.StatusCode < 200) ||
-		proxy.Dwn.Method == "CONNECT" {
-		proxy.Dwn.Resp.Writer.Header().Set(contentLength, "0")
-	} else if proxy.Dwn.Method == "HEAD" {
+		proxy.Dwn.Method == connectS {
+		proxy.Dwn.Resp.ContentLength = 0
+	} else if proxy.Dwn.Method == head {
 		//special case for upstream HEAD response with intact content-length we do copy
 		//see RFC7231 4.3.2: https://tools.ietf.org/html/rfc7231#page-25
 		cl := proxy.Up.Atmpt.resp.Header.Get(contentLength)
-		_, err := strconv.ParseInt(cl, 10, 64)
+		cli, err := strconv.ParseInt(cl, 10, 64)
 		if len(cl) > 0 && err == nil {
-			proxy.Dwn.Resp.Writer.Header().Set(contentLength, cl)
+			proxy.Dwn.Resp.ContentLength = cli
 		} else {
-			proxy.Dwn.Resp.Writer.Header().Set(contentLength, "0")
+			proxy.Dwn.Resp.ContentLength = 0
 		}
-	} else {
-		proxy.Dwn.Resp.Writer.Header().Set(contentLength, fmt.Sprintf("%d", proxy.Dwn.Resp.ContentLength))
 	}
+	proxy.Dwn.Resp.Writer.Header().Set(contentLength, fmt.Sprintf("%d", proxy.Dwn.Resp.ContentLength))
 }
 
 func (proxy *Proxy) pipeDownstreamResponse() {
