@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-//XRequestID is a per HTTP request unique identifier
+// XRequestID is a per HTTP request unique identifier
 const XRequestID = "X-Request-Id"
 const contentEncoding = "Content-Encoding"
 const transferEncoding = "Transfer-Encoding"
@@ -22,14 +22,14 @@ const contentLength = "Content-Length"
 const date = "Date"
 const server = "Server"
 
-//httpClient is the global user agent for upstream requests
+// httpClient is the global user agent for upstream requests
 var httpClient HTTPClient
 
-//httpHeadersNoRewrite contains a list of headers that are not copied in either direction. they must be set by the
-//server or are ignored.
+// httpHeadersNoRewrite contains a list of headers that are not copied in either direction. they must be set by the
+// server or are ignored.
 var httpHeadersNoRewrite []string = []string{connectionS, date, contentLength, acceptEncoding, transferEncoding, server, varyS}
 
-//extract IPs for stdout. thread safe.
+// extract IPs for stdout. thread safe.
 var ipr iprex = iprex{}
 
 func httpHandler(response http.ResponseWriter, request *http.Request) {
@@ -466,9 +466,13 @@ func logHandledDownstreamRoundtrip(proxy *Proxy) {
 		Str(dwnReqHttpVer, proxy.Dwn.HttpVer).
 		Int(dwnResCode, proxy.Dwn.Resp.StatusCode).
 		Int64(dwnResCntntLen, proxy.Dwn.Resp.ContentLength).
-		Str(dwnResCntntEnc, string(proxy.Dwn.Resp.ContentEncoding)).
 		Int64(dwnResElpsdMicros, elapsed.Microseconds()).
 		Str(XRequestID, proxy.XRequestID)
+
+	//if content encoding is not set, i.e. for body less requests, do not log this field.
+	if len(proxy.Dwn.Resp.ContentEncoding) > 0 {
+		ev = ev.Str(dwnResCntntEnc, string(proxy.Dwn.Resp.ContentEncoding))
+	}
 
 	if Runner.isTLSOn() {
 		ev = ev.Str(dwnReqTlsVer, proxy.Dwn.TlsVer)
