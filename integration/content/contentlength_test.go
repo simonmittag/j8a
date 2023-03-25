@@ -11,6 +11,7 @@ import (
 
 func TestCONNECTContentLengthResponses(t *testing.T) {
 	MethodHasZeroContentLengthAndNoBody(t, "CONNECT", "http://localhost:8080/mse6/connect", "Identity")
+	MethodHasZeroContentLengthAndNoBody(t, "CONNECT", "http://localhost:8080/mse6/connect?body=true", "Identity")
 }
 
 func TestGETContentLengthResponses(t *testing.T) {
@@ -28,6 +29,9 @@ func TestOPTIONSContentLengthResponses(t *testing.T) {
 	//golang removes content-length from http 204 response.
 	MethodHasNoContentLengthHeaderAndNoBody(t, "OPTIONS", "http://localhost:8080/mse6/options?code=204", "identity")
 	MethodHasNoContentLengthHeaderAndNoBody(t, "OPTIONS", "http://localhost:8080/mse6/options?code=204", "gzip")
+
+	MethodHasContentLengthAndBody(t, "OPTIONS", "http://localhost:8080/mse6/options?body=true", "identity")
+	MethodHasContentLengthAndBody(t, "OPTIONS", "http://localhost:8080/mse6/options?body=true", "gzip")
 }
 
 func TestHEADContentLengthResponses(t *testing.T) {
