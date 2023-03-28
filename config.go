@@ -19,7 +19,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-//Config is the system wide configuration for j8a
+// Config is the system wide configuration for j8a
 type Config struct {
 	Policies            map[string]Policy
 	Routes              Routes
@@ -27,6 +27,7 @@ type Config struct {
 	Resources           map[string][]ResourceMapping
 	Connection          Connection
 	DisableXRequestInfo bool
+	TimeZone            string
 }
 
 const HTTP = "HTTP"
@@ -107,6 +108,27 @@ func (config Config) parse(yml []byte) *Config {
 	jsn, _ := yaml.YAMLToJSON(yml)
 
 	json.Unmarshal(jsn, &config)
+	return &config
+}
+
+func (config Config) validateTimeZone() *Config {
+	var tz *time.Location
+	var e error
+	if len(config.TimeZone) > 0 {
+		tz, e = time.LoadLocation(config.TimeZone)
+		if e != nil {
+			config.panic(fmt.Sprintf("Not a valid TimeZone identifier %s, see: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones", config.TimeZone))
+		}
+	} else {
+		//we default to UTC if time wasn't specified
+		tz = time.UTC
+	}
+
+	zerolog.TimestampFunc = func() time.Time {
+		return time.Now().In(tz)
+	}
+	log.Info().Msgf("timeZone for this log and all system events set to %s", tz.String())
+
 	return &config
 }
 

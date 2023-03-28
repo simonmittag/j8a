@@ -16,12 +16,35 @@ func TestMain(m *testing.M) {
 }
 
 func testSetup() {
-	os.Setenv("TZ", "Australia/Sydney")
 	os.Setenv("LOGLEVEL", "TRACE")
 	os.Setenv("LOGCOLOR", "true")
 }
 
-//TestDefaultDownstreamReadTimeout
+func TestTimeZones(t *testing.T) {
+	tzs := []struct {
+		tz    string
+		valid bool
+	}{
+		{
+			"Australia/Sydney", true,
+		},
+		{
+			"Africa/Johannesburg", true,
+		},
+		{
+			"UTC", true,
+		},
+	}
+
+	config := new(Config)
+	for _, tz := range tzs {
+		config.TimeZone = tz.tz
+		config.validateTimeZone()
+	}
+
+}
+
+// TestDefaultDownstreamReadTimeout
 func TestDefaultDownstreamReadTimeout(t *testing.T) {
 	config := new(Config).setDefaultDownstreamParams()
 	got := config.Connection.Downstream.ReadTimeoutSeconds
@@ -31,7 +54,7 @@ func TestDefaultDownstreamReadTimeout(t *testing.T) {
 	}
 }
 
-//TestDefaultDownstreamIdleTimeout
+// TestDefaultDownstreamIdleTimeout
 func TestDefaultDownstreamIdleTimeout(t *testing.T) {
 	config := new(Config).setDefaultDownstreamParams()
 	got := config.Connection.Downstream.IdleTimeoutSeconds
@@ -41,7 +64,7 @@ func TestDefaultDownstreamIdleTimeout(t *testing.T) {
 	}
 }
 
-//TestDefaultDownstreamRoundtripTimeout
+// TestDefaultDownstreamRoundtripTimeout
 func TestDefaultDownstreamRoundtripTimeout(t *testing.T) {
 	config := new(Config).setDefaultDownstreamParams()
 	got := config.Connection.Downstream.RoundTripTimeoutSeconds
@@ -60,7 +83,7 @@ func TestDefaultDownstreamMaxBodyBytes(t *testing.T) {
 	}
 }
 
-//TestDefaultUpstreamSocketTimeout
+// TestDefaultUpstreamSocketTimeout
 func TestDefaultUpstreamSocketTimeout(t *testing.T) {
 	config := new(Config).setDefaultUpstreamParams()
 	got := config.Connection.Upstream.SocketTimeoutSeconds
@@ -70,7 +93,7 @@ func TestDefaultUpstreamSocketTimeout(t *testing.T) {
 	}
 }
 
-//TestDefaultUpstreamSocketTimeout
+// TestDefaultUpstreamSocketTimeout
 func TestDefaultUpstreamReadTimeout(t *testing.T) {
 	config := new(Config).setDefaultUpstreamParams()
 	got := config.Connection.Upstream.ReadTimeoutSeconds
@@ -80,7 +103,7 @@ func TestDefaultUpstreamReadTimeout(t *testing.T) {
 	}
 }
 
-//TestDefaultUpstreamIdleTimeout
+// TestDefaultUpstreamIdleTimeout
 func TestDefaultUpstreamIdleTimeout(t *testing.T) {
 	config := new(Config).setDefaultUpstreamParams()
 	got := config.Connection.Upstream.IdleTimeoutSeconds
@@ -90,7 +113,7 @@ func TestDefaultUpstreamIdleTimeout(t *testing.T) {
 	}
 }
 
-//TestDefaultUpstreamConnectionPoolSize
+// TestDefaultUpstreamConnectionPoolSize
 func TestDefaultUpstreamConnectionPoolSize(t *testing.T) {
 	config := new(Config).setDefaultUpstreamParams()
 	got := config.Connection.Upstream.PoolSize
@@ -100,7 +123,7 @@ func TestDefaultUpstreamConnectionPoolSize(t *testing.T) {
 	}
 }
 
-//TestDefaultUpstreamConnectionMaxAttempts
+// TestDefaultUpstreamConnectionMaxAttempts
 func TestDefaultUpstreamConnectionMaxAttempts(t *testing.T) {
 	config := new(Config).setDefaultUpstreamParams()
 	got := config.Connection.Upstream.MaxAttempts
@@ -110,7 +133,7 @@ func TestDefaultUpstreamConnectionMaxAttempts(t *testing.T) {
 	}
 }
 
-//TestDefaultPolicy
+// TestDefaultPolicy
 func TestDefaultPolicy(t *testing.T) {
 	wantLabel := "default"
 
@@ -159,7 +182,7 @@ func TestParsePolicy(t *testing.T) {
 	}
 }
 
-//TestParseResource
+// TestParseResource
 func TestParseResource(t *testing.T) {
 	configJson := []byte("{\n\t\"resources\": {\n\t\t\"customer\": [{\n\t\t\t\"labels\": [\n\t\t\t\t\"blue\"\n\t\t\t],\n\t\t\t\"url\": {\n\t\t\t\t\"scheme\": \"http\",\n\t\t\t\t\"host\": \"localhost\",\n\t\t\t\t\"port\": 8081\n\t\t\t}\n\t\t}]\n\t}\n}")
 	config := new(Config).parse(configJson)
@@ -181,7 +204,7 @@ func TestParseResource(t *testing.T) {
 	}
 }
 
-//TestParseConnection
+// TestParseConnection
 func TestParseConnection(t *testing.T) {
 	configJson := []byte("{\n\t\"connection\": {\n\t\t\"downstream\": {\n\t\t\t\"readTimeoutSeconds\": 120,\n\t\t\t\"roundTripTimeoutSeconds\": 240,\n\t\t\t\"idleTimeoutSeconds\": 30,\n\t\t\t\"port\": 8080,\n\t\t\t\"mode\": \"TLS\"\n\t\t},\n\t\t\"upstream\": {\n\t\t\t\"socketTimeoutSeconds\": 3,\n\t\t\t\"readTimeoutSeconds\": 120,\n\t\t\t\"idleTimeoutSeconds\": 120,\n\t\t\t\"maxAttempts\": 4,\n\t\t\t\"poolSize\": 1024\n\t\t}\n\t}\n}")
 	config := new(Config).parse(configJson)
@@ -245,7 +268,7 @@ func TestParseConnection(t *testing.T) {
 	}
 }
 
-//TestParseRoute
+// TestParseRoute
 func TestParseRoute(t *testing.T) {
 	configJson := []byte("{\"routes\": [{\n\t\t\t\"path\": \"/about\",\n\t\t\t\"resource\": \"aboutj8a\"\n\t\t},\n\t\t{\n\t\t\t\"path\": \"/customer\",\n\t\t\t\"resource\": \"customer\",\n\t\t\t\"policy\": \"ab\"\n\t\t}\n\t]}")
 	config := new(Config).parse(configJson)
@@ -264,7 +287,7 @@ func TestParseRoute(t *testing.T) {
 	}
 }
 
-//TestValidateAcmeEmail
+// TestValidateAcmeEmail
 func TestValidateAcmeEmail(t *testing.T) {
 	config := &Config{
 		Connection: Connection{
@@ -284,7 +307,7 @@ func TestValidateAcmeEmail(t *testing.T) {
 	config = config.validateAcmeConfig()
 }
 
-//TestValidateAcmeEmail
+// TestValidateAcmeEmail
 func TestValidateAcmeGracePeriod30(t *testing.T) {
 	config := &Config{
 		Connection: Connection{
@@ -390,7 +413,7 @@ func TestValidateAcmeGracePeriodFailsGreater30(t *testing.T) {
 	config = config.validateAcmeConfig()
 }
 
-//TestValidateAcmeDomainInvalidLeadingDotFails
+// TestValidateAcmeDomainInvalidLeadingDotFails
 func TestValidateValidateAcmeDomainInvalidLeadingDotFails(t *testing.T) {
 	defer func() {
 		if r := recover(); r == nil {
@@ -402,7 +425,7 @@ func TestValidateValidateAcmeDomainInvalidLeadingDotFails(t *testing.T) {
 	t.Errorf("config did not panic for supported Acme provider but with missing domain")
 }
 
-//TestValidateAcmeDomainInvalidTrailingDotFails
+// TestValidateAcmeDomainInvalidTrailingDotFails
 func TestValidateAcmeDomainInvalidTrailingDotFails(t *testing.T) {
 	defer func() {
 		if r := recover(); r == nil {
@@ -414,8 +437,8 @@ func TestValidateAcmeDomainInvalidTrailingDotFails(t *testing.T) {
 	t.Errorf("config did not panic for supported Acme provider but with missing domain")
 }
 
-//TestValidateAcmeDomainInvalidTrailingDotFails
-//NOTE WE DO NOT SUPPORT WILDCART CERTS BECAUSE THEY CANNOT BE VERIFIED USING HTTP01 CHALLENGE ON LETSENCRYPT, SEE: https://letsencrypt.org/docs/faq/
+// TestValidateAcmeDomainInvalidTrailingDotFails
+// NOTE WE DO NOT SUPPORT WILDCART CERTS BECAUSE THEY CANNOT BE VERIFIED USING HTTP01 CHALLENGE ON LETSENCRYPT, SEE: https://letsencrypt.org/docs/faq/
 func TestValidateAcmeDomainInvalidWildcartCertFails(t *testing.T) {
 	defer func() {
 		if r := recover(); r == nil {
@@ -427,7 +450,7 @@ func TestValidateAcmeDomainInvalidWildcartCertFails(t *testing.T) {
 	t.Errorf("config did not panic for supported Acme provider but with missing domain")
 }
 
-//TestValidateAcmeDomainValidSubdomainPasses
+// TestValidateAcmeDomainValidSubdomainPasses
 func TestValidateAcmeDomainValidSubdomainPasses(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -439,7 +462,7 @@ func TestValidateAcmeDomainValidSubdomainPasses(t *testing.T) {
 	t.Logf("normal. config did not panic for valid subdomain and supported Acme provider")
 }
 
-//TestValidateAcmeDomainMissingFails
+// TestValidateAcmeDomainMissingFails
 func TestValidateAcmeDomainMissingFails(t *testing.T) {
 	defer func() {
 		if r := recover(); r == nil {
@@ -465,7 +488,7 @@ func TestValidateAcmeDomainMissingFails(t *testing.T) {
 	t.Errorf("config did not panic for supported Acme provider but with missing domain")
 }
 
-//TestValidateAcmeProviderLetsencrypt
+// TestValidateAcmeProviderLetsencrypt
 func TestValidateAcmeProviderLetsencrypt(t *testing.T) {
 	config := &Config{
 		Connection: Connection{
@@ -486,7 +509,7 @@ func TestValidateAcmeProviderLetsencrypt(t *testing.T) {
 	t.Logf("normal. no config panic for Acme provider letsencrypt")
 }
 
-//TestValidateAcmeProviderLetsencryptWithMultipleSubDomains
+// TestValidateAcmeProviderLetsencryptWithMultipleSubDomains
 func TestValidateAcmeProviderLetsencryptWithMultipleSubdomains(t *testing.T) {
 	config := &Config{
 		Connection: Connection{
@@ -507,7 +530,7 @@ func TestValidateAcmeProviderLetsencryptWithMultipleSubdomains(t *testing.T) {
 	t.Logf("normal. no config panic for Acme provider letsencrypt")
 }
 
-//TestValidateAcmeProviderLetsencryptFailsWithOneInvalidSubDomain
+// TestValidateAcmeProviderLetsencryptFailsWithOneInvalidSubDomain
 func TestValidateAcmeProviderLetsencryptFailsWithOneInvalidSubDomain(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -533,7 +556,7 @@ func TestValidateAcmeProviderLetsencryptFailsWithOneInvalidSubDomain(t *testing.
 	t.Errorf("config did not panic for invalid subdomain")
 }
 
-//TestValidateAcmeProviderLetsencrypt
+// TestValidateAcmeProviderLetsencrypt
 func TestValidateAcmeProviderPort80(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -562,7 +585,7 @@ func TestValidateAcmeProviderPort80(t *testing.T) {
 	t.Logf("normal. no config panic for Acme provider letsencrypt with port 80")
 }
 
-//TestValidateAcmeProviderFailsWithMissingPort80
+// TestValidateAcmeProviderFailsWithMissingPort80
 func TestValidateAcmeProviderFailsWithMissingPort80(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -588,7 +611,7 @@ func TestValidateAcmeProviderFailsWithMissingPort80(t *testing.T) {
 	t.Error("no config panic for Acme provider without port 80 specified. should have panicked")
 }
 
-//TestValidateAcmeProviderFailsWithCertSpecified
+// TestValidateAcmeProviderFailsWithCertSpecified
 func TestValidateAcmeProviderFailsWithCertSpecified(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -616,7 +639,7 @@ func TestValidateAcmeProviderFailsWithCertSpecified(t *testing.T) {
 	t.Error("no config panic happened after superfluous cert specified but it should have")
 }
 
-//TestValidateAcmeProviderFailsWithKeySpecified
+// TestValidateAcmeProviderFailsWithKeySpecified
 func TestValidateAcmeProviderFailsWithKeySpecified(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -644,7 +667,7 @@ func TestValidateAcmeProviderFailsWithKeySpecified(t *testing.T) {
 	t.Error("no config panic occurred after extra private key specified next to acme")
 }
 
-//TestValidateAcmeMissingProviderFails
+// TestValidateAcmeMissingProviderFails
 func TestValidateAcmeMissingProviderFails(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -670,7 +693,7 @@ func TestValidateAcmeMissingProviderFails(t *testing.T) {
 	t.Errorf("config did not panic for missing provider")
 }
 
-//TestValidateAcmeMissingEmailFails
+// TestValidateAcmeMissingEmailFails
 func TestValidateAcmeEmailFails(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -696,7 +719,7 @@ func TestValidateAcmeEmailFails(t *testing.T) {
 	t.Errorf("config did not panic for missing email")
 }
 
-//TestValidateAcmeInvalidEmailFails
+// TestValidateAcmeInvalidEmailFails
 func TestValidateAcmeInvalidEmailFails(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -771,7 +794,7 @@ func TestTlsInsecureSkipVerify_Optional(t *testing.T) {
 	}
 }
 
-//TestReadConfigFile
+// TestReadConfigFile
 func TestReadConfigFile(t *testing.T) {
 	config := new(Config).readYmlFile("./j8acfg.yml")
 	if config.Routes == nil {

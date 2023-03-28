@@ -3,11 +3,10 @@ package j8a
 import (
 	"crypto/md5"
 	"encoding/hex"
-	"os"
-	"strings"
-
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"os"
+	"strings"
 )
 
 const dwnReqRemoteAddr = "dwnReqRemoteAddr"
@@ -39,8 +38,8 @@ const upAtmptResBodyBytes = "upAtmptResBodyBytes"
 const upAtmptElpsdMicros = "upAtmptElpsdMicros"
 const upAtmptAbort = "upAtmptAbort"
 
-//ServerID is a unique identifier made up as md5 of hostname and version.
-//initServerId creates a unique ID for the server log.
+// ServerID is a unique identifier made up as md5 of hostname and version.
+// initServerId creates a unique ID for the server log.
 func initServerID() {
 	hasher := md5.New()
 	hasher.Write([]byte(getHost() + getVersion()))
@@ -49,8 +48,8 @@ func initServerID() {
 	log.Logger = log.With().Str("srvId", ID).Logger()
 }
 
-//ServerID is a unique identifier made up as md5 of hostname and version.
-//initServerId creates a unique ID for the server log.
+// ServerID is a unique identifier made up as md5 of hostname and version.
+// initServerId creates a unique ID for the server log.
 func initPID() {
 	pid := os.Getpid()
 	log.Info().Int("pid", pid).Msg("pid determined")
@@ -100,7 +99,6 @@ func initLogger() {
 	}
 
 	initServerID()
-	initTime()
 	initPID()
 	log.Info().Msgf("setting global log level to %s", logLevel)
 }

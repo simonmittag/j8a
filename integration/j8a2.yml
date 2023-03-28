@@ -1,4 +1,5 @@
 ---
+timeZone: Africa/Casablanca
 connection:
   downstream:
     readTimeoutSeconds: 3
