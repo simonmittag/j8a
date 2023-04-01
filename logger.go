@@ -72,19 +72,8 @@ func getVersion() string {
 
 // Init sets up a global logger instance
 func initLogger() {
-	logLevel := strings.ToUpper(os.Getenv("LOGLEVEL"))
-	switch logLevel {
-	case "TRACE":
-		zerolog.SetGlobalLevel(zerolog.TraceLevel)
-	case "DEBUG":
-		zerolog.SetGlobalLevel(zerolog.DebugLevel)
-	case "INFO":
-		zerolog.SetGlobalLevel(zerolog.InfoLevel)
-	case "WARN":
-		zerolog.SetGlobalLevel(zerolog.WarnLevel)
-	default:
-		zerolog.SetGlobalLevel(zerolog.InfoLevel)
-	}
+	defaultLevel := zerolog.InfoLevel
+	zerolog.SetGlobalLevel(defaultLevel)
 
 	logColor := strings.ToUpper(os.Getenv("LOGCOLOR"))
 	switch logColor {
@@ -100,5 +89,5 @@ func initLogger() {
 
 	initServerID()
 	initPID()
-	log.Info().Msgf("setting global log level to %s", logLevel)
+	log.Info().Msgf("setting global log level to %s", strings.ToUpper(defaultLevel.String()))
 }

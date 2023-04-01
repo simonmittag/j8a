@@ -28,6 +28,7 @@ type Config struct {
 	Connection          Connection
 	DisableXRequestInfo bool
 	TimeZone            string
+	LogLevel            string
 }
 
 const HTTP = "HTTP"
@@ -108,6 +109,32 @@ func (config Config) parse(yml []byte) *Config {
 	jsn, _ := yaml.YAMLToJSON(yml)
 
 	json.Unmarshal(jsn, &config)
+	return &config
+}
+
+func (config Config) validateLogLevel() *Config {
+	logLevel := strings.ToUpper(config.LogLevel)
+	old := strings.ToUpper(zerolog.GlobalLevel().String())
+
+	if len(logLevel) > 0 && logLevel != old {
+		switch logLevel {
+		case "TRACE":
+			log.Info().Msgf("resetting global log level to %v", logLevel)
+			zerolog.SetGlobalLevel(zerolog.TraceLevel)
+		case "DEBUG":
+			log.Info().Msgf("resetting global log level to %v", logLevel)
+			zerolog.SetGlobalLevel(zerolog.DebugLevel)
+		case "INFO":
+			log.Info().Msgf("resetting global log level to %v", logLevel)
+			zerolog.SetGlobalLevel(zerolog.InfoLevel)
+		case "WARN":
+			log.Info().Msgf("resetting global log level to %v", logLevel)
+			zerolog.SetGlobalLevel(zerolog.WarnLevel)
+		default:
+			config.panic(fmt.Sprintf("invalid log level %v must be one of TRACE | DEBUG | INFO | WARN ", logLevel))
+		}
+	}
+
 	return &config
 }
 
