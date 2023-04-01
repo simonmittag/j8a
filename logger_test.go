@@ -76,3 +76,12 @@ func TestWarnLogLevelInit(t *testing.T) {
 		t.Errorf("log level not properly initialised, got %v, want %v", got, want)
 	}
 }
+
+func TestBadLogLevelPanic(t *testing.T) {
+	c := Config{
+		LogLevel: "blah",
+	}
+	initLogger()
+
+	shouldPanic(t, c.validateLogLevel)
+}
