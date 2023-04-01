@@ -68,14 +68,14 @@ go install github.com/simonmittag/j8a/cmd/j8a &&
 
 ## Configuration
 
-### Environment Variables
-
-#### J8ACFG_YML
+### J8ACFG_YML
 
 Supply the server configuration to the running process in .yml format
 
 ```bash
 J8ACFG_YML="---
+            timeZone: UTC
+            logLevel: INFO
             connection:
               downstream:
                 readTimeoutSeconds: 3
@@ -100,14 +100,6 @@ J8ACFG_YML="---
                     scheme: https
                     host: jsonplaceholder.typicode.com
                     port: 443"
-```
-
-#### LOGLEVEL
-
-Loglevel for stdout, one of TRACE, DEBUG, INFO or WARN
-
-```bash
-LOGLEVEL="DEBUG"
 ```
 
 ## Contributions
