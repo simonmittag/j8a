@@ -17,7 +17,6 @@ func TestServerID(t *testing.T) {
 }
 
 func TestDefaultLogLevelInit(t *testing.T) {
-	os.Setenv("LOGLEVEL", "not set")
 	initLogger()
 	got := zerolog.GlobalLevel().String()
 	want := "info"
@@ -27,18 +26,24 @@ func TestDefaultLogLevelInit(t *testing.T) {
 }
 
 func TestTraceLogLevelInit(t *testing.T) {
-	os.Setenv("LOGLEVEL", "TRACE")
+	c := Config{
+		LogLevel: "trace",
+	}
 	initLogger()
+	c.validateLogLevel()
 	got := zerolog.GlobalLevel().String()
 	want := "trace"
 	if got != want {
-		t.Errorf("default log level not properly initialised, got %v, want %v", got, want)
+		t.Errorf("log level not properly initialised, got %v, want %v", got, want)
 	}
 }
 
 func TestDebugLogLevelInit(t *testing.T) {
-	os.Setenv("LOGLEVEL", "DEBUG")
+	c := Config{
+		LogLevel: "debug",
+	}
 	initLogger()
+	c.validateLogLevel()
 	got := zerolog.GlobalLevel().String()
 	want := "debug"
 	if got != want {
@@ -47,8 +52,11 @@ func TestDebugLogLevelInit(t *testing.T) {
 }
 
 func TestInfoLogLevelInit(t *testing.T) {
-	os.Setenv("LOGLEVEL", "INFO")
+	c := Config{
+		LogLevel: "INFO",
+	}
 	initLogger()
+	c.validateLogLevel()
 	got := zerolog.GlobalLevel().String()
 	want := "info"
 	if got != want {
@@ -57,11 +65,23 @@ func TestInfoLogLevelInit(t *testing.T) {
 }
 
 func TestWarnLogLevelInit(t *testing.T) {
-	os.Setenv("LOGLEVEL", "WARN")
+	c := Config{
+		LogLevel: "warn",
+	}
 	initLogger()
+	c.validateLogLevel()
 	got := zerolog.GlobalLevel().String()
 	want := "warn"
 	if got != want {
 		t.Errorf("log level not properly initialised, got %v, want %v", got, want)
 	}
+}
+
+func TestBadLogLevelPanic(t *testing.T) {
+	c := Config{
+		LogLevel: "blah",
+	}
+	initLogger()
+
+	shouldPanic(t, c.validateLogLevel)
 }

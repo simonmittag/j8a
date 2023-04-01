@@ -3,11 +3,10 @@ package j8a
 import (
 	"crypto/md5"
 	"encoding/hex"
-	"os"
-	"strings"
-
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"os"
+	"strings"
 )
 
 const dwnReqRemoteAddr = "dwnReqRemoteAddr"
@@ -39,8 +38,8 @@ const upAtmptResBodyBytes = "upAtmptResBodyBytes"
 const upAtmptElpsdMicros = "upAtmptElpsdMicros"
 const upAtmptAbort = "upAtmptAbort"
 
-//ServerID is a unique identifier made up as md5 of hostname and version.
-//initServerId creates a unique ID for the server log.
+// ServerID is a unique identifier made up as md5 of hostname and version.
+// initServerId creates a unique ID for the server log.
 func initServerID() {
 	hasher := md5.New()
 	hasher.Write([]byte(getHost() + getVersion()))
@@ -49,8 +48,8 @@ func initServerID() {
 	log.Logger = log.With().Str("srvId", ID).Logger()
 }
 
-//ServerID is a unique identifier made up as md5 of hostname and version.
-//initServerId creates a unique ID for the server log.
+// ServerID is a unique identifier made up as md5 of hostname and version.
+// initServerId creates a unique ID for the server log.
 func initPID() {
 	pid := os.Getpid()
 	log.Info().Int("pid", pid).Msg("pid determined")
@@ -73,19 +72,8 @@ func getVersion() string {
 
 // Init sets up a global logger instance
 func initLogger() {
-	logLevel := strings.ToUpper(os.Getenv("LOGLEVEL"))
-	switch logLevel {
-	case "TRACE":
-		zerolog.SetGlobalLevel(zerolog.TraceLevel)
-	case "DEBUG":
-		zerolog.SetGlobalLevel(zerolog.DebugLevel)
-	case "INFO":
-		zerolog.SetGlobalLevel(zerolog.InfoLevel)
-	case "WARN":
-		zerolog.SetGlobalLevel(zerolog.WarnLevel)
-	default:
-		zerolog.SetGlobalLevel(zerolog.InfoLevel)
-	}
+	defaultLevel := zerolog.InfoLevel
+	zerolog.SetGlobalLevel(defaultLevel)
 
 	logColor := strings.ToUpper(os.Getenv("LOGCOLOR"))
 	switch logColor {
@@ -100,7 +88,6 @@ func initLogger() {
 	}
 
 	initServerID()
-	initTime()
 	initPID()
-	log.Info().Msgf("setting global log level to %s", logLevel)
+	log.Info().Msgf("setting global log level to %s", strings.ToUpper(defaultLevel.String()))
 }

@@ -1,4 +1,6 @@
 ---
+timeZone: Africa/Casablanca
+logLevel: warn
 connection:
   downstream:
     readTimeoutSeconds: 3

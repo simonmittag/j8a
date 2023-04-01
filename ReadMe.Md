@@ -110,14 +110,6 @@ Loglevel for stdout, one of TRACE, DEBUG, INFO or WARN
 LOGLEVEL="DEBUG"
 ```
 
-#### TZ
-
-TimeZone
-
-```bash
-TZ="Australia/Sydney"
-```
-
 ## Contributions
 
 The j8a team welcomes all [contributors](https://github.com/simonmittag/j8a/blob/master/CONTRIBUTING.md). Everyone

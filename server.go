@@ -175,6 +175,8 @@ func BootStrap() {
 
 	config := new(Config).
 		load().
+		validateTimeZone().
+		validateLogLevel().
 		reApplyResourceURLDefaults().
 		reApplyResourceNames().
 		validateJwt().
