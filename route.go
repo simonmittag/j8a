@@ -3,10 +3,11 @@ package j8a
 import (
 	"net/http"
 	"regexp"
+	"strings"
 	"time"
 )
 
-//Aboutj8a special Resource alias for internal endpoint
+// Aboutj8a special Resource alias for internal endpoint
 const about string = "about"
 
 type Routes []Route
@@ -21,9 +22,10 @@ func (s Routes) Less(i, j int) bool {
 	return len(s[i].Path) > len(s[j].Path)
 }
 
-//Route maps a Path to an upstream resource
+// Route maps a Path to an upstream resource
 type Route struct {
 	Path      string
+	PathType  string // exact | prefix
 	PathRegex *regexp.Regexp
 	Transform string
 	Resource  string
@@ -104,4 +106,20 @@ func (route Route) mapURL(proxy *Proxy) (*URL, string, bool) {
 
 func (route Route) hasJwt() bool {
 	return len(route.Jwt) > 0
+}
+
+type RoutePathTypes []string
+
+func NewRoutePathTypes() RoutePathTypes {
+	return RoutePathTypes([]string{"exact", "prefix"})
+}
+
+func (r RoutePathTypes) isValid(t string) bool {
+	m := false
+	for _, rp := range r {
+		if strings.EqualFold(t, rp) {
+			m = true
+		}
+	}
+	return m
 }

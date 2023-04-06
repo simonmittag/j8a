@@ -153,6 +153,22 @@ func TestRouteMapIncorrectPolicyFails(t *testing.T) {
 	}
 }
 
+func TestRoutePathTypesAreValid(t *testing.T) {
+	rpt := NewRoutePathTypes()
+	if !rpt.isValid("exact") {
+		t.Error("exact should be valid")
+	}
+	if !rpt.isValid("pREFix") {
+		t.Error("prefix should be valid")
+	}
+	if rpt.isValid("") {
+		t.Error("empty string should not be valid")
+	}
+	if rpt.isValid("test") {
+		t.Error("test should not be valid")
+	}
+}
+
 func BenchmarkRouteMatchingRegex(b *testing.B) {
 	//suppress noise
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)

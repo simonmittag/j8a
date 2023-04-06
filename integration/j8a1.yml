@@ -172,8 +172,10 @@ jwt:
 
 routes:
   - path: "/mse6/some"
+    pathType: prefix
     resource: mse61
   - path: /mse6jwtjwksbadrotate
+    pathType: prefix
     transform: /mse6
     resource: mse6
     jwt: jwtjwksbadrotate
@@ -276,6 +278,9 @@ routes:
     resource: websocketdown
   - path: /websocketsecure
     transform: /badssl
+    resource: websocketsecure
+  - path: /anotherpath
+    pathType: exact
     resource: websocketsecure
 resources:
   badssl:

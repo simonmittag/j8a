@@ -170,6 +170,8 @@ func (config Config) reApplyResourceNames() *Config {
 	return &config
 }
 
+var routePathTypes = NewRoutePathTypes()
+
 func (config Config) validateRoutes() *Config {
 	//prep routes with leading slash
 	for i, _ := range config.Routes {
@@ -181,6 +183,13 @@ func (config Config) validateRoutes() *Config {
 				config.panic(fmt.Sprintf("route [%s] jwt [%s] not found, check your configuration", config.Routes[i].Path, config.Routes[i].Jwt))
 			}
 		}
+		if len(config.Routes[i].PathType) == 0 {
+			config.Routes[i].PathType = "prefix"
+		} else {
+			if !routePathTypes.isValid(config.Routes[i].PathType) {
+				config.panic(fmt.Sprintf("path type %s invalid, not one of ['prefix', 'exact']", config.Routes[i].PathType))
+			}
+		}
 	}
 	sort.Sort(Routes(config.Routes))
 	return &config
@@ -189,7 +198,11 @@ func (config Config) validateRoutes() *Config {
 func (config Config) compileRoutePaths() *Config {
 	var err error
 	for i, route := range config.Routes {
-		config.Routes[i].PathRegex, err = regexp.Compile("^" + route.Path)
+		p := "^" + route.Path
+		if "exact" == route.PathType {
+			p = p + "$"
+		}
+		config.Routes[i].PathRegex, err = regexp.Compile(p)
 		if err != nil {
 			config.panic(fmt.Sprintf("config error, illegal route path %s", route.Path))
 		}
