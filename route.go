@@ -34,7 +34,23 @@ type Route struct {
 }
 
 const startS = "^"
+const dollarS = "$"
+const exact = "exact"
 
+func (route *Route) compilePath() error {
+	if string(route.Path[0]) != startS {
+		route.Path = startS + route.Path
+	}
+	if strings.EqualFold(exact, route.PathType) {
+		route.Path = route.Path + dollarS
+	}
+	var err error
+	route.PathRegex, err = regexp.Compile(route.Path)
+	return err
+}
+
+// TODO this matches a request to a route but it depends on sort order of multiple
+// routes matched, it will match the first one.
 func (route Route) matchURI(request *http.Request) bool {
 	matched := false
 	if route.PathRegex != nil {

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"regexp"
 	"sort"
 	"strings"
 	"text/template"
@@ -198,13 +197,11 @@ func (config Config) validateRoutes() *Config {
 func (config Config) compileRoutePaths() *Config {
 	var err error
 	for i, route := range config.Routes {
-		p := "^" + route.Path
-		if "exact" == route.PathType {
-			p = p + "$"
-		}
-		config.Routes[i].PathRegex, err = regexp.Compile(p)
+		err = route.compilePath()
 		if err != nil {
 			config.panic(fmt.Sprintf("config error, illegal route path %s", route.Path))
+		} else {
+			config.Routes[i] = route
 		}
 	}
 	return &config

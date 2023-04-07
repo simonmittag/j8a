@@ -3,7 +3,6 @@ package j8a
 import (
 	"github.com/rs/zerolog"
 	"net/http"
-	"regexp"
 	"testing"
 )
 
@@ -67,6 +66,17 @@ func TestRouteMatchWithAbsoluteWildcardSlug(t *testing.T) {
 	routeNoMatch("/*/some/", "/really/want/some/more/", t)
 }
 
+// TODO: test trailing slashes better. Do we want matches?
+// TODO: test query strings
+func TestRouteExactMatch(t *testing.T) {
+	routeExactMatch("/some/", "/some/", t)
+	routeExactNoMatch("/some/", "/some", t)
+	routeExactMatch("/some/index.html", "/some/index.html", t)
+	routeExactNoMatch("/some/index.html", "/some/index", t)
+	routeExactNoMatch("/some/index.html", "/some/index.", t)
+	routeExactNoMatch("/some/index.html", "/some/index.htm", t)
+}
+
 func routeMatch(route string, path string, t *testing.T) {
 	r := routeFactory(route)
 	req := requestFactory(path)
@@ -83,17 +93,38 @@ func routeNoMatch(route string, path string, t *testing.T) {
 	}
 }
 
+func routeExactMatch(route string, path string, t *testing.T) {
+	r := routeFactory(route, "exact")
+	req := requestFactory(path)
+	if !r.matchURI(req) {
+		t.Errorf("route %v did not exactly match desired path: %v", route, path)
+	}
+}
+
+func routeExactNoMatch(route string, path string, t *testing.T) {
+	r := routeFactory(route, "exact")
+	req := requestFactory(path)
+	if r.matchURI(req) {
+		t.Errorf("route %v did exactly match undesired path: %v", route, path)
+	}
+}
+
+// TODO this needs host
 func requestFactory(path string) *http.Request {
 	req, _ := http.NewRequest("GET", path, nil)
 	req.RequestURI = path
 	return req
 }
 
-func routeFactory(route string) Route {
-	pR, _ := regexp.Compile("^" + route)
+func routeFactory(args ...string) Route {
 	r := Route{
-		Path:      route,
-		PathRegex: pR,
+		Path: args[0],
+	}
+	if len(args) > 1 && "exact" == args[1] {
+		r.compilePath()
+	}
+	if len(args) > 2 {
+		//
 	}
 	return r
 }

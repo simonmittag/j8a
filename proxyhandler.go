@@ -84,6 +84,7 @@ func proxyHandler(response http.ResponseWriter, request *http.Request, exec prox
 	}
 
 	//once a route is matched, it needs to be mapped to an upstream resource via a policy
+	//TODO this should be it's own method since 2020 so it can be unit tested.
 	for _, route := range Runner.Routes {
 		if matched = route.matchURI(request); matched {
 			proxy.setRoute(&route)
