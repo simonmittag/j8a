@@ -835,7 +835,7 @@ func BenchmarkValidateJWT10Claims(b *testing.B) {
 		`.sub | select(.=="admin")`)
 }
 
-//.9ms this is too slow
+// .9ms this is too slow
 func BenchmarkValidateJWT25Claims(b *testing.B) {
 	doBenchValidateJwtWithClaims(b, `.sub | select(.=="subscriber")`,
 		`.sub | select(.=="developer")`,
@@ -982,12 +982,12 @@ func mockProxy(upBody []byte, cl string, path string, transform string, requestU
 			startDate: time.Time{},
 		},
 		Route: &Route{
-			Path:      path,
-			PathRegex: pr,
-			Transform: transform,
-			Resource:  "mse7",
-			Policy:    "",
-			Jwt:       jwtName,
+			Path:              path,
+			CompiledPathRegex: pr,
+			Transform:         transform,
+			Resource:          "mse7",
+			Policy:            "",
+			Jwt:               jwtName,
 		},
 	}
 	return proxy

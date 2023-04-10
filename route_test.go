@@ -121,11 +121,9 @@ func routeFactory(args ...string) Route {
 		Path: args[0],
 	}
 	if len(args) > 1 && "exact" == args[1] {
-		r.compilePath()
+		r.PathType = args[1]
 	}
-	if len(args) > 2 {
-		//
-	}
+	r.compilePath()
 	return r
 }
 

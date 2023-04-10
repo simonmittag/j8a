@@ -1,6 +1,6 @@
 ---
 timeZone: Australia/Sydney
-logLevel: info
+logLevel: trace
 connection:
   downstream:
     readTimeoutSeconds: 3

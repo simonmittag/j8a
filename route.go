@@ -24,13 +24,13 @@ func (s Routes) Less(i, j int) bool {
 
 // Route maps a Path to an upstream resource
 type Route struct {
-	Path      string
-	PathType  string // exact | prefix
-	PathRegex *regexp.Regexp
-	Transform string
-	Resource  string
-	Policy    string
-	Jwt       string
+	Path              string
+	PathType          string // exact | prefix
+	CompiledPathRegex *regexp.Regexp
+	Transform         string
+	Resource          string
+	Policy            string
+	Jwt               string
 }
 
 const startS = "^"
@@ -38,28 +38,22 @@ const dollarS = "$"
 const exact = "exact"
 
 func (route *Route) compilePath() error {
-	if string(route.Path[0]) != startS {
-		route.Path = startS + route.Path
+	compileMe := route.Path
+	if string(compileMe[0]) != startS {
+		compileMe = startS + compileMe
 	}
 	if strings.EqualFold(exact, route.PathType) {
-		route.Path = route.Path + dollarS
+		compileMe = compileMe + dollarS
 	}
 	var err error
-	route.PathRegex, err = regexp.Compile(route.Path)
+	route.CompiledPathRegex, err = regexp.Compile(compileMe)
 	return err
 }
 
 // TODO this matches a request to a route but it depends on sort order of multiple
 // routes matched, it will match the first one.
 func (route Route) matchURI(request *http.Request) bool {
-	matched := false
-	if route.PathRegex != nil {
-		matched = route.PathRegex.MatchString(request.RequestURI)
-	} else {
-		matched, _ = regexp.MatchString(startS+route.Path, request.RequestURI)
-	}
-
-	return matched
+	return route.CompiledPathRegex.MatchString(request.RequestURI)
 }
 
 const upstreamResourceMapped = "upstream resource mapped"
