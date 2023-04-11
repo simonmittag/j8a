@@ -53,12 +53,7 @@ func (route *Route) compilePath() error {
 // TODO this matches a request to a route but it depends on sort order of multiple
 // routes matched, it will match the first one.
 func (route Route) matchURI(request *http.Request) bool {
-	matched := false
-	if route.CompiledPathRegex != nil {
-		matched = route.CompiledPathRegex.MatchString(request.RequestURI)
-	}
-
-	return matched
+	return route.CompiledPathRegex.MatchString(request.RequestURI)
 }
 
 const upstreamResourceMapped = "upstream resource mapped"
