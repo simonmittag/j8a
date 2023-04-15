@@ -65,6 +65,11 @@ func (route Route) matchURI(request *http.Request) bool {
 	return match
 }
 
+// Deprecated
+func (route Route) matchURI_Naive(request *http.Request) bool {
+	return route.CompiledPathRegex.MatchString(request.URL.Path)
+}
+
 const upstreamResourceMapped = "upstream resource mapped"
 const policyMsg = "policy"
 const upResource = "upResource"

@@ -243,6 +243,38 @@ func BenchmarkRouteMatchingRegex(b *testing.B) {
 	}
 }
 
+func BenchmarkRouteMatchingRegexBusyVersion(b *testing.B) {
+	//suppress noise
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+
+	config := new(Config).readYmlFile("./j8acfg.yml")
+	config = config.compileRoutePaths().validateRoutes()
+
+	for i := 0; i < b.N; i++ {
+		for _, route := range config.Routes {
+			if ok := route.matchURI(requestFactory("/s16")); ok {
+				break
+			}
+		}
+	}
+}
+
+func BenchmarkRouteMatchingRegexNaiveBusyVersion(b *testing.B) {
+	//suppress noise
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+
+	config := new(Config).readYmlFile("./j8acfg.yml")
+	config = config.compileRoutePaths().validateRoutes()
+
+	for i := 0; i < b.N; i++ {
+		for _, route := range config.Routes {
+			if ok := route.matchURI_Naive(requestFactory("/s16")); ok {
+				break
+			}
+		}
+	}
+}
+
 // we can no longer run this it's illegal. Route paths must be compiled.
 //func BenchmarkRouteMatchingString(b *testing.B) {
 //	//suppress noise
