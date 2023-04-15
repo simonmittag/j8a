@@ -53,8 +53,6 @@ func formatInvalidAcceptEncoding() string {
 }
 
 func proxyHandler(response http.ResponseWriter, request *http.Request, exec proxyfunc) {
-	matched := false
-
 	//preprocess incoming request in proxy object
 	proxy := new(Proxy).
 		setOutgoing(response).
@@ -83,32 +81,32 @@ func proxyHandler(response http.ResponseWriter, request *http.Request, exec prox
 		return
 	}
 
-	//once a route is matched, it needs to be mapped to an upstream resource via a policy
-	//TODO this should be it's own method since 2020 so it can be unit tested.
+	if matchRoutes(request, proxy) {
+		if proxy.Route.hasJwt() && !proxy.validateJwt() {
+			sendStatusCodeAsJSON(proxy.respondWith(401, jwtBearerTokenMissing))
+		}
+		url, label, mapped := proxy.Route.mapURL(proxy)
+		if mapped {
+			//mapped requests are sent to proxyfuncs.
+			exec(proxy.firstAttempt(url, label))
+		} else {
+			//unmapped request means an internal configuration error in server
+			sendStatusCodeAsJSON(proxy.respondWith(503, unableToMapUpstreamResource))
+		}
+	} else {
+		sendStatusCodeAsJSON(proxy.respondWith(404, upstreamResourceNotFound))
+	}
+}
+
+func matchRoutes(request *http.Request, proxy *Proxy) bool {
+	matched := false
 	for _, route := range Runner.Routes {
 		if matched = route.matchURI(request); matched {
 			proxy.setRoute(&route)
-			if route.hasJwt() && !proxy.validateJwt() {
-				sendStatusCodeAsJSON(proxy.respondWith(401, jwtBearerTokenMissing))
-				return
-			}
-			url, label, mapped := route.mapURL(proxy)
-			if mapped {
-				//mapped requests are sent to proxyfuncs.
-				exec(proxy.firstAttempt(url, label))
-			} else {
-				//unmapped request means an internal configuration error in server
-				sendStatusCodeAsJSON(proxy.respondWith(503, unableToMapUpstreamResource))
-				return
-			}
 			break
 		}
 	}
-
-	//unmatched paths means we have no route for this and always return a 404
-	if !matched {
-		sendStatusCodeAsJSON(proxy.respondWith(404, upstreamResourceNotFound))
-	}
+	return matched
 }
 
 func validate(proxy *Proxy) bool {
