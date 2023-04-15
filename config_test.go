@@ -1057,3 +1057,17 @@ func TestParseDisableXRequestInfoFalse(t *testing.T) {
 		t.Error("X-Request-Info should be enabled")
 	}
 }
+
+func TestConfigValidationPanicsForInvalidRouteType(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("config should have panicked")
+		}
+	}()
+
+	config := new(Config).readYmlFile("./j8acfg.yml")
+	//thou shall not pass!
+	config.Routes[0].PathType = "blah"
+
+	config = config.validateRoutes()
+}

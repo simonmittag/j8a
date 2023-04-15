@@ -171,6 +171,8 @@ func (config Config) reApplyResourceNames() *Config {
 
 var routePathTypes = NewRoutePathTypes()
 
+const prefixS = "prefix"
+
 func (config Config) validateRoutes() *Config {
 	//prep routes with leading slash
 	for i, _ := range config.Routes {
@@ -183,7 +185,7 @@ func (config Config) validateRoutes() *Config {
 			}
 		}
 		if len(config.Routes[i].PathType) == 0 {
-			config.Routes[i].PathType = "prefix"
+			config.Routes[i].PathType = prefixS
 		} else {
 			if !routePathTypes.isValid(config.Routes[i].PathType) {
 				config.panic(fmt.Sprintf("path type %s invalid, not one of ['prefix', 'exact']", config.Routes[i].PathType))

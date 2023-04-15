@@ -7,86 +7,115 @@ import (
 )
 
 func TestRouteMatchRoot(t *testing.T) {
-	routeNoMatch("/", "", t)
-	routeMatch("/", "/some", t)
-	routeMatch("/", "/", t)
-	routeMatch("/", "/some/more", t)
-	routeMatch("/", "/some/more?param", t)
-	routeMatch("/", "/some/more?param=value", t)
-	routeMatch("/", "/some/more?param=value&param2=value2", t)
+	routePrefixNoMatch("/", "", t)
+	routePrefixMatch("/", "/some", t)
+	routePrefixMatch("/", "/", t)
+	routePrefixMatch("/", "/some/more", t)
+	routePrefixMatch("/", "/some/more?param", t)
+	routePrefixMatch("/", "/some/more?param=value", t)
+	routePrefixMatch("/", "/some/more?param=value&param2=value2", t)
 	//path is never empty string, http server inserts "/"
 }
 
 func TestRouteMatchWithSlug(t *testing.T) {
-	routeNoMatch("/so", "so", t)
-	routeNoMatch("/so", "/os", t)
-	routeMatch("/so", "/some", t)
-	routeMatch("/so", "/some/more", t)
-	routeMatch("/so", "/some/more?param", t)
-	routeMatch("/so", "/some/more?param=value", t)
-	routeMatch("/so", "/some/more?param=value&param2=value2", t)
+	routePrefixNoMatch("/so", "so", t)
+	routePrefixNoMatch("/so", "/os", t)
+	routePrefixMatch("/so", "/some", t)
+	routePrefixMatch("/so", "/some/more", t)
+	routePrefixMatch("/so", "/some/more?param", t)
+	routePrefixMatch("/so", "/some/more?param=value", t)
+	routePrefixMatch("/so", "/some/more?param=value&param2=value2", t)
 }
 
 func TestRouteMatchWithTerminatedSlug(t *testing.T) {
-	routeNoMatch("/some/", "some", t)
-	routeNoMatch("/some/", "", t)
-	routeNoMatch("/some/", "/", t)
-	routeNoMatch("/some/", "/some", t)
-	routeNoMatch("/some/", "/want/some/", t)
-	routeMatch("/some/", "/some/", t)
-	routeMatch("/some/", "/some/more", t)
-	routeMatch("/some/", "/some/more?param", t)
-	routeMatch("/some/", "/some/more?param=value", t)
-	routeMatch("/some/", "/some/more?param=value&param2=value2", t)
+	routePrefixNoMatch("/some/", "some", t)
+	routePrefixNoMatch("/some/", "", t)
+	routePrefixNoMatch("/some/", "/", t)
+	routePrefixMatch("/some/", "/some", t)
+	routePrefixNoMatch("/some/", "/want/some/", t)
+	routePrefixMatch("/some/", "/some/", t)
+	routePrefixMatch("/some/", "/some/more", t)
+	routePrefixMatch("/some/", "/some/more?param", t)
+	routePrefixMatch("/some/", "/some/more?param=value", t)
+	routePrefixMatch("/some/", "/some/more?param=value&param2=value2", t)
 }
 
 func TestRouteMatchWithWildcardSlug(t *testing.T) {
-	routeNoMatch("*/some/", "some", t)
-	routeNoMatch("*/some/", "", t)
-	routeNoMatch("*/some/", "/", t)
-	routeNoMatch("*/some/", "/some", t)
-	routeMatch("*/some/", "/want/some/", t)
-	routeMatch("*/some/", "/really/want/some/", t)
-	routeMatch("*/some/", "/really/want/some/more", t)
-	routeMatch("*/some/", "/really/want/some/more?with=params", t)
-	routeMatch("*/some/", "/really/want/some/more/", t)
-	routeMatch("*/some/", "/some/", t)
-	routeMatch("*/some/", "/some/more", t)
-	routeMatch("*/some/", "/some/more?param", t)
-	routeMatch("*/some/", "/some/more?param=value", t)
-	routeMatch("*/some/", "/some/more?param=value&param2=value2", t)
+	routePrefixNoMatch("*/some/", "some", t)
+	routePrefixNoMatch("*/some/", "", t)
+	routePrefixNoMatch("*/some/", "/", t)
+	routePrefixMatch("*/some/", "/want/some/", t)
+	routePrefixMatch("*/some/", "/really/want/some/", t)
+	routePrefixMatch("*/some/", "/really/want/some/more", t)
+	routePrefixMatch("*/some/", "/really/want/some/more?with=params", t)
+	routePrefixMatch("*/some/", "/really/want/some/more/", t)
+	//trailing slash is appended, then matches
+	routePrefixMatch("*/some/", "/some", t)
+	routePrefixMatch("*/some/", "/some/", t)
+	routePrefixMatch("*/some/", "/some/more", t)
+	routePrefixMatch("*/some/", "/some/more?param", t)
+	routePrefixMatch("*/some/", "/some/more?param=value", t)
+	routePrefixMatch("*/some/", "/some/more?param=value&param2=value2", t)
 }
 
 // some of these do not match because regex greedy matches to "/"
 func TestRouteMatchWithAbsoluteWildcardSlug(t *testing.T) {
-	routeNoMatch("/*/some/", "/want/some/", t)
-	routeNoMatch("/*/some/", "/really/want/some/", t)
-	routeNoMatch("/*/some/", "/really/want/some/more", t)
-	routeNoMatch("/*/some/", "/really/want/some/more?with=params", t)
-	routeNoMatch("/*/some/", "/really/want/some/more/", t)
+	routePrefixNoMatch("/*/some/", "/want/some/", t)
+	routePrefixNoMatch("/*/some/", "/really/want/some/", t)
+	routePrefixNoMatch("/*/some/", "/really/want/some/more", t)
+	routePrefixNoMatch("/*/some/", "/really/want/some/more?with=params", t)
+	routePrefixNoMatch("/*/some/", "/really/want/some/more/", t)
 }
 
-// TODO: test trailing slashes better. Do we want matches?
-// TODO: test query strings
 func TestRouteExactMatch(t *testing.T) {
+	routeExactMatch("/some/", "/some/?k=v", t)
 	routeExactMatch("/some/", "/some/", t)
 	routeExactNoMatch("/some/", "/some", t)
 	routeExactMatch("/some/index.html", "/some/index.html", t)
+	routeExactMatch("/some/index.html", "/some/index.html?k=v", t)
+	routeExactMatch("/some/index.html", "/some/index.html?k=v&k2=v2", t)
 	routeExactNoMatch("/some/index.html", "/some/index", t)
 	routeExactNoMatch("/some/index.html", "/some/index.", t)
 	routeExactNoMatch("/some/index.html", "/some/index.htm", t)
 }
 
-func routeMatch(route string, path string, t *testing.T) {
-	r := routeFactory(route)
+func TestKubernetesIngressExamples(t *testing.T) {
+	routePrefixMatch("/", "/any/thing?k=v", t)
+	routeExactMatch("/foo", "/foo", t)
+	routeExactNoMatch("/foo", "/bar", t)
+	routeExactNoMatch("/foo", "/foo/", t)
+	routeExactNoMatch("/foo/", "/foo", t)
+	routePrefixMatch("/foo", "/foo", t)
+	routePrefixMatch("/foo", "/foo/", t)
+	//appended by matcher for prefix mode
+	routePrefixMatch("/foo/", "/foo", t)
+	//but can't match in exact mode
+	routeExactNoMatch("/foo/", "/foo", t)
+	routePrefixMatch("/foo/", "/foo/", t)
+
+	//we match the last element of a path as substring, kube doesn't, see Kube ingress: https://kubernetes.io/docs/concepts/services-networking/ingress/
+	routePrefixMatch("/aaa/bb", "/aaa/bbb", t)
+	routePrefixMatch("/aaa/bbb", "/aaa/bbb", t)
+	//ignores trailing slash
+	routePrefixMatch("/aaa/bbb/", "/aaa/bbb", t)
+	//matches trailing slash
+	routePrefixMatch("/aaa/bbb", "/aaa/bbb/", t)
+	routePrefixMatch("/aaa/bbb", "/aaa/bbb/ccc", t)
+	//we match the last element of a path as substring, kube doesn't, see Kube ingress: https://kubernetes.io/docs/concepts/services-networking/ingress/
+	routePrefixMatch("/aaa/bbb", "/aaa/bbbxyz", t)
+	routePrefixMatch("/aaa/bbb", "/aaa/bbbxyz", t)
+}
+
+func routePrefixMatch(route string, path string, t *testing.T) {
+	r := routeFactory(route, "prefix")
 	req := requestFactory(path)
 	if !r.matchURI(req) {
 		t.Errorf("route %v did not match desired path: %v", route, path)
 	}
 }
 
-func routeNoMatch(route string, path string, t *testing.T) {
-	r := routeFactory(route)
+func routePrefixNoMatch(route string, path string, t *testing.T) {
+	r := routeFactory(route, "prefix")
 	req := requestFactory(path)
 	if r.matchURI(req) {
 		t.Errorf("route %v did match undesired path: %v", route, path)
@@ -120,7 +149,7 @@ func routeFactory(args ...string) Route {
 	r := Route{
 		Path: args[0],
 	}
-	if len(args) > 1 && "exact" == args[1] {
+	if len(args) > 1 {
 		r.PathType = args[1]
 	}
 	r.compilePath()

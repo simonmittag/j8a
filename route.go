@@ -52,8 +52,17 @@ func (route *Route) compilePath() error {
 
 // TODO this matches a request to a route but it depends on sort order of multiple
 // routes matched, it will match the first one.
+const slashS = "/"
+
 func (route Route) matchURI(request *http.Request) bool {
-	return route.CompiledPathRegex.MatchString(request.RequestURI)
+	match := route.CompiledPathRegex.MatchString(request.URL.Path)
+	if !match &&
+		route.PathType == prefixS &&
+		len(request.URL.Path) > 0 &&
+		string(request.URL.Path[len(request.URL.Path)-1]) != slashS {
+		match = route.CompiledPathRegex.MatchString(request.URL.Path + slashS)
+	}
+	return match
 }
 
 const upstreamResourceMapped = "upstream resource mapped"
