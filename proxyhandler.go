@@ -98,6 +98,8 @@ func proxyHandler(response http.ResponseWriter, request *http.Request, exec prox
 	}
 }
 
+// TODO this needs a new order. Exact matches first, then prefix matches. inside all these, longer matches first, then shorter ones.
+// try a custom sorter for routes.
 func matchRoutes(request *http.Request, proxy *Proxy) bool {
 	matched := false
 	for _, route := range Runner.Routes {

@@ -227,6 +227,20 @@ func TestRoutePathTypesAreValid(t *testing.T) {
 	}
 }
 
+func TestRouteSorting(t *testing.T) {
+	//the sort order needs to be exact over prefix, then by longest path.
+
+	config := new(Config).readYmlFile("./j8acfg.yml")
+	config = config.compileRoutePaths().validateRoutes()
+
+	if config.Routes[0].Path != "/path/med/1st" ||
+		config.Routes[1].Path != "/path/med/2" ||
+		config.Routes[2].Path != "/longfirstslug_longfirstslug_longfirstslug_longfirstslug/short" ||
+		config.Routes[3].Path != "/badremote" {
+		t.Errorf("sort order wrong %v", config.Routes)
+	}
+}
+
 func BenchmarkRouteMatchingRegex(b *testing.B) {
 	//suppress noise
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)

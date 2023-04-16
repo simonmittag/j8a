@@ -92,6 +92,31 @@ routes:
     resource: badlocal
   - path: /badssl
     resource: badssl
+  - path: /path/med/2
+    pathType: exact
+    resource: blah2
+  - path: /path/med/1st
+    pathType: exact
+    resource: blah1
+  - path: /longfirstslug_longfirstslug_longfirstslug_longfirstslug/short
+    resource: blah1
+  - path: /short/longersecondslug_longersecondslug_longersecondslug_longersecondslug
+    resource: blah1
+  - path: /a/a/
+    rescource: blah3213
+  - path: /a/ab/
+    rescource: blah3123
+  - path: /path/long/hierarchy/2nd
+    pathType: prefix
+    resource: blah4
+  - path: /path/long/hierarchy/first
+    pathType: prefix
+    resource: blah3
+  - path: /c/a
+    rescource: blah3213
+  - path: /ab/a/a/
+    rescource: blah3213
+
 
 resources:
   jsonplaceholder:

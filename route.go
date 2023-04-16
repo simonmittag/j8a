@@ -19,7 +19,27 @@ func (s Routes) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
 }
 func (s Routes) Less(i, j int) bool {
-	return len(s[i].Path) > len(s[j].Path)
+	pis := strings.Split(s[i].Path, slashS)
+	if len(pis[0]) == 0 && len(pis) > 1 {
+		pis = pis[1:]
+	}
+	pjs := strings.Split(s[j].Path, slashS)
+	if len(pjs[0]) == 0 && len(pjs) > 1 {
+		pjs = pjs[1:]
+	}
+
+	less := false
+	if (s[i].PathType == exact && s[j].PathType == exact) || (s[i].PathType == prefixS && s[j].PathType == prefixS) {
+		for pii, pip := range pis {
+			if pii <= len(pjs)-1 && len(pip) > len(pjs[pii]) {
+				less = true
+				break
+			}
+		}
+	} else {
+		less = s[i].PathType == exact
+	}
+	return less
 }
 
 // Route maps a Path to an upstream resource
