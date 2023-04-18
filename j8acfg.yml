@@ -116,6 +116,17 @@ routes:
     rescource: blah3213
   - path: /ab/a/a/
     rescource: blah3213
+  - path: /
+    rescource: blah3213
+  - path: /*
+    rescource: blah3213
+  - path: /*/a
+    rescource: blah3213
+  - path: /*/a/g*a/ba^
+    rescource: blah3213
+  - path: //a
+    rescource: blah3213
+
 
 
 resources:

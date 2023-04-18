@@ -1,6 +1,7 @@
 package j8a
 
 import (
+	"errors"
 	"net/http"
 	"regexp"
 	"strings"
@@ -9,6 +10,45 @@ import (
 
 // Aboutj8a special Resource alias for internal endpoint
 const about string = "about"
+
+type RoutePath []string
+
+func NewRoutePath(r Route) RoutePath {
+	rps := strings.Split(r.Path, slashS)
+	return RoutePath(rps).trimEmptySlug()
+}
+
+func (rp RoutePath) trimEmptySlug() RoutePath {
+	if len(rp[0]) == 0 && len(rp) > 1 {
+		rp = rp[1:]
+	}
+	return rp
+}
+
+func (rp RoutePath) trimNextSlug() (RoutePath, error) {
+	if len(rp) > 1 {
+		rp = rp[1:]
+		return rp, nil
+	} else {
+		return nil, errors.New("no more slugs")
+	}
+}
+
+func (rp RoutePath) Less(rp2 RoutePath) bool {
+	less := false
+	if len(rp[0]) > len(rp2[0]) {
+		less = true
+	} else if len(rp[0]) == len(rp2[0]) {
+		rpn, e := rp.trimNextSlug()
+		rp2n, e2 := rp2.trimNextSlug()
+		if e == nil && e2 == nil {
+			less = rpn.Less(rp2n)
+		} else if e2 != nil {
+			less = true
+		}
+	}
+	return less
+}
 
 type Routes []Route
 
@@ -19,23 +59,12 @@ func (s Routes) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
 }
 func (s Routes) Less(i, j int) bool {
-	pis := strings.Split(s[i].Path, slashS)
-	if len(pis[0]) == 0 && len(pis) > 1 {
-		pis = pis[1:]
-	}
-	pjs := strings.Split(s[j].Path, slashS)
-	if len(pjs[0]) == 0 && len(pjs) > 1 {
-		pjs = pjs[1:]
-	}
+	pis := NewRoutePath(s[i])
+	pjs := NewRoutePath(s[j])
 
 	less := false
 	if (s[i].PathType == exact && s[j].PathType == exact) || (s[i].PathType == prefixS && s[j].PathType == prefixS) {
-		for pii, pip := range pis {
-			if pii <= len(pjs)-1 && len(pip) > len(pjs[pii]) {
-				less = true
-				break
-			}
-		}
+		less = pis.Less(pjs)
 	} else {
 		less = s[i].PathType == exact
 	}

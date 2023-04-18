@@ -241,6 +241,155 @@ func TestRouteSorting(t *testing.T) {
 	}
 }
 
+func TestRoutePathLess(t *testing.T) {
+	var tests = []struct {
+		name string
+		rl   Route
+		rg   Route
+	}{
+		{
+			name: "empty paths for nil check",
+			rl: Route{
+				Path:     "",
+				PathType: "prefix",
+			},
+			rg: Route{
+				Path:     "",
+				PathType: "prefix",
+			},
+		},
+		{
+			name: "one longer vs. one shorter wildcar routepath that isn't a slug",
+			rl: Route{
+				Path:     "aabcccc*",
+				PathType: "prefix",
+			},
+			rg: Route{
+				Path:     "aaa*",
+				PathType: "prefix",
+			},
+		},
+		{
+			name: "one longer vs. one shorter routepath that isn't a slug",
+			rl: Route{
+				Path:     "aabcccc",
+				PathType: "prefix",
+			},
+			rg: Route{
+				Path:     "aaa",
+				PathType: "prefix",
+			},
+		},
+		{
+			name: "one vs. one routepath that isn't a slug",
+			rl: Route{
+				Path:     "aab",
+				PathType: "prefix",
+			},
+			rg: Route{
+				Path:     "aaa",
+				PathType: "prefix",
+			},
+		},
+		{
+			name: "one vs. one slugs",
+			rl: Route{
+				Path:     "/aab",
+				PathType: "prefix",
+			},
+			rg: Route{
+				Path:     "/aaa",
+				PathType: "prefix",
+			},
+		},
+		{
+			name: "one vs. one slugs",
+			rl: Route{
+				Path:     "/aab",
+				PathType: "prefix",
+			},
+			rg: Route{
+				Path:     "/aaa",
+				PathType: "prefix",
+			},
+		},
+		{
+			name: "two vs. one slugs",
+			rl: Route{
+				Path:     "/aaa/bbb",
+				PathType: "prefix",
+			},
+			rg: Route{
+				Path:     "/aaa",
+				PathType: "prefix",
+			},
+		},
+		{
+			name: "longer subpath slug at the end",
+			rl: Route{
+				Path:     "/aaa/bbb/cc",
+				PathType: "prefix",
+			},
+			rg: Route{
+				Path:     "/aaa/bbb/c",
+				PathType: "prefix",
+			},
+		},
+		{
+			name: "longer subpath slug higher up the chain",
+			rl: Route{
+				Path:     "/aaa/bbbbbbbbbbbbbbbbbbb/c",
+				PathType: "prefix",
+			},
+			rg: Route{
+				Path:     "/aaa/bbb/cc/d/e/f",
+				PathType: "prefix",
+			},
+		},
+		{
+			name: "longer subpath slug top of the chain",
+			rl: Route{
+				Path:     "/aaaaaa/bbb/c",
+				PathType: "prefix",
+			},
+			rg: Route{
+				Path:     "/aaa/bbb/c/d/e/f",
+				PathType: "prefix",
+			},
+		},
+		{
+			name: "more subpath slugs at the end of the chain for same root",
+			rl: Route{
+				Path:     "/aaa/bbb/ccc/ddd/",
+				PathType: "prefix",
+			},
+			rg: Route{
+				Path:     "/aaa/bbb/ccc/ddd",
+				PathType: "prefix",
+			},
+		},
+		{
+			name: "more subpath slugs at the end of the chain for same root",
+			rl: Route{
+				Path:     "/aaa/bbb/ccc/ddd/eee/fff/ggg",
+				PathType: "prefix",
+			},
+			rg: Route{
+				Path:     "/aaa/bbb/ccc/ddd",
+				PathType: "prefix",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if !NewRoutePath(tt.rl).Less(NewRoutePath(tt.rg)) {
+				t.Errorf("routepath %v should be less than %v", tt.rl, tt.rg)
+			}
+		})
+	}
+}
+
 func BenchmarkRouteMatchingRegex(b *testing.B) {
 	//suppress noise
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
