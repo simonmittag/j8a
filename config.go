@@ -177,7 +177,7 @@ func (config Config) validateRoutes() *Config {
 	//prep routes with leading slash
 	for i, _ := range config.Routes {
 		if strings.Index(config.Routes[i].Path, "/") != 0 {
-			config.Routes[i].Path = "/" + config.Routes[i].Path
+			config.panic(fmt.Sprintf("route %v does not start with '/'", config.Routes[i].Path))
 		}
 		if config.Routes[i].hasJwt() {
 			if _, ok := config.Jwt[config.Routes[i].Jwt]; !ok {
