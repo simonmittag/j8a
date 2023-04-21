@@ -227,6 +227,31 @@ func TestRoutePathTypesAreValid(t *testing.T) {
 	}
 }
 
+func TestRoutePathsValid(t *testing.T) {
+	mkPrfx := func(p string) Route {
+		return Route{
+			Path:     p,
+			PathType: "prefix",
+		}
+	}
+	var tests = []struct {
+		n string
+		r Route
+		v bool
+	}{
+		{n: "simple", r: mkPrfx("/a"), v: true},
+		{n: "no space", r: mkPrfx("/a a"), v: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.n, func(t *testing.T) {
+			if v, _ := tt.r.validPath(); v != tt.v {
+				t.Errorf("routepath %v should be %v", tt.r.Path, tt.v)
+			}
+		})
+	}
+}
+
 func TestRouteSorting(t *testing.T) {
 	//the sort order needs to be exact over prefix, then by longest path.
 

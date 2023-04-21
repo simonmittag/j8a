@@ -124,7 +124,9 @@ routes:
     rescource: blah3213
   - path: /*/a/g*a/ba^
     rescource: blah3213
-  - path: //a
+  - path: /a
+    rescource: blah3213
+  - path: /aa
     rescource: blah3213
 
 

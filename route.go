@@ -2,7 +2,10 @@ package j8a
 
 import (
 	"errors"
+	"fmt"
+	urlverifier "github.com/davidmytton/url-verifier"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strings"
 	"time"
@@ -80,6 +83,33 @@ type Route struct {
 	Resource          string
 	Policy            string
 	Jwt               string
+}
+
+func (route *Route) validPath() (bool, error) {
+	const fakeHost = "http://127.0.0.1"
+	_, err := url.ParseRequestURI(fakeHost + route.Path)
+	defaultError := errors.New(fmt.Sprintf("route %v not a valid URL path", route.Path))
+	if err != nil {
+		return false, defaultError
+	}
+	_, err = url.Parse(fakeHost + route.Path)
+	if err != nil {
+		return false, defaultError
+	}
+	_, err = urlverifier.NewVerifier().Verify(fakeHost + route.Path)
+	if err != nil {
+		return false, defaultError
+	}
+	if len(route.Path) == 0 {
+		return false, defaultError
+	}
+	if strings.Contains(route.Path, " ") {
+		return false, errors.New(fmt.Sprintf("route %v not a valid URL path, may not contain space character", route.Path))
+	}
+	if strings.Index(route.Path, "/") != 0 {
+		return false, errors.New(fmt.Sprintf("route %v not a valid URL path, does not start with '/'", route.Path))
+	}
+	return true, nil
 }
 
 const startS = "^"

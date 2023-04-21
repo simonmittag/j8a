@@ -176,8 +176,9 @@ const prefixS = "prefix"
 func (config Config) validateRoutes() *Config {
 	//prep routes with leading slash
 	for i, _ := range config.Routes {
-		if strings.Index(config.Routes[i].Path, "/") != 0 {
-			config.panic(fmt.Sprintf("route %v does not start with '/'", config.Routes[i].Path))
+		v, e := config.Routes[i].validPath()
+		if !v {
+			config.panic(e.Error())
 		}
 		if config.Routes[i].hasJwt() {
 			if _, ok := config.Jwt[config.Routes[i].Jwt]; !ok {
