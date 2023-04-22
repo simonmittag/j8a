@@ -87,8 +87,9 @@ type Route struct {
 
 func (route *Route) validPath() (bool, error) {
 	const fakeHost = "http://127.0.0.1"
-	_, err := url.ParseRequestURI(fakeHost + route.Path)
 	defaultError := errors.New(fmt.Sprintf("route %v not a valid URL path", route.Path))
+
+	_, err := url.ParseRequestURI(fakeHost + route.Path)
 	if err != nil {
 		return false, defaultError
 	}
@@ -108,6 +109,9 @@ func (route *Route) validPath() (bool, error) {
 	}
 	if strings.Index(route.Path, "/") != 0 {
 		return false, errors.New(fmt.Sprintf("route %v not a valid URL path, does not start with '/'", route.Path))
+	}
+	if e := route.compilePath(); e != nil {
+		return false, e
 	}
 	return true, nil
 }

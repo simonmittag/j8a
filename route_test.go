@@ -6,138 +6,6 @@ import (
 	"testing"
 )
 
-func TestRouteMatchRoot(t *testing.T) {
-	routePrefixNoMatch("/", "", t)
-	routePrefixMatch("/", "/some", t)
-	routePrefixMatch("/", "/", t)
-	routePrefixMatch("/", "/some/more", t)
-	routePrefixMatch("/", "/some/more?param", t)
-	routePrefixMatch("/", "/some/more?param=value", t)
-	routePrefixMatch("/", "/some/more?param=value&param2=value2", t)
-	//path is never empty string, http server inserts "/"
-}
-
-func TestRouteMatchWithSlug(t *testing.T) {
-	routePrefixNoMatch("/so", "so", t)
-	routePrefixNoMatch("/so", "/os", t)
-	routePrefixMatch("/so", "/some", t)
-	routePrefixMatch("/so", "/some/more", t)
-	routePrefixMatch("/so", "/some/more?param", t)
-	routePrefixMatch("/so", "/some/more?param=value", t)
-	routePrefixMatch("/so", "/some/more?param=value&param2=value2", t)
-}
-
-func TestRouteMatchWithTerminatedSlug(t *testing.T) {
-	routePrefixNoMatch("/some/", "some", t)
-	routePrefixNoMatch("/some/", "", t)
-	routePrefixNoMatch("/some/", "/", t)
-	routePrefixMatch("/some/", "/some", t)
-	routePrefixNoMatch("/some/", "/want/some/", t)
-	routePrefixMatch("/some/", "/some/", t)
-	routePrefixMatch("/some/", "/some/more", t)
-	routePrefixMatch("/some/", "/some/more?param", t)
-	routePrefixMatch("/some/", "/some/more?param=value", t)
-	routePrefixMatch("/some/", "/some/more?param=value&param2=value2", t)
-}
-
-func TestRouteMatchWithWildcardSlug(t *testing.T) {
-	routePrefixNoMatch("*/some/", "some", t)
-	routePrefixNoMatch("*/some/", "", t)
-	routePrefixNoMatch("*/some/", "/", t)
-	routePrefixMatch("*/some/", "/want/some/", t)
-	routePrefixMatch("*/some/", "/really/want/some/", t)
-	routePrefixMatch("*/some/", "/really/want/some/more", t)
-	routePrefixMatch("*/some/", "/really/want/some/more?with=params", t)
-	routePrefixMatch("*/some/", "/really/want/some/more/", t)
-	//trailing slash is appended, then matches
-	routePrefixMatch("*/some/", "/some", t)
-	routePrefixMatch("*/some/", "/some/", t)
-	routePrefixMatch("*/some/", "/some/more", t)
-	routePrefixMatch("*/some/", "/some/more?param", t)
-	routePrefixMatch("*/some/", "/some/more?param=value", t)
-	routePrefixMatch("*/some/", "/some/more?param=value&param2=value2", t)
-}
-
-// some of these do not match because regex greedy matches to "/"
-func TestRouteMatchWithAbsoluteWildcardSlug(t *testing.T) {
-	routePrefixNoMatch("/*/some/", "/want/some/", t)
-	routePrefixNoMatch("/*/some/", "/really/want/some/", t)
-	routePrefixNoMatch("/*/some/", "/really/want/some/more", t)
-	routePrefixNoMatch("/*/some/", "/really/want/some/more?with=params", t)
-	routePrefixNoMatch("/*/some/", "/really/want/some/more/", t)
-}
-
-func TestRouteExactMatch(t *testing.T) {
-	routeExactMatch("/some/", "/some/?k=v", t)
-	routeExactMatch("/some/", "/some/", t)
-	routeExactNoMatch("/some/", "/some", t)
-	routeExactMatch("/some/index.html", "/some/index.html", t)
-	routeExactMatch("/some/index.html", "/some/index.html?k=v", t)
-	routeExactMatch("/some/index.html", "/some/index.html?k=v&k2=v2", t)
-	routeExactNoMatch("/some/index.html", "/some/index", t)
-	routeExactNoMatch("/some/index.html", "/some/index.", t)
-	routeExactNoMatch("/some/index.html", "/some/index.htm", t)
-}
-
-func TestKubernetesIngressExamples(t *testing.T) {
-	routePrefixMatch("/", "/any/thing?k=v", t)
-	routeExactMatch("/foo", "/foo", t)
-	routeExactNoMatch("/foo", "/bar", t)
-	routeExactNoMatch("/foo", "/foo/", t)
-	routeExactNoMatch("/foo/", "/foo", t)
-	routePrefixMatch("/foo", "/foo", t)
-	routePrefixMatch("/foo", "/foo/", t)
-	//appended by matcher for prefix mode
-	routePrefixMatch("/foo/", "/foo", t)
-	//but can't match in exact mode
-	routeExactNoMatch("/foo/", "/foo", t)
-	routePrefixMatch("/foo/", "/foo/", t)
-
-	//we match the last element of a path as substring, kube doesn't, see Kube ingress: https://kubernetes.io/docs/concepts/services-networking/ingress/
-	routePrefixMatch("/aaa/bb", "/aaa/bbb", t)
-	routePrefixMatch("/aaa/bbb", "/aaa/bbb", t)
-	//ignores trailing slash
-	routePrefixMatch("/aaa/bbb/", "/aaa/bbb", t)
-	//matches trailing slash
-	routePrefixMatch("/aaa/bbb", "/aaa/bbb/", t)
-	routePrefixMatch("/aaa/bbb", "/aaa/bbb/ccc", t)
-	//we match the last element of a path as substring, kube doesn't, see Kube ingress: https://kubernetes.io/docs/concepts/services-networking/ingress/
-	routePrefixMatch("/aaa/bbb", "/aaa/bbbxyz", t)
-	routePrefixMatch("/aaa/bbb", "/aaa/bbbxyz", t)
-}
-
-func routePrefixMatch(route string, path string, t *testing.T) {
-	r := routeFactory(route, "prefix")
-	req := requestFactory(path)
-	if !r.matchURI(req) {
-		t.Errorf("route %v did not match desired path: %v", route, path)
-	}
-}
-
-func routePrefixNoMatch(route string, path string, t *testing.T) {
-	r := routeFactory(route, "prefix")
-	req := requestFactory(path)
-	if r.matchURI(req) {
-		t.Errorf("route %v did match undesired path: %v", route, path)
-	}
-}
-
-func routeExactMatch(route string, path string, t *testing.T) {
-	r := routeFactory(route, "exact")
-	req := requestFactory(path)
-	if !r.matchURI(req) {
-		t.Errorf("route %v did not exactly match desired path: %v", route, path)
-	}
-}
-
-func routeExactNoMatch(route string, path string, t *testing.T) {
-	r := routeFactory(route, "exact")
-	req := requestFactory(path)
-	if r.matchURI(req) {
-		t.Errorf("route %v did exactly match undesired path: %v", route, path)
-	}
-}
-
 // TODO this needs host
 func requestFactory(path string) *http.Request {
 	req, _ := http.NewRequest("GET", path, nil)
@@ -154,6 +22,203 @@ func routeFactory(args ...string) Route {
 	}
 	r.compilePath()
 	return r
+}
+
+func doRunRouteMatchingTests(t *testing.T, tests []struct {
+	n string
+	r string
+	t string
+	u string
+	v bool
+}) {
+	for _, tt := range tests {
+		t.Run(tt.n, func(t *testing.T) {
+			rr := Route{
+				Path:     tt.r,
+				PathType: tt.t,
+			}
+			//this is only to validate the test. invalid paths should not be tested and there are many.
+			if v, _ := rr.validPath(); !v {
+				t.Errorf("routepath %v should be valid. this is a test setup problem", rr.Path)
+			}
+			//test actual URL matching
+			if rr.matchURI(requestFactory(tt.u)) != tt.v {
+				t.Errorf("route %v type %v should match URL %v outcome %v", rr.Path, rr.PathType, tt.u, tt.v)
+			}
+		})
+	}
+}
+
+func TestRouteMatchRoot(t *testing.T) {
+	tests := []struct {
+		n string
+		r string
+		t string
+		u string
+		v bool
+	}{
+		{n: "match root", r: "/", t: "prefix", u: "", v: false},
+		{n: "match root", r: "/", t: "prefix", u: "/some", v: true},
+		{n: "match root", r: "/", t: "prefix", u: "/", v: true},
+		{n: "match root", r: "/", t: "prefix", u: "/some/more", v: true},
+		{n: "match root", r: "/", t: "prefix", u: "/some/more?k", v: true},
+		{n: "match root", r: "/", t: "prefix", u: "/some/more?k=v", v: true},
+		{n: "match root", r: "/", t: "prefix", u: "/some/more?k=v&k2=v2", v: true},
+	}
+
+	doRunRouteMatchingTests(t, tests)
+}
+
+func TestRouteMatchWithSlug(t *testing.T) {
+	tests := []struct {
+		n string
+		r string
+		t string
+		u string
+		v bool
+	}{
+		{n: "match slug", r: "/so", t: "prefix", u: "so", v: false},
+		{n: "match slug", r: "/so", t: "prefix", u: "/os", v: false},
+		{n: "match slug", r: "/so", t: "prefix", u: "/some", v: true},
+		{n: "match slug", r: "/so", t: "prefix", u: "/some/more", v: true},
+		{n: "match slug", r: "/so", t: "prefix", u: "/some/more?k", v: true},
+		{n: "match slug", r: "/so", t: "prefix", u: "/some/more?k=v", v: true},
+		{n: "match slug", r: "/so", t: "prefix", u: "/some/more?k=v&k2=v2", v: true},
+	}
+
+	doRunRouteMatchingTests(t, tests)
+}
+
+func TestRouteMatchWithTerminatedSlug(t *testing.T) {
+	tests := []struct {
+		n string
+		r string
+		t string
+		u string
+		v bool
+	}{
+		{n: "missingPrefix", r: "/some/", t: "prefix", u: "some", v: false},
+		{n: "missingPath", r: "/some/", t: "prefix", u: "", v: false},
+		{n: "simple non match", r: "/some/", t: "prefix", u: "/", v: false},
+		{n: "matching with missing trailing slash", r: "/some/", t: "prefix", u: "/some", v: true},
+		{n: "slug not matching", r: "/some/", t: "prefix", u: "/want/some", v: false},
+		{n: "slug exact match but type prefix", r: "/some/", t: "prefix", u: "/some/", v: true},
+		{n: "slug prefix match type prefix", r: "/some/", t: "prefix", u: "/some/more", v: true},
+		{n: "slug prefix match type prefix with params", r: "/some/", t: "prefix", u: "/some/more?param", v: true},
+		{n: "slug prefix match type prefix with params", r: "/some/", t: "prefix", u: "/some/more?param=value", v: true},
+		{n: "slug prefix match type prefix with params", r: "/some/", t: "prefix", u: "/some/more?param=value&param2=value2", v: true},
+	}
+
+	doRunRouteMatchingTests(t, tests)
+}
+
+func TestRouteMatchWithWildcardSlug(t *testing.T) {
+	tests := []struct {
+		n string
+		r string
+		t string
+		u string
+		v bool
+	}{
+		//valid route non matching url
+		{n: "valid Route with wildcard non matching url", r: "/[a-z]*/some/", t: "prefix", u: "some", v: false},
+		{n: "valid Route with wildcard non matching url", r: "/[a-z]*/some/", t: "prefix", u: "", v: false},
+		{n: "valid Route with wildcard non matching url", r: "/[a-z]*/some/", t: "prefix", u: "/", v: false},
+		//matches the left subpath, then the right. This is legal but iffy
+		{n: "right matching", r: "/[a-z]*/some/", t: "prefix", u: "/want/some", v: true},
+		{n: "right matching", r: "/[a-z]*/[a-z]*/some/", t: "prefix", u: "/really/want/some", v: true},
+		{n: "right matching", r: "/[a-z]*/[a-z]*/some/", t: "prefix", u: "/really/want/some/more", v: true},
+		{n: "right matching", r: "/[a-z]*/[a-z]*/some/", t: "prefix", u: "/really/want/some/more?k", v: true},
+		{n: "right matching", r: "/[a-z]*/[a-z]*/some/", t: "prefix", u: "/really/want/some/more?k=v", v: true},
+		{n: "right matching", r: "/[a-z]*/[a-z]*/some/", t: "prefix", u: "/really/want/some/more?k=v&k2=v2", v: true},
+		//match multiple subpaths, then match right
+		{n: "right matching", r: "/[a-z,/]*/some/", t: "prefix", u: "/want/want/want/want/want/some/more?param=value&param2=value2", v: true},
+		{n: "right matching", r: "/[a-z,/]*/some/", t: "prefix", u: "/want/want/want/want/want/XXXX/more?param=value&param2=value2", v: false},
+	}
+
+	doRunRouteMatchingTests(t, tests)
+}
+
+func TestRouteExactMatch(t *testing.T) {
+	tests := []struct {
+		n string
+		r string
+		t string
+		u string
+		v bool
+	}{
+		//valid route non matching url
+		{n: "match exact with params", r: "/some/", t: "exact", u: "/some/?k=v", v: true},
+		{n: "exact pathtype does not append trailing slash", r: "/some/", t: "exact", u: "/some", v: false},
+		{n: "match file", r: "/some/index.html", t: "exact", u: "/some/index.html", v: true},
+		{n: "match file with params", r: "/some/index.html", t: "exact", u: "/some/index.html?k=v", v: true},
+		{n: "match file with params", r: "/some/index.html", t: "exact", u: "/some/index.html?k=v&k2=v2", v: true},
+		{n: "do not match file unless exact", r: "/some/index.html", t: "exact", u: "/some/index", v: false},
+		{n: "do not match file unless exact", r: "/some/index.html", t: "exact", u: "/some/index.", v: false},
+		{n: "do not match file unless exact", r: "/some/index.html", t: "exact", u: "/some/index.htm", v: false},
+	}
+
+	doRunRouteMatchingTests(t, tests)
+}
+
+func TestRouteUnicodeMatch(t *testing.T) {
+	tests := []struct {
+		n string
+		r string
+		t string
+		u string
+		v bool
+	}{
+		//valid route non matching url
+		{n: "match unicode chars type exact", r: "/foo指", t: "exact", u: "/foo指", v: true},
+		{n: "match unicode chars type exact with params", r: "/foo/指", t: "exact", u: "/foo/指?k=v", v: true},
+		{n: "match unicode subpaths exact with params", r: "/指/指", t: "exact", u: "/指/指?k=v", v: true},
+		{n: "match unicode subpaths prefix", r: "/指/指", t: "prefix", u: "/指/指aaa?k=v", v: true},
+		{n: "match unicode subpaths prefix", r: "/指/指", t: "prefix", u: "/指/指😀?k=v", v: true},
+		{n: "match unicode subpaths with regex compilation", r: "/指*/指", t: "prefix", u: "/指指指指/指aaa", v: true},
+		{n: "match unicode subpaths with regex compilation and params", r: "/指*/指", t: "prefix", u: "/指指指指/指aaa?k=v", v: true},
+		{n: "match emoji as prefix", r: "/😀/😀", t: "prefix", u: "/😀/😀aaa", v: true},
+		{n: "match emoji as prefix with regex compilation", r: "/[😀]*/😀", t: "prefix", u: "/😀😀😀😀😀😀/😀aaa", v: true},
+		{n: "match emoji as prefix with regex compilation", r: "/😀*/😀", t: "prefix", u: "/😀/😀aaa", v: true},
+		{n: "match emoji as prefix with regex compilation", r: "/[😀]*/😀", t: "prefix", u: "/a/😀aaa", v: false},
+	}
+
+	doRunRouteMatchingTests(t, tests)
+}
+
+func TestKubernetesIngressExamples(t *testing.T) {
+	tests := []struct {
+		n string
+		r string
+		t string
+		u string
+		v bool
+	}{
+		//valid route non matching url
+		{n: "kubernetes ingress examples", r: "/", t: "prefix", u: "/any/thing?k=v", v: true},
+		{n: "kubernetes ingress examples", r: "/foo", t: "exact", u: "/foo", v: true},
+		{n: "kubernetes ingress examples", r: "/foo", t: "exact", u: "/bar", v: false},
+		{n: "kubernetes ingress examples", r: "/foo", t: "exact", u: "/foo/", v: false},
+		{n: "kubernetes ingress examples", r: "/foo/", t: "exact", u: "/foo", v: false},
+		{n: "kubernetes ingress examples", r: "/foo", t: "prefix", u: "/foo", v: true},
+		{n: "kubernetes ingress examples", r: "/foo", t: "prefix", u: "/foo/", v: true},
+		//appended by matcher in prefix mode but not in exact
+		{n: "kubernetes ingress examples", r: "/foo/", t: "prefix", u: "/foo", v: true},
+		{n: "kubernetes ingress examples", r: "/foo/", t: "exact", u: "/foo", v: false},
+		{n: "kubernetes ingress examples", r: "/foo/", t: "exact", u: "/foo/", v: true},
+		//we match the last element of a path as substring, kube doesn't, see Kube ingress: https://kubernetes.io/docs/concepts/services-networking/ingress/
+		{n: "kubernetes ingress examples", r: "/aaa/bb", t: "prefix", u: "/aaa/bbb", v: true},
+		{n: "kubernetes ingress examples", r: "/aaa/bbb", t: "exact", u: "/aaa/bbb", v: true},
+		//ignores trailing slash
+		{n: "kubernetes ingress examples", r: "/aaa/bbb/", t: "prefix", u: "/aaa/bbb", v: true},
+		//matches trailing slash
+		{n: "kubernetes ingress examples", r: "/aaa/bbb", t: "prefix", u: "/aaa/bbb/", v: true},
+		{n: "kubernetes ingress examples", r: "/aaa/bbb", t: "prefix", u: "/aaa/bbb/ccc", v: true},
+		//we match the last element of a path as substring, kube doesn't, see Kube ingress: https://kubernetes.io/docs/concepts/services-networking/ingress/
+		{n: "kubernetes ingress examples", r: "/aaa/bbb", t: "prefix", u: "/aaa/bbbxyz", v: true},
+	}
+
+	doRunRouteMatchingTests(t, tests)
 }
 
 func TestRouteMapDefault(t *testing.T) {
@@ -240,7 +305,19 @@ func TestRoutePathsValid(t *testing.T) {
 		v bool
 	}{
 		{n: "simple", r: mkPrfx("/a"), v: true},
+		{n: "simple", r: mkPrfx("/a/b"), v: true},
+		{n: "double slash", r: mkPrfx("//a/b"), v: true},
+		{n: "regex", r: mkPrfx("/a/b/*"), v: true},
+		{n: "regex", r: mkPrfx("/a/b/a*"), v: true},
+		{n: "emoji", r: mkPrfx("/😈"), v: true},
+		{n: "unicode", r: mkPrfx("/指"), v: true},
+		{n: "regex", r: mkPrfx("/a/b/*"), v: true},
+
+		{n: "regex", r: mkPrfx("/a/b/**"), v: false},
 		{n: "no space", r: mkPrfx("/a a"), v: false},
+		{n: "no space", r: mkPrfx("/a a"), v: false},
+		{n: "no space", r: mkPrfx(" /a"), v: false},
+		{n: "no slash prefix", r: mkPrfx("a/a"), v: false},
 	}
 
 	for _, tt := range tests {
