@@ -84,6 +84,8 @@ func TestRouteMatchWithSlug(t *testing.T) {
 		{n: "match slug", r: "/so", t: "prefix", u: "/some/more?k", v: true},
 		{n: "match slug", r: "/so", t: "prefix", u: "/some/more?k=v", v: true},
 		{n: "match slug", r: "/so", t: "prefix", u: "/some/more?k=v&k2=v2", v: true},
+		{n: "match slug", r: "/so*", t: "prefix", u: "/some/more?k=v&k2=v2", v: true},
+		{n: "match slug", r: "/so/*", t: "prefix", u: "/some/more?k=v&k2=v2", v: true},
 	}
 
 	doRunRouteMatchingTests(t, tests)
