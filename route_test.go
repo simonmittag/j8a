@@ -349,7 +349,7 @@ func TestHostDNSNamePatternValid(t *testing.T) {
 		{n: "invalid asterisk in the middle of domain", h: "a.*.😀😀😀.com", v: false},
 		{n: "valid cyrillic", h: "ԛәлп.com", v: true},
 		{n: "invalid latin with stroke, case mapping is not part of IDNA 2008. We pass this anyway because go does", h: "Ⱥbby.com", v: true},
-		{n: "DNS name can start with number (RFC1123)", h: "1aaa.com", v: true},
+		{n: "DNS name can start with number (RFC-1123)", h: "1aaa.com", v: true},
 		{n: "invalid ascii dollar sign as part of DNS name", h: "$1.a.com", v: false},
 		{n: "invalid contains illegal ascii exclamation mark !", h: "!1.abc.com", v: false},
 		{n: "invalid contains illegal ascii space", h: " 1.abc.com", v: false},
