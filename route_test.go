@@ -2,6 +2,7 @@ package j8a
 
 import (
 	"github.com/rs/zerolog"
+	"golang.org/x/net/idna"
 	"net/http"
 	"testing"
 )
@@ -329,6 +330,58 @@ func TestRoutePathsValid(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestHostDNSNamePatternValid(t *testing.T) {
+	tests := []struct {
+		n string
+		h string
+		v bool
+	}{
+		{n: "valid host", h: "blah", v: true},
+		{n: "valid host unicode", h: "六书", v: true},
+		{n: "valid wildcard dns umlaut", h: "*.faß.com", v: true},
+		{n: "invalid wildcard pattern with double dot", h: "*..faß.com", v: false},
+		{n: "invalid wildcard pattern with asterisk inside pattern", h: "a.*.faß.com", v: false},
+		{n: "invalid wildcard pattern with valid regex style asterisk", h: "a*.faß.com", v: false},
+		{n: "invalid wildcard pattern with invalid regex style asterisk", h: "*a.faß.com", v: false},
+		{n: "valid wild dns other unicode", h: "*.😀😀😀.com", v: true},
+		{n: "invalid asterisk in the middle of domain", h: "a.*.😀😀😀.com", v: false},
+		{n: "valid cyrillic", h: "ԛәлп.com", v: true},
+		{n: "invalid latin with stroke, case mapping is not part of IDNA 2008. We pass this anyway because go does", h: "Ⱥbby.com", v: true},
+		{n: "DNS name can start with number (RFC1123)", h: "1aaa.com", v: true},
+		{n: "invalid ascii dollar sign as part of DNS name", h: "$1.a.com", v: false},
+		{n: "invalid contains illegal ascii exclamation mark !", h: "!1.abc.com", v: false},
+		{n: "invalid contains illegal ascii space", h: " 1.abc.com", v: false},
+		{n: "invalid contains illegal ascii hash sign", h: "#1.abc.com", v: false},
+		{n: "invalid contains illegal ascii percent sign", h: "%1.abc.com", v: false},
+		{n: "invalid contains illegal ascii tilde", h: "^1.abc.com", v: false},
+		{n: "invalid contains illegal ascii ampersand", h: "&1.abc.com", v: false},
+		{n: "invalid contains illegal ascii (", h: "(1.abc.com", v: false},
+		{n: "invalid contains illegal ascii )", h: ")1.abc.com", v: false},
+		{n: "invalid contains illegal ascii ;", h: ";1.abc.com", v: false},
+		{n: "invalid contains illegal ascii :", h: ":1.abc.com", v: false},
+		{n: "invalid contains illegal ascii ,", h: ",1.abc.com", v: false},
+		{n: "invalid contains illegal ascii ?", h: "?1.abc.com", v: false},
+		{n: "invalid contains illegal ascii /", h: "/1.abc.com", v: false},
+		{n: "invalid contains illegal ascii \\", h: "\\1.abc.com", v: false},
+		{n: "invalid contains illegal ascii =", h: "=1.abc.com", v: false},
+		{n: "invalid contains illegal ascii +", h: "+1.abc.com", v: false},
+		{n: "invalid contains illegal ascii <", h: "<1.abc.com", v: false},
+		{n: "invalid contains illegal ascii >", h: ">1.abc.com", v: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.n, func(t *testing.T) {
+			r := Route{Host: tt.h}
+			v, e := r.validHostPattern()
+			if v != tt.v {
+				al, _ := idna.ToASCII(tt.h)
+				t.Errorf("u label host pattern %v, a label punycode: %v, valid: %v, expected: %v, cause: %v", tt.h, al, v, tt.v, e)
+			}
+		})
+	}
+
 }
 
 func TestRouteSorting(t *testing.T) {

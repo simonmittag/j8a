@@ -3,7 +3,9 @@ package j8a
 import (
 	"errors"
 	"fmt"
+	"github.com/asaskevich/govalidator"
 	urlverifier "github.com/davidmytton/url-verifier"
+	"golang.org/x/net/idna"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -76,6 +78,7 @@ func (s Routes) Less(i, j int) bool {
 
 // Route maps a Path to an upstream resource
 type Route struct {
+	Host              string //idna host patterns
 	Path              string
 	PathType          string // exact | prefix
 	CompiledPathRegex *regexp.Regexp
@@ -83,6 +86,51 @@ type Route struct {
 	Resource          string
 	Policy            string
 	Jwt               string
+}
+
+const wildcard = "*"
+
+func (route *Route) validHostPattern() (bool, error) {
+	//first check the name is a valid idna name.
+	p := idna.New(
+		idna.ValidateLabels(true),
+		//this has to be off it disallows * for registration
+		//idna.ValidateForRegistration(),
+		idna.StrictDomainName(true))
+	val, err := p.ToUnicode(route.Host)
+	if !(val == route.Host && err == nil) {
+		return false, err
+	} else {
+		a, err := p.ToASCII(route.Host)
+		if err != nil {
+			return false, err
+		}
+
+		for i, j := range strings.Split(a, ".") {
+			if len(j) == 0 {
+				return false, errors.New("dns name segments cannot be empty string")
+			}
+			if j == wildcard && i != 0 {
+				return false, errors.New("wildcard can only be at far left of domain name")
+			}
+			if strings.Contains(j, wildcard) && len(j) > 1 {
+				return false, errors.New("wildcard can only be used for entire subdomains, not regex style")
+			}
+		}
+
+		//now perform DNS name validation on ascii format.
+		v2 := govalidator.IsDNSName(a)
+		if v2 {
+			return true, nil
+		} else {
+			//this validator does not pass wildcard names so we have to
+			if strings.HasPrefix(a, wildcard) {
+				return true, nil
+			} else {
+				return false, errors.New("not a valid DNS name after idna normalisation " + a)
+			}
+		}
+	}
 }
 
 func (route *Route) validPath() (bool, error) {
