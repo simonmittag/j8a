@@ -43,7 +43,7 @@ func doRunRouteMatchingTests(t *testing.T, tests []struct {
 				t.Errorf("routepath %v should be valid. this is a test setup problem", rr.Path)
 			}
 			//test actual URL matching
-			if rr.matchURI(requestFactory(tt.u)) != tt.v {
+			if rr.match(requestFactory(tt.u)) != tt.v {
 				t.Errorf("route %v type %v should match URL %v outcome %v", rr.Path, rr.PathType, tt.u, tt.v)
 			}
 		})
@@ -579,7 +579,7 @@ func BenchmarkRouteMatchingRegex(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		for _, route := range config.Routes {
-			if ok := route.matchURI(requestFactory("/mse6")); ok {
+			if ok := route.match(requestFactory("/mse6")); ok {
 				break
 			}
 		}
@@ -595,7 +595,7 @@ func BenchmarkRouteMatchingRegexBusyVersion(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		for _, route := range config.Routes {
-			if ok := route.matchURI(requestFactory("/s16")); ok {
+			if ok := route.match(requestFactory("/s16")); ok {
 				break
 			}
 		}

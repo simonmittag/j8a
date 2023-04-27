@@ -78,7 +78,7 @@ func (s Routes) Less(i, j int) bool {
 
 // Route maps a Path to an upstream resource
 type Route struct {
-	Host              string //idna host patterns
+	Host              string //idna host pattern
 	CompiledHost      string //punycode host pattern
 	Path              string
 	PathType          string // exact | prefix
@@ -194,11 +194,23 @@ func (route *Route) compilePath() error {
 	return err
 }
 
-// TODO this matches a request to a route but it depends on sort order of multiple
-// routes matched, it will match the first one.
 const slashS = "/"
 
-func (route Route) matchURI(request *http.Request) bool {
+func (route Route) match(request *http.Request) bool {
+	if len(route.CompiledHost) > 0 {
+		return route.matchHostHeader(request) &&
+			route.matchURIPath(request)
+	} else {
+		return route.matchURIPath(request)
+	}
+}
+
+func (route Route) matchHostHeader(request *http.Request) bool {
+	//TODO: implement me
+	return true
+}
+
+func (route Route) matchURIPath(request *http.Request) bool {
 	match := route.CompiledPathRegex.MatchString(request.URL.Path)
 	if !match &&
 		route.PathType == prefixS &&

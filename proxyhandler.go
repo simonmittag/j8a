@@ -103,7 +103,7 @@ func proxyHandler(response http.ResponseWriter, request *http.Request, exec prox
 func matchRoutes(request *http.Request, proxy *Proxy) bool {
 	matched := false
 	for _, route := range Runner.Routes {
-		if matched = route.matchURI(request); matched {
+		if matched = route.match(request); matched {
 			proxy.setRoute(&route)
 			break
 		}
