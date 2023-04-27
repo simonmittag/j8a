@@ -79,6 +79,7 @@ func (s Routes) Less(i, j int) bool {
 // Route maps a Path to an upstream resource
 type Route struct {
 	Host              string //idna host patterns
+	CompiledHost      string //punycode host pattern
 	Path              string
 	PathType          string // exact | prefix
 	CompiledPathRegex *regexp.Regexp
@@ -130,6 +131,18 @@ func (route *Route) validHostPattern() (bool, error) {
 				return false, errors.New("not a valid DNS name after idna normalisation " + a)
 			}
 		}
+	}
+}
+
+func (route *Route) compileHostPattern() error {
+	if b, e := route.validHostPattern(); b {
+		al, e1 := idna.ToASCII(route.Host)
+		if e1 == nil {
+			route.CompiledHost = al
+		}
+		return e1
+	} else {
+		return e
 	}
 }
 

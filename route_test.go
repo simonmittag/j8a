@@ -333,6 +333,24 @@ func TestRoutePathsValid(t *testing.T) {
 }
 
 func TestHostDNSNamePatternValid(t *testing.T) {
+	for _, tt := range HostTestFactory() {
+		t.Run(tt.n, func(t *testing.T) {
+			r := Route{Host: tt.h}
+			v, e := r.validHostPattern()
+			if v != tt.v {
+				al, _ := idna.ToASCII(tt.h)
+				t.Errorf("u label host pattern %v, a label punycode: %v, valid: %v, expected: %v, cause: %v", tt.h, al, v, tt.v, e)
+			}
+		})
+	}
+
+}
+
+func HostTestFactory() []struct {
+	n string
+	h string
+	v bool
+} {
 	tests := []struct {
 		n string
 		h string
@@ -370,14 +388,19 @@ func TestHostDNSNamePatternValid(t *testing.T) {
 		{n: "invalid contains illegal ascii <", h: "<1.abc.com", v: false},
 		{n: "invalid contains illegal ascii >", h: ">1.abc.com", v: false},
 	}
+	return tests
+}
 
-	for _, tt := range tests {
+func TestHostDNSNamePatternCompiles(t *testing.T) {
+	for _, tt := range HostTestFactory() {
 		t.Run(tt.n, func(t *testing.T) {
 			r := Route{Host: tt.h}
-			v, e := r.validHostPattern()
-			if v != tt.v {
-				al, _ := idna.ToASCII(tt.h)
-				t.Errorf("u label host pattern %v, a label punycode: %v, valid: %v, expected: %v, cause: %v", tt.h, al, v, tt.v, e)
+			e := r.compileHostPattern()
+			compiled := e == nil && r.CompiledHost != ""
+			if compiled != tt.v {
+				t.Errorf("host pattern u label %v, a label punycode: %v, compiled: %v, expected: %v, cause: %v", tt.h, r.CompiledHost, compiled, tt.v, e)
+			} else {
+				t.Logf("host pattern u label %v, a label punycode: %v", tt.h, r.CompiledHost)
 			}
 		})
 	}
