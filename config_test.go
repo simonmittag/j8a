@@ -1085,3 +1085,17 @@ func TestConfigValidationPanicsForEmptyResource(t *testing.T) {
 
 	config = config.validateResources()
 }
+
+func TestConfigValidationPanicsForBadResource(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("config should have panicked")
+		}
+	}()
+
+	config := new(Config).readYmlFile("./j8acfg.yml")
+	//thou shall not pass!
+	config.Routes[0].Resource = "asdfadsf"
+
+	config = config.validateRoutes()
+}

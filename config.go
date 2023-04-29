@@ -206,6 +206,17 @@ func (config Config) validateRoutes() *Config {
 				config.panic(fmt.Sprintf("host pattern %s invalid, cause %v", config.Routes[i].Host, e2))
 			}
 		}
+		if len(config.Routes[i].Resource) == 0 {
+			config.panic(fmt.Sprintf("route %s must have a resource", config.Routes[i].Path))
+		} else {
+			res := config.Routes[i].Resource
+			if res != about {
+				_, ok := config.Resources[res]
+				if !ok {
+					config.panic(fmt.Sprintf("route %s must have a resource, but %s is not declared", config.Routes[i].Path, res))
+				}
+			}
+		}
 	}
 	sort.Sort(Routes(config.Routes))
 	return &config
