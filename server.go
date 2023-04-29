@@ -181,6 +181,7 @@ func BootStrap() {
 		reApplyResourceNames().
 		validateJwt().
 		compileRoutePaths().
+		compileRouteHosts().
 		compileRouteTransforms().
 		validateRoutes().
 		addDefaultPolicy().

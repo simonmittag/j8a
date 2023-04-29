@@ -16,40 +16,55 @@ import (
 // Aboutj8a special Resource alias for internal endpoint
 const about string = "about"
 
-type RoutePath []string
+type WeightedSlugs []string
+type RoutePath WeightedSlugs
+type DNSNameComponents WeightedSlugs
 
 func NewRoutePath(r Route) RoutePath {
 	rps := strings.Split(r.Path, slashS)
-	return RoutePath(rps).trimEmptySlug()
+	return RoutePath(WeightedSlugs(rps).trimEmptySlug())
 }
 
-func (rp RoutePath) trimEmptySlug() RoutePath {
-	if len(rp[0]) == 0 && len(rp) > 1 {
-		rp = rp[1:]
+func NewDNSNameComponents(r Route) DNSNameComponents {
+	rhs := strings.Split(r.PunyHost, dot)
+	for i, j := 0, len(rhs)-1; i < j; i, j = i+1, j-1 {
+		rhs[i], rhs[j] = rhs[j], rhs[i]
 	}
-	return rp
+	return DNSNameComponents(WeightedSlugs(rhs).trimEmptySlug())
 }
 
-func (rp RoutePath) trimNextSlug() (RoutePath, error) {
-	if len(rp) > 1 {
-		rp = rp[1:]
-		return rp, nil
+func (w WeightedSlugs) trimEmptySlug() WeightedSlugs {
+	if len(w[0]) == 0 && len(w) > 1 {
+		w = w[1:]
+	}
+	return w
+}
+
+func (w WeightedSlugs) trimNextSlug() (WeightedSlugs, error) {
+	if len(w) > 1 {
+		w = w[1:]
+		return w, nil
 	} else {
 		return nil, errors.New("no more slugs")
 	}
 }
 
-func (rp RoutePath) Less(rp2 RoutePath) bool {
+func (w WeightedSlugs) Less(w2 WeightedSlugs) bool {
 	less := false
-	if len(rp[0]) > len(rp2[0]) {
+	if len(w[0]) > len(w2[0]) {
 		less = true
-	} else if len(rp[0]) == len(rp2[0]) {
-		rpn, e := rp.trimNextSlug()
-		rp2n, e2 := rp2.trimNextSlug()
+	} else if len(w[0]) == len(w2[0]) {
+		wn, e := w.trimNextSlug()
+		w2n, e2 := w2.trimNextSlug()
 		if e == nil && e2 == nil {
-			less = rpn.Less(rp2n)
+			less = wn.Less(w2n)
 		} else if e2 != nil {
-			less = true
+			/////aaarrggghhh this fixes an issue because we share sorting slug paths and DNS name segments with the same alg
+			if w[0] == STAR {
+				less = false
+			} else {
+				less = true
+			}
 		}
 	}
 	return less
@@ -64,12 +79,24 @@ func (s Routes) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
 }
 func (s Routes) Less(i, j int) bool {
+	if s[i].PunyHost == s[j].PunyHost {
+		return s.PathIsLess(i, j)
+	} else {
+		return s.HostIsLess(i, j)
+	}
+}
+
+func (s Routes) HostIsLess(i int, j int) bool {
+	return WeightedSlugs(NewDNSNameComponents(s[i])).Less(WeightedSlugs(NewDNSNameComponents(s[j])))
+}
+
+func (s Routes) PathIsLess(i int, j int) bool {
 	pis := NewRoutePath(s[i])
 	pjs := NewRoutePath(s[j])
 
 	less := false
 	if (s[i].PathType == exact && s[j].PathType == exact) || (s[i].PathType == prefixS && s[j].PathType == prefixS) {
-		less = pis.Less(pjs)
+		less = WeightedSlugs(pis).Less(WeightedSlugs(pjs))
 	} else {
 		less = s[i].PathType == exact
 	}

@@ -174,7 +174,6 @@ var routePathTypes = NewRoutePathTypes()
 const prefixS = "prefix"
 
 func (config Config) validateRoutes() *Config {
-	//prep routes with leading slash
 	for i, _ := range config.Routes {
 		v, e := config.Routes[i].validPath()
 		if !v {
@@ -192,6 +191,11 @@ func (config Config) validateRoutes() *Config {
 				config.panic(fmt.Sprintf("path type %s invalid, not one of ['prefix', 'exact']", config.Routes[i].PathType))
 			}
 		}
+		if len(config.Routes[i].Host) > 0 {
+			if v2, e2 := config.Routes[i].validHostPattern(); !v2 {
+				config.panic(fmt.Sprintf("host pattern %s invalid, cause %v", config.Routes[i].Host, e2))
+			}
+		}
 	}
 	sort.Sort(Routes(config.Routes))
 	return &config
@@ -205,6 +209,21 @@ func (config Config) compileRoutePaths() *Config {
 			config.panic(fmt.Sprintf("config error, illegal route path %s", route.Path))
 		} else {
 			config.Routes[i] = route
+		}
+	}
+	return &config
+}
+
+func (config Config) compileRouteHosts() *Config {
+	var err error
+	for i, route := range config.Routes {
+		if len(route.Host) > 0 {
+			err = route.compileHostPattern()
+			if err != nil {
+				config.panic(fmt.Sprintf("config error, illegal route host pattern %s", route.Host))
+			} else {
+				config.Routes[i] = route
+			}
 		}
 	}
 	return &config

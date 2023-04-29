@@ -4,6 +4,7 @@ import (
 	"github.com/rs/zerolog"
 	"golang.org/x/net/idna"
 	"net/http"
+	"sort"
 	"testing"
 )
 
@@ -477,44 +478,44 @@ func TestRoutePathLess(t *testing.T) {
 		{
 			name: "empty paths for nil check",
 			rl: Route{
-				Path:     "",
+				Path:     "/",
 				PathType: "prefix",
 			},
 			rg: Route{
-				Path:     "",
+				Path:     "/",
 				PathType: "prefix",
 			},
 		},
 		{
 			name: "one longer vs. one shorter wildcar routepath that isn't a slug",
 			rl: Route{
-				Path:     "aabcccc*",
+				Path:     "/aabcccc*",
 				PathType: "prefix",
 			},
 			rg: Route{
-				Path:     "aaa*",
+				Path:     "/aaa*",
 				PathType: "prefix",
 			},
 		},
 		{
 			name: "one longer vs. one shorter routepath that isn't a slug",
 			rl: Route{
-				Path:     "aabcccc",
+				Path:     "/aabcccc",
 				PathType: "prefix",
 			},
 			rg: Route{
-				Path:     "aaa",
+				Path:     "/aaa",
 				PathType: "prefix",
 			},
 		},
 		{
 			name: "one vs. one routepath that isn't a slug",
 			rl: Route{
-				Path:     "aab",
+				Path:     "/aab",
 				PathType: "prefix",
 			},
 			rg: Route{
-				Path:     "aaa",
+				Path:     "/aaa",
 				PathType: "prefix",
 			},
 		},
@@ -610,8 +611,97 @@ func TestRoutePathLess(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if !NewRoutePath(tt.rl).Less(NewRoutePath(tt.rg)) {
+			if !WeightedSlugs(NewRoutePath(tt.rl)).Less(WeightedSlugs(NewRoutePath(tt.rg))) {
 				t.Errorf("routepath %v should be less than %v", tt.rl, tt.rg)
+			}
+		})
+	}
+}
+
+func TestRouteHostPathLess(t *testing.T) {
+	var tests = []struct {
+		name string
+		rl   Route
+		rg   Route
+	}{
+		{
+			name: "longer host should be first to allow overriding wildcards with explicit host names",
+			rl: Route{
+				Host:     "foo.bar.com",
+				Path:     "/mse6jwtjwksbadrotate2",
+				PathType: "prefix",
+			},
+			rg: Route{
+				Host:     "*.bar.com",
+				Path:     "/mse6jwtjwksbadrotatepath",
+				PathType: "prefix",
+			},
+		},
+		{
+			name: "longer host should be first even if DNS components are different.",
+			rl: Route{
+				Host:     "foo.baz.com",
+				Path:     "/a",
+				PathType: "prefix",
+			},
+			rg: Route{
+				Host:     "*.bar.com",
+				Path:     "/a",
+				PathType: "prefix",
+			},
+		},
+		{
+			name: "longer path should be first for same host name",
+			rl: Route{
+				Host:     "foo.bar.com",
+				Path:     "/mse6jwtjwksbadrotate2",
+				PathType: "prefix",
+			},
+			rg: Route{
+				Host:     "foo.bar.com",
+				Path:     "/",
+				PathType: "prefix",
+			},
+		},
+		{
+			name: "fqdn host should be first compared to wildcard",
+			rl: Route{
+				Host:     "f.bar.com",
+				Path:     "/m",
+				PathType: "prefix",
+			},
+			rg: Route{
+				Host:     "*.bar.com",
+				Path:     "/m",
+				PathType: "prefix",
+			},
+		},
+		{
+			name: "same host, exact path should with over prefix",
+			rl: Route{
+				Host:     "f.bar.com",
+				Path:     "/a.html",
+				PathType: "exact",
+			},
+			rg: Route{
+				Host:     "f.bar.com",
+				Path:     "/abcdefghijklm",
+				PathType: "prefix",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			//we need to do this here because config validate does not run and routes are not properly initialised.
+			tt.rl.compilePath()
+			tt.rl.compileHostPattern()
+			tt.rg.compilePath()
+			tt.rg.compileHostPattern()
+			rs := Routes{tt.rl, tt.rg}
+			sort.Sort(rs)
+			if rs[0] != tt.rl {
+				t.Errorf("route %v should be less than %v", tt.rl, tt.rg)
 			}
 		})
 	}
