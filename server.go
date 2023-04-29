@@ -178,6 +178,7 @@ func BootStrap() {
 		validateTimeZone().
 		validateLogLevel().
 		reApplyResourceURLDefaults().
+		validateResources().
 		reApplyResourceNames().
 		validateJwt().
 		compileRoutePaths().

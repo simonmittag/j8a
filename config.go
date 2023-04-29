@@ -158,6 +158,16 @@ func (config Config) validateTimeZone() *Config {
 	return &config
 }
 
+func (config Config) validateResources() *Config {
+	for name := range config.Resources {
+		resourceMappings := config.Resources[name]
+		if len(resourceMappings) == 0 {
+			config.panic("resource needs to have at least one url, see https://j8a.io/docs")
+		}
+	}
+	return &config
+}
+
 func (config Config) reApplyResourceNames() *Config {
 	for name := range config.Resources {
 		resourceMappings := config.Resources[name]

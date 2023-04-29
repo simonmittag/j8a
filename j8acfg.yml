@@ -128,6 +128,10 @@ routes:
     rescource: blah3213
   - path: /aa
     rescource: blah3213
+  - path: /hostpath
+    host: host.com
+  - path: /
+    host: host.com
 
 
 

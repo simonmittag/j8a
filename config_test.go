@@ -1071,3 +1071,17 @@ func TestConfigValidationPanicsForInvalidRouteType(t *testing.T) {
 
 	config = config.validateRoutes()
 }
+
+func TestConfigValidationPanicsForEmptyResource(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("config should have panicked")
+		}
+	}()
+
+	config := new(Config).readYmlFile("./j8acfg.yml")
+	//thou shall not pass!
+	config.Resources["mse6"] = nil
+
+	config = config.validateResources()
+}
