@@ -78,8 +78,9 @@ func (s Routes) Less(i, j int) bool {
 
 // Route maps a Path to an upstream resource
 type Route struct {
-	Host              string //idna host pattern
-	CompiledHost      string //punycode host pattern
+	Host              string         //idna host pattern
+	PunyHost          string         //punycode host pattern
+	CompiledPunyHost  *regexp.Regexp // as regex
 	Path              string
 	PathType          string // exact | prefix
 	CompiledPathRegex *regexp.Regexp
@@ -138,7 +139,9 @@ func (route *Route) compileHostPattern() error {
 	if b, e := route.validHostPattern(); b {
 		al, e1 := idna.ToASCII(route.Host)
 		if e1 == nil {
-			route.CompiledHost = al
+			route.PunyHost = al
+			re, _ := regexp.Compile(startS + al)
+			route.CompiledPunyHost = re
 		}
 		return e1
 	} else {
@@ -197,7 +200,7 @@ func (route *Route) compilePath() error {
 const slashS = "/"
 
 func (route Route) match(request *http.Request) bool {
-	if len(route.CompiledHost) > 0 {
+	if len(route.PunyHost) > 0 {
 		return route.matchHostHeader(request) &&
 			route.matchURIPath(request)
 	} else {
@@ -206,8 +209,10 @@ func (route Route) match(request *http.Request) bool {
 }
 
 func (route Route) matchHostHeader(request *http.Request) bool {
-	//TODO: implement me
-	return true
+	//safety measure in case we got a unicode host header
+	al, _ := idna.ToASCII(request.Host)
+	return route.CompiledPunyHost.MatchString(al) &&
+		len(strings.Split(route.PunyHost, ".")) == len(strings.Split(request.Host, "."))
 }
 
 func (route Route) matchURIPath(request *http.Request) bool {

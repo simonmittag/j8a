@@ -8,8 +8,11 @@ import (
 )
 
 // TODO this needs host
-func requestFactory(path string) *http.Request {
-	req, _ := http.NewRequest("GET", path, nil)
+func requestFactory(args ...string) *http.Request {
+	req, _ := http.NewRequest("GET", args[0], nil)
+	if len(args) > 1 {
+		req.Host = args[1]
+	}
 	req.RequestURI = path
 	return req
 }
@@ -396,15 +399,59 @@ func TestHostDNSNamePatternCompiles(t *testing.T) {
 		t.Run(tt.n, func(t *testing.T) {
 			r := Route{Host: tt.h}
 			e := r.compileHostPattern()
-			compiled := e == nil && r.CompiledHost != ""
+			compiled := e == nil && r.PunyHost != ""
 			if compiled != tt.v {
-				t.Errorf("host pattern u label %v, a label punycode: %v, compiled: %v, expected: %v, cause: %v", tt.h, r.CompiledHost, compiled, tt.v, e)
+				t.Errorf("host pattern u label %v, a label punycode: %v, compiled: %v, expected: %v, cause: %v", tt.h, r.PunyHost, compiled, tt.v, e)
 			} else {
-				t.Logf("host pattern u label %v, a label punycode: %v", tt.h, r.CompiledHost)
+				t.Logf("host pattern u label %v, a label punycode: %v", tt.h, r.PunyHost)
 			}
 		})
 	}
 
+}
+
+func TestHostDNSNamePatternMatchesHostHeader(t *testing.T) {
+	tests := []struct {
+		n  string
+		h  string
+		p  string
+		hh string
+		hp string
+		v  bool
+	}{
+		{n: "fqdn identical host and pattern", h: "www.host.com", p: "/", hh: "www.host.com", hp: "/", v: true},
+		{n: "fqdn identical host and pattern 2 (simple hostname)", h: "host", p: "/", hh: "host", hp: "/", v: true},
+		{n: "fqdn identical host and pattern 3(simple hostname)", h: "foo", p: "/", hh: "bar", hp: "/", v: false},
+		{n: "fqdn identical host and pattern 4", h: "host.tld", p: "/", hh: "host.tld", hp: "/", v: true},
+		//we are not allowed to match this even if it's common. if a user wants to match host.com and www.host.com they need two entries
+		{n: "fqdn common host and pattern mismatch", h: "host.com", p: "/", hh: "www.host.com", hp: "/", v: false},
+		{n: "fqdn idns identical host and pattern", h: "www.host😀😀😀.com", p: "/", hh: "www.host😀😀😀.com", hp: "/", v: true},
+		{n: "fqdn host and pattern non match", h: "www.foo.com", p: "/", hh: "www.bar.com", hp: "/", v: false},
+		{n: "fqdn host and pattern non match 2", h: "www.foo.com", p: "/", hh: "www.fo.co", hp: "/", v: false},
+		{n: "fqdn host and pattern non match 3", h: "www.foo.com", p: "/", hh: "www.foo.b.co", hp: "/", v: false},
+		{n: "fqdn idns host and pattern non match", h: "www.foo.com", p: "/", hh: "www.bar😀😀😀.com", hp: "/", v: false},
+		{n: "fqdn idns host and pattern non match 2", h: "www.bar😀.com", p: "/", hh: "www.bar.com", hp: "/", v: false},
+		{n: "wildcard match", h: "*.bar.com", p: "/", hh: "www.bar.com", hp: "/", v: true},
+		{n: "wildcard match", h: "*.baz.bar.com", p: "/", hh: "www.baz.bar.com", hp: "/", v: true},
+		{n: "wildcard match", h: "*.baz.bar.com", p: "/", hh: "boo.baz.bar.com", hp: "/", v: true},
+		{n: "wildcard non match", h: "*.bar.com", p: "/", hh: "www.uhoh.bar.com", hp: "/", v: false},
+		{n: "idns wildcard match", h: "*.baz😀.com", p: "/", hh: "www.baz😀.com", hp: "/", v: true},
+		{n: "idns wildcard match 2", h: "*.baz😀.com", p: "/", hh: "😀.baz😀.com", hp: "/", v: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.n, func(t *testing.T) {
+			r := Route{Host: tt.h, Path: tt.p}
+			r.compilePath()
+			r.compileHostPattern()
+			got := r.match(requestFactory(tt.hp, tt.hh))
+			if tt.v != got {
+				t.Errorf("route host %v path %v request host %v path %v match expected %v got %v", r.Host, r.Path, tt.hh, tt.hp, tt.v, got)
+			} else {
+				t.Logf("route host %v path %v request host %v path %v match expected %v got %v", r.Host, r.Path, tt.hh, tt.hp, tt.v, got)
+			}
+		})
+	}
 }
 
 func TestRouteSorting(t *testing.T) {
