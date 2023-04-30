@@ -747,16 +747,15 @@ func TestValidateAcmeInvalidEmailFails(t *testing.T) {
 }
 
 func TestSortRoutes(t *testing.T) {
-	configJson := []byte("{\"routes\": [{\n\t\t\t\"path\": \"/about\",\n\t\t\t\"resource\": \"about\"\n\t\t},\n\t\t{\n\t\t\t\"path\": \"/customer\",\n\t\t\t\"resource\": \"customer\",\n\t\t\t\"policy\": \"ab\"\n\t\t}\n\t]}")
-	config := new(Config).parse(configJson).validateRoutes()
+	config := new(Config).readYmlFile("./j8acfg.yml").validateRoutes()
 
 	customer := config.Routes[0]
-	if customer.Path != "/customer" {
+	if customer.Path != "/path/med/1st" {
 		t.Error("incorrectly sorted routes")
 	}
 
 	about := config.Routes[1]
-	if about.Path != "/about" {
+	if about.Path != "/path/med/2" {
 		t.Error("incorrectly sorted routes")
 	}
 }
