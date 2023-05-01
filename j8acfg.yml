@@ -135,7 +135,14 @@ routes:
     host: host3.com
     resource: blah
   - path: /
-    host: sub.host2.com
+    host: a.host2.com
+    resource: blah
+  - path: /
+    pathType: exact
+    host: a.host2.com
+    resource: blah
+  - path: /
+    host: "*.host2.com"
     resource: blah
   - path: /
     host: host123456789.com
