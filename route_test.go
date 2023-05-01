@@ -456,15 +456,52 @@ func TestHostDNSNamePatternMatchesHostHeader(t *testing.T) {
 }
 
 func TestRouteSorting(t *testing.T) {
-	//the sort order needs to be exact over prefix, then by longest path.
+	// important. see sorting rules verified in sort oder below
 
 	config := new(Config).readYmlFile("./j8acfg.yml")
-	config = config.compileRoutePaths().validateRoutes()
+	config = config.compileRoutePaths().
+		compileRouteHosts().
+		validateRoutes()
 
-	if config.Routes[0].Path != "/path/med/1st" ||
-		config.Routes[1].Path != "/path/med/2" ||
-		config.Routes[2].Path != "/longfirstslug_longfirstslug_longfirstslug_longfirstslug/short" ||
-		config.Routes[3].Path != "/badremote" {
+	//most qualified host has longest slug high up the inverted domain structure
+	if config.Routes[0].Path != "/" ||
+		config.Routes[0].PathType != "prefix" ||
+		config.Routes[0].Host != "host123456789.com" ||
+
+		//next longest slug has 5 chars on l2, then a subdomain
+		config.Routes[1].Path != "/" ||
+		config.Routes[1].PathType != "prefix" ||
+		config.Routes[1].Host != "sub.host2.com" ||
+
+		//next longest host has 5 chars on l2 but no subdomain. This order will match subdomains effectively
+		config.Routes[2].Path != "/" ||
+		config.Routes[2].PathType != "prefix" ||
+		config.Routes[2].Host != "host3.com" ||
+
+		//next longest host has 4 chars on l2. path is longer than [2] but this is ignored.
+		config.Routes[3].Path != "/hostpath" ||
+		config.Routes[3].PathType != "prefix" ||
+		config.Routes[3].Host != "host.com" ||
+
+		//no host, but longest exact path. Exact paths are matched before prefix.
+		config.Routes[4].Path != "/path/med/1st" ||
+		config.Routes[4].PathType != "exact" ||
+		config.Routes[4].Host != "" ||
+
+		//no host, but second longest exact path
+		config.Routes[5].Path != "/path/med/2" ||
+		config.Routes[5].PathType != "exact" ||
+		config.Routes[5].Host != "" ||
+
+		//no host, prefix PathType, longest first slug. Prefix matches after exact, so this is after [5]
+		config.Routes[6].Path != "/longfirstslug_longfirstslug_longfirstslug_longfirstslug/short" ||
+		config.Routes[6].PathType != "prefix" ||
+		config.Routes[6].Host != "" ||
+
+		//no host, prefix PathType, second longest slug.
+		config.Routes[7].Path != "/badremote" ||
+		config.Routes[7].PathType != "prefix" ||
+		config.Routes[7].Host != "" {
 		t.Errorf("sort order wrong %v", config.Routes)
 	}
 }

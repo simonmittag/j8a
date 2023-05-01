@@ -132,7 +132,13 @@ routes:
     host: host.com
     resource: blah
   - path: /
-    host: host.com
+    host: host3.com
+    resource: blah
+  - path: /
+    host: sub.host2.com
+    resource: blah
+  - path: /
+    host: host123456789.com
     resource: blah
 
 
