@@ -460,6 +460,7 @@ func logHandledDownstreamRoundtrip(proxy *Proxy) {
 
 	ev = ev.Str(dwnReqListnr, proxy.Dwn.Listener).
 		Str(dwnReqPort, fmt.Sprintf(pdS, proxy.Dwn.Port)).
+		Str(dwnReqHost, proxy.Dwn.Host).
 		Str(dwnReqPath, proxy.Dwn.Path).
 		Str(dwnReqRemoteAddr, ipr.extractAddr(proxy.Dwn.Req.RemoteAddr)).
 		Str(dwnReqMethod, proxy.Dwn.Method).

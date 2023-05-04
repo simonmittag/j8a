@@ -463,6 +463,30 @@ func TestParseRequestBody(t *testing.T) {
 	}
 }
 
+func TestParseHost(t *testing.T) {
+	var tests = []struct {
+		name string
+		url  string
+		host string
+	}{
+		{name: "simple", url: "http://host/path", host: "host"},
+		{name: "simple with port", url: "http://host:8080/path", host: "host"},
+		{name: "fqdn with port", url: "http://sub.host.com:8080/path", host: "sub.host.com"},
+		{name: "idna simple", url: "http://aaa😀😀😀:8080/path", host: "xn--aaa-th33baa"},
+		{name: "idna fqdn", url: "http://aaa😀😀😀.com:8080/path", host: "xn--aaa-th33baa.com"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req, _ := http.NewRequest("GET", tt.url, nil)
+			got := parseHost(req)
+			if got != tt.host {
+				t.Errorf("url %v, want host %v, got %v", tt.url, tt.host, got)
+			}
+		})
+	}
+}
+
 func TestParseRequestBodyTooLarge(t *testing.T) {
 	Runner = mockRuntime()
 	Runner.Connection.Downstream.MaxBodyBytes = 65535
