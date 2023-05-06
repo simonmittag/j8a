@@ -126,8 +126,8 @@ func (route *Route) validHostPattern() (bool, error) {
 		//this has to be off it disallows * for registration
 		//idna.ValidateForRegistration(),
 		idna.StrictDomainName(true))
-	val, err := p.ToUnicode(route.Host)
-	if !(val == route.Host && err == nil) {
+	_, err := p.ToUnicode(route.Host)
+	if err != nil {
 		return false, err
 	} else {
 		a, err := p.ToASCII(route.Host)

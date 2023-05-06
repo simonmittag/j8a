@@ -1,6 +1,6 @@
 ---
 timeZone: Australia/Sydney
-logLevel: info
+logLevel: debug
 connection:
   downstream:
     readTimeoutSeconds: 3
@@ -282,6 +282,18 @@ routes:
   - path: /anotherpath
     pathType: exact
     resource: websocketsecure
+  - path: /mse6
+    host: aaa😊😊😊.com
+    pathType: prefix
+    resource: mse62
+  - path: /mse6
+    host: xn--aaa-yi33baa.com
+    pathType: prefix
+    resource: mse61
+  - path: /mse6
+    host: '*.xn--bbb-yi33baa.com'
+    pathType: prefix
+    resource: mse62
 resources:
   badssl:
     - url:
@@ -313,6 +325,11 @@ resources:
         scheme: 'http:'
         host: localhost
         port: 60083
+  mse62:
+    - url:
+        scheme: 'http:'
+        host: localhost
+        port: 60084
   mse6:
     - labels:
         - green
