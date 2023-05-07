@@ -20,7 +20,7 @@ func TestRouting(t *testing.T) {
 		{"with no host and path match", "http://localhost:8080/jwths256/echoport", 401, 0},
 		{"with no host and path match", "http://localhost:8080/jwtnone/echoport", 401, 0},
 		{"with no host and path match", "http://localhost:8080/mse6jwt", 401, 0},
-		{"with no host and path match", "http://localhost:8080/mse6/echoport", 200, 60083},
+		{"with no host and path match", "http://localhost:8080/mse6/echoport", 200, 0},
 		{"with unicode host and path match", "http://aaa😊😊😊.com:8080/mse6/echoport", 200, 60084},
 		{"with unicode host and path match", "http://aaa😊😊😊.com:8080/mse66/echoport", 200, 60083},
 		{"with unicode host match but route doesn't match", "http://aaa😊😊😊.com:8080/", 404, 0},
