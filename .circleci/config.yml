@@ -272,6 +272,7 @@ workflows:
       - integrationResponsecode
       - integrationUpstream
       - integrationWebsocket
+      - integrationRouting
   performancetest:
     jobs:
       - performanceHttpLowGet
@@ -440,6 +441,15 @@ jobs:
     steps:
       - intjob:
           test: github.com/simonmittag/j8a/integration/websocket
+
+  integrationRouting:
+    working_directory: ~/project/tmp
+    resource_class: medium
+    docker:
+      - image: cimg/go:1.20
+    steps:
+      - intjob:
+          test: github.com/simonmittag/j8a/integration/routing
 
   performanceHttpLowGet:
     working_directory: ~/project/tmp
