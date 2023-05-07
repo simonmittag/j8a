@@ -1,6 +1,6 @@
 ---
 timeZone: Australia/Sydney
-logLevel: info
+logLevel: warn
 connection:
   downstream:
     readTimeoutSeconds: 3
@@ -217,17 +217,17 @@ routes:
     jwt: jwtrs256
   - path: /jwtrs256n
     transform: /mse6
-    resource: mse61
+    resource: mse6
     jwt: jwtrs256n
   - path: /jwtnone
     transform: /mse6
-    resource: mse61
+    resource: mse6
     jwt: jwtnone
   - path: /mse7
     transform: /mse6
-    resource: mse61
+    resource: mse6
   - path: "/mse6/"
-    resource: mse61
+    resource: mse6
     policy: ab
   - path: "/s01"
     resource: s01
