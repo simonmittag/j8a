@@ -247,7 +247,15 @@ commands:
       - run:
           name: Add test domains to hosts file
           command: |
-            sudo tee -a /etc/hosts \<<<'127.0.0.1 xn--aaa-yi33baa.com\n127.0.0.1 xn--bbb-yi33baa.com\n127.0.0.1 xn--ccc-yi33baa.com\n127.0.0.1 sub.xn--aaa-yi33baa.com\n127.0.0.1 sub.xn--bbb-yi33baa.com\n127.0.0.1 sub.xn--ccc-yi33baa.com\n'
+            sudo tee -a /etc/hosts \<<<'127.0.0.1 xn--aaa-yi33baa.com
+            127.0.0.1 xn--bbb-yi33baa.com
+            127.0.0.1 xn--ccc-yi33baa.com
+            127.0.0.1 sub.xn--aaa-yi33baa.com
+            127.0.0.1 sub.xn--bbb-yi33baa.com
+            127.0.0.1 sub.xn--ccc-yi33baa.com'
+      - run:
+          name: Test hosts file
+          command: |
             cat /etc/hosts
       - run:
           name: Run integration tests
