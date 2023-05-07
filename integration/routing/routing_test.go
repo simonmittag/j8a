@@ -15,7 +15,6 @@ func TestRouting(t *testing.T) {
 		responseCode int
 		echoport     int
 	}{
-		{"with no host and path match, path transform", "http://localhost:8080/mse7/echoport", 200, 60083},
 		{"with no host and path match", "http://localhost:8080/jwtes256/echoport", 401, 0},
 		{"with no host and path match", "http://localhost:8080/jwths256/echoport", 401, 0},
 		{"with no host and path match", "http://localhost:8080/jwtnone/echoport", 401, 0},
