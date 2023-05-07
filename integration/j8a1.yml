@@ -286,7 +286,8 @@ routes:
     host: aaa😊😊😊.com
     pathType: prefix
     resource: mse62
-  - path: /mse6
+  - path: /mse66
+    transform: /mse6
     host: xn--aaa-yi33baa.com
     pathType: prefix
     resource: mse61
