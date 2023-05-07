@@ -1,6 +1,6 @@
 ---
 timeZone: Australia/Sydney
-logLevel: debug
+logLevel: info
 connection:
   downstream:
     readTimeoutSeconds: 3
@@ -177,43 +177,43 @@ routes:
   - path: /mse6jwtjwksbadrotate
     pathType: prefix
     transform: /mse6
-    resource: mse61
+    resource: mse6
     jwt: jwtjwksbadrotate
   - path: /mse6jwtjwksbadrotate2
     transform: /mse6
-    resource: mse61
+    resource: mse6
     jwt: jwtjwksbadrotate2
   - path: /mse6jwt
     transform: /mse6
-    resource: mse61
+    resource: mse6
     jwt: jwtjwks
   - path: /x509rs256
     transform: /mse6
-    resource: mse61
+    resource: mse6
     jwt: x509rs256
   - path: /x509es256
     transform: /mse6
-    resource: mse61
+    resource: mse6
     jwt: x509es256
   - path: /auth0pub
     transform: /mse6
-    resource: mse61
+    resource: mse6
     jwt: auth0pub
   - path: /jwths256
     transform: /mse6
-    resource: mse61
+    resource: mse6
     jwt: jwths256
   - path: /jwtes256
-    transform: /mse61
-    resource: mse61
+    transform: /mse6
+    resource: mse6
     jwt: jwtes256
   - path: /jwtps256
     transform: /mse6
-    resource: mse61
+    resource: mse6
     jwt: jwtps256
   - path: /jwtrs256
     transform: /mse6
-    resource: mse61
+    resource: mse6
     jwt: jwtrs256
   - path: /jwtrs256n
     transform: /mse6
