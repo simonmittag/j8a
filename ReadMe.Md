@@ -10,9 +10,16 @@
 [![Go Version](https://img.shields.io/github/go-mod/go-version/simonmittag/j8a)](https://img.shields.io/github/go-mod/go-version/simonmittag/j8a)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Docker Pulls](https://img.shields.io/docker/pulls/simonmittag/j8a)](https://hub.docker.com/repository/docker/simonmittag/j8a)
-[![Version](https://img.shields.io/docker/v/simonmittag/j8a/0.9.7)](https://hub.docker.com/repository/docker/simonmittag/j8a)
+[![Version](https://img.shields.io/docker/v/simonmittag/j8a/1.0.0)](https://hub.docker.com/repository/docker/simonmittag/j8a)
 
 ## What's new?
+
+### v1.0.0 (07/05/2023)
+* support for virtual host based routing inc subdomains.
+* timeZone and logLevel are now options in config.yml as opposed to env variables.
+* re-introduced support for HTTP PATCH method.
+* OPTIONS requests to '*' now list legal server HTTP methods
+* update to go 1.20, and multiple dependency updates
 
 ### v0.9.7 (10/11/2022)
 * update to go 1.19
@@ -22,14 +29,10 @@
 * new params for acmeEmail, gracePeriodDays to configure letsencrypt provider
 * new param for disableXRequestInfo to disable debug mode
 
-### v0.9.5 (16/06/2022)
-* now logging ulimit (max open files) so admin has visibility next to maxopenconns
-
 ## What is j8a?
 
 [j8a [ dʒʌbbʌ ]](https://j8a.io) is a modern **TLS 1.3 reverse proxy server** designed as a lightweight API gateway for
-micro-service style JSON APIs. It is built for DevOps engineers and allows fine-grained traceability of HTTP and
-Websocket traffic without sacrificing performance.
+REST APIs. 
 
 ![](images/route.gif)
 
