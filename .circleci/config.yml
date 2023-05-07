@@ -245,6 +245,19 @@ commands:
             sudo apt install ack -y
             sudo apt install lsof -y
       - run:
+          name: Add test domains to hosts file
+          command: |
+            sudo tee -a /etc/hosts \<<<'127.0.0.1 xn--aaa-yi33baa.com
+            127.0.0.1 xn--bbb-yi33baa.com
+            127.0.0.1 xn--ccc-yi33baa.com
+            127.0.0.1 sub.xn--aaa-yi33baa.com
+            127.0.0.1 sub.xn--bbb-yi33baa.com
+            127.0.0.1 sub.xn--ccc-yi33baa.com'
+      - run:
+          name: Test hosts file
+          command: |
+            cat /etc/hosts
+      - run:
           name: Run integration tests
           command: "go test -v <<parameters.test>>"
 
@@ -267,6 +280,7 @@ workflows:
       - integrationResponsecode
       - integrationUpstream
       - integrationWebsocket
+      - integrationRouting
   performancetest:
     jobs:
       - performanceHttpLowGet
@@ -435,6 +449,15 @@ jobs:
     steps:
       - intjob:
           test: github.com/simonmittag/j8a/integration/websocket
+
+  integrationRouting:
+    working_directory: ~/project/tmp
+    resource_class: medium
+    docker:
+      - image: cimg/go:1.20
+    steps:
+      - intjob:
+          test: github.com/simonmittag/j8a/integration/routing
 
   performanceHttpLowGet:
     working_directory: ~/project/tmp

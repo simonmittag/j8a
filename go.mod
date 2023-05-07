@@ -3,7 +3,7 @@ module github.com/simonmittag/j8a
 go 1.20
 
 require (
-	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d
+	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/google/uuid v1.3.0
@@ -27,6 +27,7 @@ require (
 
 require (
 	github.com/cenkalti/backoff/v4 v4.1.1 // indirect
+	github.com/davidmytton/url-verifier v1.0.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.0-20210816181553-5444fa50b93d // indirect
 	github.com/gobwas/httphead v0.1.0 // indirect
 	github.com/gobwas/pool v0.2.1 // indirect

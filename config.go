@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"regexp"
 	"sort"
 	"strings"
 	"text/template"
@@ -159,6 +158,16 @@ func (config Config) validateTimeZone() *Config {
 	return &config
 }
 
+func (config Config) validateResources() *Config {
+	for name := range config.Resources {
+		resourceMappings := config.Resources[name]
+		if len(resourceMappings) == 0 {
+			config.panic("resource needs to have at least one url, see https://j8a.io/docs")
+		}
+	}
+	return &config
+}
+
 func (config Config) reApplyResourceNames() *Config {
 	for name := range config.Resources {
 		resourceMappings := config.Resources[name]
@@ -170,15 +179,42 @@ func (config Config) reApplyResourceNames() *Config {
 	return &config
 }
 
+var routePathTypes = NewRoutePathTypes()
+
+const prefixS = "prefix"
+
 func (config Config) validateRoutes() *Config {
-	//prep routes with leading slash
 	for i, _ := range config.Routes {
-		if strings.Index(config.Routes[i].Path, "/") != 0 {
-			config.Routes[i].Path = "/" + config.Routes[i].Path
+		v, e := config.Routes[i].validPath()
+		if !v {
+			config.panic(e.Error())
 		}
 		if config.Routes[i].hasJwt() {
 			if _, ok := config.Jwt[config.Routes[i].Jwt]; !ok {
 				config.panic(fmt.Sprintf("route [%s] jwt [%s] not found, check your configuration", config.Routes[i].Path, config.Routes[i].Jwt))
+			}
+		}
+		if len(config.Routes[i].PathType) == 0 {
+			config.Routes[i].PathType = prefixS
+		} else {
+			if !routePathTypes.isValid(config.Routes[i].PathType) {
+				config.panic(fmt.Sprintf("path type %s invalid, not one of ['prefix', 'exact']", config.Routes[i].PathType))
+			}
+		}
+		if len(config.Routes[i].Host) > 0 {
+			if v2, e2 := config.Routes[i].validHostPattern(); !v2 {
+				config.panic(fmt.Sprintf("host pattern %s invalid, cause %v", config.Routes[i].Host, e2))
+			}
+		}
+		if len(config.Routes[i].Resource) == 0 {
+			config.panic(fmt.Sprintf("route %s must have a resource", config.Routes[i].Path))
+		} else {
+			res := config.Routes[i].Resource
+			if res != about {
+				_, ok := config.Resources[res]
+				if !ok {
+					config.panic(fmt.Sprintf("route %s must have a resource, but %s is not declared", config.Routes[i].Path, res))
+				}
 			}
 		}
 	}
@@ -189,9 +225,26 @@ func (config Config) validateRoutes() *Config {
 func (config Config) compileRoutePaths() *Config {
 	var err error
 	for i, route := range config.Routes {
-		config.Routes[i].PathRegex, err = regexp.Compile("^" + route.Path)
+		err = route.compilePath()
 		if err != nil {
 			config.panic(fmt.Sprintf("config error, illegal route path %s", route.Path))
+		} else {
+			config.Routes[i] = route
+		}
+	}
+	return &config
+}
+
+func (config Config) compileRouteHosts() *Config {
+	var err error
+	for i, route := range config.Routes {
+		if len(route.Host) > 0 {
+			err = route.compileHostPattern()
+			if err != nil {
+				config.panic(fmt.Sprintf("config error, illegal route host pattern %s", route.Host))
+			} else {
+				config.Routes[i] = route
+			}
 		}
 	}
 	return &config

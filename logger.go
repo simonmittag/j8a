@@ -12,6 +12,7 @@ import (
 const dwnReqRemoteAddr = "dwnReqRemoteAddr"
 const dwnReqPort = "dwnReqPort"
 const dwnReqPath = "dwnReqPath"
+const dwnReqHost = "dwnReqHost"
 const dwnReqMethod = "dwnReqMethod"
 const dwnReqUserAgent = "dwnReqUserAgent"
 const dwnReqHttpVer = "dwnReqHttpVer"

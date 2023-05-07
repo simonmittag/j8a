@@ -748,6 +748,10 @@ func mockRuntime() *Runtime {
 		ConnectionWatcher: ConnectionWatcher{dwnOpenConns: 0},
 	}
 
+	//simple compiled regexes for prefix matching only
+	r.Routes[0].compilePath()
+	r.Routes[1].compilePath()
+
 	//we need this to add the reloadable cert.
 	r.initReloadableCert()
 

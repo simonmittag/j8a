@@ -53,8 +53,6 @@ func formatInvalidAcceptEncoding() string {
 }
 
 func proxyHandler(response http.ResponseWriter, request *http.Request, exec proxyfunc) {
-	matched := false
-
 	//preprocess incoming request in proxy object
 	proxy := new(Proxy).
 		setOutgoing(response).
@@ -83,31 +81,34 @@ func proxyHandler(response http.ResponseWriter, request *http.Request, exec prox
 		return
 	}
 
-	//once a route is matched, it needs to be mapped to an upstream resource via a policy
+	if matchRoutes(request, proxy) {
+		if proxy.Route.hasJwt() && !proxy.validateJwt() {
+			sendStatusCodeAsJSON(proxy.respondWith(401, jwtBearerTokenMissing))
+		}
+		url, label, mapped := proxy.Route.mapURL(proxy)
+		if mapped {
+			//mapped requests are sent to proxyfuncs.
+			exec(proxy.firstAttempt(url, label))
+		} else {
+			//unmapped request means an internal configuration error in server
+			sendStatusCodeAsJSON(proxy.respondWith(503, unableToMapUpstreamResource))
+		}
+	} else {
+		sendStatusCodeAsJSON(proxy.respondWith(404, upstreamResourceNotFound))
+	}
+}
+
+// TODO this needs a new order. Exact matches first, then prefix matches. inside all these, longer matches first, then shorter ones.
+// try a custom sorter for routes.
+func matchRoutes(request *http.Request, proxy *Proxy) bool {
+	matched := false
 	for _, route := range Runner.Routes {
-		if matched = route.matchURI(request); matched {
+		if matched = route.match(request); matched {
 			proxy.setRoute(&route)
-			if route.hasJwt() && !proxy.validateJwt() {
-				sendStatusCodeAsJSON(proxy.respondWith(401, jwtBearerTokenMissing))
-				return
-			}
-			url, label, mapped := route.mapURL(proxy)
-			if mapped {
-				//mapped requests are sent to proxyfuncs.
-				exec(proxy.firstAttempt(url, label))
-			} else {
-				//unmapped request means an internal configuration error in server
-				sendStatusCodeAsJSON(proxy.respondWith(503, unableToMapUpstreamResource))
-				return
-			}
 			break
 		}
 	}
-
-	//unmatched paths means we have no route for this and always return a 404
-	if !matched {
-		sendStatusCodeAsJSON(proxy.respondWith(404, upstreamResourceNotFound))
-	}
+	return matched
 }
 
 func validate(proxy *Proxy) bool {
@@ -459,6 +460,7 @@ func logHandledDownstreamRoundtrip(proxy *Proxy) {
 
 	ev = ev.Str(dwnReqListnr, proxy.Dwn.Listener).
 		Str(dwnReqPort, fmt.Sprintf(pdS, proxy.Dwn.Port)).
+		Str(dwnReqHost, proxy.Dwn.Host).
 		Str(dwnReqPath, proxy.Dwn.Path).
 		Str(dwnReqRemoteAddr, ipr.extractAddr(proxy.Dwn.Req.RemoteAddr)).
 		Str(dwnReqMethod, proxy.Dwn.Method).

@@ -92,6 +92,63 @@ routes:
     resource: badlocal
   - path: /badssl
     resource: badssl
+  - path: /path/med/2
+    pathType: exact
+    resource: blah
+  - path: /path/med/1st
+    pathType: exact
+    resource: blah
+  - path: /longfirstslug_longfirstslug_longfirstslug_longfirstslug/short
+    resource: blah
+  - path: /short/longersecondslug_longersecondslug_longersecondslug_longersecondslug
+    resource: blah
+  - path: /a/a/
+    resource: blah
+  - path: /a/ab/
+    resource: blah
+  - path: /path/long/hierarchy/2nd
+    pathType: prefix
+    resource: blah
+  - path: /path/long/hierarchy/first
+    pathType: prefix
+    resource: blah
+  - path: /c/a
+    resource: blah
+  - path: /ab/a/a/
+    resource: blah
+  - path: /
+    resource: blah
+  - path: /*
+    resource: blah
+  - path: /*/a
+    resource: blah
+  - path: /*/a/g*a/ba^
+    resource: blah
+  - path: /a
+    resource: blah
+  - path: /aa
+    resource: blah
+  - path: /hostpath
+    host: host.com
+    resource: blah
+  - path: /
+    host: host3.com
+    resource: blah
+  - path: /
+    host: a.host2.com
+    resource: blah
+  - path: /
+    pathType: exact
+    host: a.host2.com
+    resource: blah
+  - path: /
+    host: "*.host2.com"
+    resource: blah
+  - path: /
+    host: host123456789.com
+    resource: blah
+
+
 
 resources:
   jsonplaceholder:
@@ -228,4 +285,8 @@ resources:
   noport443:
     - url:
         scheme: https
+        host: localhost
+  blah:
+    - url:
+        scheme: http
         host: localhost

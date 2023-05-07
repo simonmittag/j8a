@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-//this testHandler binds the mock HTTP server to proxyHandler.
+// this testHandler binds the mock HTTP server to proxyHandler.
 type WebsocketHandler struct{}
 
 func (h WebsocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -125,9 +125,9 @@ func mockProxyWS() Proxy {
 			Path:   "/path",
 		},
 		Route: &Route{
-			Path:      "/path",
-			PathRegex: nil,
-			Resource:  "res",
+			Path:              "/path",
+			CompiledPathRegex: nil,
+			Resource:          "res",
 		},
 	}
 }

@@ -14,6 +14,7 @@ import (
 	"github.com/lestrrat-go/jwx/jws"
 	"github.com/lestrrat-go/jwx/jwt"
 	"github.com/rs/zerolog"
+	"golang.org/x/net/idna"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -229,6 +230,7 @@ type Down struct {
 	Req            *http.Request
 	Resp           Resp
 	Method         string
+	Host           string
 	Path           string
 	URI            string
 	UserAgent      string
@@ -366,6 +368,7 @@ func (proxy *Proxy) parseIncoming(request *http.Request) *Proxy {
 	if !Runner.DisableXRequestInfo {
 		proxy.XRequestInfo = parseXRequestInfo(request)
 	}
+	proxy.Dwn.Host = parseHost(request)
 	proxy.Dwn.Path = request.URL.EscapedPath()
 	proxy.Dwn.URI = request.URL.RequestURI()
 	proxy.Dwn.AcceptEncoding = parseAcceptEncoding(request)
@@ -516,6 +519,15 @@ func infoOrDebugEv(proxy *Proxy) *zerolog.Event {
 		ev = log.Debug()
 	}
 	return ev
+}
+
+const colon = ":"
+
+func parseHost(request *http.Request) string {
+	//ignore conversion errors
+	al := strings.Split(request.Host, colon)[0]
+	al2, _ := idna.ToASCII(al)
+	return al2
 }
 
 func parseMethod(request *http.Request) string {
