@@ -16,18 +16,18 @@ require (
 	github.com/simonmittag/lego/v4 v4.4.1-0.20210801233615-446f36e1d8f3
 	github.com/simonmittag/ws v1.0.42
 	golang.org/x/net v0.9.0
-	golang.org/x/sync v0.1.0
+	golang.org/x/sync v0.2.0
 )
 
 require (
 	github.com/andybalholm/brotli v1.0.5
+	github.com/davidmytton/url-verifier v1.0.0
 	github.com/klauspost/compress v1.16.3
 	github.com/simonmittag/procspy v0.0.4
 )
 
 require (
 	github.com/cenkalti/backoff/v4 v4.1.1 // indirect
-	github.com/davidmytton/url-verifier v1.0.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.0-20210816181553-5444fa50b93d // indirect
 	github.com/gobwas/httphead v0.1.0 // indirect
 	github.com/gobwas/pool v0.2.1 // indirect
