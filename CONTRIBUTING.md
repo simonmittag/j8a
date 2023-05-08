@@ -8,14 +8,14 @@ We love your input! We want to make contributing to this project as easy and tra
 - Proposing new features
 - Becoming a maintainer
 
-## We Develop with Github
+## We Develop with GitHub
 
-We use github to host code, to track issues and feature requests, as well as accept pull requests.
+We use GitHub to host code, to track issues and feature requests, as well as accept pull requests.
 
 ## We Use [CircleCi](https://circleci.com/gh/simonmittag/j8a), So All Code Changes Happen Through Pull Requests
 
 Pull requests are the best way to propose changes to the codebase (we
-use [CircleCi](https://circleci.com/gh/simonmittag/j8a). We actively welcome your pull requests:
+use [CircleCi](https://circleci.com/gh/simonmittag/j8a)). We actively welcome your pull requests:
 
 1. Fork the repo and create your branch from `master`.
 2. If you've added code that should be tested, add tests.
@@ -28,7 +28,7 @@ In short, when you submit code changes, your submissions are understood to be un
 same [Apache License](https://github.com/simonmittag/j8a/blob/master/LICENSE). Feel free to contact one of the project
 maintainers if that's a concern.
 
-## Report bugs using Github's [issues](https://github.com/simonmittag/j8a/issues)
+## Report bugs using GitHub's [issues](https://github.com/simonmittag/j8a/issues)
 
 We use GitHub issues to track public bugs. Report a bug
 by [opening a new issue](https://github.com/simonmittag/j8a/issues/new/choose); it's that easy!

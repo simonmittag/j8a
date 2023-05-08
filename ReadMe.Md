@@ -4,8 +4,8 @@
 [![Github Issues](https://img.shields.io/github/issues/simonmittag/j8a)](https://github.com/simonmittag/j8a/issues)
 [![Github Activity](https://img.shields.io/github/commit-activity/m/simonmittag/j8a)](https://img.shields.io/github/commit-activity/m/simonmittag/j8a)  
 [![Go Report](https://goreportcard.com/badge/github.com/simonmittag/j8a)](https://goreportcard.com/report/github.com/simonmittag/j8a)
-[![Codeclimate Maintainability](https://api.codeclimate.com/v1/badges/326d3c304e32645811c8/maintainability)](https://codeclimate.com/github/simonmittag/jabba/maintainability)
-[![Codeclimate Test Coverage](https://api.codeclimate.com/v1/badges/326d3c304e32645811c8/test_coverage)](https://codeclimate.com/github/simonmittag/jabba/code)
+[![CodeClimate Maintainability](https://api.codeclimate.com/v1/badges/326d3c304e32645811c8/maintainability)](https://codeclimate.com/github/simonmittag/jabba/maintainability)
+[![CodeClimate Test Coverage](https://api.codeclimate.com/v1/badges/326d3c304e32645811c8/test_coverage)](https://codeclimate.com/github/simonmittag/jabba/code)
 [![SSLLabs Rating](https://img.shields.io/badge/SSLLabs-A%2B-brightgreen)](https://www.ssllabs.com/ssltest/analyze.html?d=j8a.io)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/simonmittag/j8a)](https://img.shields.io/github/go-mod/go-version/simonmittag/j8a)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
@@ -25,7 +25,7 @@
 * update to go 1.19
 
 ### v0.9.6 (01/08/2022)
-* allows go `{{template}}` variables in config file to substituate env vars.
+* allows go `{{template}}` variables in config file to substitute env vars.
 * new params for acmeEmail, gracePeriodDays to configure letsencrypt provider
 * new param for disableXRequestInfo to disable debug mode
 
@@ -41,7 +41,7 @@ REST APIs.
 * Fast! 5k POST req/s traffic.
 * Secure. TLS1.2, TLS/1.3 termination w/ [A+ SSLLabs rating](https://www.ssllabs.com/ssltest/analyze.html?d=j8a.io).
 * Zero downtime. Auto-renew certs using ACME [RFC 8555](https://tools.ietf.org/html/rfc8555).
-* Observable. API request tracing w/ correlation ID for upstream micro-services.
+* Observable. API request tracing w/ correlation ID for upstream microservices.
 * APM. CPU, memory logging built-in. Daily TLS health and validity check for your full certificate chain.
 * JWT token validation with full JWK(S) support for [RFC 7519](https://tools.ietf.org/html/rfc7519).
 * HTTP/1.1 and HTTP/2 support w/ upstream <> downstream protocol translation.
