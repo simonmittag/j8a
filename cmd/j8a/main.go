@@ -23,7 +23,6 @@ const (
 )
 
 func main() {
-	//we default to server mode
 	mode := Bootstrap
 
 	//trap sigkill and other aborts
