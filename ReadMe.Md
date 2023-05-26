@@ -71,7 +71,7 @@ variable `J8ACFG_YML`, a specified config file, or the default config file `j8ac
 You can validate the config using the `-o` flag without actually starting the server, which 
 is useful for ci/cd pipelines. In validate mode, the process successfully exits with `0`, or `-1` in case of failure.
 
-### Usage
+### Commandline Options
 
 ```bash
 λ j8a -h
