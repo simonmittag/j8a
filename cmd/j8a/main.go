@@ -43,7 +43,7 @@ func main() {
 		mode = Usage
 	} else {
 		mode = Server
-		if c != nil && len(*c) > 0 {
+		if isFlagPassed("c") {
 			j8a.ConfigFile = *c
 		}
 		if *o {
@@ -107,6 +107,16 @@ func interruptChannel() chan os.Signal {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGQUIT)
 	return sigs
+}
+
+func isFlagPassed(name string) bool {
+	found := false
+	flag.Visit(func(f *flag.Flag) {
+		if f.Name == name {
+			found = true
+		}
+	})
+	return found
 }
 
 func parseFlags() error {
