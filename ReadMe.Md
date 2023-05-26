@@ -25,14 +25,6 @@
 * OPTIONS requests to '*' now list legal server HTTP methods
 * update to go 1.20, and multiple dependency updates
 
-### v0.9.7 (10/11/2022)
-* update to go 1.19
-
-### v0.9.6 (01/08/2022)
-* allows go `{{template}}` variables in config file to substitute env vars.
-* new params for acmeEmail, gracePeriodDays to configure letsencrypt provider
-* new param for disableXRequestInfo to disable debug mode
-
 ## What is j8a?
 
 [j8a [ dʒʌbbʌ ]](https://j8a.io) is a modern **TLS 1.3 reverse proxy server** designed as a lightweight API gateway for
