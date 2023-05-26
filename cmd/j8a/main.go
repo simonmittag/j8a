@@ -31,10 +31,10 @@ func main() {
 	//for Bootstrap
 	defer recovery()
 
-	c := flag.String("c", j8a.DefaultConfigFile, "config file location")
+	c := flag.String("c", j8a.DefaultConfigFile, "config file location.")
 	o := flag.Bool("o", false, "validate config file, then exit.")
-	v := flag.Bool("v", false, "print version")
-	h := flag.Bool("h", false, "print usage instructions")
+	v := flag.Bool("v", false, "print version.")
+	h := flag.Bool("h", false, "print usage instructions.")
 
 	flag.Usage = printUsage
 	err := parseFlags()

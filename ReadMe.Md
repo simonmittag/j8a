@@ -10,9 +10,13 @@
 [![Go Version](https://img.shields.io/github/go-mod/go-version/simonmittag/j8a)](https://img.shields.io/github/go-mod/go-version/simonmittag/j8a)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Docker Pulls](https://img.shields.io/docker/pulls/simonmittag/j8a)](https://hub.docker.com/repository/docker/simonmittag/j8a)
-[![Version](https://img.shields.io/docker/v/simonmittag/j8a/1.0.0)](https://hub.docker.com/repository/docker/simonmittag/j8a)
+[![Version](https://img.shields.io/docker/v/simonmittag/j8a/1.0.1)](https://hub.docker.com/repository/docker/simonmittag/j8a)
 
 ## What's new?
+
+### v1.0.1 (26/05/2023)
+* can now validate config & files with cli option -o
+* added cli flags -h for usage and -v for version
 
 ### v1.0.0 (07/05/2023)
 * support for virtual host based routing inc subdomains.
@@ -67,6 +71,18 @@ brew tap simonmittag/cli &&
 ```bash
 go install github.com/simonmittag/j8a/cmd/j8a &&
   j8a
+```
+
+## Usage
+```bash
+λ j8a -h
+j8a[v1.0.1] Goodde da lodia!
+Usage: j8a [-c] [-o] | [-v] | [-h]
+  -c string
+        config file location (default "j8acfg.yml").
+  -h    print usage instructions.
+  -o    validate config file, then exit.
+  -v    print version.
 ```
 
 ## Configuration
