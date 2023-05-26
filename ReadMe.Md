@@ -15,8 +15,8 @@
 ## What's new?
 
 ### v1.0.1 (26/05/2023)
-* can now validate config & files with cli option -o
-* added cli flags -h for usage and -v for version
+* can now validate config & files with cli option `-o`
+* added cli flags `-h` for usage and `-v` for version
 
 ### v1.0.0 (07/05/2023)
 * support for virtual host based routing inc subdomains.
