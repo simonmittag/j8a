@@ -169,8 +169,30 @@ func (zla *zerologAdapter) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
+func Validate() {
+	config := processConfig()
+	config.ok()
+}
+
 // BootStrap starts up the server from a ServerConfig
 func BootStrap() {
+	config := processConfig()
+
+	Runner = &Runtime{
+		Config:            *config,
+		Start:             time.Now(),
+		AcmeHandler:       NewAcmeHandler(),
+		ConnectionWatcher: ConnectionWatcher{dwnOpenConns: 0},
+	}
+	Runner.
+		initCacheDir().
+		initReloadableCert().
+		initStats().
+		initUserAgent().
+		startListening()
+}
+
+func processConfig() *Config {
 	initLogger()
 
 	config := new(Config).
@@ -190,19 +212,7 @@ func BootStrap() {
 		setDefaultDownstreamParams().
 		validateHTTPConfig().
 		validateAcmeConfig()
-
-	Runner = &Runtime{
-		Config:            *config,
-		Start:             time.Now(),
-		AcmeHandler:       NewAcmeHandler(),
-		ConnectionWatcher: ConnectionWatcher{dwnOpenConns: 0},
-	}
-	Runner.
-		initCacheDir().
-		initReloadableCert().
-		initStats().
-		initUserAgent().
-		startListening()
+	return config
 }
 
 const cacheDir = ".j8a"
