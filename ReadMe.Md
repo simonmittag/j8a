@@ -66,6 +66,13 @@ go install github.com/simonmittag/j8a/cmd/j8a &&
 ```
 
 ## Usage
+J8a runs from the cli. The process will attempt to load its configuration from the environment 
+variable `J8ACFG_YML`, a specified config file, or the default config file `j8acfg.yml` (in that order). 
+You can validate the config using the `-o` flag without actually starting the server, which 
+is useful for ci/cd pipelines. In validate mode, the process successfully exits with `0`, or `-1` in case of failure.
+
+### Usage
+
 ```bash
 λ j8a -h
 j8a[v1.0.1] Goodde da lodia!
@@ -77,31 +84,31 @@ Usage: j8a [-c] [-o] | [-v] | [-h]
   -v    print version.
 ```
 
-## Configuration
+### Examples
 
-### J8ACFG_YML
+Validate Server Configuration supplied as `myconfig.yml`
+```bash
+λ j8a -c myconfig.yml -o
+6:25PM INF hostName determined hostName=MacBook-Pro-16.local
+6:25PM INF version determined version=v1.0.1
+6:25PM INF srvID determined srvID=c91cda8c
+...
+```
 
-Supply the server configuration to the running process in .yml format
+Start Server With Configuration supplied as `myconfig.yml`
+```bash
+λ j8a -c myconfig.yml 
+6:25PM INF hostName determined hostName=MacBook-Pro-16.local
+6:25PM INF version determined version=v1.0.1
+6:25PM INF srvID determined srvID=c91cda8c
+...
+```
 
+Start Server With Configuration supplied via `J8ACFG_YML`
 ```bash
 J8ACFG_YML="---
             timeZone: UTC
             logLevel: INFO
-            connection:
-              downstream:
-                readTimeoutSeconds: 3
-                roundTripTimeoutSeconds: 20
-                idleTimeoutSeconds: 30
-                http:
-                  port: 80
-                maxBodyBytes: 65535
-              upstream:
-                socketTimeoutSeconds: 3
-                readTimeoutSeconds: 30
-                idleTimeoutSeconds: 10
-                maxAttempts: 4
-                poolSize: 8
-                tlsInsecureSkipVerify: true
             routes:
               - path: "/todos"
                 resource: jsonplaceholder
@@ -110,7 +117,7 @@ J8ACFG_YML="---
                 - url:
                     scheme: https
                     host: jsonplaceholder.typicode.com
-                    port: 443"
+                    port: 443" j8a
 ```
 
 ## Contributions
