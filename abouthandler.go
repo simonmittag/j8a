@@ -110,7 +110,7 @@ type StatusCodeResponse struct {
 func (aboutResponse AboutResponse) AsJSON() []byte {
 	aboutResponse.ServerID = ID
 	aboutResponse.Version = Version
-	aboutResponse.J8a = randomHuttese()
+	aboutResponse.J8a = RandomHuttese()
 	response, _ := json.Marshal(aboutResponse)
 	//typo fix so we can continue to use json.Marshal which needs Uppercase struct props
 	response[2] = 0x6a
@@ -134,7 +134,7 @@ func (statusCodeResponse *StatusCodeResponse) withCode(code int) {
 func (statusCodeResponse StatusCodeResponse) AsJSON() []byte {
 	statusCodeResponse.ServerID = ID
 	statusCodeResponse.Version = Version
-	statusCodeResponse.J8a = randomHuttese()
+	statusCodeResponse.J8a = RandomHuttese()
 	response, _ := json.Marshal(statusCodeResponse)
 	//typo fix so we can continue to use json.Marshal which needs Uppercase struct props
 	response[2] = 0x6a
@@ -145,7 +145,7 @@ func (statusCodeResponse StatusCodeResponse) AsString() string {
 	return strings.ToLower(string(statusCodeResponse.AsJSON()))
 }
 
-func randomHuttese() string {
+func RandomHuttese() string {
 	rand.Seed(time.Now().Unix())
 	return huttese[rand.Int()%len(huttese)]
 }
