@@ -14,7 +14,7 @@
 
 # CVEs
 🛡️ J8a has [zero](https://www.cvedetails.com/google-search-results.php?q=j8a&sa=Search) reported CVEs as of 01/06/2023. 
-If you are a security researcher and would like to get in touch, do contact the project team using the [issue tracker](https://github.com/simonmittag/j8a/issues)
+If you are a security researcher and would like to get in touch, do contact the project team using the [issue tracker](https://github.com/simonmittag/j8a/issues).
 
 ## What's new?
 
