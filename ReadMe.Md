@@ -13,7 +13,8 @@
 [![Version](https://img.shields.io/docker/v/simonmittag/j8a/1.0.1)](https://hub.docker.com/repository/docker/simonmittag/j8a)
 
 # CVEs
-🛡️ J8a has zero! reported CVEs as of 01/06/2023
+🛡️ J8a has [zero](https://www.cvedetails.com/google-search-results.php?q=j8a&sa=Search) reported CVEs as of 01/06/2023. 
+If you are a security researchers, do contact the project team using the [issue tracker](https://github.com/simonmittag/j8a/issues)
 
 ## What's new?
 
