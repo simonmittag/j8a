@@ -29,7 +29,7 @@ If you are a security researcher, the project team would like to [hear from you]
 * OPTIONS requests to '*' now list legal server HTTP methods
 * update to go 1.20, and multiple dependency updates
 
-## What is j8a?
+# What is j8a?
 
 [j8a [ dʒʌbbʌ ]](https://j8a.io) is a modern **TLS 1.3 reverse proxy server** designed as a lightweight API gateway for
 REST APIs. 
