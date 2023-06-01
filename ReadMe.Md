@@ -12,7 +12,7 @@
 [![Docker Pulls](https://img.shields.io/docker/pulls/simonmittag/j8a)](https://hub.docker.com/repository/docker/simonmittag/j8a)
 [![Version](https://img.shields.io/docker/v/simonmittag/j8a/1.0.1)](https://hub.docker.com/repository/docker/simonmittag/j8a)
 
-# CVEs
+## CVEs
 🛡️ J8a has [zero](https://www.cvedetails.com/google-search-results.php?q=j8a&sa=Search) reported CVEs as of 01/06/2023. 
 If you are a security researcher, the project team would like to [hear from you](https://github.com/simonmittag/j8a/issues).
 
