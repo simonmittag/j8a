@@ -13,7 +13,7 @@ import (
 	"testing"
 )
 
-//TODO: once we start supporting max body size, this needs to be revisited. it sends 100 every time right now.
+// TODO: once we start supporting max body size, this needs to be revisited. it sends 100 every time right now.
 func TestStatusCode100SentFromProxyWithPutIfExpected100Continue(t *testing.T) {
 	//step 1 we connect to j8a with net.dial
 	c, err := net.Dial("tcp", ":8080")
@@ -301,7 +301,7 @@ func TestUploadSmallerMaxBodyAllowed(t *testing.T) {
 	}
 }
 
-//Test normal responses
+// Test normal responses
 func TestStatusCodeOfProxiedResponses200To226(t *testing.T) {
 	var wg1 sync.WaitGroup
 	for i := 200; i <= 226; i++ {
@@ -315,7 +315,7 @@ func TestStatusCode216OfProxiedResponse(t *testing.T) {
 	performOneJ8aResponseCodeTest(t, 216, 216, 8080)
 }
 
-//Test redirects are mapped through to the calling user agent
+// Test redirects are mapped through to the calling user agent
 func TestStatusCodeOfProxiedResponses300To308NonRedirected(t *testing.T) {
 	var wg1 sync.WaitGroup
 	for i := 300; i <= 308; i++ {
@@ -361,7 +361,7 @@ func TestStatusCode300SeriesRedirect(t *testing.T) {
 
 func Test404ResponseBodyIsIncluded(t *testing.T) {
 	client := &http.Client{}
-	resp, err := client.Get("http://localhost:8080/mse6/xyzd")
+	resp, err := client.Get("http://localhost:8080/mse6/send?code=404")
 
 	if err != nil {
 		t.Errorf("error connecting to upstream server")
@@ -388,7 +388,7 @@ func Test404ResponseBodyIsIncluded(t *testing.T) {
 	}
 }
 
-//Test client errors are mapped through to the calling user agent
+// Test client errors are mapped through to the calling user agent
 func TestStatusCodeOfProxiedResponses400To499(t *testing.T) {
 	var wg1 sync.WaitGroup
 	for i := 400; i <= 499; i++ {
@@ -398,7 +398,7 @@ func TestStatusCodeOfProxiedResponses400To499(t *testing.T) {
 	wg1.Wait()
 }
 
-//Test upstream server errors are re-mapped to 502 bad gateway
+// Test upstream server errors are re-mapped to 502 bad gateway
 func TestStatusCodeOfProxiedResponses500To599(t *testing.T) {
 	var wg2 sync.WaitGroup
 	for i := 500; i <= 599; i++ {

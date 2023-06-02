@@ -73,7 +73,7 @@ func TestConnection_404ResponseClosesDownstreamConnectionUsingHTTP11(t *testing.
 	defer c.Close()
 
 	//step 2 we send headers and terminate HTTP message.
-	integration.CheckWrite(t, c, "GET /mse6/xyz HTTP/1.1\r\n")
+	integration.CheckWrite(t, c, "GET /mse6/send?code=404 HTTP/1.1\r\n")
 	integration.CheckWrite(t, c, "Host: localhost:8080\r\n")
 	integration.CheckWrite(t, c, "User-Agent: integration\r\n")
 	integration.CheckWrite(t, c, "Accept: */*\r\n")
