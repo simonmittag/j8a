@@ -126,13 +126,13 @@ J8ACFG_YML="---
 
 ## Contributions
 
-The j8a team welcomes all [contributors](https://github.com/simonmittag/j8a/blob/master/CONTRIBUTING.md). Everyone
+The j8a team is looking for and welcomes all [contributors](https://github.com/simonmittag/j8a/blob/master/CONTRIBUTING.md). Everyone
 interacting with the project's codebase, issue trackers, chat rooms and mailing lists is expected to follow
 the [code of conduct](https://github.com/simonmittag/j8a/blob/master/CODE_OF_CONDUCT.md)
 
 ## Release Cycle
-Now that 1.0 is reached, we usually release 3/4 minor versions per year.
-Bug-fixes (e.g. 1.0.1, 1.0.2) are released as needed (no additional features are delivered in those versions, bug-fixes only).
-Each version is supported until the next one is released (e.g. 1.1.x will be supported until 1.2.0 is out).
+* Now that 1.0 is reached, we usually release 3/4 minor versions per year.
+* Bug-fixes (e.g. 1.0.1, 1.0.2) are released as needed (no additional features are delivered in those versions, bug-fixes only).
+* Each version is supported until the next one is released (e.g. 1.1.x will be supported until 1.2.0 is out).
 
 We use [Semantic Versioning](https://semver.org/).
