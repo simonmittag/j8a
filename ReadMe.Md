@@ -113,6 +113,10 @@ Start Server With Configuration supplied via `J8ACFG_YML`
 J8ACFG_YML="---
             timeZone: UTC
             logLevel: INFO
+            connection:
+              downstream:
+                http:
+                  port: 80
             routes:
               - path: "/todos"
                 resource: jsonplaceholder
