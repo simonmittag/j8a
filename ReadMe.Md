@@ -111,8 +111,6 @@ Start Server With Configuration supplied as `myconfig.yml`
 Start Server With Configuration supplied via `J8ACFG_YML`
 ```bash
 J8ACFG_YML="---
-            timeZone: UTC
-            logLevel: INFO
             connection:
               downstream:
                 http:
