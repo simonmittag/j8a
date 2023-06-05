@@ -317,6 +317,20 @@ func TestValidateConfigHasHttpAndTLS(t *testing.T) {
 	config = config.validateHTTPConfig()
 }
 
+func TestValidateConfigHasTLS(t *testing.T) {
+	config := &Config{
+		Connection: Connection{
+			Downstream: Downstream{
+				Tls: Tls{
+					Port: 443,
+				},
+			},
+		},
+	}
+
+	config = config.validateHTTPConfig()
+}
+
 func TestValidateConfigNoHttpAndNoTLSFails(t *testing.T) {
 	defer func() {
 		if r := recover(); r == nil {
