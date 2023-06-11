@@ -1,4 +1,5 @@
 ---
+logLevel: TRACE
 connection:
   downstream:
     readTimeoutSeconds: 30

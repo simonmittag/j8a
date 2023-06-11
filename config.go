@@ -3,8 +3,11 @@ package j8a
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"golang.org/x/net/idna"
 	"io/ioutil"
+	"net"
 	"os"
 	"sort"
 	"strings"
@@ -164,8 +167,90 @@ func (config Config) validateResources() *Config {
 		if len(resourceMappings) == 0 {
 			config.panic("resource needs to have at least one url, see https://j8a.io/docs")
 		}
+		for _, r := range resourceMappings {
+			if r.URL.Port <= 1 || r.URL.Port > 65535 {
+				config.panic("resource needs to have port between 0 and 65535")
+			}
+			if len(r.URL.Host) == 0 {
+				config.panic("resource needs to have host")
+			} else {
+				ie := validIpAddress(r)
+				he := validHostName(r)
+				if ie != nil && he != nil {
+					config.panic(fmt.Sprintf("resource host needs to be valid DNS name or IP address: %v", r.URL.Host))
+				}
+			}
+
+			sm := "resource needs to have valid scheme: "
+			if len(r.URL.Scheme) == 0 {
+				config.panic(sm + r.URL.Scheme)
+			} else if !validScheme(r.URL.Scheme) {
+				config.panic(sm + r.URL.Scheme)
+			}
+		}
 	}
 	return &config
+}
+
+func validScheme(s string) bool {
+	s = strings.TrimSpace(s)
+	s = strings.TrimSuffix(s, "://")
+	s = strings.ToLower(s)
+
+	schemes := [4]string{"http", "https", "ws", "wss"}
+	for _, v := range schemes {
+		if v == s {
+			return true
+		}
+	}
+	return false
+}
+
+func validIpAddress(r ResourceMapping) error {
+	defaultErr := errors.New(fmt.Sprintf("invalid ipv4 or ipv6 address: %v", r.URL.Host))
+
+	h := r.URL.Host
+	h = strings.TrimPrefix(h, "[")
+	h = strings.TrimSuffix(h, "]")
+	hasBrackets := h != r.URL.Host
+
+	p := net.ParseIP(h)
+	if p == nil || len(p) == 0 {
+		return defaultErr
+	} else if p.To4() != nil && hasBrackets {
+		return defaultErr
+	}
+	return nil
+}
+
+func validHostName(r ResourceMapping) error {
+	invalidErr := errors.New(fmt.Sprintf("resource host needs a valid DNS name: %v", r.URL.Host))
+	p := idna.New(
+		idna.ValidateLabels(true),
+		//this has to be off it disallows * for registration
+		//idna.ValidateForRegistration(),
+		idna.StrictDomainName(true))
+	_, err := p.ToUnicode(r.URL.Host)
+	if err != nil {
+		return invalidErr
+	}
+	a, err := p.ToASCII(r.URL.Host)
+	if err != nil {
+		return invalidErr
+	}
+	if a != r.URL.Host {
+		return invalidErr
+	}
+	if strings.Contains(a, "*") {
+		return errors.New(fmt.Sprintf("resource host cannot be a wildcard DNS name: %v", r.URL.Host))
+	}
+	if strings.Contains(a, ":") {
+		return errors.New(fmt.Sprintf("resource host cannot contain port: %v", r.URL.Host))
+	}
+	if !govalidator.IsDNSName(a) {
+		return invalidErr
+	}
+	return nil
 }
 
 func (config Config) reApplyResourceNames() *Config {
@@ -254,6 +339,20 @@ func (config Config) compileRouteTransforms() *Config {
 	for i, route := range config.Routes {
 		if len(config.Routes[i].Transform) > 0 && config.Routes[i].Transform[:1] != "/" {
 			config.panic(fmt.Sprintf("config error, illegal route transform %s", route.Transform))
+		}
+	}
+	return &config
+}
+
+func (config Config) reformatResourceUrlSchemes() *Config {
+	for name := range config.Resources {
+		resourceMappings := config.Resources[name]
+		for i, resourceMapping := range resourceMappings {
+			scheme := resourceMapping.URL.Scheme
+			scheme = strings.TrimSpace(scheme)
+			scheme = strings.ToLower(scheme)
+			scheme = strings.TrimSuffix(scheme, "://")
+			resourceMappings[i].URL.Scheme = scheme
 		}
 	}
 	return &config
@@ -475,6 +574,7 @@ func (config Config) validateJwt() *Config {
 func (config Config) getDownstreamRoundTripTimeoutDuration() time.Duration {
 	return time.Duration(time.Second * time.Duration(config.Connection.Downstream.RoundTripTimeoutSeconds))
 }
+
 func envToMap() map[string]string {
 	envMap := make(map[string]string)
 

@@ -337,7 +337,7 @@ func TestRoutePathsValid(t *testing.T) {
 }
 
 func TestHostDNSNamePatternValid(t *testing.T) {
-	for _, tt := range HostTestFactory() {
+	for _, tt := range WildCardIdnaHostTestFactory() {
 		t.Run(tt.n, func(t *testing.T) {
 			r := Route{Host: tt.h}
 			v, e := r.validHostPattern()
@@ -350,7 +350,37 @@ func TestHostDNSNamePatternValid(t *testing.T) {
 
 }
 
-func HostTestFactory() []struct {
+func WildCardIdnaHostTestFactory() []struct {
+	n string
+	h string
+	v bool
+} {
+	tests := []struct {
+		n string
+		h string
+		v bool
+	}{
+		//wildcard valid and syntax invalid
+		{n: "valid wildcard dns umlaut", h: "*.faß.com", v: true},
+		{n: "valid wildcard dns other unicode", h: "*.😀😀😀.com", v: true},
+		{n: "valid wildcard dns with punycode", h: "*.xn--bbb-yi33baa.com", v: true},
+		{n: "invalid wildcard pattern with double dot", h: "*..faß.com", v: false},
+		{n: "invalid wildcard pattern with asterisk inside pattern", h: "a.*.faß.com", v: false},
+		{n: "invalid wildcard pattern with valid regex style asterisk", h: "a*.faß.com", v: false},
+		{n: "invalid wildcard pattern with invalid regex style asterisk", h: "*a.faß.com", v: false},
+		{n: "invalid asterisk in the middle of domain", h: "a.*.😀😀😀.com", v: false},
+
+		//IDNA
+		{n: "valid cyrillic", h: "ԛәлп.com", v: true},
+		{n: "valid host unicode", h: "六书", v: true},
+		{n: "invalid latin with stroke, case mapping is not part of IDNA 2008. We pass this anyway because go does", h: "Ⱥbby.com", v: true},
+	}
+	tests = append(tests, DNSNameHostTestFactory()...)
+
+	return tests
+}
+
+func DNSNameHostTestFactory() []struct {
 	n string
 	h string
 	v bool
@@ -361,18 +391,7 @@ func HostTestFactory() []struct {
 		v bool
 	}{
 		{n: "valid host", h: "blah", v: true},
-		{n: "valid host unicode", h: "六书", v: true},
-		{n: "valid wildcard dns umlaut", h: "*.faß.com", v: true},
-		{n: "invalid wildcard pattern with double dot", h: "*..faß.com", v: false},
-		{n: "invalid wildcard pattern with asterisk inside pattern", h: "a.*.faß.com", v: false},
-		{n: "invalid wildcard pattern with valid regex style asterisk", h: "a*.faß.com", v: false},
-		{n: "invalid wildcard pattern with invalid regex style asterisk", h: "*a.faß.com", v: false},
-		{n: "valid wildcard dns other unicode", h: "*.😀😀😀.com", v: true},
-		{n: "invalid asterisk in the middle of domain", h: "a.*.😀😀😀.com", v: false},
 		{n: "valid punycode", h: "xn--bbb-yi33baa.com", v: true},
-		{n: "valid wildcard dns with punycode", h: "*.xn--bbb-yi33baa.com", v: true},
-		{n: "valid cyrillic", h: "ԛәлп.com", v: true},
-		{n: "invalid latin with stroke, case mapping is not part of IDNA 2008. We pass this anyway because go does", h: "Ⱥbby.com", v: true},
 		{n: "DNS name can start with number (RFC-1123)", h: "1aaa.com", v: true},
 		{n: "invalid ascii dollar sign as part of DNS name", h: "$1.a.com", v: false},
 		{n: "invalid contains illegal ascii exclamation mark !", h: "!1.abc.com", v: false},
@@ -394,11 +413,12 @@ func HostTestFactory() []struct {
 		{n: "invalid contains illegal ascii <", h: "<1.abc.com", v: false},
 		{n: "invalid contains illegal ascii >", h: ">1.abc.com", v: false},
 	}
+
 	return tests
 }
 
 func TestHostDNSNamePatternCompiles(t *testing.T) {
-	for _, tt := range HostTestFactory() {
+	for _, tt := range WildCardIdnaHostTestFactory() {
 		t.Run(tt.n, func(t *testing.T) {
 			r := Route{Host: tt.h}
 			e := r.compileHostPattern()
