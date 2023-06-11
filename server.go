@@ -199,6 +199,7 @@ func processConfig() *Config {
 		load().
 		validateTimeZone().
 		validateLogLevel().
+		reformatResourceUrlSchemes().
 		reApplyResourceURLDefaults().
 		validateResources().
 		reApplyResourceNames().

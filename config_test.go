@@ -317,6 +317,20 @@ func TestValidateConfigHasHttpAndTLS(t *testing.T) {
 	config = config.validateHTTPConfig()
 }
 
+func TestValidateConfigHasTLS(t *testing.T) {
+	config := &Config{
+		Connection: Connection{
+			Downstream: Downstream{
+				Tls: Tls{
+					Port: 443,
+				},
+			},
+		},
+	}
+
+	config = config.validateHTTPConfig()
+}
+
 func TestValidateConfigNoHttpAndNoTLSFails(t *testing.T) {
 	defer func() {
 		if r := recover(); r == nil {
@@ -333,6 +347,264 @@ func TestValidateConfigNoHttpAndNoTLSFails(t *testing.T) {
 	}
 
 	config = config.validateHTTPConfig()
+}
+
+func TestValidateNonWildcardHostName(t *testing.T) {
+	var tests = []struct {
+		n string
+		h string
+		v bool
+	}{
+		{"valid host", "host.com", true},
+		{"invalid wildcard host", "*.host.com", false},
+		{"invalid unicode host", "höst.com", false},
+		{"invalid character host", "h/st.com", false},
+		{"invalid port spec host", "host.com:80", false},
+	}
+
+	tests = append(tests, DNSNameHostTestFactory()...)
+
+	for _, tt := range tests {
+		t.Run(tt.n, func(t *testing.T) {
+			rm := ResourceMapping{
+				URL: URL{
+					Scheme: "http://",
+					Host:   tt.h,
+					Port:   80,
+				}}
+			got := validHostName(rm) == nil
+			want := tt.v
+			if got != want {
+				t.Errorf("%v got: %v want %v", tt.n, got, want)
+			}
+		})
+	}
+}
+
+func TestValidateIpv4AndIpv6(t *testing.T) {
+	var tests = []struct {
+		n string
+		h string
+		v bool
+	}{
+		{"valid ipv4", "10.1.1.1", true},
+		{"invalid ipv4 with ipv6 brackets", "[10.1.1.1]", false},
+		{"invalid short ipv4", "10.0.0", false},
+		{"invalid ipv4 with CIDR range", "10.0.0/1/24", false},
+		{"invalid ipv4", "300.0.0.0", false},
+		{"invalid ipv4 with port", "10.1.1.1:80", false},
+		{"valid ipv6", "::1", true},
+		{"valid ipv6", "[::1]", true},
+		{"invalid port spec host", "host.com:80", false},
+	}
+	for i, ipv4 := range ipv4s {
+		tests = append(tests, struct {
+			n string
+			h string
+			v bool
+		}{fmt.Sprintf("valid ipv4 %v", i), ipv4, true})
+	}
+	for i, ipv6 := range ipv4s {
+		tests = append(tests, struct {
+			n string
+			h string
+			v bool
+		}{fmt.Sprintf("valid ipv6 %v", i), ipv6, true})
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.n, func(t *testing.T) {
+			rm := ResourceMapping{
+				URL: URL{
+					Scheme: "http://",
+					Host:   tt.h,
+					Port:   80,
+				}}
+			got := validIpAddress(rm) == nil
+			want := tt.v
+			if got != want {
+				t.Errorf("%v got: %v want %v", tt.n, got, want)
+			}
+		})
+	}
+}
+
+func TestResourceMappingValidUpstreamResource(t *testing.T) {
+	var tests = []struct {
+		n string
+		s string
+		h string
+		p uint16
+		v bool
+	}{
+		//ports
+		{"invalid port 0", "http", "host.com", 0, false},
+		{"valid port", "http", "host.com", 80, true},
+		{"invalid port 65535", "http", "host.com", 65535, true},
+
+		//schemes
+		{"valid scheme http", "Http", "host.com", 80, true},
+		{"valid scheme http", "http", "host.com", 80, true},
+		{"valid scheme http", "http://", "host.com", 80, true},
+		{"valid scheme http", "http:// ", "host.com", 80, true},
+		{"valid scheme https", "Https", "host.com", 443, true},
+		{"valid scheme https", "https", "host.com", 443, true},
+		{"valid scheme https", "https://", "host.com", 443, true},
+		{"valid scheme https", "https://  ", "host.com", 443, true},
+		{"valid scheme ws", "Ws", "host.com", 80, true},
+		{"valid scheme ws", "ws", "host.com", 80, true},
+		{"valid scheme ws", "ws://", "host.com", 80, true},
+		{"valid scheme ws", "ws://  ", "host.com", 80, true},
+		{"valid scheme wss", "WsS", "host.com", 80, true},
+		{"valid scheme wss", "wss", "host.com", 80, true},
+		{"valid scheme wss", "wsS://", "host.com", 80, true},
+		{"valid scheme wss", "wsS://  ", "host.com", 80, true},
+
+		//bad schemes
+		{"invalid scheme blah", "blah://  ", "host.com", 80, false},
+		{"invalid scheme gopher", "gopher://  ", "host.com", 80, false},
+		{"invalid scheme ftp", "ftp://  ", "host.com", 80, false},
+
+		//hosts
+		{"valid host", "http", "host.com", 80, true},
+		{"invalid wildcard host", "http", "*.host.com", 80, false},
+		{"invalid unicode host", "http", "höst.com", 80, false},
+		{"invalid character host", "http", "h/st.com", 80, false},
+		{"invalid port spec host", "http", "host.com:80", 80, false},
+
+		//ips
+		{"valid ipv4", "http", "10.1.1.1", 80, true},
+		{"invalid ipv4 with ipv6 brackets", "http", "[10.1.1.1]", 80, false},
+		{"invalid short ipv4", "http", "10.0.0", 80, false},
+		{"invalid ipv4 with CIDR range", "http", "10.0.0.1/24", 80, false},
+		{"invalid ipv4", "http", "300.0.0.0", 80, false},
+		{"invalid ipv4 with port", "http", "10.1.1.1:80", 80, false},
+		{"valid ipv6", "http", "::1", 80, true},
+		{"valid ipv6", "http", "[::1]", 80, true},
+		{"invalid port spec host", "http", "host.com:80", 80, false},
+	}
+	//more ipv4
+	for i, ipv4 := range ipv4s {
+		tests = append(tests, struct {
+			n string
+			s string
+			h string
+			p uint16
+			v bool
+		}{fmt.Sprintf("valid ipv4 %v", i), "http", ipv4, 80, true})
+	}
+	//more ipv6
+	for i, ipv6 := range ipv4s {
+		tests = append(tests, struct {
+			n string
+			s string
+			h string
+			p uint16
+			v bool
+		}{fmt.Sprintf("valid ipv6 %v", i), "https", ipv6, 443, true})
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.n, func(t *testing.T) {
+			//for those tests that are failing.
+			if !tt.v {
+				defer func() {
+					if err := recover(); err != nil {
+						t.Logf("normal. recovered from config panic as expected")
+					}
+				}()
+			}
+
+			//validate resource mapping. for those that don't work, a config panic will fire that this test execution recovers.
+			rm := ResourceMapping{
+				URL: URL{
+					Scheme: tt.s,
+					Host:   tt.h,
+					Port:   tt.p,
+				}}
+			cfg := Config{Resources: map[string][]ResourceMapping{tt.n: []ResourceMapping{rm}}}
+			cfg.reApplyResourceNames().
+				reformatResourceUrlSchemes().
+				validateResources()
+		})
+	}
+}
+
+func TestReformatResourceUrlSchemes(t *testing.T) {
+	var tests = []struct {
+		n string
+		r string
+		a string
+	}{
+		//schemes for reformatting
+		{"valid http", "httP://  ", "http"},
+		{"valid http", "http  ", "http"},
+		{"valid https", "httPs://  ", "https"},
+		{"valid https", "Https", "https"},
+		{"valid ws", "ws://  ", "ws"},
+		{"valid ws", "Ws  ", "ws"},
+		{"valid wss", "wss  ", "wss"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.n, func(t *testing.T) {
+			//validate resource mapping. for those that don't work, a config panic will fire that this test execution recovers.
+			rm := ResourceMapping{
+				URL: URL{
+					Scheme: tt.r,
+					Host:   "host.com",
+					Port:   80,
+				}}
+			cfg := Config{Resources: map[string][]ResourceMapping{tt.n: []ResourceMapping{rm}}}
+			cfg.reApplyResourceNames().
+				reformatResourceUrlSchemes()
+
+			got := cfg.Resources[tt.n][0].URL.Scheme
+			want := tt.a
+			if got != want {
+				t.Errorf("test %v got %v want %v", tt.n, got, want)
+			}
+		})
+	}
+}
+
+func TestScheme(t *testing.T) {
+	var tests = []struct {
+		n string
+		s string
+		v bool
+	}{
+		//hosts
+		{"valid http", "http", true},
+		{"valid http", "http://", true},
+		{"valid http", "HTTP", true},
+		{"valid http", "HTTP://", true},
+		{"valid https", "https", true},
+		{"valid https", "https://", true},
+		{"valid https", "HTTPS", true},
+		{"valid https", "HTTPS://", true},
+		{"valid https", "HtTPs://", true},
+		{"valid https", "HtTPs:// ", true},
+		{"valid ws", "ws", true},
+		{"valid ws", "ws://", true},
+		{"valid ws", "wS", true},
+		{"valid wss", "wss://", true},
+		{"valid wss", "wsS://", true},
+		{"invalid gopher", "gopher://", false},
+		{"invalid ftp", "ftp://", false},
+		{"invalid blah", "blah://", false},
+		{"invalid blah", "blah", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.n, func(t *testing.T) {
+			got := validScheme(tt.s)
+			want := tt.v
+			if got != want {
+				t.Errorf("test %v got %v want %v", tt.n, got, want)
+			}
+		})
+	}
 }
 
 // TestValidateAcmeEmail
