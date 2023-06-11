@@ -682,7 +682,7 @@ func mockRuntime() *Runtime {
 						URL: URL{
 							Scheme: "http",
 							Host:   "localhost",
-							Port:   8083,
+							Port:   "8083",
 						},
 					},
 				},
@@ -693,7 +693,7 @@ func mockRuntime() *Runtime {
 						URL: URL{
 							Scheme: "http",
 							Host:   "localhost",
-							Port:   8084,
+							Port:   "8084",
 						},
 					},
 				},
@@ -704,7 +704,7 @@ func mockRuntime() *Runtime {
 						URL: URL{
 							Scheme: "http",
 							Host:   "127.0.0.1",
-							Port:   8084,
+							Port:   "8084",
 						},
 					},
 				},
@@ -715,7 +715,7 @@ func mockRuntime() *Runtime {
 						URL: URL{
 							Scheme: "http",
 							Host:   "[::1]",
-							Port:   8084,
+							Port:   "8084",
 						},
 					},
 				},
@@ -726,7 +726,7 @@ func mockRuntime() *Runtime {
 						URL: URL{
 							Scheme: "http",
 							Host:   "::1",
-							Port:   8085,
+							Port:   "8085",
 						},
 					},
 				},

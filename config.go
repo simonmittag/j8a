@@ -10,6 +10,7 @@ import (
 	"net"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -168,7 +169,11 @@ func (config Config) validateResources() *Config {
 			config.panic(fmt.Sprintf("resource '%v' needs to have at least one url, see https://j8a.io/docs", name))
 		}
 		for _, r := range resourceMappings {
-			if r.URL.Port <= 1 || r.URL.Port > 65535 {
+			iPort, e := strconv.Atoi(r.URL.Port)
+			if e != nil {
+				config.panic(fmt.Sprintf("resource '%v' needs to have port between 1 and 65535, was: %v", name, r.URL.Port))
+			}
+			if iPort <= 1 || iPort > 65535 {
 				config.panic(fmt.Sprintf("resource '%v' needs to have port between 1 and 65535, was: %v", name, r.URL.Port))
 			}
 			if len(r.URL.Host) == 0 {
@@ -361,8 +366,8 @@ func (config Config) reformatResourceUrlSchemes() *Config {
 func (config Config) reApplyResourceURLDefaults() *Config {
 	const http = "http"
 	const https = "https"
-	const p80 = 80
-	const p443 = 443
+	const p80S = "80"
+	const p443S = "443"
 	for name := range config.Resources {
 		resourceMappings := config.Resources[name]
 		for i, resourceMapping := range resourceMappings {
@@ -379,12 +384,12 @@ func (config Config) reApplyResourceURLDefaults() *Config {
 			resourceMappings[i].URL.Scheme = scheme
 
 			//insert port here if not specified
-			if resourceMapping.URL.Port == 0 {
+			if len(resourceMapping.URL.Port) == 0 {
 				if scheme == http {
-					resourceMappings[i].URL.Port = p80
+					resourceMappings[i].URL.Port = p80S
 				}
 				if scheme == https {
-					resourceMappings[i].URL.Port = p443
+					resourceMappings[i].URL.Port = p443S
 				}
 			}
 		}

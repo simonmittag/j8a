@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"strconv"
 	"testing"
 
 	isd "github.com/jbenet/go-is-domain"
@@ -184,7 +185,7 @@ func TestParsePolicy(t *testing.T) {
 
 // TestParseResource
 func TestParseResource(t *testing.T) {
-	configJson := []byte("{\n\t\"resources\": {\n\t\t\"customer\": [{\n\t\t\t\"labels\": [\n\t\t\t\t\"blue\"\n\t\t\t],\n\t\t\t\"url\": {\n\t\t\t\t\"scheme\": \"http\",\n\t\t\t\t\"host\": \"localhost\",\n\t\t\t\t\"port\": 8081\n\t\t\t}\n\t\t}]\n\t}\n}")
+	configJson := []byte("{\n\t\"resources\": {\n\t\t\"customer\": [{\n\t\t\t\"labels\": [\n\t\t\t\t\"blue\"\n\t\t\t],\n\t\t\t\"url\": {\n\t\t\t\t\"scheme\": \"http\",\n\t\t\t\t\"host\": \"localhost\",\n\t\t\t\t\"port\": \"8081\"\n\t\t\t}\n\t\t}]\n\t}\n}")
 	config := new(Config).parse(configJson)
 	config.reApplyResourceNames()
 
@@ -197,7 +198,7 @@ func TestParseResource(t *testing.T) {
 		t.Error("resource label not parsed, cannot perform upstream mapping")
 	}
 
-	wantURL := URL{"http", "localhost", 8081}
+	wantURL := URL{"http", "localhost", "8081"}
 	gotURL := customer[0].URL
 	if wantURL != gotURL {
 		t.Errorf("resource url parsed incorrectly. want %s got %s", wantURL, gotURL)
@@ -370,7 +371,7 @@ func TestValidateNonWildcardHostName(t *testing.T) {
 				URL: URL{
 					Scheme: "http://",
 					Host:   tt.h,
-					Port:   80,
+					Port:   "80",
 				}}
 			got := validHostName(rm) == nil
 			want := tt.v
@@ -418,7 +419,7 @@ func TestValidateIpv4AndIpv6(t *testing.T) {
 				URL: URL{
 					Scheme: "http://",
 					Host:   tt.h,
-					Port:   80,
+					Port:   "80",
 				}}
 			got := validIpAddress(rm) == nil
 			want := tt.v
@@ -434,56 +435,57 @@ func TestResourceMappingValidUpstreamResource(t *testing.T) {
 		n string
 		s string
 		h string
-		p int
+		p string
 		v bool
 	}{
 		//ports
-		{"invalid port -1", "http", "host.com", -1, false},
-		{"invalid port 0", "http", "host.com", 0, false},
-		{"valid port", "http", "host.com", 80, true},
-		{"invalid port 65535", "http", "host.com", 65535, true},
-		{"invalid port 65536", "http", "host.com", 65536, false},
+		{"invalid port -1", "http", "host.com", "-1", false},
+		{"invalid port 0", "http", "host.com", "0", false},
+		{"valid port", "http", "host.com", "80", true},
+		{"invalid port 65535", "http", "host.com", "65535", true},
+		{"invalid port 65536", "http", "host.com", "65536", false},
+		{"invalid port blah", "http", "host.com", "blah", false},
 
 		//schemes
-		{"valid scheme http", "Http", "host.com", 80, true},
-		{"valid scheme http", "http", "host.com", 80, true},
-		{"valid scheme http", "http://", "host.com", 80, true},
-		{"valid scheme http", "http:// ", "host.com", 80, true},
-		{"valid scheme https", "Https", "host.com", 443, true},
-		{"valid scheme https", "https", "host.com", 443, true},
-		{"valid scheme https", "https://", "host.com", 443, true},
-		{"valid scheme https", "https://  ", "host.com", 443, true},
-		{"valid scheme ws", "Ws", "host.com", 80, true},
-		{"valid scheme ws", "ws", "host.com", 80, true},
-		{"valid scheme ws", "ws://", "host.com", 80, true},
-		{"valid scheme ws", "ws://  ", "host.com", 80, true},
-		{"valid scheme wss", "WsS", "host.com", 80, true},
-		{"valid scheme wss", "wss", "host.com", 80, true},
-		{"valid scheme wss", "wsS://", "host.com", 80, true},
-		{"valid scheme wss", "wsS://  ", "host.com", 80, true},
+		{"valid scheme http", "Http", "host.com", "80", true},
+		{"valid scheme http", "http", "host.com", "80", true},
+		{"valid scheme http", "http://", "host.com", "80", true},
+		{"valid scheme http", "http:// ", "host.com", "80", true},
+		{"valid scheme https", "Https", "host.com", "443", true},
+		{"valid scheme https", "https", "host.com", "443", true},
+		{"valid scheme https", "https://", "host.com", "443", true},
+		{"valid scheme https", "https://  ", "host.com", "443", true},
+		{"valid scheme ws", "Ws", "host.com", "80", true},
+		{"valid scheme ws", "ws", "host.com", "80", true},
+		{"valid scheme ws", "ws://", "host.com", "80", true},
+		{"valid scheme ws", "ws://  ", "host.com", "80", true},
+		{"valid scheme wss", "WsS", "host.com", "80", true},
+		{"valid scheme wss", "wss", "host.com", "80", true},
+		{"valid scheme wss", "wsS://", "host.com", "80", true},
+		{"valid scheme wss", "wsS://  ", "host.com", "80", true},
 
 		//bad schemes
-		{"invalid scheme blah", "blah://  ", "host.com", 80, false},
-		{"invalid scheme gopher", "gopher://  ", "host.com", 80, false},
-		{"invalid scheme ftp", "ftp://  ", "host.com", 80, false},
+		{"invalid scheme blah", "blah://  ", "host.com", "80", false},
+		{"invalid scheme gopher", "gopher://  ", "host.com", "80", false},
+		{"invalid scheme ftp", "ftp://  ", "host.com", "80", false},
 
 		//hosts
-		{"valid host", "http", "host.com", 80, true},
-		{"invalid wildcard host", "http", "*.host.com", 80, false},
-		{"invalid unicode host", "http", "höst.com", 80, false},
-		{"invalid character host", "http", "h/st.com", 80, false},
-		{"invalid port spec host", "http", "host.com:80", 80, false},
+		{"valid host", "http", "host.com", "80", true},
+		{"invalid wildcard host", "http", "*.host.com", "80", false},
+		{"invalid unicode host", "http", "höst.com", "80", false},
+		{"invalid character host", "http", "h/st.com", "80", false},
+		{"invalid port spec host", "http", "host.com:80", "80", false},
 
 		//ips
-		{"valid ipv4", "http", "10.1.1.1", 80, true},
-		{"invalid ipv4 with ipv6 brackets", "http", "[10.1.1.1]", 80, false},
-		{"invalid short ipv4", "http", "10.0.0", 80, false},
-		{"invalid ipv4 with CIDR range", "http", "10.0.0.1/24", 80, false},
-		{"invalid ipv4", "http", "300.0.0.0", 80, false},
-		{"invalid ipv4 with port", "http", "10.1.1.1:80", 80, false},
-		{"valid ipv6", "http", "::1", 80, true},
-		{"valid ipv6", "http", "[::1]", 80, true},
-		{"invalid port spec host", "http", "host.com:80", 80, false},
+		{"valid ipv4", "http", "10.1.1.1", "80", true},
+		{"invalid ipv4 with ipv6 brackets", "http", "[10.1.1.1]", "80", false},
+		{"invalid short ipv4", "http", "10.0.0", "80", false},
+		{"invalid ipv4 with CIDR range", "http", "10.0.0.1/24", "80", false},
+		{"invalid ipv4", "http", "300.0.0.0", "80", false},
+		{"invalid ipv4 with port", "http", "10.1.1.1:80", "80", false},
+		{"valid ipv6", "http", "::1", "80", true},
+		{"valid ipv6", "http", "[::1]", "80", true},
+		{"invalid port spec host", "http", "host.com:80", "80", false},
 	}
 	//more ipv4
 	for i, ipv4 := range ipv4s {
@@ -491,9 +493,9 @@ func TestResourceMappingValidUpstreamResource(t *testing.T) {
 			n string
 			s string
 			h string
-			p int
+			p string
 			v bool
-		}{fmt.Sprintf("valid ipv4 %v", i), "http", ipv4, 80, true})
+		}{fmt.Sprintf("valid ipv4 %v", i), "http", ipv4, "80", true})
 	}
 	//more ipv6
 	for i, ipv6 := range ipv4s {
@@ -501,9 +503,9 @@ func TestResourceMappingValidUpstreamResource(t *testing.T) {
 			n string
 			s string
 			h string
-			p int
+			p string
 			v bool
-		}{fmt.Sprintf("valid ipv6 %v", i), "https", ipv6, 443, true})
+		}{fmt.Sprintf("valid ipv6 %v", i), "https", ipv6, "443", true})
 	}
 
 	for _, tt := range tests {
@@ -555,7 +557,7 @@ func TestReformatResourceUrlSchemes(t *testing.T) {
 				URL: URL{
 					Scheme: tt.r,
 					Host:   "host.com",
-					Port:   80,
+					Port:   "80",
 				}}
 			cfg := Config{Resources: map[string][]ResourceMapping{tt.n: []ResourceMapping{rm}}}
 			cfg.reApplyResourceNames().
@@ -1152,7 +1154,7 @@ func TestReApplyPort(t *testing.T) {
 	for name := range config.Resources {
 		resourceMappings := config.Resources[name]
 		for _, resourceMapping := range resourceMappings {
-			port := int(resourceMapping.URL.Port)
+			port, _ := strconv.Atoi(resourceMapping.URL.Port)
 			if port == 0 {
 				t.Error("incorrectly applied port, got 0")
 			}
@@ -1204,6 +1206,7 @@ func TestRenderVariableTemplate(t *testing.T) {
 		t.Error("config not Parsed from renderTemplate() function")
 	}
 }
+
 func TestRenderSecretVariableTemplate(t *testing.T) {
 	// Rendering Template with placeholders
 	PUBLIC_KEY := `-----BEGIN PUBLIC KEY-----
@@ -1225,6 +1228,7 @@ func TestRenderSecretVariableTemplate(t *testing.T) {
 		t.Error("config not Parsed from renderTemplate() function")
 	}
 }
+
 func TestLoadAndRenderConfigFromEnv(t *testing.T) {
 	ConfigFile = ""
 	os.Setenv("READ_TIME_OUT_SECONDS", "301")
@@ -1235,6 +1239,7 @@ func TestLoadAndRenderConfigFromEnv(t *testing.T) {
 	}
 	os.Unsetenv("READ_TIME_OUT_SECONDS")
 }
+
 func TestLoadAndRenderCertificateFromEnv(t *testing.T) {
 	os.Setenv("PORT", "9443")
 	PRIVATE_KEY := "-----BEGIN PRIVATE KEY-----\n        MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCwJND2stNBiMiU\n        YXsQ6tMm7HwTnXhNSgC5DTGjU05Kyym2OYPIaFvwrv4D9OB1T/GU8xwl/bac0NDY\n        ymqmAcaUNy5e3dKZWtyxN5vLU9rzWDEqnbdrnUHzECgegfBdVJZ2IxaTcf8mO/92\n        1gvUvXzSd57Bxa8rboA1TCXNYboFbVBVRdc11Gh2bFDV6DZL+owEBIWPpCMKxZYm\n        IR+bPg9Cmw/yrkioJxfzkFSoY73X0mUT95cQCCT1i6HrX/nSff0H+w8LSZTmzq8f\n        RI8IG/PWDxKJdryOPeMJfFr/Rmxi0BWo97kGhE+8rarWxspslWvsSmaI50rEo8ei\n        dEdqzB4bAgMBAAECggEAc9nDFn7HM3MjeXQj3RyVhCRF9yC63xqtHwjufN1twQOe\n        i5uIcWcyETsHFtMYThAmdDDxcotMcBdnRS7cthK06QbiGMMMoJCCVoyciz674xE+\n        RSk2WjE0DwmxWV9dGAVqcIjjcFap2hvcCez+Gw4F6ueCIzBB5e7npCZRNqPwFWCY\n        /og06ypz/4LHXFNatvRJC3qhWFwFo1bVC1ycZmc5RQ4IHeQHzi6oCJhSRdCbM7Q9\n        7fQhmjtcw0pxvJTVV+XP7tTf9iDDwgi/Le2iEqNQ1D6c4+nYAGYj2D3919oUYnyv\n        tnznZ2GTibIyP6kl4L79ChRz0JGBzraKH7aJh9H1AQKBgQDS0xd8RNLJ5hkwPitt\n        x/4RNlobGGZqqvQiCKkaDvnc1E1eKR3rVlxH17/ccA/qs0vcoFDPbGyRa/OgD7p5\n        Ro3R+EPDFoFq1KMP4SRoGcDgrNKHQ3o06sUngmtUUP28G+DUQm46xW7cnQrvvNiK\n        f9MMfeNH+tAPtssZh0HNKJa9fwKBgQDV40peDqh9b4Ag+mfiHIJGuwTN8LMvKRqr\n        N5dVirl2BDYMwF6JflIwIwjBZq7ah3NsT5/Yd+nuY+ux/pO4iU5jMbTtoAOv2dc7\n        VKpqNTaQdJhta5OlOdBSP5iXj4siVCMIFL1jz8JtWuXX4hUtbliG6ICZTH2/5ivG\n        faPiOhAlZQKBgQCp941jnojiRSPhhP22UBpA/jS+y3kmXhTcq2bJn3FJ289ULon0\n        hXd4ZDRGIAJ1EYADqyv7TkppI0MStBt+UqdbtG/NBIPqAOxFjRmw47JgcHR6oKgR\n        qYSxSbAGFhW6Zi9ocPY1Y57xNZrvlKxvXIZl98gY69h6EsDDIAyoviRpOQKBgC0g\n        Rjlv+EZ2tt6+VhqTjzzjClF03ikuD+1dzjUDDrwCiXDJSWjS2P5E9fzv8CY0+7o3\n        Vm8yZY2hUUH9hycg+QPeoeCcqQp5+HoRE99SmM+DegFj+AOdHgGsX0Jiy6UTgUyc\n        K5UaaVfvHJ0emv85z72u4ir1w3YwVr4LFf+N5ogtAoGAHODQpVC7sg+nlbeSKsPf\n        RbULfOG4YD5pHszNM+nCjNWs00ofJoZOFA64qXwTIc4Vrh8JLiwAkXiTGYM2guv5\n        Qnp+HbFi/tAc+rQu4SGBaVIglnIj7jFNdgJOb68Vw/L9v2jW1Y8VoAC0eCRWpHud\n        GsMkN4GFOfQKoBI/aCXn4DM=\n        -----END PRIVATE KEY-----"

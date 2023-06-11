@@ -984,7 +984,7 @@ func mockProxy(upBody []byte, cl string, path string, transform string, requestU
 				URL: &URL{
 					Scheme: "http",
 					Host:   "upstreamhost",
-					Port:   8080,
+					Port:   "8080",
 				},
 				resp: &http.Response{
 					Body: ioutil.NopCloser(bytes.NewReader(upBody)),

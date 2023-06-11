@@ -9,6 +9,7 @@ import (
 	"net"
 	"os"
 	"runtime/pprof"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -178,7 +179,8 @@ UpConn:
 		if c.PID == uint(proc.Pid) {
 			for _, v := range rt.Config.Resources {
 				for _, r := range v {
-					if c.RemotePort == uint16(r.URL.Port) {
+					rup, _ := strconv.Atoi(r.URL.Port)
+					if c.RemotePort == uint16(rup) {
 						for _, ip := range ips[r.URL.Host] {
 							if ip.Equal(c.RemoteAddress) {
 								d++

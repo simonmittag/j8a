@@ -110,7 +110,7 @@ func mockProxyWS() Proxy {
 				URL: &URL{
 					Scheme: "ws",
 					Host:   "localhost",
-					Port:   80,
+					Port:   "80",
 				},
 			},
 		},

@@ -244,7 +244,7 @@ func TestRouteMapDefault(t *testing.T) {
 	wantUrl := URL{
 		Scheme: "http",
 		Host:   "localhost",
-		Port:   8084,
+		Port:   "8084",
 	}
 	if *gotUrl != wantUrl {
 		t.Errorf("url did not successfully map, want %v, got %v, wantUrl,  url", wantUrl, gotUrl)
@@ -266,7 +266,7 @@ func TestRouteMap(t *testing.T) {
 	wantUrl := URL{
 		Scheme: "http",
 		Host:   "localhost",
-		Port:   8083,
+		Port:   "8083",
 	}
 	if *gotUrl != wantUrl {
 		t.Errorf("url did not successfully map, want %v, got %v, wantUrl,  url", wantUrl, gotUrl)
