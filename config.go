@@ -165,11 +165,11 @@ func (config Config) validateResources() *Config {
 	for name := range config.Resources {
 		resourceMappings := config.Resources[name]
 		if len(resourceMappings) == 0 {
-			config.panic("resource needs to have at least one url, see https://j8a.io/docs")
+			config.panic(fmt.Sprintf("resource '%v' needs to have at least one url, see https://j8a.io/docs", name))
 		}
 		for _, r := range resourceMappings {
 			if r.URL.Port <= 1 || r.URL.Port > 65535 {
-				config.panic("resource needs to have port between 0 and 65535")
+				config.panic(fmt.Sprintf("resource '%v' needs to have port between 1 and 65535, was: %v", name, r.URL.Port))
 			}
 			if len(r.URL.Host) == 0 {
 				config.panic("resource needs to have host")
@@ -177,15 +177,15 @@ func (config Config) validateResources() *Config {
 				ie := validIpAddress(r)
 				he := validHostName(r)
 				if ie != nil && he != nil {
-					config.panic(fmt.Sprintf("resource host needs to be valid DNS name or IP address: %v", r.URL.Host))
+					config.panic(fmt.Sprintf("resource '%v' host needs to be valid DNS name or IP address, was: %v", name, r.URL.Host))
 				}
 			}
 
-			sm := "resource needs to have valid scheme: "
+			sm := "resource '%v' needs to have valid scheme, was: %v"
 			if len(r.URL.Scheme) == 0 {
-				config.panic(sm + r.URL.Scheme)
+				config.panic(fmt.Sprintf(sm, name, r.URL.Scheme))
 			} else if !validScheme(r.URL.Scheme) {
-				config.panic(sm + r.URL.Scheme)
+				config.panic(fmt.Sprintf(sm, name, r.URL.Scheme))
 			}
 		}
 	}

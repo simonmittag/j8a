@@ -434,13 +434,15 @@ func TestResourceMappingValidUpstreamResource(t *testing.T) {
 		n string
 		s string
 		h string
-		p uint16
+		p int
 		v bool
 	}{
 		//ports
+		{"invalid port -1", "http", "host.com", -1, false},
 		{"invalid port 0", "http", "host.com", 0, false},
 		{"valid port", "http", "host.com", 80, true},
 		{"invalid port 65535", "http", "host.com", 65535, true},
+		{"invalid port 65536", "http", "host.com", 65536, false},
 
 		//schemes
 		{"valid scheme http", "Http", "host.com", 80, true},
@@ -489,7 +491,7 @@ func TestResourceMappingValidUpstreamResource(t *testing.T) {
 			n string
 			s string
 			h string
-			p uint16
+			p int
 			v bool
 		}{fmt.Sprintf("valid ipv4 %v", i), "http", ipv4, 80, true})
 	}
@@ -499,7 +501,7 @@ func TestResourceMappingValidUpstreamResource(t *testing.T) {
 			n string
 			s string
 			h string
-			p uint16
+			p int
 			v bool
 		}{fmt.Sprintf("valid ipv6 %v", i), "https", ipv6, 443, true})
 	}
