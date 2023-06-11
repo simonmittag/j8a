@@ -294,6 +294,10 @@ func (config Config) reApplyResourceURLDefaults() *Config {
 }
 
 func (config Config) validateHTTPConfig() *Config {
+	if !(config.isHTTPOn() || config.isTLSOn()) {
+		config.panic("must have either http or tls enabled")
+	}
+
 	if !config.isTLSOn() &&
 		config.Connection.Downstream.Http.Redirecttls == true {
 		config.panic("cannot redirect to TLS if not properly configured.")

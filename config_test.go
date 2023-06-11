@@ -288,6 +288,54 @@ func TestParseRoute(t *testing.T) {
 }
 
 // TestValidateAcmeEmail
+func TestValidateConfigHasHTTP(t *testing.T) {
+	config := &Config{
+		Connection: Connection{
+			Downstream: Downstream{
+				Http: Http{Port: 80},
+			},
+		},
+	}
+
+	config = config.validateHTTPConfig()
+}
+
+func TestValidateConfigHasHttpAndTLS(t *testing.T) {
+	config := &Config{
+		Connection: Connection{
+			Downstream: Downstream{
+				Http: Http{
+					Port: 80,
+				},
+				Tls: Tls{
+					Port: 443,
+				},
+			},
+		},
+	}
+
+	config = config.validateHTTPConfig()
+}
+
+func TestValidateConfigNoHttpAndNoTLSFails(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("config should have panicked with no tls and no http")
+		} else {
+			t.Logf("normal config panic without http or tls port")
+		}
+	}()
+
+	config := &Config{
+		Connection: Connection{
+			Downstream: Downstream{},
+		},
+	}
+
+	config = config.validateHTTPConfig()
+}
+
+// TestValidateAcmeEmail
 func TestValidateAcmeEmail(t *testing.T) {
 	config := &Config{
 		Connection: Connection{
@@ -414,7 +462,7 @@ func TestValidateAcmeGracePeriodFailsGreater30(t *testing.T) {
 }
 
 // TestValidateAcmeDomainInvalidLeadingDotFails
-func TestValidateValidateAcmeDomainInvalidLeadingDotFails(t *testing.T) {
+func TestValidateAcmeDomainInvalidLeadingDotFails(t *testing.T) {
 	defer func() {
 		if r := recover(); r == nil {
 			t.Logf("normal. config panic for invalid domain with supported provider")
