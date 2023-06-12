@@ -320,7 +320,7 @@ func TestRuntime_CountResourceIps(t *testing.T) {
 				"jsonplaceholder.typicode.com": []j8a.ResourceMapping{{
 					URL: j8a.URL{
 						Host: "jsonplaceholder.typicode.com",
-						Port: 443,
+						Port: "443",
 					},
 				}},
 			}},
