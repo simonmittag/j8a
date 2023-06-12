@@ -1278,6 +1278,104 @@ func TestParsingHttpPortAsIntAndString(t *testing.T) {
 	}
 }
 
+func TestParsingJwtConfigAcceptableSkewSeconds(t *testing.T) {
+	ConfigFile = "./integration/j8a1.yml"
+	config := new(Config).load()
+	config.Jwt["jwtrs256n"].Name = "jwtrs256n"
+
+	got := config.Jwt["jwtrs256n"].AcceptableSkewSeconds
+	want := "121"
+	if got != want {
+		t.Errorf("did not parse jwt from yml file, got %v want %v", got, want)
+	}
+	err := config.Jwt["jwtrs256n"].Validate()
+	if err != nil {
+		t.Errorf("jwt config did not validate after parsing, cause: %v", err)
+	}
+}
+
+func TestParsingJwtConfigAlg(t *testing.T) {
+	ConfigFile = "./integration/j8a1.yml"
+	config := new(Config).load()
+	config.Jwt["jwtrs256n"].Name = "jwtrs256n"
+
+	got := config.Jwt["jwtrs256n"].Alg
+	want := "RS256"
+	if got != want {
+		t.Errorf("did not parse jwt from yml file, got %v want %v", got, want)
+	}
+	err := config.Jwt["jwtrs256n"].Validate()
+	if err != nil {
+		t.Errorf("jwt config did not validate after parsing, cause: %v", err)
+	}
+}
+
+func TestParsingJwtConfigKey(t *testing.T) {
+	ConfigFile = "./integration/j8a1.yml"
+	config := new(Config).load()
+	config.Jwt["jwtrs256n"].Name = "jwtrs256n"
+
+	got := config.Jwt["jwtrs256n"].Key
+	want := "-----BEGIN PUBLIC KEY-----\nMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAtXhyIjACJ9I/1RLe6ewu\nBIzZ1275BUssbeUdE87qSNpkJHsn6lNKPUQVix/Hk8MDME6Et1zmyK7a2XoTovME\nLgaHFSpH3i+Eqdl1jG9c0/vkHlwC6Ba+MLxvSCn6HVrcSMMGpOdVHUU4cuqDRpVO\n4owby8e1ZSS1hdhaqs5t464BID7e907oe7hE8deqD9MXmGEimcXXEJTF84wH2xcB\nqUO35dcc5SBJfPAibZ6U2AaNIEZJouUYMJOqwVttTBvKYwhuEwcxsPrYfkufbmGb\n9dnTfKMJamujAwFf+YUwifYfpY763cQ4Ex7eHWVp4LlBB9zYYBBGp2ueLuhJSMWh\nk0yP4KBk8ZDcIgLZKsTzYDdnvbecii7qAxRYMaSEkdjSj2JTmV/GtDBLmkejVNqo\n9s/BvgEIDiPipTWesPKsaNigyhs6p6POJvOHkAAc3+88cfShLuDpobWmNEO6eOAG\nGvACbWs+EOepMrvWuL53QWgJzJaKsxgGejQ1jVCIRZeaVsWiPrJFSUk87lWwxGpR\ncSdvOATlGgjz28jL/CqtuAySGTb4S0LsBFgdpykrGChjbajxeMMjnV3khI4c/KXl\nSmOsxHfJ5vzfbicw1Inn/4RoVxw72p4t1NN3va1W6jZt/FZ5R8xgV5T5zgeAEkSm\nHJa/PXCQoBYwK7cuMJhjRaMCAwEAAQ==\n-----END PUBLIC KEY-----\n"
+	if got != want {
+		t.Errorf("did not parse jwt from yml file, got %v want %v", got, want)
+	}
+	err := config.Jwt["jwtrs256n"].Validate()
+	if err != nil {
+		t.Errorf("jwt config did not validate after parsing, cause: %v", err)
+	}
+}
+
+func TestParsingJwtConfigNoClaims(t *testing.T) {
+	ConfigFile = "./integration/j8a1.yml"
+	config := new(Config).load()
+	config.Jwt["jwtrs256n"].Name = "jwtrs256n"
+
+	got := config.Jwt["jwtrs256n"].Claims
+	if got != nil {
+		t.Errorf("did not parse jwt from yml file, got %v want nil claims", got)
+	}
+	err := config.Jwt["jwtrs256n"].Validate()
+	if err != nil {
+		t.Errorf("jwt config did not validate after parsing, cause: %v", err)
+	}
+}
+
+func TestParsingJwtConfigArrayStringClaims(t *testing.T) {
+	ConfigFile = "./integration/j8a1.yml"
+	config := new(Config).load()
+	config.Jwt["jwtrs256"].Name = "jwtrs256"
+
+	got := config.Jwt["jwtrs256"].Claims
+	want := []string{".sub | select(.==\"subscriber\")", ".sub | select(.==\"admin\")", "nonce"}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("did not parse jwt from yml file, got %v want %v", got, want)
+	}
+	err := config.Jwt["jwtrs256"].Validate()
+	if err != nil {
+		t.Errorf("jwt config did not validate after parsing, cause: %v", err)
+	}
+}
+
+func TestParsingJwtJwksUrl(t *testing.T) {
+	ConfigFile = "./integration/j8a1.yml"
+	config := new(Config).load()
+	config.Jwt["jwtjwks"].Name = "jwtjwks"
+
+	got := config.Jwt["jwtjwks"].JwksUrl
+	want := "http://localhost:60083/mse6/jwks"
+	if got != want {
+		t.Errorf("did not parse jwt from yml file, got jwksUrl %v want %v", got, want)
+	}
+
+	//we can't test this in a unit test it will go remote.
+	//config.Jwt["jwtjwks"].Init()
+	//err := config.Jwt["jwtjwks"].Validate()
+	//if err != nil {
+	//	t.Errorf("jwt config did not validate after parsing, cause: %v", err)
+	//}
+}
+
 // Helps with detection of Panic in the execution
 func shouldPanic(t *testing.T, f func() *Config) {
 	t.Helper()
