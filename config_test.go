@@ -1259,11 +1259,23 @@ func TestFailureOnEnvironmentVariableNotPresentWhenSettingConfigThroughEnvrionme
 
 	shouldPanic(t, new(Config).load)
 }
+
 func TestFailureOnEnvironmentVarialbeNotPresentWhenSettingConfigThroughConfigFile(t *testing.T) {
 	os.Unsetenv("PORT")
 
 	ConfigFile = "./integration/templatej8a1.yml"
 	shouldPanic(t, new(Config).load)
+}
+
+func TestParsingHttpPortAsIntAndString(t *testing.T) {
+	ConfigFile = "./integration/j8a1.yml"
+	config := new(Config).load()
+	if config.Resources["mse61"][0].URL.Port != "60083" {
+		t.Errorf("did not parse number port from yml as string")
+	}
+	if config.Resources["mse62"][0].URL.Port != "60084" {
+		t.Errorf("did not parse string port from yml as string")
+	}
 }
 
 // Helps with detection of Panic in the execution
