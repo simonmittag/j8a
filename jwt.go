@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/rsa"
 	"crypto/x509"
+	"encoding/json"
 	"encoding/pem"
 	"errors"
 	"fmt"
@@ -101,13 +102,55 @@ func NewJwt(name string, alg string, key string, jwksUrl string, acceptableSkewS
 	return &jwt
 }
 
-//we need this separate because the JSON unmarshaller creates this object without asking us.
+// we need this separate because the JSON unmarshaller creates this object without asking us.
 func (jwt *Jwt) Init() {
 	jwt.RSAPublic = make([]KidPair, 0)
 	jwt.ECDSAPublic = make([]KidPair, 0)
 	jwt.Secret = make([]KidPair, 0)
 	jwt.lock = semaphore.NewWeighted(1)
 	jwt.claimsVal = make([]*gojq.Code, 0)
+}
+
+func (j *Jwt) UnmarshalJSON(data []byte) error {
+	var value interface{}
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+
+	switch v := value.(type) {
+	case map[string]interface{}:
+		if v["acceptableSkewSeconds"] != nil {
+			j.AcceptableSkewSeconds = fmt.Sprintf("%v", v["acceptableSkewSeconds"])
+		}
+		if v["alg"] != nil {
+			j.Alg = fmt.Sprintf("%v", v["alg"])
+		}
+		if v["key"] != nil {
+			j.Key = fmt.Sprintf("%v", v["key"])
+		}
+		if v["jwksUrl"] != nil {
+			j.JwksUrl = fmt.Sprintf("%v", v["jwksUrl"])
+		}
+		if v["claims"] != nil {
+			vc, ok := v["claims"].([]interface{})
+			if !ok {
+				return fmt.Errorf("unexpected JSON value type: %T", value)
+			}
+			for _, v1 := range vc {
+				s, ok := v1.(string)
+				if ok {
+					j.Claims = append(j.Claims, s)
+				} else {
+					return fmt.Errorf("unexpected JSON value type: %T", value)
+				}
+			}
+		}
+
+	default:
+		return fmt.Errorf("unexpected JSON value type: %T", value)
+	}
+
+	return nil
 }
 
 func (jwt *Jwt) Validate() error {
@@ -194,7 +237,7 @@ func (jwt *Jwt) Validate() error {
 	return err
 }
 
-//TODO this method needs a refactor and has high cognitive complexity
+// TODO this method needs a refactor and has high cognitive complexity
 func (jwt *Jwt) LoadJwks() error {
 	var err error
 
