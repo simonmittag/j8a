@@ -4,6 +4,7 @@ import (
 	"github.com/rs/zerolog"
 	"os"
 	"testing"
+	"time"
 )
 
 func TestServerID(t *testing.T) {
@@ -31,6 +32,8 @@ func TestTraceLogLevelInit(t *testing.T) {
 	}
 	initLogger()
 	c.validateLogLevel()
+	time.Sleep(time.Second * 4)
+
 	got := zerolog.GlobalLevel().String()
 	want := "trace"
 	if got != want {
@@ -44,6 +47,8 @@ func TestDebugLogLevelInit(t *testing.T) {
 	}
 	initLogger()
 	c.validateLogLevel()
+	time.Sleep(time.Second * 4)
+
 	got := zerolog.GlobalLevel().String()
 	want := "debug"
 	if got != want {
@@ -57,6 +62,8 @@ func TestInfoLogLevelInit(t *testing.T) {
 	}
 	initLogger()
 	c.validateLogLevel()
+	time.Sleep(time.Second * 4)
+
 	got := zerolog.GlobalLevel().String()
 	want := "info"
 	if got != want {
@@ -70,6 +77,8 @@ func TestWarnLogLevelInit(t *testing.T) {
 	}
 	initLogger()
 	c.validateLogLevel()
+	time.Sleep(time.Second * 4)
+
 	got := zerolog.GlobalLevel().String()
 	want := "warn"
 	if got != want {

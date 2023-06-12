@@ -325,12 +325,12 @@ resources:
     - url:
         scheme: 'http:'
         host: localhost
-        port: 60083
+        port: '60083'
   mse62:
     - url:
         scheme: 'http:'
         host: localhost
-        port: 60084
+        port: '60084'
   mse6:
     - labels:
         - green

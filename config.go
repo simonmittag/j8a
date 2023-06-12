@@ -119,20 +119,29 @@ func (config Config) validateLogLevel() *Config {
 	logLevel := strings.ToUpper(config.LogLevel)
 	old := strings.ToUpper(zerolog.GlobalLevel().String())
 
+	const delay = time.Second * 3
 	if len(logLevel) > 0 && logLevel != old {
 		switch logLevel {
 		case "TRACE":
-			log.Info().Msgf("resetting global log level to %v", logLevel)
-			zerolog.SetGlobalLevel(zerolog.TraceLevel)
+			time.AfterFunc(delay, func() {
+				log.Info().Msgf("resetting global log level to %v", logLevel)
+				zerolog.SetGlobalLevel(zerolog.TraceLevel)
+			})
 		case "DEBUG":
-			log.Info().Msgf("resetting global log level to %v", logLevel)
-			zerolog.SetGlobalLevel(zerolog.DebugLevel)
+			time.AfterFunc(delay, func() {
+				log.Info().Msgf("resetting global log level to %v", logLevel)
+				zerolog.SetGlobalLevel(zerolog.DebugLevel)
+			})
 		case "INFO":
-			log.Info().Msgf("resetting global log level to %v", logLevel)
-			zerolog.SetGlobalLevel(zerolog.InfoLevel)
+			time.AfterFunc(delay, func() {
+				log.Info().Msgf("resetting global log level to %v", logLevel)
+				zerolog.SetGlobalLevel(zerolog.InfoLevel)
+			})
 		case "WARN":
-			log.Info().Msgf("resetting global log level to %v", logLevel)
-			zerolog.SetGlobalLevel(zerolog.WarnLevel)
+			time.AfterFunc(delay, func() {
+				log.Info().Msgf("resetting global log level to %v", logLevel)
+				zerolog.SetGlobalLevel(zerolog.WarnLevel)
+			})
 		default:
 			config.panic(fmt.Sprintf("invalid log level %v must be one of TRACE | DEBUG | INFO | WARN ", logLevel))
 		}
@@ -357,6 +366,8 @@ func (config Config) reformatResourceUrlSchemes() *Config {
 			scheme = strings.TrimSpace(scheme)
 			scheme = strings.ToLower(scheme)
 			scheme = strings.TrimSuffix(scheme, "://")
+			scheme = strings.TrimSuffix(scheme, ":/")
+			scheme = strings.TrimSuffix(scheme, ":")
 			resourceMappings[i].URL.Scheme = scheme
 		}
 	}
