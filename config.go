@@ -413,6 +413,28 @@ func (config Config) validateHTTPConfig() *Config {
 		config.panic("must have either http or tls enabled")
 	}
 
+	if config.isHTTPOn() && config.isTLSOn() {
+		if config.Connection.Downstream.Http.Port == config.Connection.Downstream.Tls.Port {
+			config.panic("connection downstream http and tls port must be different")
+		}
+	}
+
+	if config.isHTTPOn() {
+		if config.Connection.Downstream.Http.Port < 1 ||
+			config.Connection.Downstream.Http.Port > 65535 {
+			config.panic(fmt.Sprintf("connection downstream http port must be between 1 and 65535, was: %v",
+				config.Connection.Downstream.Http.Port))
+		}
+	}
+
+	if config.isTLSOn() {
+		if config.Connection.Downstream.Tls.Port < 1 ||
+			config.Connection.Downstream.Tls.Port > 65535 {
+			config.panic(fmt.Sprintf("connection downstream tls port must be between 1 and 65535, was: %v",
+				config.Connection.Downstream.Tls.Port))
+		}
+	}
+
 	if !config.isTLSOn() &&
 		config.Connection.Downstream.Http.Redirecttls == true {
 		config.panic("cannot redirect to TLS if not properly configured.")

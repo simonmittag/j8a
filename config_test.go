@@ -572,6 +572,50 @@ func TestReformatResourceUrlSchemes(t *testing.T) {
 	}
 }
 
+func TestDownstreamHttpPortInRange(t *testing.T) {
+	var tests = []struct {
+		n string
+		h int
+		t int
+		v bool
+	}{
+		//hosts
+		{"Invalid http -1 and valid 443 tls", -1, 443, false},
+		{"Valid http 80 and invalid -1 tls", 80, -1, false},
+		{"Valid http and no tls", 80, 0, true},
+		{"no http and valid tls", 0, 443, true},
+		{"no http and valid tls", 80, 443, true},
+		{"invalid tcp 80 for both http and tls", 80, 80, false},
+		{"invalid tcp 1 for both http and tls", 1, 1, false},
+		{"invalid tcp 80000 for http and valid port 443 for tls", 80000, 443, false},
+		{"valid tcp 80 for http and invalid port 80000 for tls", 80, 80000, false},
+		{"valid tcp 65534 for http and valid port 65535 for tls", 65534, 65535, true},
+		{"valid tcp 65535 for http and valid port 65536 for tls", 65535, 65536, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.n, func(t *testing.T) {
+			//defer this to catch validation errors for those tests that are supposed to fail
+			if !tt.v {
+				defer func() {
+					if r := recover(); r != nil {
+						t.Logf("normal. config panic for invalid HTTP config")
+					}
+				}()
+			}
+			config := &Config{
+				Connection: Connection{
+					Downstream: Downstream{
+						Http: Http{Port: tt.h},
+						Tls:  Tls{Port: tt.t},
+					},
+				},
+			}
+			config.validateHTTPConfig()
+		})
+	}
+}
+
 func TestScheme(t *testing.T) {
 	var tests = []struct {
 		n string
