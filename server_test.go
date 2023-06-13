@@ -121,7 +121,7 @@ func TestServerBootStrap(t *testing.T) {
 		}
 	}
 
-	//this blocks until we reach Daemon state or dies after 30 seconds
+	//this blocks until we reach Daemon state or dies after 10 seconds
 	testTimeOutSeconds := 10
 	Runner.StateHandler.waitState(Daemon, testTimeOutSeconds)
 	delta := time.Now().Sub(before)
