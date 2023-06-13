@@ -2,12 +2,10 @@ package j8a
 
 import (
 	"crypto/tls"
-	"crypto/x509"
 	"fmt"
 	"github.com/rs/zerolog/log"
 	"github.com/shirou/gopsutil/process"
 	golog "log"
-	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -15,7 +13,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 )
 
@@ -31,6 +28,7 @@ var ID string = "unknown"
 type Runtime struct {
 	Config
 	Start             time.Time
+	StateHandler      *StateHandler
 	Memory            []sample
 	AcmeHandler       *AcmeHandler
 	ReloadableCert    *ReloadableCert
@@ -38,109 +36,8 @@ type Runtime struct {
 	ConnectionWatcher ConnectionWatcher
 }
 
-type ReloadableCert struct {
-	Cert *tls.Certificate
-	mu   sync.Mutex
-	Init bool
-	//required to use runtime internally without global pointer for testing.
-	runtime *Runtime
-}
-
-func (r *ReloadableCert) GetCertificateFunc(clientHello *tls.ClientHelloInfo) (*tls.Certificate, error) {
-	return r.Cert, nil
-}
-
-func (r *ReloadableCert) triggerInit() error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	r.Init = true
-
-	var cert tls.Certificate
-	var err error
-
-	c := []byte(r.runtime.Connection.Downstream.Tls.Cert)
-	k := []byte(r.runtime.Connection.Downstream.Tls.Key)
-
-	cert, err = tls.X509KeyPair(c, k)
-	if err == nil {
-		r.Cert = &cert
-		r.Cert.Leaf, err = x509.ParseCertificate(cert.Certificate[0])
-	}
-	if err == nil {
-		log.Info().Msgf("TLS certificate #%v initialized", formatSerial(cert.Leaf.SerialNumber))
-	}
-	r.Init = false
-	return err
-}
-
-type ConnectionWatcher struct {
-	dwnOpenConns    int64
-	dwnMaxOpenConns int64
-	upOpenConns     int64
-	upMaxOpenConns  int64
-}
-
-// OnStateChange records open connections in response to connection
-// state changes. Set net/http Server.ConnState to this method
-// as value.
-func (cw *ConnectionWatcher) OnStateChange(conn net.Conn, state http.ConnState) {
-	switch state {
-	case http.StateNew:
-		cw.AddDwn(1)
-	case http.StateHijacked, http.StateClosed:
-		cw.AddDwn(-1)
-	}
-	cw.UpdateMaxDwn(cw.DwnCount())
-}
-
-// Count returns the number of connections at the time
-// the call.
-func (cw *ConnectionWatcher) DwnCount() uint64 {
-	return uint64(atomic.LoadInt64(&cw.dwnOpenConns))
-}
-
-func (cw *ConnectionWatcher) DwnMaxCount() uint64 {
-	return uint64(atomic.LoadInt64(&cw.dwnMaxOpenConns))
-}
-
-// Add adds c to the number of active connections.
-func (cw *ConnectionWatcher) AddDwn(c int64) {
-	atomic.AddInt64(&cw.dwnOpenConns, c)
-}
-
-// Sets the maximum number of active connections observed
-func (cw *ConnectionWatcher) UpdateMaxDwn(c uint64) {
-	if c > cw.DwnMaxCount() {
-		atomic.StoreInt64(&cw.dwnMaxOpenConns, int64(c))
-	}
-}
-
-func (cw *ConnectionWatcher) UpCount() uint64 {
-	return uint64(atomic.LoadInt64(&cw.upOpenConns))
-}
-
-func (cw *ConnectionWatcher) UpMaxCount() uint64 {
-	return uint64(atomic.LoadInt64(&cw.upMaxOpenConns))
-}
-
-func (cw *ConnectionWatcher) AddUp(c int64) {
-	atomic.AddInt64(&cw.upOpenConns, c)
-}
-
-func (cw *ConnectionWatcher) SetUp(c uint64) {
-	atomic.StoreInt64(&cw.upOpenConns, int64(c))
-}
-
-func (cw *ConnectionWatcher) UpdateMaxUp(c uint64) {
-	if c > cw.UpMaxCount() {
-		atomic.StoreInt64(&cw.upMaxOpenConns, int64(c))
-	}
-}
-
 // Runner is the Live environment of the server
 var Runner *Runtime
-
-var Boot sync.WaitGroup = sync.WaitGroup{}
 
 const tlsHandshakeError = "TLS handshake error"
 const aboutPath = "/about"
@@ -179,11 +76,13 @@ func BootStrap() {
 	config := processConfig()
 
 	Runner = &Runtime{
+		StateHandler:      NewStateHandler(),
 		Config:            *config,
 		Start:             time.Now(),
 		AcmeHandler:       NewAcmeHandler(),
 		ConnectionWatcher: ConnectionWatcher{dwnOpenConns: 0},
 	}
+
 	Runner.
 		initCacheDir().
 		initReloadableCert().
@@ -276,9 +175,6 @@ func (rt *Runtime) startListening() {
 		DisableGeneralOptionsHandler: true,
 	}
 
-	//signal the WaitGroup that boot is over.
-	Boot.Done()
-
 	err := make(chan error)
 
 	msg := fmt.Sprintf("j8a %s listener(s) init on", Version)
@@ -295,6 +191,7 @@ func (rt *Runtime) startListening() {
 
 	select {
 	case sig := <-err:
+		rt.StateHandler.setState(Shutdown)
 		log.Fatal().Err(sig).Msg(sig.Error())
 		panic(sig.Error())
 	}
@@ -357,6 +254,7 @@ func (runtime *Runtime) startTls(server *http.Server, err chan<- error, msg stri
 	if tlsErr == nil {
 		go runtime.tlsHealthCheck(true)
 		log.Info().Msg(msg)
+		runtime.StateHandler.setState(Daemon)
 		err <- server.ListenAndServeTLS("", "")
 	} else {
 		err <- tlsErr
@@ -366,6 +264,7 @@ func (runtime *Runtime) startTls(server *http.Server, err chan<- error, msg stri
 func (runtime *Runtime) startHTTP(server *http.Server, err chan<- error, msg string) {
 	server.Addr = ":" + strconv.Itoa(runtime.Connection.Downstream.Http.Port)
 	log.Info().Msg(msg)
+	runtime.StateHandler.setState(Daemon)
 	err <- server.ListenAndServe()
 }
 

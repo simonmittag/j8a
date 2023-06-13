@@ -123,6 +123,7 @@ func (config Config) validateLogLevel() *Config {
 	if len(logLevel) > 0 && logLevel != old {
 		switch logLevel {
 		case "TRACE":
+			//TODO this should wait for Daemon state instead
 			time.AfterFunc(delay, func() {
 				log.Info().Msgf("resetting global log level to %v", logLevel)
 				zerolog.SetGlobalLevel(zerolog.TraceLevel)

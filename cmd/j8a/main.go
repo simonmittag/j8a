@@ -60,7 +60,6 @@ func main() {
 	case Validate:
 		j8a.Validate()
 	case Server:
-		j8a.Boot.Add(1)
 		j8a.BootStrap()
 	case Usage:
 		printUsage()
