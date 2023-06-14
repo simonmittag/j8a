@@ -93,6 +93,16 @@ func BootStrap() {
 		startListening()
 }
 
+func ShutDown() {
+	if Runner != nil {
+		Runner.Config.LogLevel = "INFO"
+		//do this synchronous inline here. we want it before the next statement (setState)
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+		log.Info().Msgf("resetting global log level to %v", Runner.Config.LogLevel)
+		Runner.StateHandler.setState(Shutdown)
+	}
+}
+
 func processConfig() *Config {
 	initLogger()
 
@@ -156,8 +166,8 @@ func (rt *Runtime) resetLogLevel() *Runtime {
 				zerolog.SetGlobalLevel(zerolog.DebugLevel)
 
 			case "INFO":
-				log.Info().Msgf("resetting global log level to %v", logLevel)
 				zerolog.SetGlobalLevel(zerolog.InfoLevel)
+				log.Info().Msgf("resetting global log level to %v", logLevel)
 
 			case "WARN":
 				log.Info().Msgf("resetting global log level to %v", logLevel)
@@ -224,7 +234,6 @@ func (rt *Runtime) startListening() {
 
 	select {
 	case sig := <-err:
-		rt.StateHandler.setState(Shutdown)
 		log.Fatal().Err(sig).Msg(sig.Error())
 		panic(sig.Error())
 	}
