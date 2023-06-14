@@ -57,9 +57,12 @@ func (sh *StateHandler) waitState(s State, timeoutSeconds ...int) {
 }
 
 func (sh *StateHandler) setState(s State) {
-	sh.Current = s
-	//needs to be async else setState blocks
-	go func() {
-		sh.Update <- s
-	}()
+	// == matters because we may want to retrigger the state for waiting goroutines.
+	if sh.Current == s || sh.Current.Lesser(s) {
+		sh.Current = s
+		//needs to be async else setState blocks
+		go func() {
+			sh.Update <- s
+		}()
+	}
 }

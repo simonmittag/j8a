@@ -58,7 +58,6 @@ func TestStateHandlerWaitForStatus(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.n, func(t *testing.T) {
 			sh := NewStateHandler()
-			//TODO this blocks
 			sh.setState(tt.current)
 
 			before := time.Now()
@@ -70,5 +69,73 @@ func TestStateHandlerWaitForStatus(t *testing.T) {
 				t.Errorf("current status %v waiting for %v delay %v", tt.current, tt.waitingFor, after)
 			}
 		})
+	}
+}
+
+func TestStateHandlerSetStateAndWaitForStatus(t *testing.T) {
+	tests := []struct {
+		n               string
+		current         State
+		setState1S      State
+		waitingForState State
+		greaterTimeout  bool
+	}{
+		{"BBB", Bootstrap, Bootstrap, Bootstrap, false},
+		{"BBD", Bootstrap, Bootstrap, Daemon, true},
+		{"BBS", Bootstrap, Bootstrap, Shutdown, true},
+		{"BDB", Bootstrap, Daemon, Bootstrap, false},
+		{"BDD", Bootstrap, Daemon, Daemon, false},
+		{"BDS", Bootstrap, Daemon, Shutdown, true},
+		{"BSB", Bootstrap, Shutdown, Bootstrap, false},
+		{"BSD", Bootstrap, Shutdown, Daemon, false},
+		{"BSS", Bootstrap, Shutdown, Shutdown, false},
+		{"DDB", Daemon, Daemon, Bootstrap, false},
+		{"DDD", Daemon, Daemon, Daemon, false},
+		{"DDS", Daemon, Daemon, Shutdown, true},
+		{"DSB", Daemon, Shutdown, Bootstrap, false},
+		{"DSD", Daemon, Shutdown, Daemon, false},
+		{"DSS", Daemon, Shutdown, Shutdown, false},
+		{"SSB", Shutdown, Shutdown, Bootstrap, false},
+		{"SSD", Shutdown, Shutdown, Daemon, false},
+		{"SSS", Shutdown, Shutdown, Shutdown, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.n, func(t *testing.T) {
+			timeoutSeconds := 2
+
+			sh := NewStateHandler()
+			sh.setState(tt.current)
+			before := time.Now()
+
+			time.AfterFunc(time.Second*1, func() {
+				sh.setState(tt.setState1S)
+			})
+
+			sh.waitState(tt.waitingForState, timeoutSeconds)
+			elapsed := time.Now().Sub(before)
+
+			if (elapsed > time.Second*time.Duration(timeoutSeconds)) != tt.greaterTimeout {
+				t.Errorf("current status %v set to %v after 1s, waiting for %v timed out after %v", tt.current, tt.setState1S, tt.waitingForState, elapsed)
+			}
+		})
+	}
+}
+
+func TestStateHandlerSetStateToShutdownWaitingForDaemonWithMultiplePreviousSetStateOperations(t *testing.T) {
+	sh := NewStateHandler()
+
+	before := time.Now()
+	for i := 0; i < 5; i++ {
+		sh.setState(Daemon)
+	}
+
+	time.AfterFunc(time.Second*1, func() {
+		sh.setState(Shutdown)
+	})
+	sh.waitState(Daemon, 10)
+	elapsed := time.Now().Sub(before)
+	if elapsed > time.Second*10 {
+		t.Errorf("state handler did not set to Shutdown")
 	}
 }
