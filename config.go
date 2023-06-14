@@ -119,30 +119,9 @@ func (config Config) validateLogLevel() *Config {
 	logLevel := strings.ToUpper(config.LogLevel)
 	old := strings.ToUpper(zerolog.GlobalLevel().String())
 
-	const delay = time.Second * 3
 	if len(logLevel) > 0 && logLevel != old {
 		switch logLevel {
-		case "TRACE":
-			//TODO this should wait for Daemon state instead
-			time.AfterFunc(delay, func() {
-				log.Info().Msgf("resetting global log level to %v", logLevel)
-				zerolog.SetGlobalLevel(zerolog.TraceLevel)
-			})
-		case "DEBUG":
-			time.AfterFunc(delay, func() {
-				log.Info().Msgf("resetting global log level to %v", logLevel)
-				zerolog.SetGlobalLevel(zerolog.DebugLevel)
-			})
-		case "INFO":
-			time.AfterFunc(delay, func() {
-				log.Info().Msgf("resetting global log level to %v", logLevel)
-				zerolog.SetGlobalLevel(zerolog.InfoLevel)
-			})
-		case "WARN":
-			time.AfterFunc(delay, func() {
-				log.Info().Msgf("resetting global log level to %v", logLevel)
-				zerolog.SetGlobalLevel(zerolog.WarnLevel)
-			})
+		case "TRACE", "DEBUG", "INFO", "WARN":
 		default:
 			config.panic(fmt.Sprintf("invalid log level %v must be one of TRACE | DEBUG | INFO | WARN ", logLevel))
 		}

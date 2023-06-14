@@ -26,63 +26,40 @@ func TestDefaultLogLevelInit(t *testing.T) {
 	}
 }
 
-func TestTraceLogLevelInit(t *testing.T) {
-	c := Config{
-		LogLevel: "trace",
+func TestLogLevelReset(t *testing.T) {
+	tests := []struct {
+		n string
+		l string
+	}{
+		{"trace", "trace"},
+		{"debug", "debug"},
+		{"info", "info"},
+		{"warn", "warn"},
 	}
-	initLogger()
-	c.validateLogLevel()
-	time.Sleep(time.Second * 4)
 
-	got := zerolog.GlobalLevel().String()
-	want := "trace"
-	if got != want {
-		t.Errorf("log level not properly initialised, got %v, want %v", got, want)
-	}
-}
+	for _, tt := range tests {
+		t.Run(tt.n, func(t *testing.T) {
+			c := Config{
+				LogLevel: tt.l,
+			}
+			initLogger()
+			c.validateLogLevel()
 
-func TestDebugLogLevelInit(t *testing.T) {
-	c := Config{
-		LogLevel: "debug",
-	}
-	initLogger()
-	c.validateLogLevel()
-	time.Sleep(time.Second * 4)
+			Runner = &Runtime{
+				Config:       c,
+				StateHandler: NewStateHandler(),
+			}
+			Runner.StateHandler.setState(Daemon)
+			Runner.resetLogLevel()
 
-	got := zerolog.GlobalLevel().String()
-	want := "debug"
-	if got != want {
-		t.Errorf("log level not properly initialised, got %v, want %v", got, want)
-	}
-}
+			time.Sleep(time.Millisecond * 1000)
 
-func TestInfoLogLevelInit(t *testing.T) {
-	c := Config{
-		LogLevel: "INFO",
-	}
-	initLogger()
-	c.validateLogLevel()
-	time.Sleep(time.Second * 4)
-
-	got := zerolog.GlobalLevel().String()
-	want := "info"
-	if got != want {
-		t.Errorf("log level not properly initialised, got %v, want %v", got, want)
-	}
-}
-
-func TestWarnLogLevelInit(t *testing.T) {
-	c := Config{
-		LogLevel: "warn",
-	}
-	initLogger()
-	c.validateLogLevel()
-	time.Sleep(time.Second * 4)
-
-	got := zerolog.GlobalLevel().String()
-	want := "warn"
-	if got != want {
-		t.Errorf("log level not properly initialised, got %v, want %v", got, want)
+			got := zerolog.GlobalLevel().String()
+			want := tt.l
+			if got != want {
+				t.Errorf("log level not properly initialised, got %v, want %v", got, want)
+			}
+		})
 	}
 }
 

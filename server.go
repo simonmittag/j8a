@@ -3,6 +3,7 @@ package j8a
 import (
 	"crypto/tls"
 	"fmt"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/shirou/gopsutil/process"
 	golog "log"
@@ -88,6 +89,7 @@ func BootStrap() {
 		initReloadableCert().
 		initStats().
 		initUserAgent().
+		resetLogLevel().
 		startListening()
 }
 
@@ -133,6 +135,37 @@ func (r *Runtime) initCacheDir() *Runtime {
 		}
 	}
 	return r
+}
+
+func (rt *Runtime) resetLogLevel() *Runtime {
+	logLevel := strings.ToUpper(rt.Config.LogLevel)
+	old := strings.ToUpper(zerolog.GlobalLevel().String())
+
+	//this should be async so we never get stuck waiting for resetting log level.
+	go func() {
+		//this will wait until start listening is giving us Daemon state
+		rt.StateHandler.waitState(Daemon)
+		if len(logLevel) > 0 && logLevel != old {
+			switch logLevel {
+			case "TRACE":
+				log.Info().Msgf("resetting global log level to %v", logLevel)
+				zerolog.SetGlobalLevel(zerolog.TraceLevel)
+
+			case "DEBUG":
+				log.Info().Msgf("resetting global log level to %v", logLevel)
+				zerolog.SetGlobalLevel(zerolog.DebugLevel)
+
+			case "INFO":
+				log.Info().Msgf("resetting global log level to %v", logLevel)
+				zerolog.SetGlobalLevel(zerolog.InfoLevel)
+
+			case "WARN":
+				log.Info().Msgf("resetting global log level to %v", logLevel)
+				zerolog.SetGlobalLevel(zerolog.WarnLevel)
+			}
+		}
+	}()
+	return rt
 }
 
 func (r *Runtime) cacheDirIsActive() bool {
