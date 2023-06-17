@@ -15,7 +15,7 @@ import (
 type Mode uint8
 
 const (
-	Bootstrap Mode = 1 << iota
+	Loading Mode = 1 << iota
 	Server
 	Validate
 	Usage
@@ -23,7 +23,7 @@ const (
 )
 
 func main() {
-	mode := Bootstrap
+	mode := Loading
 
 	//trap sigkill and other aborts
 	go waitForSignal()
@@ -60,7 +60,6 @@ func main() {
 	case Validate:
 		j8a.Validate()
 	case Server:
-		j8a.Boot.Add(1)
 		j8a.BootStrap()
 	case Usage:
 		printUsage()
@@ -81,6 +80,7 @@ func printVersion() {
 
 func recovery() {
 	if r := recover(); r != nil {
+		j8a.ShutDown()
 		pid := os.Getpid()
 		log.WithLevel(zerolog.FatalLevel).
 			Int("pid", pid).

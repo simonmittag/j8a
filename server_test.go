@@ -12,9 +12,10 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
-//takes 76μs to load a certificate that's way too long to do every incoming request.
+// takes 76μs to load a certificate that's way too long to do every incoming request.
 func BenchmarkLoadTlsCert(b *testing.B) {
 	certPem := "-----BEGIN CERTIFICATE-----\nMIIEkzCCAvugAwIBAgIRANiwkh9AuRgrvYh7Y5DtWIUwDQYJKoZIhvcNAQELBQAw\ngYExHjAcBgNVBAoTFW1rY2VydCBkZXZlbG9wbWVudCBDQTErMCkGA1UECwwic2lt\nb25taXR0YWdAdHJvb3BlciAoU2ltb24gTWl0dGFnKTEyMDAGA1UEAwwpbWtjZXJ0\nIHNpbW9ubWl0dGFnQHRyb29wZXIgKFNpbW9uIE1pdHRhZykwHhcNMTkwNjAxMDAw\nMDAwWhcNMzAwNzMwMDExNDU5WjBjMScwJQYDVQQKEx5ta2NlcnQgZGV2ZWxvcG1l\nbnQgY2VydGlmaWNhdGUxODA2BgNVBAsML3NpbW9ubWl0dGFnQE1hY0Jvb2stUHJv\nLTE2LmxvY2FsIChTaW1vbiBNaXR0YWcpMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A\nMIIBCgKCAQEAsCTQ9rLTQYjIlGF7EOrTJux8E514TUoAuQ0xo1NOSssptjmDyGhb\n8K7+A/TgdU/xlPMcJf22nNDQ2MpqpgHGlDcuXt3SmVrcsTeby1Pa81gxKp23a51B\n8xAoHoHwXVSWdiMWk3H/Jjv/dtYL1L180neewcWvK26ANUwlzWG6BW1QVUXXNdRo\ndmxQ1eg2S/qMBASFj6QjCsWWJiEfmz4PQpsP8q5IqCcX85BUqGO919JlE/eXEAgk\n9Yuh61/50n39B/sPC0mU5s6vH0SPCBvz1g8SiXa8jj3jCXxa/0ZsYtAVqPe5BoRP\nvK2q1sbKbJVr7EpmiOdKxKPHonRHasweGwIDAQABo4GiMIGfMA4GA1UdDwEB/wQE\nAwIFoDATBgNVHSUEDDAKBggrBgEFBQcDATAMBgNVHRMBAf8EAjAAMB8GA1UdIwQY\nMBaAFMNEcloV4jg+eonB5omuJvQXiqiRMEkGA1UdEQRCMECCDyouamFiYmF0ZXN0\nLmNvbYIKamFiYmEudGVzdIIJbG9jYWxob3N0hwR/AAABhxAAAAAAAAAAAAAAAAAA\nAAABMA0GCSqGSIb3DQEBCwUAA4IBgQDGI3EUWPKsEOqLCpnwSlFihu8n9+g4pV3/\njItYhUqMBz1v8TqV2zykkJUtlfNoxrp5OAg4CG0Xr1zhqjub3teKbsNKlRpV+h04\n4ncltpe66u4gg9RW+ww/f+J3C2yZRIX+brhDcTpdEMyfVoCV/5jeCxWf29MdFcLU\nBfgFdEp1oe3bK/dyZc8SbUlmizyumaDOaZACihz/DKsJ+lzRdy6c3UPQgC3r72oN\nLx/ccpnwdeumWFs+qYOjYfrCGFXaabokdtyit4XURFngxpnPUB9jHDvkI5+/eTaB\nSpdjJxE6x4mciyZSvshhu1v8j52+d9zUANs9+Y/v6EoCZ6byaaS4NAmTXdAWlnYb\nhIuRRsI4gIDhJWLrACBu1Osh7ZknaLNVMt5xo3TemCkVKud3NHGbycHTUoFBuHz/\nJOTQJ/Z1Ym3enpTAESZVcZTzS9gL62wfIfLcFvq+tVjoJZVJCcolP2fYn3U5lEiN\nvZvs72xp4sYEOa9zhvEs/yte9c6rkU0=\n-----END CERTIFICATE-----\n"
 	cAPem := "-----BEGIN CERTIFICATE-----\nMIIE0zCCAzugAwIBAgIQB2bsiI7SUtxu+HwBxuNtpDANBgkqhkiG9w0BAQsFADCB\ngTEeMBwGA1UEChMVbWtjZXJ0IGRldmVsb3BtZW50IENBMSswKQYDVQQLDCJzaW1v\nbm1pdHRhZ0B0cm9vcGVyIChTaW1vbiBNaXR0YWcpMTIwMAYDVQQDDClta2NlcnQg\nc2ltb25taXR0YWdAdHJvb3BlciAoU2ltb24gTWl0dGFnKTAeFw0yMDA1MDEyMTE2\nNDNaFw0zMDA1MDEyMTE2NDNaMIGBMR4wHAYDVQQKExVta2NlcnQgZGV2ZWxvcG1l\nbnQgQ0ExKzApBgNVBAsMInNpbW9ubWl0dGFnQHRyb29wZXIgKFNpbW9uIE1pdHRh\nZykxMjAwBgNVBAMMKW1rY2VydCBzaW1vbm1pdHRhZ0B0cm9vcGVyIChTaW1vbiBN\naXR0YWcpMIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAzivKfp5OiWpT\n362cVgbw9DBqwMP0pO32aP79Y4UYeAxCfaWQDdqQEatBdraShtZcvUX8vZ9jvgHE\noGMGSJb/DIVRxIDfhdvhh4qGQgbbSLwDkfLJTkpGMdONa/5yDC54fNZjF095YZn7\niPmsFbvYUfTwpM8qrP+jZzobByrTO4rG3Ps080gIR08RCA0E+uLg58rTpnsdBKZ0\nK2uuE4B4lVAs2AeS4KPMrH/rnCjSZz4KRwnaGqh+wiAjO0PHAfrbrhNsFB6P1/Zk\nCqzclj3TXdkMDaXhSvt0qJPEpNIPQMkvj9GROom7hExZUT7t7LPOZwODtiR2VjM3\nDDehfLqpNPRrxU3aOR7b4lFVtEL1+9NXKc3rnR5T2xPVVvBxx8FqYAxFmQtkGqpA\nYlRxImBONBreIr5/fdkr5xqd/S0s1pb8ubuK7x5COfqf0Mv++j+UjMptBQ3kYvOh\ntNrbnEI1q/7kvHNB8ETtJ4hqXikl9EHMYWdOo4nyGd4P8jo9jmGVAgMBAAGjRTBD\nMA4GA1UdDwEB/wQEAwICBDASBgNVHRMBAf8ECDAGAQH/AgEAMB0GA1UdDgQWBBTD\nRHJaFeI4PnqJweaJrib0F4qokTANBgkqhkiG9w0BAQsFAAOCAYEAb+K3HO2AlDed\nS2yT7GnxD75Hcjnv1tMvMIlh1EOmRMHrzbsi7jv3Z7SDe2R5s1qRku3nxbVWj8i8\noRBi5GeRE+q/HkVloi4WPmgFGxUUbkWszAFSSGN5TAs72e5sCG/wMyEa0Gj8cOO1\ndK5SH3thP8+OjSpgQXToYfOimILlk7Hj7EgKE5Y8YX8UV+41LhGkzeK2UX9dBZn1\nof9qBc0dAQVlAA/O3dOgXorgiDbNT38cjignWEwVYzjeuJCYB91Ixf0CfHJZKHZR\nZCdIAHTJqW1tx7vsbrcl0PVAMgm+rkHLL0Dh9cp4fvONXWygVSjbqKM1s8UI9bFA\nbWU5Z3MhEn25wZCXLQDIq0uC+FwCxyS9e/exL4wmYpCLmRKVCp2gUa78Rlr/FJNa\nH9kfvP41Ya+fLzDWNKAlYQgizpZJmZuhPZu7O6n0UusaI+0WTKblCFUQJkx4aKEv\nio8QmLzoedmvVpO9Zp44Lyabmc7VnjoYTOcZczx4ECwEdKH/jswc\n-----END CERTIFICATE-----\n"
@@ -102,13 +103,43 @@ func TestHandlerDelegate_ServeHTTP_Acme(t *testing.T) {
 }
 
 func TestServerBootStrap(t *testing.T) {
-	setupJ8a()
+	ConfigFile = "./j8acfg.yml"
+	before := time.Now()
+
+	//we need to nuke the other Runners that may have been created by previous unit tests
+	Runner = nil
+
+	//this triggers the Bootstrap process and results in the StateHandler to go through Bootstrap, then into Daemon state
+	go BootStrap()
+
+	//we need this because Runner is initialised by the goroutine above
+	for {
+		if Runner != nil && Runner.StateHandler != nil {
+			break
+		} else {
+			time.Sleep(time.Millisecond * 100)
+		}
+	}
+
+	//this blocks until we reach Daemon state or dies after 10 seconds
+	testTimeOutSeconds := 10
+	Runner.StateHandler.waitState(Daemon, testTimeOutSeconds)
+	delta := time.Now().Sub(before)
+
+	if delta > time.Second*time.Duration(testTimeOutSeconds) {
+		t.Errorf("should not have timed out waiting for Daemon state")
+	} else {
+		t.Logf("normal. returned from StateHandler wait state in %v", delta)
+	}
+
 	resp, err := http.Get("http://localhost:8080/about")
 	if resp != nil && resp.StatusCode != 200 {
 		t.Errorf("server does not return ok status response after starting, want 200, got %v", resp.StatusCode)
 	}
 	if err != nil {
 		t.Errorf("GET req to /about returned error, %v", err)
+	} else {
+		t.Logf("normal. GET req against Bootstrapped server")
 	}
 }
 
@@ -138,7 +169,7 @@ func TestZerologAdapter_Write(t *testing.T) {
 	zla.Write([]byte("i'm a log line from 127.0.0.1 there's no place like it"))
 }
 
-//test this on windows. Go doco says it should work:
+// test this on windows. Go doco says it should work:
 func TestServerInitDotDir(t *testing.T) {
 	Runner := mockRuntime()
 	Runner.initCacheDir()
@@ -200,13 +231,6 @@ func TestConnectionWatcher_OnStateChange(t *testing.T) {
 	if cw.DwnMaxCount() != 2 {
 		t.Error("maxcount should still be 2")
 	}
-}
-
-func setupJ8a() {
-	ConfigFile = "./j8acfg.yml"
-	Boot.Add(1)
-	go BootStrap()
-	Boot.Wait()
 }
 
 func mockRequest() http.Request {
