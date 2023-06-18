@@ -2,6 +2,7 @@ package j8a
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"fmt"
 	"github.com/lestrrat-go/jwx/jwa"
@@ -980,6 +981,7 @@ func mockProxy(upBody []byte, cl string, path string, transform string, requestU
 	proxy := Proxy{
 		XRequestID: "12345",
 		Up: Up{
+
 			Atmpt: &Atmpt{
 				URL: &URL{
 					Scheme: "http",
@@ -1014,5 +1016,13 @@ func mockProxy(upBody []byte, cl string, path string, transform string, requestU
 			Jwt:               jwtName,
 		},
 	}
+
+	ctx, cancel := context.WithCancel(context.TODO())
+	proxy.Up.Atmpt.CancelFunc = func() {
+		cancel()
+		fmt.Println("cancel() called")
+	}
+	proxy.Up.Atmpt.Aborted = ctx.Done()
+
 	return proxy
 }
