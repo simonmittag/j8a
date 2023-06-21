@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -267,6 +268,7 @@ const safeToIgnoreFailedBodyChannelClosure = "safe to ignore. recovered internal
 const upstreamConReadTimeoutFired = "upstream connection read timeout fired, aborting upstream response body processing"
 
 const upResBodyBytes = "upResBodyBytes"
+const upstreamResParseAbort = "upstream response parsing aborted"
 const upstreamResBodyAbort = "upstream response body processing aborted"
 const upstreamResBodyProcessed = "upstream response body processed"
 const emptyJSON = "{}"
@@ -296,17 +298,28 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 	attemptIndex := proxy.Up.Count - 1
 
 	go func() {
-		proxy.Up.Atmpt.StatusCode = upstreamResponse.StatusCode
-		proxy.Up.Atmpt.ContentEncoding = NewContentEncoding(proxy.Up.Atmpt.resp.Header.Get(contentEncoding))
-
-		upstreamResponseBody, bodyError = ioutil.ReadAll(upstreamResponse.Body)
-
 		defer func() {
 			if err := recover(); err != nil {
 				scaffoldUpAttemptLog(proxy).
-					Msg(safeToIgnoreFailedBodyChannelClosure)
+					Msg(upstreamResParseAbort)
+				bodyError = errors.New(upstreamResParseAbort)
+				proxy.Up.Atmpt.CancelFunc()
 			}
 		}()
+
+		if upstreamResponse != nil {
+			proxy.Up.Atmpt.StatusCode = upstreamResponse.StatusCode
+			if proxy.Up.Atmpt != nil &&
+				proxy.Up.Atmpt.resp != nil &&
+				proxy.Up.Atmpt.resp.Header != nil {
+				proxy.Up.Atmpt.ContentEncoding = NewContentEncoding(proxy.Up.Atmpt.resp.Header.Get(contentEncoding))
+			}
+
+			upstreamResponseBody, bodyError = ioutil.ReadAll(upstreamResponse.Body)
+		} else {
+			bodyError = errors.New(upstreamResParseAbort)
+			proxy.Up.Atmpt.CancelFunc()
+		}
 
 		//this is ok, see: https://stackoverflow.com/questions/8593645/is-it-ok-to-leave-a-channel-open#:~:text=5%20Answers&text=It's%20OK%20to%20leave%20a,it%20will%20be%20garbage%20collected.&text=Closing%20the%20channel%20is%20a,that%20no%20more%20data%20follows.
 		if proxy.Up.Atmpt.CompleteBody != nil && !proxy.Up.Atmpt.AbortedFlag && !proxy.Dwn.AbortedFlag {

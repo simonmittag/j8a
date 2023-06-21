@@ -2,6 +2,7 @@ package j8a
 
 import (
 	"bytes"
+	"github.com/rs/zerolog"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -631,6 +632,33 @@ func TestJsonifyUpstreamHeadersWithHeader(t *testing.T) {
 	got := string(res)
 	if got != want {
 		t.Errorf("should have returned json encoded headers, but got: %v", got)
+	}
+}
+
+func TestParseUpstreamResponseWithNilResponse(t *testing.T) {
+	//needed for print function
+	Runner = mockRuntime()
+	Runner.Connection.Upstream.MaxAttempts = 1
+
+	p := mockProxy(make([]byte, 1), "", "/", "", "/", "", "")
+	_, e := parseUpstreamResponse(nil, &p)
+	if e == nil {
+		t.Errorf("no response error for nil http request")
+	}
+}
+
+func BenchmarkParseUpstreamResponseWithNilResponse(b *testing.B) {
+	//needed, otherwise test output is too noisy
+	zerolog.SetGlobalLevel(zerolog.WarnLevel)
+
+	//needed because of callbacks to global Runner
+	Runner = mockRuntime()
+	Runner.Connection.Upstream.MaxAttempts = 1
+
+	p := mockProxy(make([]byte, 1), "", "/", "", "/", "", "")
+
+	for i := 0; i < b.N; i++ {
+		parseUpstreamResponse(nil, &p)
 	}
 }
 
