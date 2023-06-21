@@ -8,6 +8,7 @@ import (
 	"github.com/simonmittag/j8a"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -82,9 +83,13 @@ func recovery() {
 	if r := recover(); r != nil {
 		j8a.ShutDown()
 		pid := os.Getpid()
+		msg := fmt.Sprintf("%v", r)
+		if !strings.HasSuffix(msg, ".") {
+			msg = msg + "."
+		}
 		log.WithLevel(zerolog.FatalLevel).
 			Int("pid", pid).
-			Msg("exiting...")
+			Msg(fmt.Sprintf("%v now exiting...", msg))
 		os.Exit(-1)
 	}
 }
