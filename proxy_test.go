@@ -1020,7 +1020,7 @@ func mockProxy(upBody []byte, cl string, path string, transform string, requestU
 	ctx, cancel := context.WithCancel(context.TODO())
 	proxy.Up.Atmpt.CancelFunc = func() {
 		cancel()
-		fmt.Println("cancel() called")
+		log.Info().Msg("cancel() called")
 	}
 	proxy.Up.Atmpt.Aborted = ctx.Done()
 
