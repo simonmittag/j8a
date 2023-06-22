@@ -198,7 +198,7 @@ func scaffoldUpstreamRequest(proxy *Proxy) *http.Request {
 }
 
 const upResHeaders = "upResHeaders"
-const upstreamResAborted = "upstream request processing aborted"
+const upstreamReqAborted = "upstream request processing aborted"
 const upstreamResHeaderAborted = "upstream response header processing aborted"
 const upstreamResHeadersProcessed = "upstream response headers processed"
 const upConReadTimeoutFired = "upstream connection read timeout fired, aborting upstream response header processing."
@@ -219,9 +219,7 @@ func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
 			//this should never happen in production, http client doesn't panic
 			//if it does, abort only one request as opposed to shutting down the server.
 			if err := recover(); err != nil {
-				scaffoldUpAttemptLog(proxy).
-					Msg(upstreamResAborted)
-				upstreamError = errors.New(upstreamResAborted)
+				upstreamError = errors.New(upstreamReqAborted)
 				proxy.Up.Atmpt.CancelFunc()
 			}
 		}()
@@ -230,8 +228,12 @@ func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
 		upstreamResponse, upstreamError = httpClient.Do(req)
 		proxy.Up.Atmpt.resp = upstreamResponse
 
-		if proxy.Up.Atmpts[attemptIndex].CompleteHeader != nil && !proxy.Up.Atmpts[attemptIndex].AbortedFlag && !proxy.Dwn.AbortedFlag {
+		if proxy.Up.Atmpts[attemptIndex].CompleteHeader != nil &&
+			!proxy.Up.Atmpts[attemptIndex].AbortedFlag &&
+			!proxy.Dwn.AbortedFlag {
 			close(proxy.Up.Atmpts[attemptIndex].CompleteHeader)
+		} else {
+			panic(upstreamReqAborted)
 		}
 	}()
 
@@ -246,6 +248,9 @@ func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
 			scaffoldUpAttemptLog(proxy).
 				Int(upReadTimeoutSecs, Runner.Connection.Upstream.ReadTimeoutSeconds).
 				Msg(upConReadTimeoutFired)
+		} else {
+			scaffoldUpAttemptLog(proxy).
+				Msg(upstreamReqAborted)
 		}
 	case <-proxy.Dwn.Timeout:
 		proxy.Dwn.TimeoutFlag = true
@@ -309,8 +314,6 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 	go func() {
 		defer func() {
 			if err := recover(); err != nil {
-				scaffoldUpAttemptLog(proxy).
-					Msg(upstreamResParseAbort)
 				bodyError = errors.New(upstreamResParseAbort)
 				proxy.Up.Atmpt.CancelFunc()
 			}
@@ -326,22 +329,30 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 
 			upstreamResponseBody, bodyError = ioutil.ReadAll(upstreamResponse.Body)
 		} else {
-			bodyError = errors.New(upstreamResParseAbort)
-			proxy.Up.Atmpt.CancelFunc()
+			panic(upstreamResParseAbort)
 		}
 
 		//this is ok, see: https://stackoverflow.com/questions/8593645/is-it-ok-to-leave-a-channel-open#:~:text=5%20Answers&text=It's%20OK%20to%20leave%20a,it%20will%20be%20garbage%20collected.&text=Closing%20the%20channel%20is%20a,that%20no%20more%20data%20follows.
-		if proxy.Up.Atmpt.CompleteBody != nil && !proxy.Up.Atmpt.AbortedFlag && !proxy.Dwn.AbortedFlag {
+		if proxy.Up.Atmpt.CompleteBody != nil &&
+			!proxy.Up.Atmpt.AbortedFlag &&
+			!proxy.Dwn.AbortedFlag {
 			close(proxy.Up.Atmpts[attemptIndex].CompleteBody)
+		} else {
+			panic(upstreamResParseAbort)
 		}
 	}()
 
 	select {
 	case <-proxy.Up.Atmpt.Aborted:
 		proxy.Up.Atmpt.AbortedFlag = true
-		scaffoldUpAttemptLog(proxy).
-			Int(upReadTimeoutSecs, Runner.Connection.Upstream.ReadTimeoutSeconds).
-			Msg(upstreamConReadTimeoutFired)
+		if bodyError == nil {
+			scaffoldUpAttemptLog(proxy).
+				Int(upReadTimeoutSecs, Runner.Connection.Upstream.ReadTimeoutSeconds).
+				Msg(upstreamConReadTimeoutFired)
+		} else {
+			scaffoldUpAttemptLog(proxy).
+				Msg(upstreamResParseAbort)
+		}
 	case <-proxy.Dwn.Timeout:
 		proxy.Dwn.TimeoutFlag = true
 		scaffoldUpAttemptLog(proxy).
