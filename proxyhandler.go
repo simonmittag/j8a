@@ -198,6 +198,7 @@ func scaffoldUpstreamRequest(proxy *Proxy) *http.Request {
 }
 
 const upResHeaders = "upResHeaders"
+const upstreamResAborted = "upstream request processing aborted"
 const upstreamResHeaderAborted = "upstream response header processing aborted"
 const upstreamResHeadersProcessed = "upstream response headers processed"
 const upConReadTimeoutFired = "upstream connection read timeout fired, aborting upstream response header processing."
@@ -214,15 +215,18 @@ func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
 	var upstreamError error
 
 	go func() {
+		defer func() {
+			if err := recover(); err != nil {
+				scaffoldUpAttemptLog(proxy).
+					Msg(upstreamResAborted)
+				upstreamError = errors.New(upstreamResAborted)
+				proxy.Up.Atmpt.CancelFunc()
+			}
+		}()
+
 		//this blocks until upstream headers come in
 		upstreamResponse, upstreamError = httpClient.Do(req)
 		proxy.Up.Atmpt.resp = upstreamResponse
-
-		defer func() {
-			if err := recover(); err != nil {
-				//it's safe to ignore this.
-			}
-		}()
 
 		if proxy.Up.Atmpts[attemptIndex].CompleteHeader != nil && !proxy.Up.Atmpts[attemptIndex].AbortedFlag && !proxy.Dwn.AbortedFlag {
 			close(proxy.Up.Atmpts[attemptIndex].CompleteHeader)
