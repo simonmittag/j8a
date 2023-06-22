@@ -216,6 +216,8 @@ func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
 
 	go func() {
 		defer func() {
+			//this should never happen in production, http client doesn't panic
+			//if it does, abort only one request as opposed to shutting down the server.
 			if err := recover(); err != nil {
 				scaffoldUpAttemptLog(proxy).
 					Msg(upstreamResAborted)
@@ -239,9 +241,12 @@ func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
 	case <-proxy.Up.Atmpt.Aborted:
 		proxy.Up.Atmpt.AbortedFlag = true
 		proxy.Up.Atmpt.StatusCode = 0
-		scaffoldUpAttemptLog(proxy).
-			Int(upReadTimeoutSecs, Runner.Connection.Upstream.ReadTimeoutSeconds).
-			Msg(upConReadTimeoutFired)
+		//aborts due to timeout don't set upstream error
+		if upstreamError == nil {
+			scaffoldUpAttemptLog(proxy).
+				Int(upReadTimeoutSecs, Runner.Connection.Upstream.ReadTimeoutSeconds).
+				Msg(upConReadTimeoutFired)
+		}
 	case <-proxy.Dwn.Timeout:
 		proxy.Dwn.TimeoutFlag = true
 		scaffoldUpAttemptLog(proxy).
