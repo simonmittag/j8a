@@ -70,10 +70,7 @@ func (config Config) load() *Config {
 }
 
 func (config Config) panic(msg string) {
-	if len(msg) == 0 {
-		msg = "error loading config."
-	}
-	log.WithLevel(zerolog.FatalLevel).Msg(msg)
+	msg = "unable to validate config. " + msg
 	panic(msg)
 }
 
@@ -92,8 +89,7 @@ func (config Config) readYmlFile(file string) *Config {
 	defer f.Close()
 	if err != nil {
 		msg := fmt.Sprintf("unable to load config from %s", file)
-		log.Fatal().Msg(msg)
-		panic(msg)
+		config.panic(msg)
 	}
 	byteValue, _ := ioutil.ReadAll(f)
 	return config.parse(byteValue)

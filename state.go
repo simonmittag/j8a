@@ -2,7 +2,6 @@ package j8a
 
 import (
 	"fmt"
-	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"math"
 	"time"
@@ -65,11 +64,8 @@ func (sh *StateHandler) setState(s State) {
 		sh.Current = s
 
 		msg := fmt.Sprintf("server state now %v", sh.Current)
-		if s == Shutdown {
-			log.WithLevel(zerolog.FatalLevel).Msg(msg)
-		} else {
-			log.Info().Msg(msg)
-		}
+		log.Info().Msg(msg)
+
 		//needs to be async else setState blocks
 		go func() {
 			sh.Update <- s
