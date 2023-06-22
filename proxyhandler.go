@@ -220,6 +220,11 @@ func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
 			//if it does, abort only one request as opposed to shutting down the server.
 			if err := recover(); err != nil {
 				upstreamError = errors.New(upstreamReqAborted)
+				defer func() {
+					if err := recover(); err != nil {
+						//ignore
+					}
+				}()
 				proxy.Up.Atmpt.CancelFunc()
 			}
 		}()
@@ -313,6 +318,11 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 		defer func() {
 			if err := recover(); err != nil {
 				bodyError = errors.New(upstreamResParseAbort)
+				defer func() {
+					if err := recover(); err != nil {
+						//ignore
+					}
+				}()
 				proxy.Up.Atmpt.CancelFunc()
 			}
 		}()
