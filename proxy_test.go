@@ -1005,6 +1005,9 @@ func mockProxy(upBody []byte, cl string, path string, transform string, requestU
 				Body:          &upBody,
 				ContentLength: 0,
 			},
+			AcceptEncoding: AcceptEncoding{
+				EncIdentity,
+			},
 			startDate: time.Time{},
 		},
 		Route: &Route{

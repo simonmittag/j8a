@@ -662,6 +662,18 @@ func BenchmarkParseUpstreamResponseWithNilResponse(b *testing.B) {
 	}
 }
 
+func TestProcessUpstreamRequestWithoutValidUpstream(t *testing.T) {
+	//needed for print function
+	Runner = mockRuntime()
+	Runner.Connection.Upstream.MaxAttempts = 1
+
+	p := mockProxy(make([]byte, 1), "", "/", "", "/", "", "")
+	_, e := performUpstreamRequest(&p)
+	if e == nil {
+		t.Errorf("no response error for nil http request")
+	}
+}
+
 func mockRunner() {
 	Runner = mockRuntime()
 }
