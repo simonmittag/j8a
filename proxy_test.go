@@ -978,11 +978,13 @@ func mockProxy(upBody []byte, cl string, path string, transform string, requestU
 	req, _ := http.NewRequest("GET", "/blah", nil)
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", bearer))
 
+	ctx, cancel := context.WithCancel(context.TODO())
+
 	proxy := Proxy{
 		XRequestID: "12345",
 		Up: Up{
 
-			Atmpt: &Atmpt{
+			Atmpts: []Atmpt{Atmpt{
 				URL: &URL{
 					Scheme: "http",
 					Host:   "upstreamhost",
@@ -994,7 +996,13 @@ func mockProxy(upBody []byte, cl string, path string, transform string, requestU
 						"Content-Length": []string{cl},
 					},
 				},
-			},
+				CancelFunc: func() {
+					cancel()
+					log.Info().Msg("cancel() called")
+				},
+				Aborted: ctx.Done(),
+			}},
+			Count: 1,
 		},
 		Dwn: Down{
 			URI:    requestUri,
@@ -1019,13 +1027,7 @@ func mockProxy(upBody []byte, cl string, path string, transform string, requestU
 			Jwt:               jwtName,
 		},
 	}
-
-	ctx, cancel := context.WithCancel(context.TODO())
-	proxy.Up.Atmpt.CancelFunc = func() {
-		cancel()
-		log.Info().Msg("cancel() called")
-	}
-	proxy.Up.Atmpt.Aborted = ctx.Done()
+	proxy.Up.Atmpt = &proxy.Up.Atmpts[0]
 
 	return proxy
 }
