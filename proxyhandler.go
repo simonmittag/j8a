@@ -225,7 +225,7 @@ func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
 						//ignore
 					}
 				}()
-				proxy.Up.Atmpt.CancelFunc()
+				proxy.Up.Atmpts[attemptIndex].CancelFunc()
 			}
 		}()
 
@@ -325,7 +325,8 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 						//ignore
 					}
 				}()
-				proxy.Up.Atmpt.CancelFunc()
+				//this matters because current Up.Atmpt may have moved on
+				proxy.Up.Atmpts[attemptIndex].CancelFunc()
 			}
 		}()
 
