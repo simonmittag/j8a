@@ -63,7 +63,9 @@ func PerformJ8aTest(t *testing.T, testMethod string, wantUpstreamWaitSeconds int
 		client = &http.Client{}
 	}
 
-	resp, err := client.Get(fmt.Sprintf("%s://localhost:%d/mse6%s?wait=%d", scheme, serverPort, testMethod, wantUpstreamWaitSeconds))
+	req, _ := http.NewRequest("GET", fmt.Sprintf("%s://localhost:%d/mse6%s?wait=%d", scheme, serverPort, testMethod, wantUpstreamWaitSeconds), nil)
+	req.Header.Set("X-REQUEST-INFO", "true")
+	resp, err := client.Do(req)
 	gotTotalWait := time.Since(start)
 
 	if err != nil {

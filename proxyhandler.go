@@ -225,7 +225,7 @@ func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
 						//ignore
 					}
 				}()
-				proxy.Up.Atmpt.CancelFunc()
+				proxy.Up.Atmpts[attemptIndex].CancelFunc()
 			}
 		}()
 
@@ -237,6 +237,8 @@ func performUpstreamRequest(proxy *Proxy) (*http.Response, error) {
 			!proxy.Up.Atmpts[attemptIndex].AbortedFlag &&
 			!proxy.Dwn.AbortedFlag {
 			close(proxy.Up.Atmpts[attemptIndex].CompleteHeader)
+		} else {
+			panic(upstreamReqAborted)
 		}
 	}()
 
@@ -323,7 +325,8 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 						//ignore
 					}
 				}()
-				proxy.Up.Atmpt.CancelFunc()
+				//this matters because current Up.Atmpt may have moved on
+				proxy.Up.Atmpts[attemptIndex].CancelFunc()
 			}
 		}()
 
@@ -345,6 +348,8 @@ func parseUpstreamResponse(upstreamResponse *http.Response, proxy *Proxy) ([]byt
 			!proxy.Up.Atmpt.AbortedFlag &&
 			!proxy.Dwn.AbortedFlag {
 			close(proxy.Up.Atmpts[attemptIndex].CompleteBody)
+		} else {
+			panic(upstreamResParseAbort)
 		}
 	}()
 
