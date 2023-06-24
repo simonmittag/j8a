@@ -1,0 +1,46 @@
+---
+connection:
+  downstream:
+    readTimeoutSeconds: 3
+    roundTripTimeoutSeconds: 20
+    idleTimeoutSeconds: 30
+    http:
+      port: 8080
+  upstream:
+    socketTimeoutSeconds: 30
+    readTimeoutSeconds: 120
+    idleTimeoutSeconds: 120
+    maxAttempts: 1
+    tlsInsecureSkipVerify: yes
+policies:
+  ab:
+    - label: green
+      weight: 0.8
+    - label: blue
+      weight: 0.2
+routes:
+  - path: "/about"
+    resource: about
+  - path: "/mse6/some"
+    resource: mse61
+  - path: "/mse6/"
+    resource: mse6
+    policy: ab
+resources:
+  mse61:
+    - url:
+        scheme: 'http:'
+        host: localhost
+        port: 60083
+  mse6:
+    - labels:
+        - green
+      url:
+        scheme: http://
+        host: localhost
+        port: 60083
+    - labels:
+        - blue
+      url:
+        host: localhost
+        port: 60084
