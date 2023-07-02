@@ -9,12 +9,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/lestrrat-go/jwx/jwa"
-	"github.com/lestrrat-go/jwx/jws"
-	"github.com/lestrrat-go/jwx/jwt"
-	"github.com/rs/zerolog"
-	"golang.org/x/net/idna"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -22,6 +16,13 @@ import (
 	"strings"
 	"time"
 	unicode "unicode"
+
+	"github.com/google/uuid"
+	"github.com/lestrrat-go/jwx/jwa"
+	"github.com/lestrrat-go/jwx/jws"
+	"github.com/lestrrat-go/jwx/jwt"
+	"github.com/rs/zerolog"
+	"golang.org/x/net/idna"
 
 	"github.com/rs/zerolog/log"
 )
@@ -525,8 +526,18 @@ const colon = ":"
 
 func parseHost(request *http.Request) string {
 	//ignore conversion errors
-	al := strings.Split(request.Host, colon)[0]
-	al2, _ := idna.ToASCII(al)
+	al := strings.Split(request.Host, colon)
+	// ipv6
+	if len(al) == 8 {
+		ipv6, _ := idna.ToASCII(request.Host)
+		return ipv6
+	}
+	// ipv6 with port
+	if len(al) == 9 {
+		ipv6Port, _ := idna.ToASCII(strings.Join(al[0:8], ":"))
+		return ipv6Port
+	}
+	al2, _ := idna.ToASCII(al[0])
 	return al2
 }
 
