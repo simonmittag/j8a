@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"strconv"
 	"strings"
@@ -524,18 +525,27 @@ func infoOrDebugEv(proxy *Proxy) *zerolog.Event {
 
 const colon = ":"
 
+func isIPv6(address string) bool {
+	ip := net.ParseIP(address)
+	return ip != nil && ip.To4() == nil
+}
 func parseHost(request *http.Request) string {
 	//ignore conversion errors
-	al := strings.Split(request.Host, colon)
-	// ipv6
-	if len(al) == 8 {
-		ipv6, _ := idna.ToASCII(request.Host)
-		return ipv6
+	if isIPv6(request.Host) {
+		return request.Host
 	}
-	// ipv6 with port
+	al := strings.Split(request.Host, colon)
+	fmt.Println("Number of colons", len(al))
 	if len(al) == 9 {
-		ipv6Port, _ := idna.ToASCII(strings.Join(al[0:8], ":"))
-		return ipv6Port
+		host := strings.Join(al[:8], ":")
+		fmt.Println("Host - ", host)
+		if isIPv6(host) {
+			return host
+		}
+		return request.Host
+	}
+	if len(al) > 2 {
+		return request.Host
 	}
 	al2, _ := idna.ToASCII(al[0])
 	return al2
