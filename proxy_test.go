@@ -471,6 +471,11 @@ func TestParseHost(t *testing.T) {
 		host string
 	}{
 		{name: "simple", url: "http://host/path", host: "host"},
+		{name: "simple ipv4", url: "http://127.0.0.1/path", host: "127.0.0.1"},
+		{name: "ipv4 with port", url: "http://127.0.0.1:8080/path", host: "127.0.0.1"},
+		{name: "simple ipv6", url: "http://::1/path", host: "::1"},
+		{name: "simple ipv6 in brackets", url: "http://[::1]/path", host: "[::1]"},
+		{name: "ipv6 with port", url: "http://[::1]:8080/path", host: "[::1]"},
 		{name: "simple with port", url: "http://host:8080/path", host: "host"},
 		{name: "fqdn with port", url: "http://sub.host.com:8080/path", host: "sub.host.com"},
 		{name: "idna simple", url: "http://aaa😀😀😀:8080/path", host: "xn--aaa-th33baa"},
