@@ -20,7 +20,7 @@ require (
 )
 
 require (
-	github.com/andybalholm/brotli v1.0.5
+	github.com/andybalholm/brotli v1.0.6
 	github.com/davidmytton/url-verifier v1.0.0
 	github.com/klauspost/compress v1.17.2
 	github.com/simonmittag/procspy v0.0.5
