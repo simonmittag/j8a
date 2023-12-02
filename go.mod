@@ -16,7 +16,7 @@ require (
 	github.com/simonmittag/lego/v4 v4.4.1-0.20210801233615-446f36e1d8f3
 	github.com/simonmittag/ws v1.0.42
 	golang.org/x/net v0.19.0
-	golang.org/x/sync v0.3.0
+	golang.org/x/sync v0.5.0
 )
 
 require (
