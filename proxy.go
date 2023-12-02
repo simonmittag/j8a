@@ -529,26 +529,21 @@ func isIPv6(address string) bool {
 	ip := net.ParseIP(address)
 	return ip != nil && ip.To4() == nil
 }
+
 func parseHost(request *http.Request) string {
-	//ignore conversion errors
-	if isIPv6(request.Host) {
-		return request.Host
+	host := request.Host
+	hostElements := strings.Split(host, ":")
+	//trim port for ipv4
+	if len(hostElements) == 2 {
+		host = hostElements[0]
 	}
-	al := strings.Split(request.Host, colon)
-	fmt.Println("Number of colons", len(al))
-	if len(al) == 9 {
-		host := strings.Join(al[:8], ":")
-		fmt.Println("Host - ", host)
-		if isIPv6(host) {
-			return host
-		}
-		return request.Host
+
+	//trim port for ipv6
+	if strings.Contains(host, "]") {
+		host = host[:strings.LastIndex(host, "]")+1]
 	}
-	if len(al) > 2 {
-		return request.Host
-	}
-	al2, _ := idna.ToASCII(al[0])
-	return al2
+	host, _ = idna.ToASCII(host)
+	return host
 }
 
 func parseMethod(request *http.Request) string {
