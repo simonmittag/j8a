@@ -9,19 +9,21 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"net"
+	"net/http"
+	"strconv"
+	"strings"
+	"time"
+	unicode "unicode"
+
 	"github.com/google/uuid"
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jws"
 	"github.com/lestrrat-go/jwx/jwt"
 	"github.com/rs/zerolog"
 	"golang.org/x/net/idna"
-	"io"
-	"io/ioutil"
-	"net/http"
-	"strconv"
-	"strings"
-	"time"
-	unicode "unicode"
 
 	"github.com/rs/zerolog/log"
 )
@@ -523,11 +525,25 @@ func infoOrDebugEv(proxy *Proxy) *zerolog.Event {
 
 const colon = ":"
 
+func isIPv6(address string) bool {
+	ip := net.ParseIP(address)
+	return ip != nil && ip.To4() == nil
+}
+
 func parseHost(request *http.Request) string {
-	//ignore conversion errors
-	al := strings.Split(request.Host, colon)[0]
-	al2, _ := idna.ToASCII(al)
-	return al2
+	host := request.Host
+	hostElements := strings.Split(host, ":")
+	//trim port for ipv4
+	if len(hostElements) == 2 {
+		host = hostElements[0]
+	}
+
+	//trim port for ipv6
+	if strings.Contains(host, "]") {
+		host = host[:strings.LastIndex(host, "]")+1]
+	}
+	host, _ = idna.ToASCII(host)
+	return host
 }
 
 func parseMethod(request *http.Request) string {
