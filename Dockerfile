@@ -5,8 +5,8 @@ RUN apk update && apk upgrade && apk add --no-cache bash git
 WORKDIR .
 COPY . /proj/
 
-RUN /bin/bash
-RUN cd /proj && CGO_ENABLED=0 go build github.com/simonmittag/j8a/cmd/j8a
+WORKDIR /proj
+RUN CGO_ENABLED=0 go build github.com/simonmittag/j8a/cmd/j8a
 
 #multistage build uses output from previous image
 FROM alpine
