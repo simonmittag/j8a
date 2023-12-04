@@ -17,8 +17,7 @@ universal_binaries:
   - replace: true
 
 brews:
-  -
-    name: j8a
+  - name: j8a
     homepage: "https://github.com/simonmittag/j8a"
     tap:
       owner: simonmittag
@@ -28,8 +27,24 @@ brews:
       email: simonmittag@gmail.com
 
 dockers:
-  - image_templates:
-      - "docker.io/simonmittag/j8a:{{.Tag}}"
+  - goarch: amd64
+    goos: linux
+    image_templates:
+      - 'docker.io/simonmittag/j8a:{{.Tag}}-amd64'
+  - goarch: arm64
+    goos: darwin
+    image_templates:
+      - 'docker.io/simonmittag/j8a:{{.Tag}}-arm64'
+
+docker_manifests:
+  - name_template: 'docker.io/simonmittag/j8a:{{.Tag}}'
+    image_templates:
+      - 'docker.io/simonmittag/j8a:{{.Tag}}-arm64'
+      - 'docker.io/simonmittag/j8a:{{.Tag}}-amd64'
+  - name_template: 'docker.io/simonmittag/j8a:latest'
+    image_templates:
+      - 'docker.io/simonmittag/j8a:{{.Tag}}-arm64'
+      - 'docker.io/simonmittag/j8a:{{.Tag}}-amd64'
 
 checksum:
   name_template: 'checksums.txt'
