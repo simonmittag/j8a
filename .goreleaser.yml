@@ -27,5 +27,9 @@ brews:
       name: simonmittag
       email: simonmittag@gmail.com
 
+dockers:
+  - image_templates:
+      - "docker.io/simonmittag/j8a:{{.Tag}}"
+
 checksum:
   name_template: 'checksums.txt'
