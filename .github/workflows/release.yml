@@ -24,13 +24,7 @@ jobs:
           go-version: '1.21'
       -
         name: Log into dockerhub
-        uses: actions/docker/login@master
-        with: # Set the secret as an input
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
       -
         name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v2
