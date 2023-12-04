@@ -30,27 +30,21 @@ dockers:
   - goarch: amd64
     goos: linux
     image_templates:
-      - 'docker.io/simonmittag/j8a:{{.Tag}}-linux-amd64'
+      - 'docker.io/simonmittag/j8a:{{.Tag}}-amd64'
   - goarch: arm64
     goos: linux
     image_templates:
-      - 'docker.io/simonmittag/j8a:{{.Tag}}-linux-arm64'
-  - goarch: arm64
-    goos: darwin
-    image_templates:
-      - 'docker.io/simonmittag/j8a:{{.Tag}}-darwin-arm64'
+      - 'docker.io/simonmittag/j8a:{{.Tag}}-arm64'
 
 docker_manifests:
   - name_template: 'docker.io/simonmittag/j8a:{{.Tag}}'
     image_templates:
-      - 'docker.io/simonmittag/j8a:{{.Tag}}-linux-amd64'
-      - 'docker.io/simonmittag/j8a:{{.Tag}}-linux-arm64'
-      - 'docker.io/simonmittag/j8a:{{.Tag}}-darwin-arm64'
+      - 'docker.io/simonmittag/j8a:{{.Tag}}-amd64'
+      - 'docker.io/simonmittag/j8a:{{.Tag}}-arm64'
   - name_template: 'docker.io/simonmittag/j8a:latest'
     image_templates:
-      - 'docker.io/simonmittag/j8a:{{.Tag}}-linux-amd64'
-      - 'docker.io/simonmittag/j8a:{{.Tag}}-linux-arm64'
-      - 'docker.io/simonmittag/j8a:{{.Tag}}-darwin-arm64'
+      - 'docker.io/simonmittag/j8a:{{.Tag}}-amd64'
+      - 'docker.io/simonmittag/j8a:{{.Tag}}-arm64'
 
 checksum:
   name_template: 'checksums.txt'
