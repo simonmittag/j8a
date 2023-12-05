@@ -10,7 +10,7 @@
 [![Go Version](https://img.shields.io/github/go-mod/go-version/simonmittag/j8a)](https://img.shields.io/github/go-mod/go-version/simonmittag/j8a)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Docker Pulls](https://img.shields.io/docker/pulls/simonmittag/j8a)](https://hub.docker.com/repository/docker/simonmittag/j8a)
-[![Version](https://img.shields.io/docker/v/simonmittag/j8a/1.1.0)](https://hub.docker.com/repository/docker/simonmittag/j8a)
+[![Version](https://img.shields.io/docker/v/simonmittag/j8a/1.1.1)](https://hub.docker.com/repository/docker/simonmittag/j8a)
 
 ## CVEs
 🛡️ J8a has [zero](https://www.cvedetails.com/google-search-results.php?q=j8a&sa=Search) reported CVEs as of 04/12/2023. 
