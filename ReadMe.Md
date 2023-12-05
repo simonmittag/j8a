@@ -20,6 +20,7 @@ If you are a security researcher, the project team would like to [hear from you]
 ### v1.1.1 (04/12/2023)
 * Update to Go 1.21
 * Fixed a bug where IPV6 addresses as host names weren't logged correctly.
+* docker distribution now includes multi-arch amd64 and arm64 images.
 * Bumped several dependency versions
 
 
