@@ -36,22 +36,16 @@ dockers:
     goos: linux
     image_templates:
       - 'docker.io/simonmittag/j8a:{{.Tag}}-arm64'
-  - goarch: arm64/v8
-    goos: linux
-    image_templates:
-      - 'docker.io/simonmittag/j8a:{{.Tag}}-arm64-v8'
 
 docker_manifests:
   - name_template: 'docker.io/simonmittag/j8a:{{.Tag}}'
     image_templates:
       - 'docker.io/simonmittag/j8a:{{.Tag}}-amd64'
       - 'docker.io/simonmittag/j8a:{{.Tag}}-arm64'
-      - 'docker.io/simonmittag/j8a:{{.Tag}}-arm64-v8'
   - name_template: 'docker.io/simonmittag/j8a:latest'
     image_templates:
       - 'docker.io/simonmittag/j8a:{{.Tag}}-amd64'
       - 'docker.io/simonmittag/j8a:{{.Tag}}-arm64'
-      - 'docker.io/simonmittag/j8a:{{.Tag}}-arm64-v8'
 
 checksum:
   name_template: 'checksums.txt'
