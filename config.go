@@ -42,24 +42,32 @@ var ConfigFile = ""
 
 const DefaultConfigFile = "j8acfg.yml"
 
+// load loads the configuration from a file or environment variables.
+// If `ConfigFile` is set, it attempts to load the configuration from the specified file.
+// If `ConfigFile` is empty and `J8ACFG_YML` environment variable is set,
+// it attempts to load the configuration from the environment variable.
+// If both `ConfigFile` and `J8ACFG_YML` are empty,
+// it attempts to load the configuration from the default file `DefaultConfigFile`.
+// It returns a pointer to the loaded configuration.
+// If an error occurs while loading the configuration, it panics with an error message.
 func (config Config) load() *Config {
 	if len(ConfigFile) > 0 {
 		log.Info().Msgf("attempting config from file '%s'", ConfigFile)
-		if cfg := *config.readYmlFile(ConfigFile); cfg.ok() {
+		if cfg := *config.readYmlFile(ConfigFile); cfg.loaded() {
 			config = cfg
 		} else {
 			config.panic(fmt.Sprintf("error loading config from file '%s'", ConfigFile))
 		}
 	} else if len(os.Getenv(J8ACFG_YML)) > 0 {
 		log.Info().Msgf("attempting config from env %s", J8ACFG_YML)
-		if cfg := *config.readYmlEnv(); cfg.ok() {
+		if cfg := *config.readYmlEnv(); cfg.loaded() {
 			config = cfg
 		} else {
 			config.panic(fmt.Sprintf("error loading config from env '%s'", J8ACFG_YML))
 		}
 	} else {
 		log.Info().Msgf("attempting config from default file '%s'", DefaultConfigFile)
-		if cfg := config.readYmlFile(DefaultConfigFile); cfg.ok() {
+		if cfg := config.readYmlFile(DefaultConfigFile); cfg.loaded() {
 			config = *cfg
 		} else {
 			config.panic(fmt.Sprintf("error loading config from default file '%s'", DefaultConfigFile))
@@ -69,6 +77,8 @@ func (config Config) load() *Config {
 	return &config
 }
 
+// Wrapper method for config to panic during loading. We never
+// want invalid config.
 func (config Config) panic(msg string) {
 	msg = "unable to validate config. " + msg
 	panic(msg)
@@ -79,8 +89,8 @@ func (config Config) readYmlEnv() *Config {
 	return config.parse(conf)
 }
 
-func (config Config) ok() bool {
-	//lightweight test if config was loaded, not necessarily valid
+// Returns true if config was loaded, but does not test if it's valid.
+func (config Config) loaded() bool {
 	return config.Routes.Len() > 0
 }
 
@@ -196,6 +206,8 @@ func validScheme(s string) bool {
 	return false
 }
 
+// validIpAddress checks if the given IP address is a valid IPv4 or IPv6 address.
+// It returns an error if the address is invalid.
 func validIpAddress(r ResourceMapping) error {
 	defaultErr := errors.New(fmt.Sprintf("invalid ipv4 or ipv6 address: %v", r.URL.Host))
 
@@ -213,6 +225,12 @@ func validIpAddress(r ResourceMapping) error {
 	return nil
 }
 
+// validHostName checks if the given host name in the ResourceMapping URL is a valid DNS name.
+// It returns an error if the host name is invalid.
+// It uses the golang.org/x/net/idna package to validate and convert the host name into Unicode and ASCII representations.
+// The host name should not contain a wildcard, a port, or any invalid characters.
+// The function also validates the host name according to the govalidator.IsDNSName function.
+// If any validation fails, an error is returned.
 func validHostName(r ResourceMapping) error {
 	invalidErr := errors.New(fmt.Sprintf("resource host needs a valid DNS name: %v", r.URL.Host))
 	p := idna.New(

@@ -2,7 +2,7 @@ json = require "json"
 math = require "math"
 
 -- This test script sends a HTTP 1.1. POST with 2580 bytes body to j8a
--- with 8 concurrent threads and records various performance metrics such as requests per second
+-- with concurrent threads and records various performance metrics such as requests per second
 -- in an output file
 
 wrk.method = "POST"

@@ -69,7 +69,7 @@ func (zla *zerologAdapter) Write(p []byte) (n int, err error) {
 
 func Validate() {
 	config := processConfig()
-	config.ok()
+	config.loaded()
 }
 
 // BootStrap starts up the server from a ServerConfig

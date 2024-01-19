@@ -573,6 +573,22 @@ func parseXRequestInfo(request *http.Request) bool {
 		(len(h2) > 0 && strings.ToLower(h2) == trueStr)
 }
 
+// parseTlsVersion checks the TLS version of the incoming request.
+// It returns the TLS version as a string.
+// If the request has a valid TLS connection, the function checks
+// the TLS version and returns "1.2" for TLS 1.2, "1.3" for TLS 1.3,
+// and "unknown" for other TLS versions.
+// If the request does not have a TLS connection, the function returns
+// "none".
+// Usage Example:
+//
+//	req, _ := http.NewRequest("GET", "/hello", nil)
+//	req.TLS = &tls.ConnectionState{
+//	    Version: tls.VersionTLS12,
+//	}
+//	if "1.2" != parseTlsVersion(req) {
+//	    t.Errorf("wrong TLS version")
+//	}
 func parseTlsVersion(request *http.Request) string {
 	if request.TLS != nil {
 		if request.TLS.Version == tls.VersionTLS12 {
