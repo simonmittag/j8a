@@ -78,7 +78,7 @@ brew tap simonmittag/cli &&
 
 ### Golang
 ```bash
-go install github.com/simonmittag/j8a/cmd/j8a &&
+go install github.com/simonmittag/j8a/cmd/j8a@latest &&
   j8a
 ```
 
