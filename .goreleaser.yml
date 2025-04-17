@@ -29,30 +29,17 @@ brews:
       name: simonmittag
       email: simonmittag@gmail.com
 
-dockers:
-  - goarch: amd64
-    goos: linux
+docker_build:
+  - dockerfile: Dockerfile
+    context: .
     use: buildx
-    dockerfile: Dockerfile
     image_templates:
-      - docker.io/simonmittag/j8a:{{.Tag}}-amd64
+      - docker.io/simonmittag/j8a:{{ .Tag }}-{{ .Arch }}
+    platforms:
+      - linux/amd64
+      - linux/arm64
     build_flag_templates:
       - "--pull"
-      - "--platform=linux/amd64"
-    extra_files:
-      - .
-
-  - goarch: arm64
-    goos: linux
-    use: buildx
-    dockerfile: Dockerfile
-    image_templates:
-      - docker.io/simonmittag/j8a:{{.Tag}}-arm64
-    build_flag_templates:
-      - "--pull"
-      - "--platform=linux/arm64"
-    extra_files:
-      - .
 
 docker_manifests:
   - name_template: docker.io/simonmittag/j8a:{{.Tag}}
