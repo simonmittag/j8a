@@ -41,6 +41,8 @@ dockers:
       - "--platform=linux/amd64"
     extra_files:
       - .
+      - go.mod
+      - go.sum
 
   - goarch: arm64
     goos: linux
@@ -53,6 +55,8 @@ dockers:
       - "--platform=linux/arm64"
     extra_files:
       - .
+      - go.mod
+      - go.sum
 
 docker_manifests:
   - name_template: docker.io/simonmittag/j8a:{{.Tag}}
