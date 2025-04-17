@@ -31,30 +31,34 @@ brews:
 dockers:
   - goarch: amd64
     goos: linux
-    image_templates:
-      - 'docker.io/simonmittag/j8a:{{.Tag}}-amd64'
     use: buildx
+    dockerfile: Dockerfile
+    image_templates:
+      - docker.io/simonmittag/j8a:{{.Tag}}-amd64
     build_flag_templates:
       - "--pull"
       - "--platform=linux/amd64"
+
   - goarch: arm64
     goos: linux
-    image_templates:
-      - 'docker.io/simonmittag/j8a:{{.Tag}}-arm64'
     use: buildx
+    dockerfile: Dockerfile
+    image_templates:
+      - docker.io/simonmittag/j8a:{{.Tag}}-arm64
     build_flag_templates:
       - "--pull"
       - "--platform=linux/arm64"
 
 docker_manifests:
-  - name_template: 'docker.io/simonmittag/j8a:{{.Tag}}'
+  - name_template: docker.io/simonmittag/j8a:{{.Tag}}
     image_templates:
-      - 'docker.io/simonmittag/j8a:{{.Tag}}-amd64'
-      - 'docker.io/simonmittag/j8a:{{.Tag}}-arm64'
-  - name_template: 'docker.io/simonmittag/j8a:latest'
+      - docker.io/simonmittag/j8a:{{.Tag}}-amd64
+      - docker.io/simonmittag/j8a:{{.Tag}}-arm64
+
+  - name_template: docker.io/simonmittag/j8a:latest
     image_templates:
-      - 'docker.io/simonmittag/j8a:{{.Tag}}-amd64'
-      - 'docker.io/simonmittag/j8a:{{.Tag}}-arm64'
+      - docker.io/simonmittag/j8a:{{.Tag}}-amd64
+      - docker.io/simonmittag/j8a:{{.Tag}}-arm64
 
 checksum:
   name_template: 'checksums.txt'
