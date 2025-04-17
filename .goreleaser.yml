@@ -1,3 +1,5 @@
+version: 2
+
 builds:
   - binary: j8a
     main: cmd/j8a/main.go
@@ -19,7 +21,7 @@ universal_binaries:
 brews:
   - name: j8a
     homepage: "https://github.com/simonmittag/j8a"
-    tap:
+    repository:
       owner: simonmittag
       name: homebrew-cli
     commit_author:
