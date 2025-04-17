@@ -22,20 +22,6 @@ If you are a security researcher, the project team would like to [hear from you]
 * Update to goreleaser 2.8 and multiplatform docker build
 * Bumped several dependencies
 
-### v1.1.1 (04/12/2023)
-* Update to Go 1.21
-* Fixed a bug where IPV6 addresses as host names weren't logged correctly.
-* docker distribution now includes multi-arch amd64 and arm64 images.
-* Bumped several dependency versions
-
-
-### v1.1.0 (24/06/2023)
-* improved error handling for failed upstream requests.
-* added new internal status management for server bootstrap and shutdown behaviour.
-* bumped several dependencies
-* now validating port ranges for http and tls ports downstream during bootstrap
-* fixed a bug where acceptableSkewSeconds was incorrectly loaded from config files
-
 # What is j8a?
 
 [j8a [ dʒʌbbʌ ]](https://j8a.io) is a modern **TLS 1.3 reverse proxy server** designed as a lightweight API gateway for
