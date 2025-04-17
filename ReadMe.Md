@@ -19,6 +19,8 @@ If you are a security researcher, the project team would like to [hear from you]
 
 ### v1.1.2 (17/04/2025)
 * Update to Go 1.24
+* Update to goreleaser 2.8 and multiplatform docker build
+* Bumped several dependencies
 
 ### v1.1.1 (04/12/2023)
 * Update to Go 1.21
