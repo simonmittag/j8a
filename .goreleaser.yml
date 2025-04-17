@@ -39,6 +39,8 @@ dockers:
     build_flag_templates:
       - "--pull"
       - "--platform=linux/amd64"
+    extra_files:
+      - .
 
   - goarch: arm64
     goos: linux
@@ -49,6 +51,8 @@ dockers:
     build_flag_templates:
       - "--pull"
       - "--platform=linux/arm64"
+    extra_files:
+      - .
 
 docker_manifests:
   - name_template: docker.io/simonmittag/j8a:{{.Tag}}

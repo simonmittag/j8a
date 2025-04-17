@@ -10,7 +10,7 @@ COPY . .
 ENV CGO_ENABLED=0
 ENV GO111MODULE=on
 
-RUN go build -o j8a ./cmd/j8a/main.go
+RUN go build -o j8a github.com/simonmittag/j8a/cmd/j8a
 
 # Stage 2: Minimal runtime image
 FROM alpine:latest
