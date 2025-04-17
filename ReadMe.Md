@@ -9,13 +9,16 @@
 [![Go Version](https://img.shields.io/github/go-mod/go-version/simonmittag/j8a)](https://img.shields.io/github/go-mod/go-version/simonmittag/j8a)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Docker Pulls](https://img.shields.io/docker/pulls/simonmittag/j8a)](https://hub.docker.com/repository/docker/simonmittag/j8a)
-[![Version](https://img.shields.io/docker/v/simonmittag/j8a/v1.1.1)](https://hub.docker.com/repository/docker/simonmittag/j8a)
+[![Version](https://img.shields.io/docker/v/simonmittag/j8a/v1.1.2)](https://hub.docker.com/repository/docker/simonmittag/j8a)
 
 ## CVEs
-🛡️ J8a has [zero](https://www.cvedetails.com/google-search-results.php?q=j8a&sa=Search) reported CVEs as of 04/12/2023. 
+🛡️ J8a has [zero](https://www.cvedetails.com/google-search-results.php?q=j8a&sa=Search) reported CVEs as of 17/04/2025. 
 If you are a security researcher, the project team would like to [hear from you](https://github.com/simonmittag/j8a/issues).
 
 ## What's new?
+
+### v1.1.2 (17/04/2025)
+* Update to Go 1.24
 
 ### v1.1.1 (04/12/2023)
 * Update to Go 1.21
@@ -30,17 +33,6 @@ If you are a security researcher, the project team would like to [hear from you]
 * bumped several dependencies
 * now validating port ranges for http and tls ports downstream during bootstrap
 * fixed a bug where acceptableSkewSeconds was incorrectly loaded from config files
-
-### v1.0.1 (26/05/2023)
-* can now validate config & files with cli option `-o`
-* added cli flags `-h` for usage and `-v` for version
-
-### v1.0.0 (07/05/2023)
-* support for virtual host based routing inc subdomains.
-* timeZone and logLevel are now options in config.yml as opposed to env variables.
-* re-introduced support for HTTP PATCH method.
-* OPTIONS requests to '*' now list legal server HTTP methods
-* update to go 1.20, and multiple dependency updates
 
 # What is j8a?
 
