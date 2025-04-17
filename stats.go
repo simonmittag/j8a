@@ -252,7 +252,7 @@ func (rt *Runtime) logUptime() {
 				log.Info().
 					Int(pid, os.Getpid()).
 					Int64(uptimeMicros, int64(upNanos/1000)).
-					Msgf(fmt.Sprintf("server upTime is %s", uptime))
+					Msgf("server upTime is %s", uptime)
 			}
 			time.Sleep(time.Hour * 24)
 		}
