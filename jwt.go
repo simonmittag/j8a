@@ -287,12 +287,12 @@ func (jwt *Jwt) LoadJwks() error {
 						keyAlgs = keyAlg.String()
 					}
 					msg := "jwt [%s] key algorithm [%s] in jwks keyset does not match configured alg [%s]."
-					err = errors.New(fmt.Sprintf(msg, jwt.Name, keyAlg, jwtAlg))
+					err = fmt.Errorf(msg, jwt.Name, keyAlgs, jwtAlg)
 					log.Warn().
 						Str("jwt", jwt.Name).
 						Str("jwtAlg", jwtAlg.String()).
 						Str("keyAlg", keyAlgs).
-						Msgf(msg, jwt.Name, keyAlg, jwtAlg)
+						Msgf(msg, jwt.Name, keyAlgs, jwtAlg)
 				}
 
 				if err == nil {
