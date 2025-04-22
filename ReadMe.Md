@@ -11,6 +11,22 @@
 [![Docker Pulls](https://img.shields.io/docker/pulls/simonmittag/j8a)](https://hub.docker.com/repository/docker/simonmittag/j8a)
 [![Version](https://img.shields.io/docker/v/simonmittag/j8a/v1.1.2)](https://hub.docker.com/repository/docker/simonmittag/j8a)
 
+# What is j8a?
+[j8a [ dʒʌbbʌ ]](https://j8a.io) is a modern **TLS 1.3 reverse proxy server** designed as a lightweight API gateway for
+REST APIs.
+
+![](images/route.gif)
+
+## What's new?
+
+### v1.1.3 (23/04/2025)
+* upgraded to `github.com/lestrrat-go/jwx/v3`, retired older dependencies.
+
+### v1.1.2 (17/04/2025)
+* Update to Go 1.24
+* Update to goreleaser 2.8 and multiplatform docker build
+* Bumped several dependencies
+
 ## CVEs
 🛡️ J8a v1.1.3 has [zero](https://www.cvedetails.com/google-search-results.php?q=j8a&sa=Search) reported CVEs as of 23/04/2025. 
 If you are a security researcher, the project team would like to [hear from you](https://github.com/simonmittag/j8a/issues).
@@ -45,23 +61,6 @@ Report Summary
     size            │ 9.2 MB                       
     packages        │ 56                         
 ```
-
-## What's new?
-
-### v1.1.3 (23/04/2025)
-* upgraded to `github.com/lestrrat-go/jwx/v3`, retired older dependencies.
-
-### v1.1.2 (17/04/2025)
-* Update to Go 1.24
-* Update to goreleaser 2.8 and multiplatform docker build
-* Bumped several dependencies
-
-# What is j8a?
-
-[j8a [ dʒʌbbʌ ]](https://j8a.io) is a modern **TLS 1.3 reverse proxy server** designed as a lightweight API gateway for
-REST APIs. 
-
-![](images/route.gif)
 
 ## Features
 
