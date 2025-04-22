@@ -5,8 +5,8 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/lestrrat-go/jwx/jwa"
-	"github.com/lestrrat-go/jwx/jwt"
+	"github.com/lestrrat-go/jwx/v3/jwa"
+	"github.com/lestrrat-go/jwx/v3/jwt"
 	"github.com/rs/zerolog/log"
 	"io/ioutil"
 	"net/http"
@@ -925,7 +925,7 @@ func doBenchValidateJwtWithClaims(b *testing.B, claims ...string) {
 		token,
 		"jwty")
 
-	parsed, err2 := jwt.Parse([]byte(token))
+	parsed, err2 := jwt.Parse([]byte(token), jwt.WithVerify(false))
 	if err2 != nil {
 		b.Errorf("token not parsed %v", err2)
 	}
@@ -945,7 +945,7 @@ func dummyHs256TokenFactory(t *testing.T, key string, value time.Time) []byte {
 	tok := jwt.New()
 	tok.Set(key, value)
 	tok.Set("foo", "bar")
-	payload, err = jwt.Sign(tok, jwa.HS256, []byte("secret"))
+	payload, err = jwt.Sign(tok, jwt.WithKey(jwa.HS256(), []byte("secret")))
 	t.Logf("token %s", payload)
 	if err != nil {
 		t.Errorf("cannot sign token, cause: %v", err)
@@ -970,8 +970,7 @@ func mockJwtRuntime(jwtName string, alg string, key string, claims ...string) *R
 		"121",
 		claims...)
 
-	jwaAlg := *new(jwa.SignatureAlgorithm)
-	jwaAlg.Accept(jwtConfig.Alg)
+	jwaAlg, _ := jwa.LookupSignatureAlgorithm(jwtConfig.Alg)
 
 	jwtConfig.parseKey(jwaAlg)
 	jwtConfig.Validate()

@@ -11,8 +11,8 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/itchyny/gojq"
-	"github.com/lestrrat-go/jwx/jwa"
-	"github.com/lestrrat-go/jwx/jwk"
+	"github.com/lestrrat-go/jwx/v3/jwa"
+	"github.com/lestrrat-go/jwx/v3/jwk"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/sync/semaphore"
 	"strconv"
@@ -155,8 +155,10 @@ func (j *Jwt) UnmarshalJSON(data []byte) error {
 
 func (jwt *Jwt) Validate() error {
 	var err error
-	alg := *new(jwa.SignatureAlgorithm)
-	err = alg.Accept(jwt.Alg)
+	alg, ok := jwa.LookupSignatureAlgorithm(jwt.Alg)
+	if !ok {
+		err = errors.New(fmt.Sprintf("invalid alg [%s]", jwt.Alg))
+	}
 
 	if len(jwt.Name) == 0 {
 		return errors.New("invalid jwt name not specified")
@@ -182,11 +184,11 @@ func (jwt *Jwt) Validate() error {
 		return errors.New(fmt.Sprintf(missingAlg, jwt.Name, validAlgNoNone))
 	}
 
-	if alg == jwa.NoSignature && len(jwt.Key) > 0 {
+	if alg == jwa.NoSignature() && len(jwt.Key) > 0 {
 		return errors.New(fmt.Sprintf(noneWithKeyData, jwt.Name))
 	}
 
-	if alg != jwa.NoSignature && len(jwt.Key) == 0 && len(jwt.JwksUrl) == 0 {
+	if alg != jwa.NoSignature() && len(jwt.Key) == 0 && len(jwt.JwksUrl) == 0 {
 		return errors.New(fmt.Sprintf(missingKeyOrJwks, jwt.Name, alg))
 	}
 
@@ -256,59 +258,79 @@ func (jwt *Jwt) LoadJwks() error {
 		if keyset == nil || keyset.Len() == 0 {
 			err = errors.New(fmt.Sprintf("jwt [%s] unable to parse keys in keyset", jwt.Name))
 		} else {
-			keys := keyset.Iterate(context.Background())
-		Keyrange:
-			for keys.Next(context.Background()) {
-				key := keys.Pair().Value.(jwk.Key)
-				alg := *new(jwa.SignatureAlgorithm)
-				err = alg.Accept(key.Algorithm())
+		KeyRange:
+			for i := 0; i < keyset.Len(); i++ {
+				key, ok := keyset.Key(i)
+				if !ok {
+					err = errors.New(fmt.Sprintf("jwt [%s] unable to find key in keyset", jwt.Name))
+				}
+
+				keyId, ok := key.KeyID()
+				if !ok {
+					err = errors.New(fmt.Sprintf("jwt [%s] unable to find key ID", jwt.Name))
+				}
+
+				jwtAlg, ok := jwa.LookupSignatureAlgorithm(jwt.Alg)
+				if !ok {
+					err = errors.New(fmt.Sprintf("invalid alg [%s]", jwt.Alg))
+				}
 
 				//check alg conforms to what's configured. J8a does not support rotating key algos for security.
-				if jwt.Alg != key.Algorithm() {
+				keyAlg, ok := key.Algorithm()
+				if !ok {
+					err = errors.New(fmt.Sprintf("invalid key alg [%s]", jwt.Alg))
+				}
+
+				if jwtAlg != keyAlg {
+					keyAlgs := "not determined"
+					if keyAlg != nil {
+						keyAlgs = keyAlg.String()
+					}
 					msg := "jwt [%s] key algorithm [%s] in jwks keyset does not match configured alg [%s]."
-					err = errors.New(fmt.Sprintf(msg, jwt.Name, key.Algorithm(), jwt.Alg))
+					err = fmt.Errorf(msg, jwt.Name, keyAlgs, jwtAlg)
 					log.Warn().
 						Str("jwt", jwt.Name).
-						Str("jwtAlg", jwt.Alg).
-						Str("keyAlg", key.Algorithm()).
-						Msgf(msg, jwt.Name, key.Algorithm(), jwt.Alg)
+						Str("jwtAlg", jwtAlg.String()).
+						Str("keyAlg", keyAlgs).
+						Msgf(msg, jwt.Name, keyAlgs, jwtAlg)
 				}
 
 				if err == nil {
-					switch alg {
-					case jwa.RS256, jwa.RS384, jwa.RS512, jwa.PS256, jwa.PS384, jwa.PS512:
+					switch jwtAlg {
+					case jwa.RS256(), jwa.RS384(), jwa.RS512(), jwa.PS256(), jwa.PS384(), jwa.PS512():
 						k := KidPair{
-							Kid: key.KeyID(),
+							Kid: keyId,
 							Key: &rsa.PublicKey{
 								N: nil,
 								E: 0,
 							},
 						}
-						err = key.Raw(k.Key)
+
+						err = jwk.Export(key, k.Key)
 						if err == nil {
 							jwt.RSAPublic.Upsert(k)
 						}
 					//Note, removed support for HS256, secret keys make no sense for JWKS even over TLS.
-					case jwa.ES256, jwa.ES384, jwa.ES512:
+					case jwa.ES256(), jwa.ES384(), jwa.ES512():
 						k := KidPair{
-							Kid: key.KeyID(),
+							Kid: keyId,
 							Key: &ecdsa.PublicKey{
 								Curve: nil,
 								X:     nil,
 								Y:     nil,
 							},
 						}
-						err = key.Raw(k.Key)
-						err = jwt.checkECDSABitSize(alg, k.Key.(*ecdsa.PublicKey))
+						err = jwk.Export(key, k.Key)
+						err = jwt.checkECDSABitSize(jwtAlg, k.Key.(*ecdsa.PublicKey))
 						if err == nil {
 							jwt.ECDSAPublic.Upsert(k)
 						}
 					default:
-						err = errors.New(fmt.Sprintf("unknown key type in Jwks %v", alg.String()))
+						err = errors.New(fmt.Sprintf("unknown key type in Jwks %v", jwtAlg.String()))
 					}
-					log.Info().Msgf("jwt [%s] successfully parsed %s key from remote jwk", jwt.Name, alg)
+					log.Info().Msgf("jwt [%s] successfully parsed %s key from remote jwk", jwt.Name, jwtAlg)
 				} else {
-					break Keyrange
+					break KeyRange
 				}
 			}
 		}
@@ -320,12 +342,13 @@ func (jwt *Jwt) LoadJwks() error {
 		jwt.updateCount++
 		//release here, don't use defer
 		jwt.lock.Release(1)
+
+		return err
 	} else {
 		log.Info().
 			Str("jwt", jwt.Name).
 			Msgf("jwt [%s] already updating within 10s, skipping attempt.", jwt.Name)
 	}
-
 	return err
 }
 
@@ -335,7 +358,7 @@ func (jwt *Jwt) parseKey(alg jwa.SignatureAlgorithm) error {
 	var err error
 
 	switch alg {
-	case jwa.RS256, jwa.RS384, jwa.RS512, jwa.PS256, jwa.PS384, jwa.PS512:
+	case jwa.RS256(), jwa.RS384(), jwa.RS512(), jwa.PS256(), jwa.PS384(), jwa.PS512():
 		p, p1 = pem.Decode([]byte(jwt.Key))
 		if len(p1) > 0 {
 			return errors.New(fmt.Sprintf(pemOverflow, jwt.Name))
@@ -379,7 +402,7 @@ func (jwt *Jwt) parseKey(alg jwa.SignatureAlgorithm) error {
 			}
 		}
 
-	case jwa.HS256, jwa.HS384, jwa.HS512:
+	case jwa.HS256(), jwa.HS384(), jwa.HS512():
 		if len(jwt.Key) > 0 {
 			jwt.Secret.Upsert(
 				KidPair{
@@ -390,7 +413,7 @@ func (jwt *Jwt) parseKey(alg jwa.SignatureAlgorithm) error {
 			err = errors.New("jwt secret not found, check your configuration")
 		}
 
-	case jwa.ES256, jwa.ES384, jwa.ES512:
+	case jwa.ES256(), jwa.ES384(), jwa.ES512():
 		p, p1 = pem.Decode([]byte(jwt.Key))
 		if len(p1) > 0 {
 			return errors.New(fmt.Sprintf(pemOverflow, jwt.Name))
@@ -442,7 +465,7 @@ func (jwt *Jwt) parseKey(alg jwa.SignatureAlgorithm) error {
 			}
 		}
 
-	case jwa.NoSignature:
+	case jwa.NoSignature():
 		if len(jwt.Key) > 0 {
 			return errors.New(fmt.Sprintf("jwt [%s] none type signature does not allow key data, check your configuration", jwt.Name))
 		}
@@ -460,11 +483,11 @@ func (jwt *Jwt) checkECDSABitSize(alg jwa.SignatureAlgorithm, parsed *ecdsa.Publ
 	bitsize := parsed.Curve.Params().BitSize
 
 	var err error
-	if alg == jwa.ES256 && (bitsize != 256) {
+	if alg == jwa.ES256() && (bitsize != 256) {
 		err = errors.New(fmt.Sprintf(ecdsaKeySizeBad, jwt.Name, alg, bitsize))
-	} else if alg == jwa.ES384 && (bitsize != 384) {
+	} else if alg == jwa.ES384() && (bitsize != 384) {
 		err = errors.New(fmt.Sprintf(ecdsaKeySizeBad, jwt.Name, alg, bitsize))
-	} else if alg == jwa.ES512 && (bitsize != 521) {
+	} else if alg == jwa.ES512() && (bitsize != 521) {
 		err = errors.New(fmt.Sprintf(ecdsaKeySizeBad, jwt.Name, alg, bitsize))
 	}
 	return err
