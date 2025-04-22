@@ -212,17 +212,19 @@ func (jwt *Jwt) Validate() error {
 				jwt.Claims[i] = claim
 			}
 
-			q, e := gojq.Parse(claim)
-			if e != nil {
-				err = e
-				break
-			} else {
-				var c *gojq.Code
-				c, err = gojq.Compile(q)
-				if err == nil {
-					jwt.claimsVal[i] = c
-				} else {
+			if len(claim) > 0 {
+				q, e := gojq.Parse(claim)
+				if e != nil {
+					err = e
 					break
+				} else {
+					var c *gojq.Code
+					c, err = gojq.Compile(q)
+					if err == nil {
+						jwt.claimsVal[i] = c
+					} else {
+						break
+					}
 				}
 			}
 		}
