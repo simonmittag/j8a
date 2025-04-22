@@ -19,9 +19,9 @@ import (
 	unicode "unicode"
 
 	"github.com/google/uuid"
-	"github.com/lestrrat-go/jwx/jwa"
-	"github.com/lestrrat-go/jwx/jws"
-	"github.com/lestrrat-go/jwx/jwt"
+	"github.com/lestrrat-go/jwx/v3/jwa"
+	"github.com/lestrrat-go/jwx/v3/jws"
+	"github.com/lestrrat-go/jwx/v3/jwt"
 	"github.com/rs/zerolog"
 	"golang.org/x/net/idna"
 
@@ -834,19 +834,19 @@ func (proxy *Proxy) validateJwt() bool {
 	if len(bearer) > 1 {
 		token = bearer[1]
 		routeSec := Runner.Jwt[proxy.Route.Jwt]
-		alg := *new(jwa.SignatureAlgorithm)
-		alg.Accept(routeSec.Alg)
+		//this is safe to ignore, it was verified during init of config.
+		alg, _ := jwa.LookupSignatureAlgorithm(routeSec.Alg)
 
 		var parsed jwt.Token
 
 		switch alg {
-		case jwa.RS256, jwa.RS384, jwa.RS512, jwa.PS256, jwa.PS384, jwa.PS512:
+		case jwa.RS256(), jwa.RS384(), jwa.RS512(), jwa.PS256(), jwa.PS384(), jwa.PS512():
 			parsed, err = proxy.verifyJwtSignature(token, routeSec.RSAPublic, alg, ev)
-		case jwa.ES256, jwa.ES384, jwa.ES512:
+		case jwa.ES256(), jwa.ES384(), jwa.ES512():
 			parsed, err = proxy.verifyJwtSignature(token, routeSec.ECDSAPublic, alg, ev)
-		case jwa.HS256, jwa.HS384, jwa.HS512:
+		case jwa.HS256(), jwa.HS384(), jwa.HS512():
 			parsed, err = proxy.verifyJwtSignature(token, routeSec.Secret, alg, ev)
-		case jwa.NoSignature:
+		case jwa.NoSignature():
 			parsed, err = jwt.Parse([]byte(token))
 		default:
 			parsed, err = jwt.Parse([]byte(token))
@@ -898,8 +898,11 @@ func (proxy *Proxy) verifyMandatoryJwtClaims(token jwt.Token, ev *zerolog.Event)
 			lk := "jwtClaimsMatchRequired[" + claim + "]"
 			ev.Bool(lk, false)
 
-			json, _ := token.AsMap(context.Background())
-			iter := jwtc.claimsVal[i].Run(json)
+			// In jwx v3, token.AsMap is no longer available, use json.Marshal and json.Unmarshal instead
+			tokenJSON, _ := json.Marshal(token)
+			jsonMap := make(map[string]interface{})
+			_ = json.Unmarshal(tokenJSON, &jsonMap)
+			iter := jwtc.claimsVal[i].Run(jsonMap)
 			value, ok := iter.Next()
 			if value != nil {
 				if _, nok := value.(error); nok {
@@ -933,7 +936,8 @@ func (proxy *Proxy) verifyJwtSignature(token string, keySet KeySet, alg jwa.Sign
 			key = keySet.Find(kid)
 			if key != nil {
 				parsed, err = jwt.Parse([]byte(token),
-					jwt.WithVerify(alg, key))
+					jwt.WithKey(alg, key),
+					jwt.WithVerify(true), jwt.WithValidate(false))
 			} else {
 				proxy.triggerKeyRotationCheck(kid)
 			}
@@ -949,7 +953,8 @@ func (proxy *Proxy) verifyJwtSignature(token string, keySet KeySet, alg jwa.Sign
 
 			for _, kp := range keySet {
 				parsed, err = jwt.Parse([]byte(token),
-					jwt.WithVerify(alg, kp.Key))
+					jwt.WithKey(alg, kp.Key),
+					jwt.WithVerify(true))
 				if err == nil {
 					break
 				}
@@ -976,29 +981,32 @@ func (proxy *Proxy) triggerKeyRotationCheck(kid string) {
 }
 
 func logDateClaims(parsed jwt.Token, ev *zerolog.Event) {
-	if parsed.IssuedAt().Unix() > 1 {
+	iat, iok := parsed.IssuedAt()
+	if iok {
 		ev.Bool("jwtClaimsIat", true)
-		ev.Str("jwtIatUtcIso", parsed.IssuedAt().Format(time.RFC3339))
-		ev.Str("jwtIatLclIso", parsed.IssuedAt().Local().Format(time.RFC3339))
-		ev.Int64("jwtIatUnix", parsed.IssuedAt().Unix())
+		ev.Str("jwtIatUtcIso", iat.Format(time.RFC3339))
+		ev.Str("jwtIatLclIso", iat.Local().Format(time.RFC3339))
+		ev.Int64("jwtIatUnix", iat.Unix())
 	} else {
 		ev.Bool("jwtClaimsIat", false)
 	}
 
-	if parsed.NotBefore().Unix() > 1 {
+	nbf, nok := parsed.NotBefore()
+	if nok {
 		ev.Bool("jwtClaimsNbf", true)
-		ev.Str("jwtNbfUtcIso", parsed.NotBefore().Format(time.RFC3339))
-		ev.Str("jwtNbfLclIso", parsed.NotBefore().Local().Format(time.RFC3339))
-		ev.Int64("jwtNbfUnix", parsed.NotBefore().Unix())
+		ev.Str("jwtNbfUtcIso", nbf.Format(time.RFC3339))
+		ev.Str("jwtNbfLclIso", nbf.Local().Format(time.RFC3339))
+		ev.Int64("jwtNbfUnix", nbf.Unix())
 	} else {
 		ev.Bool("jwtClaimsNbf", false)
 	}
 
-	if parsed.Expiration().Unix() > 1 {
+	exp, eok := parsed.Expiration()
+	if eok {
 		ev.Bool("jwtClaimsExp", true)
-		ev.Str("jwtExpUtcIso", parsed.Expiration().Format(time.RFC3339))
-		ev.Str("jwtExpLclIso", parsed.Expiration().Local().Format(time.RFC3339))
-		ev.Int64("jwtExpUnix", parsed.Expiration().Unix())
+		ev.Str("jwtExpUtcIso", exp.Format(time.RFC3339))
+		ev.Str("jwtExpLclIso", exp.Local().Format(time.RFC3339))
+		ev.Int64("jwtExpUnix", exp.Unix())
 	} else {
 		ev.Bool("jwtClaimsExp", false)
 	}
@@ -1006,20 +1014,24 @@ func logDateClaims(parsed jwt.Token, ev *zerolog.Event) {
 
 func verifyDateClaims(token string, skew int, ev *zerolog.Event) error {
 	//arghh i need a deep copy of this token so i can modify it, but it's an interface wrapping a package private jwt.stdToken
-	//so i need to parse it again.
-	skewed, err := jwt.Parse([]byte(token))
+	//so i need to parse it again. we need to turn off key validation and verification since we're doing our own math on the iat, nbf, exp claims.
+	skewed, err := jwt.Parse([]byte(token), jwt.WithVerify(false), jwt.WithValidate(false))
 
-	if skewed.IssuedAt().Unix() > int64(skew*1000) {
+	iat, iok := skewed.IssuedAt()
+	if iok {
 		ev.Bool("jwtClaimsIatValidated", true)
-		skewed.Set("iat", skewed.IssuedAt().Add(-time.Second*time.Duration(skew)))
+		skewed.Set("iat", iat.Add(-time.Second*time.Duration(skew)))
 	}
-	if skewed.NotBefore().Unix() > int64(skew*1000) {
+	nbf, nok := skewed.NotBefore()
+	if nok {
 		ev.Bool("jwtClaimsNbfValidated", true)
-		skewed.Set("nbf", skewed.NotBefore().Add(-time.Second*time.Duration(skew)))
+		skewed.Set("nbf", nbf.Add(-time.Second*time.Duration(skew)))
 	}
-	if skewed.Expiration().Unix() > 1 {
+
+	exp, eok := skewed.Expiration()
+	if eok {
 		ev.Bool("jwtClaimsExpValidated", true)
-		skewed.Set("exp", skewed.Expiration().Add(time.Second*time.Duration(skew)))
+		skewed.Set("exp", exp.Add(time.Second*time.Duration(skew)))
 	}
 
 	if skewed != nil {

@@ -6,3 +6,6 @@ test:
 
 performance:
 	rm local.yml && circleci config process .circleci/local.yml > local.yml && circleci local execute -c local.yml localperformance
+
+snapshot:
+	goreleaser release --snapshot
