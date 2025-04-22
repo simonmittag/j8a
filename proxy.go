@@ -847,9 +847,9 @@ func (proxy *Proxy) validateJwt() bool {
 		case jwa.HS256(), jwa.HS384(), jwa.HS512():
 			parsed, err = proxy.verifyJwtSignature(token, routeSec.Secret, alg, ev)
 		case jwa.NoSignature():
-			parsed, err = jwt.Parse([]byte(token))
+			parsed, err = jwt.Parse([]byte(token), jwt.WithVerify(false), jwt.WithValidate(false))
 		default:
-			parsed, err = jwt.Parse([]byte(token))
+			parsed, err = jwt.Parse([]byte(token), jwt.WithVerify(false), jwt.WithValidate(false))
 		}
 
 		//date claims are verified separately to signature including skew
@@ -937,7 +937,8 @@ func (proxy *Proxy) verifyJwtSignature(token string, keySet KeySet, alg jwa.Sign
 			if key != nil {
 				parsed, err = jwt.Parse([]byte(token),
 					jwt.WithKey(alg, key),
-					jwt.WithVerify(true), jwt.WithValidate(false))
+					jwt.WithVerify(true),
+					jwt.WithValidate(false))
 			} else {
 				proxy.triggerKeyRotationCheck(kid)
 			}
@@ -954,7 +955,8 @@ func (proxy *Proxy) verifyJwtSignature(token string, keySet KeySet, alg jwa.Sign
 			for _, kp := range keySet {
 				parsed, err = jwt.Parse([]byte(token),
 					jwt.WithKey(alg, kp.Key),
-					jwt.WithVerify(true))
+					jwt.WithVerify(true),
+					jwt.WithValidate(false))
 				if err == nil {
 					break
 				}
@@ -1034,9 +1036,7 @@ func verifyDateClaims(token string, skew int, ev *zerolog.Event) error {
 		skewed.Set("exp", exp.Add(time.Second*time.Duration(skew)))
 	}
 
-	if skewed != nil {
-		err = jwt.Validate(skewed)
-	}
+	err = jwt.Validate(skewed)
 
 	if err != nil && strings.Contains(err.Error(), "iat") {
 		ev.Bool("jwtClaimsIatValidated", false)
