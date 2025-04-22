@@ -12,8 +12,39 @@
 [![Version](https://img.shields.io/docker/v/simonmittag/j8a/v1.1.2)](https://hub.docker.com/repository/docker/simonmittag/j8a)
 
 ## CVEs
-🛡️ J8a has [zero](https://www.cvedetails.com/google-search-results.php?q=j8a&sa=Search) reported CVEs as of 3/04/2025. 
+🛡️ J8a v1.1.3 has [zero](https://www.cvedetails.com/google-search-results.php?q=j8a&sa=Search) reported CVEs as of 23/04/2025. 
 If you are a security researcher, the project team would like to [hear from you](https://github.com/simonmittag/j8a/issues).
+
+### Trivy
+```aiignore
+λ trivy image simonmittag/j8a:v1.1.3
+2025-04-23T01:09:26+10:00       INFO    [gobinary] Detecting vulnerabilities...
+
+Report Summary
+┌────────────────────────────────────────┬──────────┬─────────────────┬─────────┐
+│                 Target                 │   Type   │ Vulnerabilities │ Secrets │
+├────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ simonmittag/j8a:v1.1.3 (alpine 3.21.3) │  alpine  │        0        │    -    │
+├────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ j8a                                    │ gobinary │        0        │    -    │
+└────────────────────────────────────────┴──────────┴─────────────────┴─────────┘
+```
+
+### Docker Scout
+```aiignore
+λ docker scout cves simonmittag/j8a:v1.1.3
+    ✓ Indexed 56 packages
+    ✓ No vulnerable package detected
+
+                    │       Analyzed Image         
+────────────────────┼──────────────────────────────
+  Target            │  simonmittag/j8a:v1.1.3      
+    digest          │  54aae504c670                
+    platform        │ linux/arm64                  
+    vulnerabilities │    0C     0H     0M     0L   
+    size            │ 9.2 MB                       
+    packages        │ 56                         
+```
 
 ## What's new?
 
