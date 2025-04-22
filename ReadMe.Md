@@ -12,10 +12,13 @@
 [![Version](https://img.shields.io/docker/v/simonmittag/j8a/v1.1.2)](https://hub.docker.com/repository/docker/simonmittag/j8a)
 
 ## CVEs
-🛡️ J8a has [zero](https://www.cvedetails.com/google-search-results.php?q=j8a&sa=Search) reported CVEs as of 17/04/2025. 
+🛡️ J8a has [zero](https://www.cvedetails.com/google-search-results.php?q=j8a&sa=Search) reported CVEs as of 3/04/2025. 
 If you are a security researcher, the project team would like to [hear from you](https://github.com/simonmittag/j8a/issues).
 
 ## What's new?
+
+### v1.1.3 (23/04/2025)
+* upgraded to `github.com/lestrrat-go/jwx/v3`, retired older dependencies.
 
 ### v1.1.2 (17/04/2025)
 * Update to Go 1.24
