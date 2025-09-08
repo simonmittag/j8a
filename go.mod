@@ -1,6 +1,6 @@
 module github.com/simonmittag/j8a
 
-go 1.24
+go 1.24.0
 
 require (
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2
@@ -17,7 +17,7 @@ require (
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/simonmittag/ws v1.0.42
 	golang.org/x/net v0.39.0
-	golang.org/x/sync v0.13.0
+	golang.org/x/sync v0.17.0
 )
 
 require (
